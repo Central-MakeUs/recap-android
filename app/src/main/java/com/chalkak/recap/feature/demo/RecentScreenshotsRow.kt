@@ -1,5 +1,6 @@
 package com.chalkak.recap.feature.demo
 
+import android.content.res.Configuration
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -22,7 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.chalkak.recap.core.design.theme.RECAPTheme
 import coil3.compose.AsyncImage
 
 @Composable
@@ -95,5 +98,31 @@ fun RecentScreenshotsRow(
                 }
             }
         }
+    }
+}
+
+@Preview(name = "Recent Screenshots - Empty")
+@Preview(name = "Recent Screenshots - Empty Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun RecentScreenshotsRowEmptyPreview() {
+    RECAPTheme(dynamicColor = false) {
+        RecentScreenshotsRow(
+            imageUris = emptyList(),
+        )
+    }
+}
+
+@Preview(name = "Recent Screenshots - Populated")
+@Composable
+private fun RecentScreenshotsRowPopulatedPreview() {
+    RECAPTheme(dynamicColor = false) {
+        RecentScreenshotsRow(
+            imageUris = listOf(
+                Uri.parse("content://com.chalkak.recap.preview/screenshot/1"),
+                Uri.parse("content://com.chalkak.recap.preview/screenshot/2"),
+                Uri.parse("content://com.chalkak.recap.preview/screenshot/3"),
+                Uri.parse("content://com.chalkak.recap.preview/screenshot/4"),
+            ),
+        )
     }
 }

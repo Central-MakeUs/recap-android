@@ -10,14 +10,28 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import androidx.annotation.WorkerThread
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.tasks.Task
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
+import com.google.mlkit.vision.text.TextRecognition
+import com.google.mlkit.vision.text.TextRecognizer
+import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
+import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -25,6 +39,7 @@ class DemoViewModel(
     application: Application,
 ) : AndroidViewModel(application) {
     private val appContext = application.applicationContext
+    private var ocrJob: Job? = null
 
     private val _uiState = MutableStateFlow(
         DemoUiState(
@@ -59,6 +74,8 @@ class DemoViewModel(
             DemoAction.RequestImagePermission,
             DemoAction.RefreshImagePermission,
             -> refreshImagePermissionLevel()
+
+            is DemoAction.RunOcr -> runOcr(action.engine)
         }
     }
 
@@ -86,6 +103,81 @@ class DemoViewModel(
             }
             _uiState.update { current ->
                 current.copy(recentScreenshotUris = screenshotUris)
+            }
+        }
+    }
+
+    private fun runOcr(engine: OcrEngine) {
+        val screenshotUris = _uiState.value.recentScreenshotUris.take(RecentScreenshotLimit)
+        if (screenshotUris.isEmpty()) {
+            _uiState.update { current ->
+                current.copy(
+                    ocrState = OcrUiState(
+                        engine = engine,
+                        errorMessage = "OCR을 실행할 스크린샷이 없습니다.",
+                    ),
+                )
+            }
+            return
+        }
+
+        ocrJob?.cancel()
+        ocrJob = viewModelScope.launch {
+            _uiState.update { current ->
+                current.copy(
+                    ocrState = OcrUiState(
+                        engine = engine,
+                        isRunning = true,
+                        totalCount = screenshotUris.size,
+                    ),
+                )
+            }
+
+            val recognizer = engine.createTextRecognizer()
+            val results = mutableListOf<OcrImageResult>()
+            try {
+                screenshotUris.forEachIndexed { index, uri ->
+                    if (!isActive) return@launch
+
+                    val result = withContext(Dispatchers.IO) {
+                        appContext.recognizeScreenshotText(
+                            recognizer = recognizer,
+                            uri = uri,
+                            imageIndex = index + 1,
+                        )
+                    }
+                    results += result
+                    _uiState.update { current ->
+                        current.copy(
+                            ocrState = current.ocrState.copy(
+                                completedCount = results.size,
+                                results = results.toList(),
+                            ),
+                        )
+                    }
+                }
+                _uiState.update { current ->
+                    current.copy(
+                        ocrState = current.ocrState.copy(
+                            isRunning = false,
+                            completedCount = screenshotUris.size,
+                        ),
+                    )
+                }
+            } catch (throwable: Throwable) {
+                if (throwable is CancellationException) {
+                    throw throwable
+                }
+                _uiState.update { current ->
+                    current.copy(
+                        ocrState = current.ocrState.copy(
+                            isRunning = false,
+                            errorMessage = "OCR 처리 중 오류가 발생했습니다.",
+                        ),
+                    )
+                }
+            } finally {
+                recognizer.close()
             }
         }
     }
@@ -141,6 +233,58 @@ private fun Context.queryRecentScreenshotUris(): List<Uri> {
             }
         }.orEmpty()
     }.getOrDefault(emptyList())
+}
+
+private fun OcrEngine.createTextRecognizer(): TextRecognizer {
+    return when (this) {
+        OcrEngine.Latin -> TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS)
+        OcrEngine.Korean -> TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())
+    }
+}
+
+@WorkerThread
+private suspend fun Context.recognizeScreenshotText(
+    recognizer: TextRecognizer,
+    uri: Uri,
+    imageIndex: Int,
+): OcrImageResult {
+    val image = InputImage.fromFilePath(this, uri)
+    val text = recognizer.process(image).await()
+    return text.toOcrImageResult(
+        imageIndex = imageIndex,
+        imageUri = uri.toString(),
+    )
+}
+
+private fun Text.toOcrImageResult(
+    imageIndex: Int,
+    imageUri: String,
+): OcrImageResult {
+    return OcrImageResult(
+        imageIndex = imageIndex,
+        imageUri = imageUri,
+        text = text,
+        blocks = textBlocks.map { block ->
+            OcrTextBlock(
+                text = block.text,
+                lines = block.lines.map { line -> line.text },
+            )
+        },
+    )
+}
+
+private suspend fun <T> Task<T>.await(): T {
+    return suspendCancellableCoroutine { continuation ->
+        addOnSuccessListener { result ->
+            continuation.resume(result)
+        }
+        addOnFailureListener { throwable ->
+            continuation.resumeWithException(throwable)
+        }
+        addOnCanceledListener {
+            continuation.cancel()
+        }
+    }
 }
 
 private val screenshotRelativePaths = listOf(

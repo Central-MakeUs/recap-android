@@ -1,5 +1,7 @@
 package com.chalkak.recap.feature.demo
 
+import android.content.res.Configuration
+import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,7 +20,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.chalkak.recap.core.design.theme.RECAPTheme
 
 @Composable
 fun DemoContent(
@@ -79,6 +83,73 @@ fun DemoContent(
                     Text("상태 새로고침")
                 }
             }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                val canRunOcr = uiState.recentScreenshotUris.isNotEmpty() && !uiState.ocrState.isRunning
+                Button(
+                    modifier = Modifier.weight(1f),
+                    enabled = canRunOcr,
+                    onClick = {
+                        onAction(DemoAction.RunOcr(OcrEngine.Latin))
+                    },
+                ) {
+                    Text(OcrEngine.Latin.buttonLabel)
+                }
+                OutlinedButton(
+                    modifier = Modifier.weight(1f),
+                    enabled = canRunOcr,
+                    onClick = {
+                        onAction(DemoAction.RunOcr(OcrEngine.Korean))
+                    },
+                ) {
+                    Text(OcrEngine.Korean.buttonLabel)
+                }
+            }
+            OcrResultPanel(
+                ocrState = uiState.ocrState,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
+    }
+}
+
+@Preview(name = "Demo Content - Default", showBackground = true)
+@Preview(name = "Demo Content - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Composable
+private fun DemoContentPreview() {
+    RECAPTheme(dynamicColor = false) {
+        DemoContent(
+            uiState = DemoUiState(
+                title = "Demo",
+                description = "이미지 권한 정책과 가져오기 플로우를 확인합니다.",
+                imagePermissionLevel = ImagePermissionLevel.Selected,
+                recentScreenshotUris = listOf(
+                    Uri.parse("content://com.chalkak.recap.preview/screenshot/1"),
+                    Uri.parse("content://com.chalkak.recap.preview/screenshot/2"),
+                    Uri.parse("content://com.chalkak.recap.preview/screenshot/3"),
+                ),
+                ocrState = OcrUiState(
+                    engine = OcrEngine.Korean,
+                    completedCount = 3,
+                    totalCount = 5,
+                    results = listOf(
+                        OcrImageResult(
+                            imageIndex = 1,
+                            imageUri = "content://com.chalkak.recap.preview/screenshot/1",
+                            text = "오늘 회의 메모",
+                            blocks = listOf(
+                                OcrTextBlock(
+                                    text = "오늘 회의 메모",
+                                    lines = listOf("오늘 회의 메모"),
+                                ),
+                            ),
+                        ),
+                    ),
+                ),
+            ),
+        )
     }
 }

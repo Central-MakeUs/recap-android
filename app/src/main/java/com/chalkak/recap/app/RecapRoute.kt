@@ -3,6 +3,7 @@ package com.chalkak.recap.app
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
+@Serializable
 sealed interface RecapRootRoute : NavKey {
     @Serializable
     data object Onboarding : RecapRootRoute
@@ -14,27 +15,33 @@ sealed interface RecapRootRoute : NavKey {
     data object Demo : RecapRootRoute
 }
 
-sealed class RecapRoute(
-    val route: String,
-    val label: String,
-) : NavKey {
+sealed interface RecapRoute : NavKey {
     @Serializable
-    data object Home : RecapRoute("home", "Home")
+    data object Home : RecapRoute
 
     @Serializable
-    data object Card : RecapRoute("card", "Cards")
+    data object Card : RecapRoute
 
     @Serializable
-    data object Collection : RecapRoute("collection", "Collections")
+    data object Collection : RecapRoute
 
     @Serializable
-    data object Search : RecapRoute("search", "Search")
+    data object Search : RecapRoute
 
     @Serializable
-    data object MyPage : RecapRoute("mypage", "My")
+    data object MyPage : RecapRoute
 
     companion object {
         val topLevelRoutes: List<RecapRoute>
             get() = listOf(Home, Card, Collection, Search, MyPage)
     }
 }
+
+val RecapRoute.label: String
+    get() = when (this) {
+        RecapRoute.Home -> "Home"
+        RecapRoute.Card -> "Cards"
+        RecapRoute.Collection -> "Collections"
+        RecapRoute.Search -> "Search"
+        RecapRoute.MyPage -> "My"
+    }

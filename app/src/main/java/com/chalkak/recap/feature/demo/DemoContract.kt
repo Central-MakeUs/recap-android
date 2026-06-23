@@ -7,12 +7,52 @@ data class DemoUiState(
     val description: String = "이미지 권한 정책과 가져오기 플로우를 확인합니다.",
     val imagePermissionLevel: ImagePermissionLevel = ImagePermissionLevel.Denied,
     val recentScreenshotUris: List<Uri> = emptyList(),
+    val ocrState: OcrUiState = OcrUiState(),
 )
 
 sealed interface DemoAction {
     data object RequestImagePermission : DemoAction
     data object RefreshImagePermission : DemoAction
+    data class RunOcr(val engine: OcrEngine) : DemoAction
 }
+
+data class OcrUiState(
+    val engine: OcrEngine? = null,
+    val isRunning: Boolean = false,
+    val completedCount: Int = 0,
+    val totalCount: Int = 0,
+    val results: List<OcrImageResult> = emptyList(),
+    val errorMessage: String? = null,
+) {
+    val progress: Float
+        get() = if (totalCount == 0) 0f else completedCount.toFloat() / totalCount.toFloat()
+}
+
+enum class OcrEngine(
+    val buttonLabel: String,
+    val resultLabel: String,
+) {
+    Latin(
+        buttonLabel = "text-recognition",
+        resultLabel = "text-recognition",
+    ),
+    Korean(
+        buttonLabel = "text-recognition-korean",
+        resultLabel = "text-recognition-korean",
+    ),
+}
+
+data class OcrImageResult(
+    val imageIndex: Int,
+    val imageUri: String,
+    val text: String,
+    val blocks: List<OcrTextBlock>,
+)
+
+data class OcrTextBlock(
+    val text: String,
+    val lines: List<String>,
+)
 
 enum class ImagePermissionLevel(
     val label: String,
