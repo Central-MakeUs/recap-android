@@ -15,10 +15,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.chalkak.recap.core.design.component.KakaoLoginButton
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.component.AppleButton
 import com.chalkak.recap.feature.onboarding.component.BrandMark
-import com.chalkak.recap.feature.onboarding.component.KakaoButton
 import com.chalkak.recap.feature.onboarding.component.ScreenshotIllustration
 import com.chalkak.recap.feature.onboarding.component.StepHeader
 
@@ -56,7 +56,7 @@ fun OnboardingAuthScreen(
                 .padding(top = 28.dp),
         )
         Spacer(modifier = Modifier.height(28.dp))
-        KakaoButton(onClick = { onAction(OnboardingAction.LoginWithKakao) })
+        KakaoLoginButton(onClick = { onAction(OnboardingAction.LoginWithKakao) })
         Spacer(modifier = Modifier.height(12.dp))
         AppleButton(onClick = { onAction(OnboardingAction.LoginWithApple) })
         TextButton(

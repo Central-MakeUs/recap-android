@@ -314,30 +314,6 @@ internal fun OnboardingPrimaryButton(
 }
 
 @Composable
-internal fun KakaoButton(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Button(
-        onClick = onClick,
-        modifier = modifier
-            .fillMaxWidth()
-            .height(56.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = ButtonDefaults.buttonColors(
-            containerColor = Color(0xFFFFE500),
-            contentColor = Color(0xFF1A1A1A),
-        ),
-    ) {
-        Text(
-            text = "카카오로 시작하기",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-        )
-    }
-}
-
-@Composable
 internal fun AppleButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
