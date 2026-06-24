@@ -65,8 +65,6 @@ private fun DemoScreenPreview() {
     RECAPTheme(dynamicColor = false) {
         DemoContent(
             uiState = DemoUiState(
-                title = "Demo",
-                description = "이미지 권한 정책과 가져오기 플로우를 확인합니다.",
                 imagePermissionLevel = ImagePermissionLevel.Full,
                 recentScreenshotUris = listOf(
                     Uri.parse("content://com.chalkak.recap.preview/screenshot/1"),

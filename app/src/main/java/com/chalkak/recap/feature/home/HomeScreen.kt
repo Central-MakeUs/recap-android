@@ -10,9 +10,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-
-
+import com.chalkak.recap.R
 
 
 @Composable
@@ -30,24 +30,19 @@ fun HomeScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Text(
-                text = uiState.title,
+                text = stringResource(uiState.titleResId),
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
-                text = uiState.description,
+                text = stringResource(uiState.descriptionResId),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Button(
-                onClick = { onAction(HomeAction.EnterDemo) },
+                onClick = { onAction(HomeAction.EnterDeveloperOptions) },
             ) {
-                Text("테스트 진입")
-            }
-            Button(
-                onClick = { onAction(HomeAction.ResetOnboarding) },
-            ) {
-                Text("온보딩 초기화")
+                Text(stringResource(R.string.home_developer_options_button))
             }
         }
     }

@@ -8,7 +8,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.chalkak.recap.R
 import com.chalkak.recap.feature.onboarding.CleanupRange
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingUiState
@@ -39,22 +41,22 @@ fun OnboardingCleanupRangeScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             StepHeader(
-                title = "처음 정리할 스크린샷\n범위를 선택해주세요",
-                description = "먼저 최근 스크린샷부터 정리해보세요.\n이후 새로 저장되는 스크린샷은 자동으로 정리됩니다.",
+                title = stringResource(R.string.onboarding_cleanup_range_title),
+                description = stringResource(R.string.onboarding_cleanup_range_description),
                 modifier = Modifier.padding(top = 32.dp),
             )
             CleanupRange.entries.forEach { range ->
                 CleanupRangeOptionCard(
-                    title = range.title,
-                    count = range.countLabel,
-                    badge = range.badge,
+                    title = stringResource(range.titleResId),
+                    count = stringResource(range.countLabelResId),
+                    badge = range.badgeResId?.let { stringResource(it) },
                     selected = uiState.selectedRange == range,
                     onClick = { onAction(OnboardingAction.SelectRange(range)) },
                 )
             }
         }
         OnboardingPrimaryButton(
-            label = "이 범위로 정리 시작",
+            label = stringResource(R.string.onboarding_cleanup_range_confirm_button),
             onClick = { onAction(OnboardingAction.ConfirmRange) },
         )
     }

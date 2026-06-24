@@ -14,7 +14,9 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.chalkak.recap.R
 import com.chalkak.recap.core.design.component.KakaoLoginButton
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.component.AppleButton
@@ -37,7 +39,7 @@ fun OnboardingAuthScreen(
         Spacer(modifier = Modifier.height(48.dp))
         BrandMark()
         Text(
-            text = "SCREENSHOT ORGANIZER",
+            text = stringResource(R.string.onboarding_auth_tagline),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(top = 8.dp),
@@ -49,8 +51,8 @@ fun OnboardingAuthScreen(
                 .height(220.dp),
         )
         StepHeader(
-            title = "저장된 스크린샷을\n필요한 순간 다시 찾을 수 있게",
-            description = "맛집, 상품, 일정, 레퍼런스까지\n스크린샷 속 정보를 카드와 컬렉션으로 정리해요.",
+            title = stringResource(R.string.onboarding_auth_title),
+            description = stringResource(R.string.onboarding_auth_description),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 28.dp),
@@ -63,7 +65,7 @@ fun OnboardingAuthScreen(
             onClick = { onAction(OnboardingAction.LoginWithEmail) },
             modifier = Modifier.padding(top = 12.dp),
         ) {
-            Text(text = "이메일로 로그인")
+            Text(text = stringResource(R.string.onboarding_email_login_button))
         }
     }
 }

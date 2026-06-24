@@ -1,8 +1,11 @@
 package com.chalkak.recap.feature.onboarding
 
+import androidx.annotation.StringRes
+import com.chalkak.recap.R
+
 data class OnboardingUiState(
-    val title: String = "RECAP",
-    val description: String = "Screenshots cleanup onboarding starts here.",
+    @StringRes val titleResId: Int = R.string.onboarding_title,
+    @StringRes val descriptionResId: Int = R.string.onboarding_description,
     val step: OnboardingStep = OnboardingStep.Start,
     val selectedRange: CleanupRange = CleanupRange.Last30Days,
     val isLoading: Boolean = false,
@@ -31,11 +34,21 @@ enum class OnboardingStep {
 }
 
 enum class CleanupRange(
-    val title: String,
-    val countLabel: String,
-    val badge: String? = null,
+    @StringRes val titleResId: Int,
+    @StringRes val countLabelResId: Int,
+    @StringRes val badgeResId: Int? = null,
 ) {
-    Last7Days(title = "최근 7일", countLabel = "26개"),
-    Last30Days(title = "최근 30일", countLabel = "124개", badge = "추천"),
-    Last3Months(title = "최근 3개월", countLabel = "386개"),
+    Last7Days(
+        titleResId = R.string.onboarding_cleanup_range_last_7_days,
+        countLabelResId = R.string.onboarding_cleanup_range_last_7_days_count,
+    ),
+    Last30Days(
+        titleResId = R.string.onboarding_cleanup_range_last_30_days,
+        countLabelResId = R.string.onboarding_cleanup_range_last_30_days_count,
+        badgeResId = R.string.onboarding_cleanup_range_recommended_badge,
+    ),
+    Last3Months(
+        titleResId = R.string.onboarding_cleanup_range_last_3_months,
+        countLabelResId = R.string.onboarding_cleanup_range_last_3_months_count,
+    ),
 }

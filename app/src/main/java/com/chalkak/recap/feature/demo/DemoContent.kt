@@ -20,8 +20,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.chalkak.recap.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
 @Composable
@@ -44,12 +46,12 @@ fun DemoContent(
             verticalArrangement = Arrangement.spacedBy(18.dp),
         ) {
             Text(
-                text = uiState.title,
+                text = stringResource(uiState.titleResId),
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
-                text = uiState.description,
+                text = stringResource(uiState.descriptionResId),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -72,7 +74,7 @@ fun DemoContent(
                         onAction(DemoAction.RequestImagePermission)
                     },
                 ) {
-                    Text("이미지 권한 요청")
+                    Text(stringResource(R.string.demo_request_image_permission_button))
                 }
                 OutlinedButton(
                     modifier = Modifier.weight(1f),
@@ -80,7 +82,7 @@ fun DemoContent(
                         onAction(DemoAction.RefreshImagePermission)
                     },
                 ) {
-                    Text("상태 새로고침")
+                    Text(stringResource(R.string.demo_refresh_status_button))
                 }
             }
             Row(
@@ -96,7 +98,7 @@ fun DemoContent(
                         onAction(DemoAction.RunOcr(OcrEngine.Latin))
                     },
                 ) {
-                    Text(OcrEngine.Latin.buttonLabel)
+                    Text(stringResource(OcrEngine.Latin.buttonLabelResId))
                 }
                 OutlinedButton(
                     modifier = Modifier.weight(1f),
@@ -105,7 +107,7 @@ fun DemoContent(
                         onAction(DemoAction.RunOcr(OcrEngine.Korean))
                     },
                 ) {
-                    Text(OcrEngine.Korean.buttonLabel)
+                    Text(stringResource(OcrEngine.Korean.buttonLabelResId))
                 }
             }
             OcrResultPanel(
@@ -123,8 +125,6 @@ private fun DemoContentPreview() {
     RECAPTheme(dynamicColor = false) {
         DemoContent(
             uiState = DemoUiState(
-                title = "Demo",
-                description = "이미지 권한 정책과 가져오기 플로우를 확인합니다.",
                 imagePermissionLevel = ImagePermissionLevel.Selected,
                 recentScreenshotUris = listOf(
                     Uri.parse("content://com.chalkak.recap.preview/screenshot/1"),

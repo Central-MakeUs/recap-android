@@ -29,8 +29,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.chalkak.recap.R
 
 @Composable
 internal fun OnboardingTopBar(
@@ -76,14 +78,14 @@ internal fun BrandMark(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = "R",
+                text = stringResource(R.string.onboarding_brand_mark_initial),
                 style = MaterialTheme.typography.titleLarge,
                 color = MaterialTheme.colorScheme.onPrimary,
                 fontWeight = FontWeight.Bold,
             )
         }
         Text(
-            text = "RE-CAP",
+            text = stringResource(R.string.onboarding_brand_mark_name),
             style = MaterialTheme.typography.headlineSmall,
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
@@ -103,7 +105,7 @@ internal fun ScreenshotIllustration(
         contentAlignment = Alignment.Center,
     ) {
         IllustrationCard(
-            label = "스크린샷",
+            label = stringResource(R.string.onboarding_screenshot_label),
             modifier = Modifier
                 .width(104.dp)
                 .height(148.dp)
@@ -114,7 +116,7 @@ internal fun ScreenshotIllustration(
                 },
         )
         IllustrationCard(
-            label = "다시 볼 정보",
+            label = stringResource(R.string.onboarding_saved_info_label),
             modifier = Modifier
                 .width(132.dp)
                 .height(152.dp)
@@ -153,7 +155,7 @@ internal fun PermissionIconTile(
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = "이미지",
+            text = stringResource(R.string.onboarding_permission_icon_label),
             style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
@@ -330,7 +332,7 @@ internal fun AppleButton(
         ),
     ) {
         Text(
-            text = "Apple로 시작하기",
+            text = stringResource(R.string.onboarding_apple_login_button),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
         )

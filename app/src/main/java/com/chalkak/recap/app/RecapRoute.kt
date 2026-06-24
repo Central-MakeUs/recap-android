@@ -1,6 +1,8 @@
 package com.chalkak.recap.app
 
+import androidx.annotation.StringRes
 import androidx.navigation3.runtime.NavKey
+import com.chalkak.recap.R
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -12,7 +14,7 @@ sealed interface RecapRootRoute : NavKey {
     data object Main : RecapRootRoute
 
     @Serializable
-    data object Demo : RecapRootRoute
+    data object Developer : RecapRootRoute
 }
 
 sealed interface RecapRoute : NavKey {
@@ -31,9 +33,10 @@ sealed interface RecapRoute : NavKey {
     }
 }
 
-val RecapRoute.label: String
+@get:StringRes
+val RecapRoute.labelResId: Int
     get() = when (this) {
-        RecapRoute.Home -> "홈"
-        RecapRoute.Collection -> "컬렉션"
-        RecapRoute.MyPage -> "마이페이지"
+        RecapRoute.Home -> R.string.bottom_nav_home
+        RecapRoute.Collection -> R.string.bottom_nav_collection
+        RecapRoute.MyPage -> R.string.bottom_nav_my_page
     }

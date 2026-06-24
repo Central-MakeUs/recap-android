@@ -11,7 +11,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.feature.demo.DemoScreen
+import com.chalkak.recap.feature.developer.DeveloperRoute
 import com.chalkak.recap.feature.onboarding.OnboardingRoute
 
 @Composable
@@ -59,17 +59,18 @@ fun RecapApp(
                     }
                     RecapRootRoute.Main -> NavEntry(route) {
                         RecapMainScreen(
-                            onNavigateToDemo = {
-                                rootBackStack.add(RecapRootRoute.Demo)
+                            onNavigateToDeveloper = {
+                                rootBackStack.add(RecapRootRoute.Developer)
                             },
+                        )
+                    }
+                    RecapRootRoute.Developer -> NavEntry(route) {
+                        DeveloperRoute(
                             onResetOnboarding = {
                                 onboardingSessionKey += 1
                                 startupViewModel.resetOnboarding()
                             },
                         )
-                    }
-                    RecapRootRoute.Demo -> NavEntry(route) {
-                        DemoScreen()
                     }
                     else -> error("Unknown root route: $route")
                 }

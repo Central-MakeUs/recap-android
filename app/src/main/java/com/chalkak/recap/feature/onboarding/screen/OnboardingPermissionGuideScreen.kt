@@ -11,7 +11,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.chalkak.recap.R
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.component.GuideBullet
 import com.chalkak.recap.feature.onboarding.component.OnboardingPrimaryButton
@@ -41,24 +43,24 @@ fun OnboardingPermissionGuideScreen(
         ) {
             PermissionIconTile(modifier = Modifier.padding(top = 40.dp))
             StepHeader(
-                title = "스크린샷을 정리하려면\n사진 접근 권한이 필요해요",
-                description = "RE-CAP은 사용자가 허용한 범위 안에서\n스크린샷만 찾아 정리합니다.",
+                title = stringResource(R.string.onboarding_permission_title),
+                description = stringResource(R.string.onboarding_permission_description),
             )
             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
-                GuideBullet(text = "선택한 범위의 스크린샷만 분석해요")
-                GuideBullet(text = "원본 이미지는 앱에서 다시 확인할 수 있어요")
-                GuideBullet(text = "민감한 정보는 확인이 필요한 카드로 분리할 수 있어요")
+                GuideBullet(text = stringResource(R.string.onboarding_permission_bullet_selected_only))
+                GuideBullet(text = stringResource(R.string.onboarding_permission_bullet_original_available))
+                GuideBullet(text = stringResource(R.string.onboarding_permission_bullet_sensitive_cards))
             }
         }
         OnboardingPrimaryButton(
-            label = "권한 허용하기",
+            label = stringResource(R.string.onboarding_permission_grant_button),
             onClick = { onAction(OnboardingAction.GrantPermission) },
         )
         TextButton(
             onClick = { onAction(OnboardingAction.SkipPermission) },
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(text = "나중에 하기")
+            Text(text = stringResource(R.string.onboarding_permission_skip_button))
         }
     }
 }

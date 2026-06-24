@@ -14,8 +14,7 @@ import com.chalkak.recap.feature.mypage.MyPageScreen
 @Composable
 fun RecapNavHost(
     backStack: NavBackStack<NavKey>,
-    onNavigateToDemo: () -> Unit,
-    onResetOnboarding: () -> Unit,
+    onNavigateToDeveloper: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     NavDisplay(
@@ -29,8 +28,7 @@ fun RecapNavHost(
                         onAction = { action ->
                             when (action) {
                                 HomeAction.StartImport -> Unit
-                                HomeAction.EnterDemo -> onNavigateToDemo()
-                                HomeAction.ResetOnboarding -> onResetOnboarding()
+                                HomeAction.EnterDeveloperOptions -> onNavigateToDeveloper()
                             }
                         },
                     )

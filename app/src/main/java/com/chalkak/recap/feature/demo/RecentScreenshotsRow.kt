@@ -23,8 +23,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.chalkak.recap.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import coil3.compose.AsyncImage
 
@@ -49,12 +51,12 @@ fun RecentScreenshotsRow(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
-                    text = "최근 스크린샷",
+                    text = stringResource(R.string.demo_recent_screenshots_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = "DCIM/Screenshots · 최근 5개",
+                    text = stringResource(R.string.demo_recent_screenshots_path_label),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -72,7 +74,7 @@ fun RecentScreenshotsRow(
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     Text(
-                        text = "표시할 이미지가 없습니다.",
+                        text = stringResource(R.string.demo_recent_screenshots_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -87,7 +89,10 @@ fun RecentScreenshotsRow(
                     imageUris.forEachIndexed { index, uri ->
                         AsyncImage(
                             model = uri,
-                            contentDescription = "최근 스크린샷 ${index + 1}",
+                            contentDescription = stringResource(
+                                R.string.demo_recent_screenshot_content_description,
+                                index + 1,
+                            ),
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .size(width = 104.dp, height = 148.dp)

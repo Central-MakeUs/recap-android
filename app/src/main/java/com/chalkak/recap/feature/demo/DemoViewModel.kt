@@ -14,6 +14,7 @@ import androidx.annotation.WorkerThread
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.chalkak.recap.R
 import com.google.android.gms.tasks.Task
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
@@ -114,7 +115,7 @@ class DemoViewModel(
                 current.copy(
                     ocrState = OcrUiState(
                         engine = engine,
-                        errorMessage = "OCR을 실행할 스크린샷이 없습니다.",
+                        errorMessage = appContext.getString(R.string.demo_ocr_error_no_screenshots),
                     ),
                 )
             }
@@ -172,7 +173,7 @@ class DemoViewModel(
                     current.copy(
                         ocrState = current.ocrState.copy(
                             isRunning = false,
-                            errorMessage = "OCR 처리 중 오류가 발생했습니다.",
+                            errorMessage = appContext.getString(R.string.demo_ocr_error_processing),
                         ),
                     )
                 }

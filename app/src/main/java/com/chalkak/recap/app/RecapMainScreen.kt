@@ -15,6 +15,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -23,8 +24,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 @Composable
 fun RecapMainScreen(
     viewModel: RecapMainViewModel = viewModel(),
-    onNavigateToDemo: () -> Unit = {},
-    onResetOnboarding: () -> Unit = {},
+    onNavigateToDeveloper: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val backStack = rememberNavBackStack(RecapRoute.Home)
@@ -51,7 +51,7 @@ fun RecapMainScreen(
                             RouteIndicator(selected = currentRoute == route)
                         },
                         label = {
-                            Text(route.label)
+                            Text(stringResource(route.labelResId))
                         },
                     )
                 }
@@ -60,8 +60,7 @@ fun RecapMainScreen(
     ) { innerPadding ->
         RecapNavHost(
             backStack = backStack,
-            onNavigateToDemo = onNavigateToDemo,
-            onResetOnboarding = onResetOnboarding,
+            onNavigateToDeveloper = onNavigateToDeveloper,
             modifier = Modifier.padding(innerPadding),
         )
     }

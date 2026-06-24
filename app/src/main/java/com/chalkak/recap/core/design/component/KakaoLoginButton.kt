@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.tooling.preview.Preview
@@ -45,18 +46,20 @@ fun KakaoLoginButton(
             val textStyle = MaterialTheme.typography.titleMedium
             val textMeasurer = rememberTextMeasurer()
             val density = LocalDensity.current
+            val fullText = stringResource(R.string.onboarding_kakao_login_full)
+            val shortText = stringResource(R.string.onboarding_kakao_login_short)
             val fullTextWidth = with(density) {
                 textMeasurer.measure(
-                    text = KakaoLoginFullText,
+                    text = fullText,
                     style = textStyle,
                 ).size.width.toDp()
             }
             val logoEnd = KakaoLogoStartPadding + KakaoLogoSize
             val fullTextStart = (maxWidth - fullTextWidth) / 2
             val loginText = if (fullTextStart < logoEnd) {
-                KakaoLoginShortText
+                shortText
             } else {
-                KakaoLoginFullText
+                fullText
             }
 
             Box(
@@ -91,8 +94,6 @@ private val KakaoLogoColor = Color(0xFF000000)
 private val KakaoTextColor = Color(0xD9000000)
 private val KakaoLogoStartPadding = 28.dp
 private val KakaoLogoSize = 24.dp
-private const val KakaoLoginFullText = "카카오톡 계정으로 로그인"
-private const val KakaoLoginShortText = "로그인"
 
 @Preview(name = "Kakao Login Button", showBackground = true, widthDp = 360)
 @Composable

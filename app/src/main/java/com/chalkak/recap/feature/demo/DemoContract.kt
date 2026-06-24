@@ -1,10 +1,12 @@
 package com.chalkak.recap.feature.demo
 
 import android.net.Uri
+import androidx.annotation.StringRes
+import com.chalkak.recap.R
 
 data class DemoUiState(
-    val title: String = "Demo",
-    val description: String = "이미지 권한 정책과 가져오기 플로우를 확인합니다.",
+    @StringRes val titleResId: Int = R.string.demo_title,
+    @StringRes val descriptionResId: Int = R.string.demo_description,
     val imagePermissionLevel: ImagePermissionLevel = ImagePermissionLevel.Denied,
     val recentScreenshotUris: List<Uri> = emptyList(),
     val ocrState: OcrUiState = OcrUiState(),
@@ -29,16 +31,16 @@ data class OcrUiState(
 }
 
 enum class OcrEngine(
-    val buttonLabel: String,
-    val resultLabel: String,
+    @StringRes val buttonLabelResId: Int,
+    @StringRes val resultLabelResId: Int,
 ) {
     Latin(
-        buttonLabel = "text-recognition",
-        resultLabel = "text-recognition",
+        buttonLabelResId = R.string.demo_ocr_engine_latin,
+        resultLabelResId = R.string.demo_ocr_engine_latin,
     ),
     Korean(
-        buttonLabel = "text-recognition-korean",
-        resultLabel = "text-recognition-korean",
+        buttonLabelResId = R.string.demo_ocr_engine_korean,
+        resultLabelResId = R.string.demo_ocr_engine_korean,
     ),
 }
 
@@ -55,19 +57,19 @@ data class OcrTextBlock(
 )
 
 enum class ImagePermissionLevel(
-    val label: String,
-    val description: String,
+    @StringRes val labelResId: Int,
+    @StringRes val descriptionResId: Int,
 ) {
     Full(
-        label = "전체 이미지",
-        description = "MediaStore에서 이미지 목록을 조회할 수 있습니다.",
+        labelResId = R.string.demo_image_permission_full_label,
+        descriptionResId = R.string.demo_image_permission_full_description,
     ),
     Selected(
-        label = "선택한 이미지만",
-        description = "사용자가 허용한 일부 이미지만 앱에서 볼 수 있습니다.",
+        labelResId = R.string.demo_image_permission_selected_label,
+        descriptionResId = R.string.demo_image_permission_selected_description,
     ),
     Denied(
-        label = "권한 없음",
-        description = "이미지 자동 조회는 불가하며, 선택 플로우가 필요합니다.",
+        labelResId = R.string.demo_image_permission_denied_label,
+        descriptionResId = R.string.demo_image_permission_denied_description,
     ),
 }

@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.chalkak.recap.R
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingUiState
 import com.chalkak.recap.feature.onboarding.component.OnboardingPrimaryButton
@@ -25,11 +27,11 @@ fun OnboardingStartScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         StepHeader(
-            title = uiState.title,
-            description = "RECAP이 스크린샷을 정리할 수 있도록 초기 설정을 시작합니다.",
+            title = stringResource(uiState.titleResId),
+            description = stringResource(R.string.onboarding_start_description),
         )
         OnboardingPrimaryButton(
-            label = "시작하기",
+            label = stringResource(R.string.onboarding_start_button),
             onClick = { onAction(OnboardingAction.Start) },
         )
     }
