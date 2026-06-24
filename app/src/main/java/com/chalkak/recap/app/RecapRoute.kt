@@ -20,28 +20,20 @@ sealed interface RecapRoute : NavKey {
     data object Home : RecapRoute
 
     @Serializable
-    data object Card : RecapRoute
-
-    @Serializable
     data object Collection : RecapRoute
-
-    @Serializable
-    data object Search : RecapRoute
 
     @Serializable
     data object MyPage : RecapRoute
 
     companion object {
         val topLevelRoutes: List<RecapRoute>
-            get() = listOf(Home, Card, Collection, Search, MyPage)
+            get() = listOf(Home, Collection, MyPage)
     }
 }
 
 val RecapRoute.label: String
     get() = when (this) {
-        RecapRoute.Home -> "Home"
-        RecapRoute.Card -> "Cards"
-        RecapRoute.Collection -> "Collections"
-        RecapRoute.Search -> "Search"
-        RecapRoute.MyPage -> "My"
+        RecapRoute.Home -> "홈"
+        RecapRoute.Collection -> "컬렉션"
+        RecapRoute.MyPage -> "마이페이지"
     }

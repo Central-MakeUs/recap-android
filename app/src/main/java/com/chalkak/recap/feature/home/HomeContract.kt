@@ -8,4 +8,5 @@ data class HomeUiState(
 sealed interface HomeAction {
     data object StartImport : HomeAction
     data object EnterDemo : HomeAction
+    data object ResetOnboarding : HomeAction
 }

@@ -24,10 +24,11 @@ import androidx.navigation3.runtime.rememberNavBackStack
 fun RecapMainScreen(
     viewModel: RecapMainViewModel = viewModel(),
     onNavigateToDemo: () -> Unit = {},
+    onResetOnboarding: () -> Unit = {},
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val backStack = rememberNavBackStack(uiState.startRoute)
-    val currentRoute = backStack.lastOrNull() as? RecapRoute ?: uiState.startRoute
+    val backStack = rememberNavBackStack(RecapRoute.Home)
+    val currentRoute = backStack.lastOrNull() as? RecapRoute ?: RecapRoute.Home
 
     LaunchedEffect(currentRoute) {
         viewModel.onDestinationChanged(currentRoute)
@@ -60,6 +61,7 @@ fun RecapMainScreen(
         RecapNavHost(
             backStack = backStack,
             onNavigateToDemo = onNavigateToDemo,
+            onResetOnboarding = onResetOnboarding,
             modifier = Modifier.padding(innerPadding),
         )
     }

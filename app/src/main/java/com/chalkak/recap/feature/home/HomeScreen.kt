@@ -17,8 +17,8 @@ import androidx.compose.ui.unit.dp
 
 @Composable
 fun HomeScreen(
-    uiState: HomeUiState = HomeUiState(),
     modifier: Modifier = Modifier,
+    uiState: HomeUiState = HomeUiState(),
     onAction: (HomeAction) -> Unit = {},
 ) {
     Surface(
@@ -43,6 +43,11 @@ fun HomeScreen(
                 onClick = { onAction(HomeAction.EnterDemo) },
             ) {
                 Text("테스트 진입")
+            }
+            Button(
+                onClick = { onAction(HomeAction.ResetOnboarding) },
+            ) {
+                Text("온보딩 초기화")
             }
         }
     }

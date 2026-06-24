@@ -1,17 +1,50 @@
 package com.chalkak.recap.app
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.feature.demo.DemoScreen
-import com.chalkak.recap.feature.onboarding.OnboardingScreen
+import com.chalkak.recap.feature.onboarding.OnboardingRoute
 
 @Composable
-fun RecapApp() {
+fun RecapApp(
+    startupViewModel: RecapStartupViewModel,
+) {
     RECAPTheme {
-        val rootBackStack = rememberNavBackStack(RecapRootRoute.Main)
+        val uiState by startupViewModel.uiState.collectAsStateWithLifecycle()
+        var onboardingSessionKey by rememberSaveable { mutableIntStateOf(0) }
+
+        if (uiState is RecapStartupUiState.Loading) {
+            return@RECAPTheme
+        }
+
+        val readyState = uiState as RecapStartupUiState.Ready
+        val initialRoute = if (readyState.onboardingCompleted) {
+            RecapRootRoute.Main
+        } else {
+            RecapRootRoute.Onboarding
+        }
+        val rootBackStack = rememberNavBackStack(initialRoute)
+
+        LaunchedEffect(readyState.onboardingCompleted) {
+            val targetRoute = if (readyState.onboardingCompleted) {
+                RecapRootRoute.Main
+            } else {
+                RecapRootRoute.Onboarding
+            }
+            if (rootBackStack.lastOrNull() != targetRoute) {
+                rootBackStack.clear()
+                rootBackStack.add(targetRoute)
+            }
+        }
 
         NavDisplay(
             backStack = rootBackStack,
@@ -19,12 +52,19 @@ fun RecapApp() {
             entryProvider = { route ->
                 when (route) {
                     RecapRootRoute.Onboarding -> NavEntry(route) {
-                        OnboardingScreen()
+                        OnboardingRoute(
+                            onOnboardingComplete = startupViewModel::completeOnboarding,
+                            viewModelKey = "onboarding-$onboardingSessionKey",
+                        )
                     }
                     RecapRootRoute.Main -> NavEntry(route) {
                         RecapMainScreen(
                             onNavigateToDemo = {
                                 rootBackStack.add(RecapRootRoute.Demo)
+                            },
+                            onResetOnboarding = {
+                                onboardingSessionKey += 1
+                                startupViewModel.resetOnboarding()
                             },
                         )
                     }
