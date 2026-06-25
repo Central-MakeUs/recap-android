@@ -19,93 +19,77 @@ val PretendardFontFamily = FontFamily(
 
 val Typography = Typography(
     displayLarge = recapTextStyle(
-        weight = FontWeight.Bold,
-        size = 22,
-        lineHeight = 30
+        weight = FontWeight.SemiBold,
+        size = 28
     ),
     displayMedium = recapTextStyle(
-        weight = FontWeight.Bold,
-        size = 20,
-        lineHeight = 26
+        weight = FontWeight.SemiBold,
+        size = 28
     ),
     displaySmall = recapTextStyle(
-        weight = FontWeight.Bold,
-        size = 18,
-        lineHeight = 24
+        weight = FontWeight.SemiBold,
+        size = 22
     ),
     headlineLarge = recapTextStyle(
-        weight = FontWeight.Bold,
-        size = 22,
-        lineHeight = 30
+        weight = FontWeight.SemiBold,
+        size = 22
     ),
     headlineMedium = recapTextStyle(
-        weight = FontWeight.Bold,
-        size = 20,
-        lineHeight = 26
+        weight = FontWeight.SemiBold,
+        size = 18
     ),
     headlineSmall = recapTextStyle(
-        weight = FontWeight.Bold,
-        size = 18,
-        lineHeight = 24
+        weight = FontWeight.SemiBold,
+        size = 16
     ),
     titleLarge = recapTextStyle(
-        weight = FontWeight.Bold,
-        size = 17,
-        lineHeight = 22
+        weight = FontWeight.SemiBold,
+        size = 22
     ),
     titleMedium = recapTextStyle(
         weight = FontWeight.SemiBold,
-        size = 16,
-        lineHeight = 21
+        size = 18
     ),
     titleSmall = recapTextStyle(
         weight = FontWeight.SemiBold,
-        size = 15,
-        lineHeight = 20
+        size = 16
     ),
     bodyLarge = recapTextStyle(
-        weight = FontWeight.SemiBold,
-        size = 16,
-        lineHeight = 21
+        weight = FontWeight.Medium,
+        size = 15
     ),
     bodyMedium = recapTextStyle(
-        weight = FontWeight.Medium,
-        size = 14,
-        lineHeight = 18
+        weight = FontWeight.Normal,
+        size = 14
     ),
     bodySmall = recapTextStyle(
-        weight = FontWeight.Normal,
-        size = 14,
-        lineHeight = 18
+        weight = FontWeight.Medium,
+        size = 13
     ),
     labelLarge = recapTextStyle(
-        weight = FontWeight.SemiBold,
-        size = 14,
-        lineHeight = 18
+        weight = FontWeight.Normal,
+        size = 14
     ),
     labelMedium = recapTextStyle(
         weight = FontWeight.Medium,
-        size = 13,
-        lineHeight = 17
+        size = 13
     ),
     labelSmall = recapTextStyle(
         weight = FontWeight.Medium,
-        size = 10,
-        lineHeight = 13
+        size = 12
     ),
 ).applyFontFamily(PretendardFontFamily)
 
 private fun recapTextStyle(
     weight: FontWeight,
     size: Int,
-    lineHeight: Int,
 ): TextStyle {
     return TextStyle(
         fontFamily = PretendardFontFamily,
         fontWeight = weight,
         fontSize = size.sp,
-        lineHeight = lineHeight.sp,
-        letterSpacing = 0.sp
+        lineHeight = (size * 1.4f).sp,
+        letterSpacing = (size * -0.02f).sp
     )
 }
 

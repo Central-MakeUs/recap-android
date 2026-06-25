@@ -36,16 +36,20 @@ fun OnboardingScreen(
                     uiState = uiState,
                     onAction = onAction,
                 )
+
                 OnboardingStep.Auth -> OnboardingAuthScreen(
                     onAction = onAction,
                 )
+
                 OnboardingStep.PermissionGuide -> OnboardingPermissionGuideScreen(
                     onAction = onAction,
                 )
+
                 OnboardingStep.CleanupRange -> OnboardingCleanupRangeScreen(
                     uiState = uiState,
                     onAction = onAction,
                 )
+
                 OnboardingStep.CleanupStart -> OnboardingCleanupStartScreen(
                     uiState = uiState,
                     onAction = onAction,

@@ -33,12 +33,15 @@ fun RecapNavHost(
                         },
                     )
                 }
+
                 RecapRoute.Collection -> NavEntry(route) {
                     CollectionScreen()
                 }
+
                 RecapRoute.MyPage -> NavEntry(route) {
                     MyPageScreen()
                 }
+
                 else -> error("Unknown main route: $route")
             }
         },

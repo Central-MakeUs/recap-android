@@ -57,6 +57,7 @@ fun RecapApp(
                             viewModelKey = "onboarding-$onboardingSessionKey",
                         )
                     }
+
                     RecapRootRoute.Main -> NavEntry(route) {
                         RecapMainScreen(
                             onNavigateToDeveloper = {
@@ -64,6 +65,7 @@ fun RecapApp(
                             },
                         )
                     }
+
                     RecapRootRoute.Developer -> NavEntry(route) {
                         DeveloperRoute(
                             onResetOnboarding = {
@@ -72,6 +74,7 @@ fun RecapApp(
                             },
                         )
                     }
+
                     else -> error("Unknown root route: $route")
                 }
             },

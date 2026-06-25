@@ -30,7 +30,10 @@ fun OnboardingCleanupStartScreen(
     ) {
         StepHeader(
             title = stringResource(R.string.onboarding_cleanup_start_title),
-            description = stringResource(R.string.onboarding_cleanup_start_description, selectedRangeTitle),
+            description = stringResource(
+                R.string.onboarding_cleanup_start_description,
+                selectedRangeTitle
+            ),
         )
         OnboardingPrimaryButton(
             label = stringResource(R.string.onboarding_cleanup_start_home_button),

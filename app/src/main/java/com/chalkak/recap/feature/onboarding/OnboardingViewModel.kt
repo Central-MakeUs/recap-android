@@ -17,15 +17,18 @@ class OnboardingViewModel : ViewModel() {
             OnboardingAction.LoginWithKakao,
             OnboardingAction.LoginWithApple,
             OnboardingAction.LoginWithEmail,
-            -> moveTo(OnboardingStep.PermissionGuide)
+                -> moveTo(OnboardingStep.PermissionGuide)
+
             OnboardingAction.GrantPermission,
             OnboardingAction.SkipPermission,
-            -> moveTo(OnboardingStep.CleanupRange)
+                -> moveTo(OnboardingStep.CleanupRange)
+
             is OnboardingAction.SelectRange -> {
                 _uiState.update { current ->
                     current.copy(selectedRange = action.range)
                 }
             }
+
             OnboardingAction.ConfirmRange -> moveTo(OnboardingStep.CleanupStart)
             OnboardingAction.StartCleanup -> Unit
         }

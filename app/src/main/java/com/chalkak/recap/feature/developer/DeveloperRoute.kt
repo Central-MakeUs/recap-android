@@ -29,14 +29,17 @@ fun DeveloperRoute(
                                 DeveloperOptionAction.OpenTechnicalDemo -> {
                                     backStack.add(DeveloperDestination.TechnicalDemo)
                                 }
+
                                 DeveloperOptionAction.ResetOnboarding -> onResetOnboarding()
                             }
                         },
                     )
                 }
+
                 DeveloperDestination.TechnicalDemo -> NavEntry(route) {
                     DemoScreen()
                 }
+
                 else -> error("Unknown developer route: $route")
             }
         },

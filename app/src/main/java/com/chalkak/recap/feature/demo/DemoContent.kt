@@ -90,7 +90,8 @@ fun DemoContent(
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                val canRunOcr = uiState.recentScreenshotUris.isNotEmpty() && !uiState.ocrState.isRunning
+                val canRunOcr =
+                    uiState.recentScreenshotUris.isNotEmpty() && !uiState.ocrState.isRunning
                 Button(
                     modifier = Modifier.weight(1f),
                     enabled = canRunOcr,
@@ -119,7 +120,11 @@ fun DemoContent(
 }
 
 @Preview(name = "Demo Content - Default", showBackground = true)
-@Preview(name = "Demo Content - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showBackground = true)
+@Preview(
+    name = "Demo Content - Dark",
+    uiMode = Configuration.UI_MODE_NIGHT_YES,
+    showBackground = true
+)
 @Composable
 private fun DemoContentPreview() {
     RECAPTheme(dynamicColor = false) {
