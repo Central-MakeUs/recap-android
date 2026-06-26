@@ -15,6 +15,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
 import com.chalkak.recap.feature.onboarding.OnboardingAction
+import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
+import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
 import com.chalkak.recap.feature.onboarding.component.GuideBullet
 import com.chalkak.recap.feature.onboarding.component.OnboardingPrimaryButton
 import com.chalkak.recap.feature.onboarding.component.OnboardingTopBar
@@ -62,5 +64,13 @@ fun OnboardingPermissionGuideScreen(
         ) {
             Text(text = stringResource(R.string.onboarding_permission_skip_button))
         }
+    }
+}
+
+@OnboardingScreenPreview
+@Composable
+private fun OnboardingPermissionGuideScreenPreview() {
+    OnboardingPreviewContainer {
+        OnboardingPermissionGuideScreen(onAction = {})
     }
 }

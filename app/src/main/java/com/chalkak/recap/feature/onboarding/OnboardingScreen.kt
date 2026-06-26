@@ -8,11 +8,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.feature.onboarding.screen.OnboardingAuthScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingCleanupRangeScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingCleanupStartScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingPermissionGuideScreen
-import com.chalkak.recap.feature.onboarding.screen.OnboardingStartScreen
 
 @Composable
 fun OnboardingScreen(
@@ -32,11 +32,6 @@ fun OnboardingScreen(
                 .navigationBarsPadding(),
         ) {
             when (uiState.step) {
-                OnboardingStep.Start -> OnboardingStartScreen(
-                    uiState = uiState,
-                    onAction = onAction,
-                )
-
                 OnboardingStep.Auth -> OnboardingAuthScreen(
                     onAction = onAction,
                 )
@@ -56,5 +51,55 @@ fun OnboardingScreen(
                 )
             }
         }
+    }
+}
+
+@OnboardingScreenPreview
+@Composable
+private fun OnboardingScreenAuthPreview() {
+    RECAPTheme(dynamicColor = false) {
+        OnboardingScreen(
+            uiState = OnboardingUiState(step = OnboardingStep.Auth),
+            onAction = {},
+        )
+    }
+}
+
+@OnboardingScreenPreview
+@Composable
+private fun OnboardingScreenPermissionGuidePreview() {
+    RECAPTheme(dynamicColor = false) {
+        OnboardingScreen(
+            uiState = OnboardingUiState(step = OnboardingStep.PermissionGuide),
+            onAction = {},
+        )
+    }
+}
+
+@OnboardingScreenPreview
+@Composable
+private fun OnboardingScreenCleanupRangePreview() {
+    RECAPTheme(dynamicColor = false) {
+        OnboardingScreen(
+            uiState = OnboardingUiState(
+                step = OnboardingStep.CleanupRange,
+                selectedRange = CleanupRange.Last30Days,
+            ),
+            onAction = {},
+        )
+    }
+}
+
+@OnboardingScreenPreview
+@Composable
+private fun OnboardingScreenCleanupStartPreview() {
+    RECAPTheme(dynamicColor = false) {
+        OnboardingScreen(
+            uiState = OnboardingUiState(
+                step = OnboardingStep.CleanupStart,
+                selectedRange = CleanupRange.Last30Days,
+            ),
+            onAction = {},
+        )
     }
 }

@@ -19,6 +19,8 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
 import com.chalkak.recap.core.design.component.KakaoLoginButton
 import com.chalkak.recap.feature.onboarding.OnboardingAction
+import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
+import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
 import com.chalkak.recap.feature.onboarding.component.AppleButton
 import com.chalkak.recap.feature.onboarding.component.BrandMark
 import com.chalkak.recap.feature.onboarding.component.ScreenshotIllustration
@@ -36,7 +38,7 @@ fun OnboardingAuthScreen(
             .padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(modifier = Modifier.height(48.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         BrandMark()
         Text(
             text = stringResource(R.string.onboarding_auth_tagline),
@@ -67,5 +69,13 @@ fun OnboardingAuthScreen(
         ) {
             Text(text = stringResource(R.string.onboarding_email_login_button))
         }
+    }
+}
+
+@OnboardingScreenPreview
+@Composable
+private fun OnboardingAuthScreenPreview() {
+    OnboardingPreviewContainer {
+        OnboardingAuthScreen(onAction = {})
     }
 }

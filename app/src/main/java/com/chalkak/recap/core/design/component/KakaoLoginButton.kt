@@ -36,7 +36,7 @@ fun KakaoLoginButton(
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp),
-        shape = RoundedCornerShape(8.dp),
+        shape = RoundedCornerShape(16.dp),
         color = KakaoYellow,
         contentColor = KakaoLogoColor,
     ) {
@@ -106,9 +106,20 @@ private fun KakaoLoginButtonPreview1() {
     }
 }
 
-@Preview(name = "Kakao Login Button", showBackground = true, widthDp = 240)
+@Preview(name = "Kakao Login Button", showBackground = true, widthDp = 320)
 @Composable
 private fun KakaoLoginButtonPreview2() {
+    RECAPTheme(dynamicColor = false) {
+        KakaoLoginButton(
+            onClick = {},
+            modifier = Modifier.padding(24.dp),
+        )
+    }
+}
+
+@Preview(name = "Kakao Login Button", showBackground = true, widthDp = 330)
+@Composable
+private fun KakaoLoginButtonPreview3() {
     RECAPTheme(dynamicColor = false) {
         KakaoLoginButton(
             onClick = {},
@@ -120,7 +131,7 @@ private fun KakaoLoginButtonPreview2() {
 
 @Preview(name = "Kakao Login Button", showBackground = true, widthDp = 480)
 @Composable
-private fun KakaoLoginButtonPreview3() {
+private fun KakaoLoginButtonPreview4() {
     RECAPTheme(dynamicColor = false) {
         KakaoLoginButton(
             onClick = {},

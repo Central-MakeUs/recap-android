@@ -4,9 +4,7 @@ import androidx.annotation.StringRes
 import com.chalkak.recap.R
 
 data class OnboardingUiState(
-    @get:StringRes val titleResId: Int = R.string.onboarding_title,
-    @get:StringRes val descriptionResId: Int = R.string.onboarding_description,
-    val step: OnboardingStep = OnboardingStep.Start,
+    val step: OnboardingStep = OnboardingStep.Auth,
     val selectedRange: CleanupRange = CleanupRange.Last30Days,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
@@ -14,7 +12,6 @@ data class OnboardingUiState(
 
 sealed interface OnboardingAction {
     data object Back : OnboardingAction
-    data object Start : OnboardingAction
     data object LoginWithKakao : OnboardingAction
     data object LoginWithApple : OnboardingAction
     data object LoginWithEmail : OnboardingAction
@@ -26,7 +23,6 @@ sealed interface OnboardingAction {
 }
 
 enum class OnboardingStep {
-    Start,
     Auth,
     PermissionGuide,
     CleanupRange,

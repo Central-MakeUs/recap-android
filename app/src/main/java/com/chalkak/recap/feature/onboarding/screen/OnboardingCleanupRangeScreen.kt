@@ -13,6 +13,8 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
 import com.chalkak.recap.feature.onboarding.CleanupRange
 import com.chalkak.recap.feature.onboarding.OnboardingAction
+import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
+import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
 import com.chalkak.recap.feature.onboarding.OnboardingUiState
 import com.chalkak.recap.feature.onboarding.component.CleanupRangeOptionCard
 import com.chalkak.recap.feature.onboarding.component.OnboardingPrimaryButton
@@ -58,6 +60,17 @@ fun OnboardingCleanupRangeScreen(
         OnboardingPrimaryButton(
             label = stringResource(R.string.onboarding_cleanup_range_confirm_button),
             onClick = { onAction(OnboardingAction.ConfirmRange) },
+        )
+    }
+}
+
+@OnboardingScreenPreview
+@Composable
+private fun OnboardingCleanupRangeScreenPreview() {
+    OnboardingPreviewContainer {
+        OnboardingCleanupRangeScreen(
+            uiState = OnboardingUiState(selectedRange = CleanupRange.Last30Days),
+            onAction = {},
         )
     }
 }

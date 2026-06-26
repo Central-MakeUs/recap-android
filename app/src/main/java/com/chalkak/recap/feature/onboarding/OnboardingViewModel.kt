@@ -13,7 +13,6 @@ class OnboardingViewModel : ViewModel() {
     fun onAction(action: OnboardingAction) {
         when (action) {
             OnboardingAction.Back -> moveBack()
-            OnboardingAction.Start -> moveTo(OnboardingStep.Auth)
             OnboardingAction.LoginWithKakao,
             OnboardingAction.LoginWithApple,
             OnboardingAction.LoginWithEmail,
@@ -49,8 +48,7 @@ class OnboardingViewModel : ViewModel() {
 
 private fun OnboardingStep.previousStep(): OnboardingStep =
     when (this) {
-        OnboardingStep.Start -> OnboardingStep.Start
-        OnboardingStep.Auth -> OnboardingStep.Start
+        OnboardingStep.Auth -> OnboardingStep.Auth
         OnboardingStep.PermissionGuide -> OnboardingStep.Auth
         OnboardingStep.CleanupRange -> OnboardingStep.PermissionGuide
         OnboardingStep.CleanupStart -> OnboardingStep.CleanupRange

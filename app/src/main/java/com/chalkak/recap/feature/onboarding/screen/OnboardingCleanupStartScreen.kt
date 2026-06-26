@@ -9,7 +9,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
+import com.chalkak.recap.feature.onboarding.CleanupRange
 import com.chalkak.recap.feature.onboarding.OnboardingAction
+import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
+import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
 import com.chalkak.recap.feature.onboarding.OnboardingUiState
 import com.chalkak.recap.feature.onboarding.component.OnboardingPrimaryButton
 import com.chalkak.recap.feature.onboarding.component.StepHeader
@@ -38,6 +41,17 @@ fun OnboardingCleanupStartScreen(
         OnboardingPrimaryButton(
             label = stringResource(R.string.onboarding_cleanup_start_home_button),
             onClick = { onAction(OnboardingAction.StartCleanup) },
+        )
+    }
+}
+
+@OnboardingScreenPreview
+@Composable
+private fun OnboardingCleanupStartScreenPreview() {
+    OnboardingPreviewContainer {
+        OnboardingCleanupStartScreen(
+            uiState = OnboardingUiState(selectedRange = CleanupRange.Last30Days),
+            onAction = {},
         )
     }
 }
