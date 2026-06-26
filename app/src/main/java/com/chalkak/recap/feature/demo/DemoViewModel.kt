@@ -14,6 +14,7 @@ import androidx.annotation.WorkerThread
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.chalkak.recap.R
 import com.google.android.gms.tasks.Task
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
@@ -21,19 +22,19 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 class DemoViewModel(
     application: Application,
@@ -73,7 +74,7 @@ class DemoViewModel(
         when (action) {
             DemoAction.RequestImagePermission,
             DemoAction.RefreshImagePermission,
-            -> refreshImagePermissionLevel()
+                -> refreshImagePermissionLevel()
 
             is DemoAction.RunOcr -> runOcr(action.engine)
         }
@@ -114,7 +115,7 @@ class DemoViewModel(
                 current.copy(
                     ocrState = OcrUiState(
                         engine = engine,
-                        errorMessage = "OCR을 실행할 스크린샷이 없습니다.",
+                        errorMessage = appContext.getString(R.string.demo_ocr_error_no_screenshots),
                     ),
                 )
             }
@@ -172,7 +173,7 @@ class DemoViewModel(
                     current.copy(
                         ocrState = current.ocrState.copy(
                             isRunning = false,
-                            errorMessage = "OCR 처리 중 오류가 발생했습니다.",
+                            errorMessage = appContext.getString(R.string.demo_ocr_error_processing),
                         ),
                     )
                 }
@@ -186,13 +187,13 @@ class DemoViewModel(
 private fun Context.currentImagePermissionLevel(): ImagePermissionLevel {
     return when {
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            hasPermission(Manifest.permission.READ_MEDIA_IMAGES) -> ImagePermissionLevel.Full
+                hasPermission(Manifest.permission.READ_MEDIA_IMAGES) -> ImagePermissionLevel.Full
 
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-            hasPermission(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) -> ImagePermissionLevel.Selected
+                hasPermission(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) -> ImagePermissionLevel.Selected
 
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU &&
-            hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE) -> ImagePermissionLevel.Full
+                hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE) -> ImagePermissionLevel.Full
 
         else -> ImagePermissionLevel.Denied
     }

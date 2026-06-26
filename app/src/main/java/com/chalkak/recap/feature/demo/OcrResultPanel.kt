@@ -15,9 +15,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.chalkak.recap.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
 @Composable
@@ -25,6 +27,8 @@ fun OcrResultPanel(
     ocrState: OcrUiState,
     modifier: Modifier = Modifier,
 ) {
+    val engineLabel = ocrState.engine?.let { stringResource(it.resultLabelResId) }
+
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(8.dp),
@@ -42,12 +46,12 @@ fun OcrResultPanel(
                 verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
                 Text(
-                    text = "OCR Raw Result",
+                    text = stringResource(R.string.demo_ocr_result_title),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = ocrState.engine?.resultLabel ?: "아직 실행하지 않음",
+                    text = engineLabel ?: stringResource(R.string.demo_ocr_not_run),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -59,7 +63,11 @@ fun OcrResultPanel(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Text(
-                    text = "${ocrState.completedCount}/${ocrState.totalCount}",
+                    text = stringResource(
+                        R.string.demo_ocr_progress_count,
+                        ocrState.completedCount,
+                        ocrState.totalCount,
+                    ),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -74,7 +82,7 @@ fun OcrResultPanel(
             }
 
             Text(
-                text = ocrState.toRawJsonLikeText(),
+                text = ocrState.toRawJsonLikeText(engineLabel),
                 modifier = Modifier
                     .fillMaxWidth()
                     .horizontalScroll(rememberScrollState()),
@@ -86,10 +94,10 @@ fun OcrResultPanel(
     }
 }
 
-private fun OcrUiState.toRawJsonLikeText(): String {
+private fun OcrUiState.toRawJsonLikeText(engineLabel: String?): String {
     return buildString {
         appendLine("{")
-        appendLine("  \"engine\": ${engine?.resultLabel.quoteOrNull()},")
+        appendLine("  \"engine\": ${engineLabel.quoteOrNull()},")
         appendLine("  \"isRunning\": $isRunning,")
         appendLine("  \"completedCount\": $completedCount,")
         appendLine("  \"totalCount\": $totalCount,")

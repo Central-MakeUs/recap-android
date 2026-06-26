@@ -11,8 +11,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
@@ -65,8 +65,6 @@ private fun DemoScreenPreview() {
     RECAPTheme(dynamicColor = false) {
         DemoContent(
             uiState = DemoUiState(
-                title = "Demo",
-                description = "이미지 권한 정책과 가져오기 플로우를 확인합니다.",
                 imagePermissionLevel = ImagePermissionLevel.Full,
                 recentScreenshotUris = listOf(
                     Uri.parse("content://com.chalkak.recap.preview/screenshot/1"),

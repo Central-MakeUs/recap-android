@@ -1,8 +1,11 @@
 package com.chalkak.recap.feature.collection
 
+import androidx.annotation.StringRes
+import com.chalkak.recap.R
+
 data class CollectionUiState(
-    val title: String = "Collections",
-    val description: String = "Saved purpose-based card collections will be organized here.",
+    @StringRes val titleResId: Int = R.string.collection_title,
+    @StringRes val descriptionResId: Int = R.string.collection_description,
 )
 
 sealed interface CollectionAction {
