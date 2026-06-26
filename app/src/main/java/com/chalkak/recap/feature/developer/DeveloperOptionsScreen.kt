@@ -53,7 +53,7 @@ internal fun DeveloperOptionsScreen(
 }
 
 internal enum class DeveloperOption(
-    @StringRes val labelResId: Int,
+    @get:StringRes val labelResId: Int,
     val action: DeveloperOptionAction,
 ) {
     TechnicalDemo(

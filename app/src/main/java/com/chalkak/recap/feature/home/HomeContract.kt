@@ -4,8 +4,8 @@ import androidx.annotation.StringRes
 import com.chalkak.recap.R
 
 data class HomeUiState(
-    @StringRes val titleResId: Int = R.string.home_title,
-    @StringRes val descriptionResId: Int = R.string.home_description,
+    @get:StringRes val titleResId: Int = R.string.home_title,
+    @get:StringRes val descriptionResId: Int = R.string.home_description,
 )
 
 sealed interface HomeAction {

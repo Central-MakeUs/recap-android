@@ -4,8 +4,8 @@ import androidx.annotation.StringRes
 import com.chalkak.recap.R
 
 data class OnboardingUiState(
-    @StringRes val titleResId: Int = R.string.onboarding_title,
-    @StringRes val descriptionResId: Int = R.string.onboarding_description,
+    @get:StringRes val titleResId: Int = R.string.onboarding_title,
+    @get:StringRes val descriptionResId: Int = R.string.onboarding_description,
     val step: OnboardingStep = OnboardingStep.Start,
     val selectedRange: CleanupRange = CleanupRange.Last30Days,
     val isLoading: Boolean = false,
@@ -34,9 +34,9 @@ enum class OnboardingStep {
 }
 
 enum class CleanupRange(
-    @StringRes val titleResId: Int,
-    @StringRes val countLabelResId: Int,
-    @StringRes val badgeResId: Int? = null,
+    @get:StringRes val titleResId: Int,
+    @get:StringRes val countLabelResId: Int,
+    @get:StringRes val badgeResId: Int? = null,
 ) {
     Last7Days(
         titleResId = R.string.onboarding_cleanup_range_last_7_days,
