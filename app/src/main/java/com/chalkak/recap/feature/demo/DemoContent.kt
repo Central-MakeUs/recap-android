@@ -1,7 +1,6 @@
 package com.chalkak.recap.feature.demo
 
 import android.content.res.Configuration
-import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -23,13 +22,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import com.chalkak.recap.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
 @Composable
 fun DemoContent(
-    uiState: DemoUiState = DemoUiState(),
     modifier: Modifier = Modifier,
+    uiState: DemoUiState = DemoUiState(),
     onAction: (DemoAction) -> Unit = {},
 ) {
     Surface(
@@ -132,9 +132,9 @@ private fun DemoContentPreview() {
             uiState = DemoUiState(
                 imagePermissionLevel = ImagePermissionLevel.Selected,
                 recentScreenshotUris = listOf(
-                    Uri.parse("content://com.chalkak.recap.preview/screenshot/1"),
-                    Uri.parse("content://com.chalkak.recap.preview/screenshot/2"),
-                    Uri.parse("content://com.chalkak.recap.preview/screenshot/3"),
+                    "content://com.chalkak.recap.preview/screenshot/1".toUri(),
+                    "content://com.chalkak.recap.preview/screenshot/2".toUri(),
+                    "content://com.chalkak.recap.preview/screenshot/3".toUri(),
                 ),
                 ocrState = OcrUiState(
                     engine = OcrEngine.Korean,

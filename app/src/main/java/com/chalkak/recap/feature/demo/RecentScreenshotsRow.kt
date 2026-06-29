@@ -25,6 +25,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import coil3.compose.AsyncImage
 import com.chalkak.recap.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
@@ -122,10 +123,10 @@ private fun RecentScreenshotsRowPopulatedPreview() {
     RECAPTheme(dynamicColor = false) {
         RecentScreenshotsRow(
             imageUris = listOf(
-                Uri.parse("content://com.chalkak.recap.preview/screenshot/1"),
-                Uri.parse("content://com.chalkak.recap.preview/screenshot/2"),
-                Uri.parse("content://com.chalkak.recap.preview/screenshot/3"),
-                Uri.parse("content://com.chalkak.recap.preview/screenshot/4"),
+                "content://com.chalkak.recap.preview/screenshot/1".toUri(),
+                "content://com.chalkak.recap.preview/screenshot/2".toUri(),
+                "content://com.chalkak.recap.preview/screenshot/3".toUri(),
+                "content://com.chalkak.recap.preview/screenshot/4".toUri(),
             ),
         )
     }

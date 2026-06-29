@@ -15,6 +15,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
 import com.chalkak.recap.feature.onboarding.OnboardingAction
+import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
+import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
 import com.chalkak.recap.feature.onboarding.component.GuideBullet
 import com.chalkak.recap.feature.onboarding.component.OnboardingPrimaryButton
 import com.chalkak.recap.feature.onboarding.component.OnboardingTopBar
@@ -43,8 +45,7 @@ fun OnboardingPermissionGuideScreen(
         ) {
             PermissionIconTile(modifier = Modifier.padding(top = 40.dp))
             StepHeader(
-                title = stringResource(R.string.onboarding_permission_title),
-                description = stringResource(R.string.onboarding_permission_description),
+                title = stringResource(R.string.onboarding_permission_title)
             )
             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 GuideBullet(text = stringResource(R.string.onboarding_permission_bullet_selected_only))
@@ -62,5 +63,13 @@ fun OnboardingPermissionGuideScreen(
         ) {
             Text(text = stringResource(R.string.onboarding_permission_skip_button))
         }
+    }
+}
+
+@OnboardingScreenPreview
+@Composable
+private fun OnboardingPermissionGuideScreenPreview() {
+    OnboardingPreviewContainer {
+        OnboardingPermissionGuideScreen(onAction = {})
     }
 }
