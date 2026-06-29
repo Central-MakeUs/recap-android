@@ -7,8 +7,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import com.chalkak.recap.feature.collection.CollectionScreen
-import com.chalkak.recap.feature.home.HomeAction
-import com.chalkak.recap.feature.home.HomeScreen
+import com.chalkak.recap.feature.home.HomeRoute
 import com.chalkak.recap.feature.mypage.MyPageScreen
 
 @Composable
@@ -24,14 +23,7 @@ fun RecapNavHost(
         entryProvider = { route ->
             when (route) {
                 RecapRoute.Home -> NavEntry(route) {
-                    HomeScreen(
-                        onAction = { action ->
-                            when (action) {
-                                HomeAction.StartImport -> Unit
-                                HomeAction.EnterDeveloperOptions -> onNavigateToDeveloper()
-                            }
-                        },
-                    )
+                    HomeRoute(onNavigateToDeveloper = onNavigateToDeveloper)
                 }
 
                 RecapRoute.Collection -> NavEntry(route) {

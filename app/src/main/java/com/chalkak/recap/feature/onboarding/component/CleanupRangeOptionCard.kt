@@ -103,7 +103,7 @@ private fun CleanupRangeOptionCardSelectedPreview() {
     OnboardingComponentPreviewContainer {
         CleanupRangeOptionCard(
             title = stringResource(R.string.onboarding_cleanup_range_last_30_days),
-            count = stringResource(R.string.onboarding_cleanup_range_last_30_days_count),
+            count = stringResource(R.string.onboarding_cleanup_range_last_30_days_count, 124),
             badge = stringResource(R.string.onboarding_cleanup_range_recommended_badge),
             selected = true,
             onClick = {},
@@ -117,7 +117,7 @@ private fun CleanupRangeOptionCardUnselectedPreview() {
     OnboardingComponentPreviewContainer {
         CleanupRangeOptionCard(
             title = stringResource(R.string.onboarding_cleanup_range_last_7_days),
-            count = stringResource(R.string.onboarding_cleanup_range_last_7_days_count),
+            count = stringResource(R.string.onboarding_cleanup_range_last_7_days_count, 26),
             selected = false,
             onClick = {},
         )

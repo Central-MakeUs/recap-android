@@ -1,20 +1,15 @@
 package com.chalkak.recap.feature.demo
 
-import android.Manifest
 import android.app.Application
-import android.content.ContentResolver
-import android.content.ContentUris
 import android.content.Context
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
-import android.os.Bundle
-import android.provider.MediaStore
 import androidx.annotation.WorkerThread
-import androidx.core.content.ContextCompat
+import androidx.core.net.toUri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.R
+import com.chalkak.recap.core.data.LocalScreenshotDataSource
+import com.chalkak.recap.core.model.ImageAccessLevel
 import com.google.android.gms.tasks.Task
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
@@ -22,6 +17,8 @@ import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.TextRecognizer
 import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -36,15 +33,17 @@ import kotlinx.coroutines.withContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
-class DemoViewModel(
+@HiltViewModel
+class DemoViewModel @Inject constructor(
     application: Application,
+    private val screenshotDataSource: LocalScreenshotDataSource,
 ) : AndroidViewModel(application) {
     private val appContext = application.applicationContext
     private var ocrJob: Job? = null
 
     private val _uiState = MutableStateFlow(
         DemoUiState(
-            imagePermissionLevel = appContext.currentImagePermissionLevel(),
+            imagePermissionLevel = screenshotDataSource.currentImageAccessLevel().toDemoPermissionLevel(),
         ),
     )
     val uiState: StateFlow<DemoUiState> = _uiState.asStateFlow()
@@ -54,20 +53,7 @@ class DemoViewModel(
     }
 
     fun imagePermissionRequest(): Array<String> {
-        return when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> arrayOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED,
-            )
-
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> arrayOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
-            )
-
-            else -> arrayOf(
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-            )
-        }
+        return screenshotDataSource.imagePermissionRequest()
     }
 
     fun onAction(action: DemoAction) {
@@ -81,7 +67,7 @@ class DemoViewModel(
     }
 
     fun refreshImagePermissionLevel() {
-        val permissionLevel = appContext.currentImagePermissionLevel()
+        val permissionLevel = screenshotDataSource.currentImageAccessLevel().toDemoPermissionLevel()
         _uiState.update { current ->
             current.copy(
                 imagePermissionLevel = permissionLevel,
@@ -99,9 +85,9 @@ class DemoViewModel(
         }
 
         viewModelScope.launch {
-            val screenshotUris = withContext(Dispatchers.IO) {
-                appContext.queryRecentScreenshotUris()
-            }
+            val screenshotUris = screenshotDataSource
+                .queryRecentScreenshots(RecentScreenshotLimit)
+                .map { it.uri.toUri() }
             _uiState.update { current ->
                 current.copy(recentScreenshotUris = screenshotUris)
             }
@@ -184,56 +170,12 @@ class DemoViewModel(
     }
 }
 
-private fun Context.currentImagePermissionLevel(): ImagePermissionLevel {
+private fun ImageAccessLevel.toDemoPermissionLevel(): ImagePermissionLevel {
     return when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                hasPermission(Manifest.permission.READ_MEDIA_IMAGES) -> ImagePermissionLevel.Full
-
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-                hasPermission(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) -> ImagePermissionLevel.Selected
-
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU &&
-                hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE) -> ImagePermissionLevel.Full
-
+        this == ImageAccessLevel.Full -> ImagePermissionLevel.Full
+        this == ImageAccessLevel.Selected -> ImagePermissionLevel.Selected
         else -> ImagePermissionLevel.Denied
     }
-}
-
-private fun Context.hasPermission(permission: String): Boolean {
-    return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
-}
-
-private fun Context.queryRecentScreenshotUris(): List<Uri> {
-    val collection = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
-    val projection = arrayOf(MediaStore.Images.Media._ID)
-    val selection = screenshotRelativePaths.joinToString(separator = " OR ") {
-        "${MediaStore.Images.Media.RELATIVE_PATH} = ?"
-    }
-    val selectionArgs = screenshotRelativePaths.toTypedArray()
-    val queryArgs = Bundle().apply {
-        putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
-        putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, selectionArgs)
-        putStringArray(
-            ContentResolver.QUERY_ARG_SORT_COLUMNS,
-            arrayOf(MediaStore.Images.Media.DATE_ADDED),
-        )
-        putInt(
-            ContentResolver.QUERY_ARG_SORT_DIRECTION,
-            ContentResolver.QUERY_SORT_DIRECTION_DESCENDING,
-        )
-        putInt(ContentResolver.QUERY_ARG_LIMIT, RecentScreenshotLimit)
-    }
-
-    return runCatching {
-        contentResolver.query(collection, projection, queryArgs, null)?.use { cursor ->
-            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Images.Media._ID)
-            buildList {
-                while (cursor.moveToNext()) {
-                    add(ContentUris.withAppendedId(collection, cursor.getLong(idColumn)))
-                }
-            }
-        }.orEmpty()
-    }.getOrDefault(emptyList())
 }
 
 private fun OcrEngine.createTextRecognizer(): TextRecognizer {
@@ -287,9 +229,5 @@ private suspend fun <T> Task<T>.await(): T {
         }
     }
 }
-
-private val screenshotRelativePaths = listOf(
-    "DCIM/Screenshots/",
-)
 
 private const val RecentScreenshotLimit = 5

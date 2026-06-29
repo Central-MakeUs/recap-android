@@ -22,12 +22,14 @@ internal fun OnboardingPrimaryButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Button(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp),
+        enabled = enabled,
         shape = RoundedCornerShape(16.dp),
     ) {
         Text(

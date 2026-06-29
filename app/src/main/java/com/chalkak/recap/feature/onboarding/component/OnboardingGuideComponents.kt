@@ -79,7 +79,7 @@ internal fun GuideBullet(
 @Composable
 internal fun StepHeader(
     title: String,
-    description: String,
+    description: String? = null,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -92,11 +92,13 @@ internal fun StepHeader(
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
         )
-        Text(
-            text = description,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
+        if (description != null) {
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
     }
 }
 

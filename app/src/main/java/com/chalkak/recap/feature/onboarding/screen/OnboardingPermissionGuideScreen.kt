@@ -45,8 +45,7 @@ fun OnboardingPermissionGuideScreen(
         ) {
             PermissionIconTile(modifier = Modifier.padding(top = 40.dp))
             StepHeader(
-                title = stringResource(R.string.onboarding_permission_title),
-                description = stringResource(R.string.onboarding_permission_description),
+                title = stringResource(R.string.onboarding_permission_title)
             )
             Column(verticalArrangement = Arrangement.spacedBy(18.dp)) {
                 GuideBullet(text = stringResource(R.string.onboarding_permission_bullet_selected_only))
