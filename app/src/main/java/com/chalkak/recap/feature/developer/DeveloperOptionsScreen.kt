@@ -60,6 +60,10 @@ internal enum class DeveloperOption(
         labelResId = R.string.developer_options_technical_demo_button,
         action = DeveloperOptionAction.OpenTechnicalDemo,
     ),
+    ComponentGarden(
+        labelResId = R.string.developer_options_component_garden_button,
+        action = DeveloperOptionAction.OpenComponentGarden,
+    ),
     ResetOnboarding(
         labelResId = R.string.developer_options_reset_onboarding_button,
         action = DeveloperOptionAction.ResetOnboarding,
@@ -68,5 +72,6 @@ internal enum class DeveloperOption(
 
 internal sealed interface DeveloperOptionAction {
     data object OpenTechnicalDemo : DeveloperOptionAction
+    data object OpenComponentGarden : DeveloperOptionAction
     data object ResetOnboarding : DeveloperOptionAction
 }
