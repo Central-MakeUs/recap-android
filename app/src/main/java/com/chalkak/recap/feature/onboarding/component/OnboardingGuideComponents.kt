@@ -79,9 +79,9 @@ internal fun GuideBullet(
 
 @Composable
 internal fun StepHeader(
+    modifier: Modifier = Modifier,
     title: String,
     description: String? = null,
-    modifier: Modifier = Modifier,
     titleStyle: TextStyle = MaterialTheme.typography.displaySmall,
     descriptionStyle: TextStyle = MaterialTheme.typography.bodyLarge,
 ) {

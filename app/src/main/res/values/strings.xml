@@ -28,6 +28,7 @@
     <string name="developer_options_reset_onboarding_button">온보딩 초기화</string>
     <string name="component_garden_title">컴포넌트 가든</string>
     <string name="component_garden_home_cards_section_title">홈 카드</string>
+    <string name="component_garden_ui_components_section_title"> 컴포넌트</string>
     <string name="component_garden_bottom_sheets_section_title">바텀시트</string>
     <string name="component_garden_photo_access_permission_bottom_sheet_button">사진 접근 권한 바텀시트 보기</string>
     <string name="component_garden_image_load_failure_bottom_sheet_button">이미지 로드 실패 바텀시트 보기</string>

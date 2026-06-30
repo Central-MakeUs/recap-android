@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.CircularProgressIndicator
@@ -16,12 +17,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
+import com.chalkak.recap.core.design.component.RecapButton
 import com.chalkak.recap.feature.onboarding.CleanupRange
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
 import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
 import com.chalkak.recap.feature.onboarding.OnboardingUiState
-import com.chalkak.recap.feature.onboarding.component.OnboardingPrimaryButton
 import com.chalkak.recap.feature.onboarding.component.StepHeader
 
 @Composable
@@ -83,9 +84,10 @@ fun OnboardingCleanupStartScreen(
                 )
             }
         }
-        OnboardingPrimaryButton(
-            label = stringResource(buttonLabelResId),
+        RecapButton(
+            text = stringResource(buttonLabelResId),
             onClick = { onAction(OnboardingAction.StartCleanup) },
+            modifier = Modifier.fillMaxWidth(),
         )
     }
 }

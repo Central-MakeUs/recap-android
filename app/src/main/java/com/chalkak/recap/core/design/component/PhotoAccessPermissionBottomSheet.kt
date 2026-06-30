@@ -13,8 +13,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -22,14 +20,12 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
@@ -127,37 +123,21 @@ fun PhotoAccessPermissionBottomSheetContent(
 
         Spacer(modifier = Modifier.height(PhotoAccessPermissionBottomSheetTokens.ActionTopSpacing))
 
-        Button(
+        RecapButton(
+            text = stringResource(R.string.photo_access_permission_settings_button),
             onClick = onOpenSettingsClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(PhotoAccessPermissionBottomSheetTokens.PrimaryButtonHeight),
-            shape = RoundedCornerShape(PhotoAccessPermissionBottomSheetTokens.ButtonCornerRadius),
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = PhotoAccessPermissionBottomSheetTokens.PrimaryButtonElevation,
-            ),
-        ) {
-            Text(
-                text = stringResource(R.string.photo_access_permission_settings_button),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+            modifier = Modifier.fillMaxWidth(),
+            size = RecapButtonSize.Medium,
+            shadowElevation = PhotoAccessPermissionBottomSheetTokens.PrimaryButtonElevation,
+        )
 
-        TextButton(
+        RecapButton(
+            text = stringResource(R.string.photo_access_permission_later_button),
             onClick = onLaterClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(PhotoAccessPermissionBottomSheetTokens.TextButtonHeight),
-        ) {
-            Text(
-                text = stringResource(R.string.photo_access_permission_later_button),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-            )
-        }
+            modifier = Modifier.fillMaxWidth(),
+            size = RecapButtonSize.Compact,
+            colors = RecapButtonDefaults.textColors(),
+        )
     }
 }
 
@@ -192,9 +172,6 @@ private object PhotoAccessPermissionBottomSheetTokens {
     val IconPadding = 16.dp
     val IconSize = 24.dp
     val ActionTopSpacing = 4.dp
-    val PrimaryButtonHeight = 52.dp
-    val TextButtonHeight = 42.dp
-    val ButtonCornerRadius = 14.dp
     val PrimaryButtonElevation = 20.dp
 }
 

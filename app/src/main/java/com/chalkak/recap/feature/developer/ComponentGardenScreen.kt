@@ -29,6 +29,8 @@ import com.chalkak.recap.R
 import com.chalkak.recap.core.design.component.ImageLoadFailureBottomSheet
 import com.chalkak.recap.core.design.component.OrganizedCaptureCard
 import com.chalkak.recap.core.design.component.PhotoAccessPermissionBottomSheet
+import com.chalkak.recap.core.design.component.RecapButton
+import com.chalkak.recap.core.design.component.RecapButtonSize
 import com.chalkak.recap.core.design.component.ReviewRequiredScreenshotCard
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
@@ -68,6 +70,17 @@ internal fun ComponentGardenScreen(
                 OrganizedCaptureCard(
                     organizedCaptureCount = ComponentGardenOrganizedCaptureCount,
                     onClick = {},
+                )
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_ui_components_section_title)
+            ) {
+                RecapButton(
+                    text = stringResource(R.string.photo_access_permission_settings_button),
+                    onClick = {},
+                    modifier = Modifier.fillMaxWidth(),
+                    size = RecapButtonSize.Medium,
+                    shadowElevation = 20.dp
                 )
             }
             ComponentGardenSection(

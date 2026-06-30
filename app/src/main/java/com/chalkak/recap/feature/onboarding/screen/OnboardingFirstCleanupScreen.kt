@@ -17,11 +17,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
+import com.chalkak.recap.core.design.component.RecapButton
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
 import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
 import com.chalkak.recap.feature.onboarding.component.FirstCleanupIllustration
-import com.chalkak.recap.feature.onboarding.component.OnboardingPrimaryButton
 import com.chalkak.recap.feature.onboarding.component.StepHeader
 
 @Composable
@@ -58,9 +58,10 @@ fun OnboardingFirstCleanupScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            OnboardingPrimaryButton(
-                label = stringResource(R.string.onboarding_first_cleanup_select_button),
+            RecapButton(
+                text = stringResource(R.string.onboarding_first_cleanup_select_button),
                 onClick = { onAction(OnboardingAction.SelectFirstScreenshots) },
+                modifier = Modifier.fillMaxWidth(),
             )
             TextButton(
                 onClick = { onAction(OnboardingAction.SkipFirstCleanup) },

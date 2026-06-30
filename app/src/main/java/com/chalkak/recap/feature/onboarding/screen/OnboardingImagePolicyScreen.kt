@@ -32,10 +32,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
+import com.chalkak.recap.core.design.component.RecapButton
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
 import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
-import com.chalkak.recap.feature.onboarding.component.OnboardingPrimaryButton
 import com.chalkak.recap.feature.onboarding.component.StepHeader
 
 @Composable
@@ -91,10 +91,12 @@ fun OnboardingImagePolicyScreen(
                 .fillMaxWidth()
                 .padding(top = 24.dp),
         )
-        OnboardingPrimaryButton(
-            label = stringResource(R.string.onboarding_policy_next_button),
+        RecapButton(
+            text = stringResource(R.string.onboarding_policy_next_button),
             onClick = { onAction(OnboardingAction.ContinuePolicy) },
-            modifier = Modifier.padding(top = 16.dp),
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .fillMaxWidth(),
         )
     }
 }

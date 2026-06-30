@@ -1,5 +1,6 @@
 package com.chalkak.recap.feature.onboarding.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,14 +14,16 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
-import com.chalkak.recap.core.design.component.KakaoLoginButton
+import com.chalkak.recap.core.design.component.RecapButton
+import com.chalkak.recap.core.design.component.RecapButtonDefaults
+import com.chalkak.recap.core.design.component.RecapButtonIconPlacement
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
 import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
-import com.chalkak.recap.feature.onboarding.component.AppleButton
 import com.chalkak.recap.feature.onboarding.component.OnboardingTopBar
 import com.chalkak.recap.feature.onboarding.component.StepHeader
 
@@ -57,8 +60,27 @@ fun OnboardingLoginScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            KakaoLoginButton(onClick = { onAction(OnboardingAction.LoginWithKakao) })
-            AppleButton(onClick = { onAction(OnboardingAction.LoginWithApple) })
+            RecapButton(
+                text = stringResource(R.string.onboarding_kakao_login_full),
+                compactText = stringResource(R.string.onboarding_kakao_login_short),
+                onClick = { onAction(OnboardingAction.LoginWithKakao) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = RecapButtonDefaults.kakaoColors(),
+                leadingIcon = {
+                    Image(
+                        painter = painterResource(R.drawable.kakao_96px),
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                },
+                iconPlacement = RecapButtonIconPlacement.FixedStart,
+            )
+            RecapButton(
+                text = stringResource(R.string.onboarding_apple_login_button),
+                onClick = { onAction(OnboardingAction.LoginWithApple) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = RecapButtonDefaults.appleColors(),
+            )
             TextButton(
                 onClick = { onAction(OnboardingAction.LoginWithEmail) },
             ) {

@@ -14,8 +14,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.outlined.BrokenImage
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -23,14 +21,12 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
@@ -120,43 +116,28 @@ fun ImageLoadFailureBottomSheetContent(
 
         Spacer(modifier = Modifier.height(ImageLoadFailureBottomSheetTokens.ActionTopSpacing))
 
-        Button(
+        RecapButton(
+            text = stringResource(R.string.image_load_failure_retry_button),
             onClick = onRetryClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(ImageLoadFailureBottomSheetTokens.PrimaryButtonHeight),
-            shape = RoundedCornerShape(ImageLoadFailureBottomSheetTokens.ButtonCornerRadius),
-            elevation = ButtonDefaults.buttonElevation(
-                defaultElevation = ImageLoadFailureBottomSheetTokens.PrimaryButtonElevation,
-            ),
-        ) {
-            Icon(
-                imageVector = Icons.Filled.Refresh,
-                contentDescription = null,
-                modifier = Modifier.size(ImageLoadFailureBottomSheetTokens.ButtonIconSize),
-            )
-            Text(
-                text = stringResource(R.string.image_load_failure_retry_button),
-                modifier = Modifier.padding(start = ImageLoadFailureBottomSheetTokens.ButtonIconSpacing),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-            )
-        }
+            modifier = Modifier.fillMaxWidth(),
+            size = RecapButtonSize.Medium,
+            shadowElevation = ImageLoadFailureBottomSheetTokens.PrimaryButtonElevation,
+            leadingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.Refresh,
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            },
+        )
 
-        TextButton(
+        RecapButton(
+            text = stringResource(R.string.image_load_failure_home_button),
             onClick = onGoHomeClick,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(ImageLoadFailureBottomSheetTokens.TextButtonHeight),
-        ) {
-            Text(
-                text = stringResource(R.string.image_load_failure_home_button),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-            )
-        }
+            modifier = Modifier.fillMaxWidth(),
+            size = RecapButtonSize.Compact,
+            colors = RecapButtonDefaults.textColors(),
+        )
     }
 }
 
@@ -191,12 +172,7 @@ private object ImageLoadFailureBottomSheetTokens {
     val IconPadding = 16.dp
     val IconSize = 24.dp
     val ActionTopSpacing = 4.dp
-    val PrimaryButtonHeight = 52.dp
-    val TextButtonHeight = 42.dp
-    val ButtonCornerRadius = 14.dp
     val PrimaryButtonElevation = 20.dp
-    val ButtonIconSize = 22.dp
-    val ButtonIconSpacing = 8.dp
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
