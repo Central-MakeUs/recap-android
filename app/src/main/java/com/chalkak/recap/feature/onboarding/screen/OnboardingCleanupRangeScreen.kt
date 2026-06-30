@@ -3,6 +3,7 @@ package com.chalkak.recap.feature.onboarding.screen
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -13,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
+import com.chalkak.recap.core.design.component.RecapButton
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.feature.onboarding.CleanupRange
 import com.chalkak.recap.feature.onboarding.OnboardingAction
@@ -20,7 +22,6 @@ import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
 import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
 import com.chalkak.recap.feature.onboarding.OnboardingUiState
 import com.chalkak.recap.feature.onboarding.component.CleanupRangeOptionCard
-import com.chalkak.recap.feature.onboarding.component.OnboardingPrimaryButton
 import com.chalkak.recap.feature.onboarding.component.OnboardingTopBar
 import com.chalkak.recap.feature.onboarding.component.StepHeader
 
@@ -81,9 +82,10 @@ fun OnboardingCleanupRangeScreen(
                 )
             }
         }
-        OnboardingPrimaryButton(
-            label = stringResource(R.string.onboarding_cleanup_range_confirm_button),
+        RecapButton(
+            text = stringResource(R.string.onboarding_cleanup_range_confirm_button),
             onClick = { onAction(OnboardingAction.ConfirmRange) },
+            modifier = Modifier.fillMaxWidth(),
             enabled = uiState.canConfirmRange,
         )
     }

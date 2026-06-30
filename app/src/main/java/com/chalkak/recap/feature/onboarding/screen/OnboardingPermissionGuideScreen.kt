@@ -14,11 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
+import com.chalkak.recap.core.design.component.RecapButton
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
 import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
 import com.chalkak.recap.feature.onboarding.component.GuideBullet
-import com.chalkak.recap.feature.onboarding.component.OnboardingPrimaryButton
 import com.chalkak.recap.feature.onboarding.component.OnboardingTopBar
 import com.chalkak.recap.feature.onboarding.component.PermissionIconTile
 import com.chalkak.recap.feature.onboarding.component.StepHeader
@@ -53,9 +53,10 @@ fun OnboardingPermissionGuideScreen(
                 GuideBullet(text = stringResource(R.string.onboarding_permission_bullet_sensitive_cards))
             }
         }
-        OnboardingPrimaryButton(
-            label = stringResource(R.string.onboarding_permission_grant_button),
+        RecapButton(
+            text = stringResource(R.string.onboarding_permission_grant_button),
             onClick = { onAction(OnboardingAction.GrantPermission) },
+            modifier = Modifier.fillMaxWidth(),
         )
         TextButton(
             onClick = { onAction(OnboardingAction.SkipPermission) },

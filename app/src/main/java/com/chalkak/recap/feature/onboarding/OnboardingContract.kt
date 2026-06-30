@@ -7,7 +7,7 @@ import com.chalkak.recap.core.model.OcrCleanupRange
 import com.chalkak.recap.core.model.OcrJob
 
 data class OnboardingUiState(
-    val step: OnboardingStep = OnboardingStep.Auth,
+    val step: OnboardingStep = OnboardingStep.Landing,
     val selectedRange: CleanupRange = CleanupRange.Last30Days,
     val imageAccessLevel: ImageAccessLevel = ImageAccessLevel.Denied,
     val rangeCounts: Map<CleanupRange, Int> = CleanupRange.entries.associateWith { 0 },
@@ -28,9 +28,14 @@ data class OnboardingUiState(
 
 sealed interface OnboardingAction {
     data object Back : OnboardingAction
+    data object StartOnboarding : OnboardingAction
+    data object ContinuePolicy : OnboardingAction
+    data object OpenLogin : OnboardingAction
     data object LoginWithKakao : OnboardingAction
     data object LoginWithApple : OnboardingAction
     data object LoginWithEmail : OnboardingAction
+    data object SelectFirstScreenshots : OnboardingAction
+    data object SkipFirstCleanup : OnboardingAction
     data object GrantPermission : OnboardingAction
     data object RefreshImagePermission : OnboardingAction
     data object SkipPermission : OnboardingAction
@@ -40,8 +45,10 @@ sealed interface OnboardingAction {
 }
 
 enum class OnboardingStep {
-    Auth,
-    PermissionGuide,
+    Landing,
+    ImagePolicy,
+    Login,
+    FirstCleanup,
     CleanupRange,
     CleanupStart,
 }
