@@ -29,10 +29,18 @@ class OnboardingViewModel @Inject constructor(
     fun onAction(action: OnboardingAction) {
         when (action) {
             OnboardingAction.Back -> moveBack()
+            OnboardingAction.StartOnboarding -> moveTo(OnboardingStep.ImagePolicy)
+            OnboardingAction.ContinuePolicy -> moveTo(OnboardingStep.Login)
+            OnboardingAction.OpenLogin -> moveTo(OnboardingStep.Login)
             OnboardingAction.LoginWithKakao,
             OnboardingAction.LoginWithApple,
-            OnboardingAction.LoginWithEmail,
-                -> moveTo(OnboardingStep.PermissionGuide)
+            OnboardingAction.LoginWithEmail -> {
+                refreshImagePermissionLevel()
+                moveTo(OnboardingStep.FirstCleanup)
+            }
+
+            OnboardingAction.SelectFirstScreenshots,
+            OnboardingAction.SkipFirstCleanup -> moveTo(OnboardingStep.CleanupRange)
 
             OnboardingAction.GrantPermission -> Unit
             OnboardingAction.RefreshImagePermission -> {
@@ -137,8 +145,10 @@ class OnboardingViewModel @Inject constructor(
 
 private fun OnboardingStep.previousStep(): OnboardingStep =
     when (this) {
-        OnboardingStep.Auth -> OnboardingStep.Auth
-        OnboardingStep.PermissionGuide -> OnboardingStep.Auth
-        OnboardingStep.CleanupRange -> OnboardingStep.PermissionGuide
+        OnboardingStep.Landing -> OnboardingStep.Landing
+        OnboardingStep.ImagePolicy -> OnboardingStep.Landing
+        OnboardingStep.Login -> OnboardingStep.ImagePolicy
+        OnboardingStep.FirstCleanup -> OnboardingStep.Login
+        OnboardingStep.CleanupRange -> OnboardingStep.FirstCleanup
         OnboardingStep.CleanupStart -> OnboardingStep.CleanupRange
     }

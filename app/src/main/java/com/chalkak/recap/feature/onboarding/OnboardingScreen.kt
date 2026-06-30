@@ -9,10 +9,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.feature.onboarding.screen.OnboardingAuthScreen
+import com.chalkak.recap.feature.onboarding.screen.OnboardingImagePolicyScreen
+import com.chalkak.recap.feature.onboarding.screen.OnboardingLandingScreen
+import com.chalkak.recap.feature.onboarding.screen.OnboardingLoginScreen
+import com.chalkak.recap.feature.onboarding.screen.OnboardingFirstCleanupScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingCleanupRangeScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingCleanupStartScreen
-import com.chalkak.recap.feature.onboarding.screen.OnboardingPermissionGuideScreen
 
 @Composable
 fun OnboardingScreen(
@@ -32,11 +34,19 @@ fun OnboardingScreen(
                 .navigationBarsPadding(),
         ) {
             when (uiState.step) {
-                OnboardingStep.Auth -> OnboardingAuthScreen(
+                OnboardingStep.Landing -> OnboardingLandingScreen(
                     onAction = onAction,
                 )
 
-                OnboardingStep.PermissionGuide -> OnboardingPermissionGuideScreen(
+                OnboardingStep.ImagePolicy -> OnboardingImagePolicyScreen(
+                    onAction = onAction,
+                )
+
+                OnboardingStep.Login -> OnboardingLoginScreen(
+                    onAction = onAction,
+                )
+
+                OnboardingStep.FirstCleanup -> OnboardingFirstCleanupScreen(
                     onAction = onAction,
                 )
 
@@ -59,7 +69,7 @@ fun OnboardingScreen(
 private fun OnboardingScreenAuthPreview() {
     RECAPTheme(dynamicColor = false) {
         OnboardingScreen(
-            uiState = OnboardingUiState(step = OnboardingStep.Auth),
+            uiState = OnboardingUiState(step = OnboardingStep.Landing),
             onAction = {},
         )
     }
@@ -70,7 +80,29 @@ private fun OnboardingScreenAuthPreview() {
 private fun OnboardingScreenPermissionGuidePreview() {
     RECAPTheme(dynamicColor = false) {
         OnboardingScreen(
-            uiState = OnboardingUiState(step = OnboardingStep.PermissionGuide),
+            uiState = OnboardingUiState(step = OnboardingStep.ImagePolicy),
+            onAction = {},
+        )
+    }
+}
+
+@OnboardingScreenPreview
+@Composable
+private fun OnboardingScreenLoginPreview() {
+    RECAPTheme(dynamicColor = false) {
+        OnboardingScreen(
+            uiState = OnboardingUiState(step = OnboardingStep.Login),
+            onAction = {},
+        )
+    }
+}
+
+@OnboardingScreenPreview
+@Composable
+private fun OnboardingScreenFirstCleanupPreview() {
+    RECAPTheme(dynamicColor = false) {
+        OnboardingScreen(
+            uiState = OnboardingUiState(step = OnboardingStep.FirstCleanup),
             onAction = {},
         )
     }

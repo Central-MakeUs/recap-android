@@ -1,10 +1,9 @@
 package com.chalkak.recap.feature.onboarding.screen
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -22,60 +21,60 @@ import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
 import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
 import com.chalkak.recap.feature.onboarding.component.AppleButton
-import com.chalkak.recap.feature.onboarding.component.BrandMark
-import com.chalkak.recap.feature.onboarding.component.ScreenshotIllustration
+import com.chalkak.recap.feature.onboarding.component.OnboardingTopBar
 import com.chalkak.recap.feature.onboarding.component.StepHeader
 
 @Composable
-fun OnboardingAuthScreen(
+fun OnboardingLoginScreen(
     onAction: (OnboardingAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Spacer(modifier = Modifier.height(24.dp))
-        BrandMark()
-        Text(
-            text = stringResource(R.string.onboarding_auth_tagline),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp),
+        OnboardingTopBar(
+            progress = stringResource(R.string.onboarding_login_progress),
+            onBack = { onAction(OnboardingAction.Back) },
         )
-        ScreenshotIllustration(
+        Column(
             modifier = Modifier
-                .padding(top = 32.dp)
-                .fillMaxWidth()
-                .height(220.dp),
-        )
-        StepHeader(
-            title = stringResource(R.string.onboarding_auth_title),
-            description = stringResource(R.string.onboarding_auth_description),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 28.dp),
-        )
-        Spacer(modifier = Modifier.height(28.dp))
-        KakaoLoginButton(onClick = { onAction(OnboardingAction.LoginWithKakao) })
-        Spacer(modifier = Modifier.height(12.dp))
-        AppleButton(onClick = { onAction(OnboardingAction.LoginWithApple) })
-        TextButton(
-            onClick = { onAction(OnboardingAction.LoginWithEmail) },
-            modifier = Modifier.padding(top = 12.dp),
+                .weight(1f)
+                .verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(text = stringResource(R.string.onboarding_email_login_button))
+            StepHeader(
+                title = stringResource(R.string.onboarding_login_title),
+                description = stringResource(R.string.onboarding_login_description),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 56.dp),
+            )
+        }
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            KakaoLoginButton(onClick = { onAction(OnboardingAction.LoginWithKakao) })
+            AppleButton(onClick = { onAction(OnboardingAction.LoginWithApple) })
+            TextButton(
+                onClick = { onAction(OnboardingAction.LoginWithEmail) },
+            ) {
+                Text(
+                    text = stringResource(R.string.onboarding_email_login_button),
+                    style = MaterialTheme.typography.labelLarge,
+                )
+            }
         }
     }
 }
 
 @OnboardingScreenPreview
 @Composable
-private fun OnboardingAuthScreenPreview() {
+private fun OnboardingLoginScreenPreview() {
     OnboardingPreviewContainer {
-        OnboardingAuthScreen(onAction = {})
+        OnboardingLoginScreen(onAction = {})
     }
 }

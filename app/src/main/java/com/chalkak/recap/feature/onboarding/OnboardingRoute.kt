@@ -34,6 +34,10 @@ fun OnboardingRoute(
                     onOnboardingComplete()
                 }
 
+                OnboardingAction.SkipFirstCleanup -> {
+                    onOnboardingComplete()
+                }
+
                 else -> viewModel.onAction(action)
             }
         },

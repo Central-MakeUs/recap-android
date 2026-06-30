@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
 
@@ -81,6 +82,8 @@ internal fun StepHeader(
     title: String,
     description: String? = null,
     modifier: Modifier = Modifier,
+    titleStyle: TextStyle = MaterialTheme.typography.displaySmall,
+    descriptionStyle: TextStyle = MaterialTheme.typography.bodyLarge,
 ) {
     Column(
         modifier = modifier,
@@ -88,14 +91,14 @@ internal fun StepHeader(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.displaySmall,
+            style = titleStyle,
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
         )
         if (description != null) {
             Text(
                 text = description,
-                style = MaterialTheme.typography.bodyLarge,
+                style = descriptionStyle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
