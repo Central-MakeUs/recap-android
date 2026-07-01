@@ -22,8 +22,7 @@ object DatabaseModule {
             context,
             RecapDatabase::class.java,
             "recap.db",
-        ).addMigrations(RecapDatabase.MIGRATION_1_2)
-            .build()
+        ).build()
     }
 
     @Provides

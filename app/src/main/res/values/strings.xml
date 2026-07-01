@@ -16,6 +16,8 @@
     <string name="organized_capture_card_title">%1$d개의 캡처가 정리됐어요</string>
     <string name="organized_capture_card_description">최근 정리된 캡처에서 확인하세요</string>
     <string name="home_ocr_raw_result_title">OCR Raw Result</string>
+    <string name="home_entity_extraction_raw_result_title">Entity Extraction Raw</string>
+    <string name="home_ocr_text_raw_result_title">OCR Text Raw</string>
     <string name="home_ocr_raw_result_empty">분석된 텍스트가 아직 없습니다.</string>
     <string name="home_ocr_raw_result_blank">인식된 텍스트 없음</string>
     <string name="collection_title">Collections</string>
@@ -26,6 +28,12 @@
     <string name="developer_options_technical_demo_button">기술 데모</string>
     <string name="developer_options_component_garden_button">컴포넌트 가든</string>
     <string name="developer_options_reset_onboarding_button">온보딩 초기화</string>
+    <string name="developer_options_download_entity_model_button">Entity Extraction 모델 다운로드</string>
+    <string name="developer_options_entity_model_status_checking">모델 다운로드 상태를 확인 중입니다.</string>
+    <string name="developer_options_entity_model_status_not_downloaded">Entity Extraction 한국어 모델이 아직 없습니다.</string>
+    <string name="developer_options_entity_model_status_downloading">Entity Extraction 한국어 모델을 다운로드 중입니다.</string>
+    <string name="developer_options_entity_model_status_downloaded">Entity Extraction 한국어 모델이 로컬에 저장되어 있습니다.</string>
+    <string name="developer_options_entity_model_status_failed">모델 다운로드에 실패했습니다. 네트워크 상태를 확인한 뒤 다시 시도해주세요.</string>
     <string name="component_garden_title">컴포넌트 가든</string>
     <string name="component_garden_home_cards_section_title">홈 카드</string>
     <string name="component_garden_ui_components_section_title"> 컴포넌트</string>

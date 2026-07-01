@@ -1,7 +1,10 @@
 package com.chalkak.recap.feature.developer
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -23,7 +26,11 @@ fun DeveloperRoute(
         entryProvider = { route ->
             when (route) {
                 DeveloperDestination.Options -> NavEntry(route) {
+                    val viewModel: DeveloperOptionsViewModel = hiltViewModel()
+                    val modelDownloadState by viewModel.modelDownloadState.collectAsStateWithLifecycle()
+
                     DeveloperOptionsScreen(
+                        modelDownloadState = modelDownloadState,
                         onAction = { action ->
                             when (action) {
                                 DeveloperOptionAction.OpenTechnicalDemo -> {
@@ -35,6 +42,9 @@ fun DeveloperRoute(
                                 }
 
                                 DeveloperOptionAction.ResetOnboarding -> onResetOnboarding()
+                                DeveloperOptionAction.DownloadEntityExtractionModel -> {
+                                    viewModel.downloadEntityExtractionModel()
+                                }
                             }
                         },
                     )

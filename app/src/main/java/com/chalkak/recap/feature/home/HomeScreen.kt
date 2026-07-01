@@ -186,6 +186,12 @@ private fun OcrRawResultItem(
                 fontWeight = FontWeight.Bold,
             )
             val blankText = stringResource(R.string.home_ocr_raw_result_blank)
+            OcrRawTextSection(
+                title = stringResource(R.string.home_entity_extraction_raw_result_title),
+                blocks = listOf(result.entityAnnotationsRaw.ifBlank { EmptyEntityAnnotationsRaw }),
+                blankText = blankText,
+                modifier = Modifier.fillMaxWidth(),
+            )
             val rawTextBlocks = result.rawTextBlocks.ifEmpty {
                 if (result.rawText.isBlank()) {
                     emptyList()
@@ -193,24 +199,45 @@ private fun OcrRawResultItem(
                     listOf(OcrTextBlock(result.rawText))
                 }
             }
-            if (rawTextBlocks.isEmpty()) {
-                Text(
-                    text = blankText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            } else {
-                Column(
+            OcrRawTextSection(
+                title = stringResource(R.string.home_ocr_text_raw_result_title),
+                blocks = rawTextBlocks.map { it.text },
+                blankText = blankText,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+    }
+}
+
+@Composable
+private fun OcrRawTextSection(
+    title: String,
+    blocks: List<String>,
+    blankText: String,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontWeight = FontWeight.Bold,
+        )
+        if (blocks.isEmpty()) {
+            Text(
+                text = blankText,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            blocks.forEach { block ->
+                OcrRawTextBlock(
+                    text = block.ifBlank { blankText },
                     modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    rawTextBlocks.forEach { block ->
-                        OcrRawTextBlock(
-                            text = block.text.ifBlank { blankText },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                }
+                )
             }
         }
     }
@@ -237,3 +264,5 @@ private fun OcrRawTextBlock(
         )
     }
 }
+
+private const val EmptyEntityAnnotationsRaw = "[]"

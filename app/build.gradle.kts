@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.androidx.hilt.work)
     implementation(libs.coil.compose)
     implementation(libs.hilt.android)
+    implementation(libs.mlkit.entity.extraction)
     implementation(libs.mlkit.text.recognition)
     implementation(libs.mlkit.text.recognition.korean)
     implementation(libs.play.services.oss.licenses)

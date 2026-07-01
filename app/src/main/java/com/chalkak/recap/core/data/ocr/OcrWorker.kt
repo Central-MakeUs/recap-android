@@ -6,17 +6,21 @@ import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
+import com.chalkak.recap.core.data.entity.EntityTextExtractor
 import com.chalkak.recap.core.data.LocalScreenshotDataSource
 import com.chalkak.recap.core.model.OcrCleanupRange
 import com.chalkak.recap.core.model.OcrJobStatus
 import com.chalkak.recap.core.model.OcrTextBlock
 import com.google.android.gms.tasks.Task
+import com.google.mlkit.nl.entityextraction.EntityAnnotation
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import org.json.JSONArray
+import org.json.JSONObject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -30,6 +34,7 @@ class OcrWorker @AssistedInject constructor(
     @Assisted workerParameters: WorkerParameters,
     private val ocrDao: OcrDao,
     private val screenshotDataSource: LocalScreenshotDataSource,
+    private val entityTextExtractor: EntityTextExtractor,
 ) : CoroutineWorker(appContext, workerParameters) {
     override suspend fun doWork(): Result {
         val jobId = inputData.getString(KEY_JOB_ID) ?: return Result.failure()
@@ -54,6 +59,9 @@ class OcrWorker @AssistedInject constructor(
                 currentCoroutineContext().ensureActive()
                 val inputImage = InputImage.fromFilePath(applicationContext, image.uri.toUri())
                 val recognizedText = recognizer.process(inputImage).await()
+                val entityAnnotationsJson = runCatching {
+                    entityTextExtractor.extract(recognizedText.text).toEntityAnnotationsJson()
+                }.getOrDefault(EmptyEntityAnnotationsJson)
                 val completedCount = index + 1
 
                 ocrDao.insertResult(
@@ -62,6 +70,7 @@ class OcrWorker @AssistedInject constructor(
                         imageUri = image.uri,
                         displayName = image.displayName,
                         rawText = recognizedText.text,
+                        entityAnnotationsJson = entityAnnotationsJson,
                         rawTextBlocksJson = recognizedText.toOcrTextBlocks().toJson(),
                         sortIndex = index,
                     ),
@@ -126,6 +135,31 @@ private fun Text.toOcrTextBlocks(): List<OcrTextBlock> {
     }
 }
 
+private fun List<EntityAnnotation>.toEntityAnnotationsJson(): String {
+    val jsonArray = JSONArray()
+    forEach { annotation ->
+        jsonArray.put(
+            JSONObject()
+                .put("text", annotation.annotatedText)
+                .put("start", annotation.start)
+                .put("end", annotation.end)
+                .put(
+                    "entities",
+                    JSONArray().apply {
+                        annotation.entities.forEach { entity ->
+                            put(
+                                JSONObject()
+                                    .put("type", entity.type)
+                                    .put("raw", entity.toString()),
+                            )
+                        }
+                    },
+                ),
+        )
+    }
+    return jsonArray.toString()
+}
+
 private suspend fun <T> Task<T>.await(): T {
     return suspendCancellableCoroutine { continuation ->
         addOnSuccessListener { result ->
@@ -139,3 +173,5 @@ private suspend fun <T> Task<T>.await(): T {
         }
     }
 }
+
+private const val EmptyEntityAnnotationsJson = "[]"

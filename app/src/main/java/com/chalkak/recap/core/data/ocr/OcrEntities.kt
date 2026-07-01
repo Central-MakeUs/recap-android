@@ -29,6 +29,7 @@ data class OcrResultEntity(
     val imageUri: String,
     val displayName: String,
     val rawText: String,
+    val entityAnnotationsJson: String = EmptyEntityAnnotationsJson,
     val rawTextBlocksJson: String = EmptyTextBlocksJson,
     val sortIndex: Int,
 )
@@ -53,6 +54,7 @@ fun OcrResultEntity.toDomain(): OcrImageResult {
         imageUri = imageUri,
         displayName = displayName,
         rawText = rawText,
+        entityAnnotationsRaw = entityAnnotationsJson,
         rawTextBlocks = rawTextBlocksJson.toOcrTextBlocks(),
         sortIndex = sortIndex,
     )
@@ -78,3 +80,4 @@ private fun String.toOcrTextBlocks(): List<OcrTextBlock> {
 }
 
 private const val EmptyTextBlocksJson = "[]"
+private const val EmptyEntityAnnotationsJson = "[]"
