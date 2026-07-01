@@ -24,7 +24,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
-import com.chalkak.recap.core.model.OcrImageResult
 import com.chalkak.recap.core.model.OcrJob
 
 @Composable
@@ -62,10 +61,6 @@ fun HomeScreen(
             uiState.latestOcrJob?.let { job ->
                 OcrProgressCard(
                     job = job,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OcrRawResultList(
-                    results = job.results,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -125,67 +120,6 @@ private fun OcrProgressCard(
                     job.totalCount,
                 ),
                 style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        }
-    }
-}
-
-@Composable
-private fun OcrRawResultList(
-    results: List<OcrImageResult>,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.home_ocr_raw_result_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Bold,
-        )
-        if (results.isEmpty()) {
-            Text(
-                text = stringResource(R.string.home_ocr_raw_result_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            results.forEach { result ->
-                OcrRawResultItem(
-                    result = result,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun OcrRawResultItem(
-    result: OcrImageResult,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedCard(modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = result.displayName,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = result.rawText.ifBlank {
-                    stringResource(R.string.home_ocr_raw_result_blank)
-                },
-                style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
