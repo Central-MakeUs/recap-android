@@ -30,6 +30,10 @@ fun DeveloperRoute(
                                     backStack.add(DeveloperDestination.TechnicalDemo)
                                 }
 
+                                DeveloperOptionAction.OpenComponentGarden -> {
+                                    backStack.add(DeveloperDestination.ComponentGarden)
+                                }
+
                                 DeveloperOptionAction.ResetOnboarding -> onResetOnboarding()
                             }
                         },
@@ -38,6 +42,10 @@ fun DeveloperRoute(
 
                 DeveloperDestination.TechnicalDemo -> NavEntry(route) {
                     DemoScreen()
+                }
+
+                DeveloperDestination.ComponentGarden -> NavEntry(route) {
+                    ComponentGardenScreen()
                 }
 
                 else -> error("Unknown developer route: $route")
@@ -53,4 +61,7 @@ private sealed interface DeveloperDestination : NavKey {
 
     @Serializable
     data object TechnicalDemo : DeveloperDestination
+
+    @Serializable
+    data object ComponentGarden : DeveloperDestination
 }

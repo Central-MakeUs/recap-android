@@ -7,8 +7,8 @@ import com.chalkak.recap.core.design.component.RecapPlaceholderScreen
 
 @Composable
 fun MyPageScreen(
-    uiState: MyPageUiState = MyPageUiState(),
     modifier: Modifier = Modifier,
+    uiState: MyPageUiState = MyPageUiState(),
     onAction: (MyPageAction) -> Unit = {},
 ) {
     RecapPlaceholderScreen(

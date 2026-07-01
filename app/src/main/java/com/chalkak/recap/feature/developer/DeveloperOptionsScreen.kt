@@ -53,12 +53,16 @@ internal fun DeveloperOptionsScreen(
 }
 
 internal enum class DeveloperOption(
-    @StringRes val labelResId: Int,
+    @get:StringRes val labelResId: Int,
     val action: DeveloperOptionAction,
 ) {
     TechnicalDemo(
         labelResId = R.string.developer_options_technical_demo_button,
         action = DeveloperOptionAction.OpenTechnicalDemo,
+    ),
+    ComponentGarden(
+        labelResId = R.string.developer_options_component_garden_button,
+        action = DeveloperOptionAction.OpenComponentGarden,
     ),
     ResetOnboarding(
         labelResId = R.string.developer_options_reset_onboarding_button,
@@ -68,5 +72,6 @@ internal enum class DeveloperOption(
 
 internal sealed interface DeveloperOptionAction {
     data object OpenTechnicalDemo : DeveloperOptionAction
+    data object OpenComponentGarden : DeveloperOptionAction
     data object ResetOnboarding : DeveloperOptionAction
 }

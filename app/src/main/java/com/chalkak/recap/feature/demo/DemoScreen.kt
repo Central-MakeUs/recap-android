@@ -1,7 +1,6 @@
 package com.chalkak.recap.feature.demo
 
 import android.content.res.Configuration
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -9,17 +8,18 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.net.toUri
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
 @Composable
 fun DemoScreen(
-    viewModel: DemoViewModel = viewModel(),
     modifier: Modifier = Modifier,
+    viewModel: DemoViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -67,11 +67,11 @@ private fun DemoScreenPreview() {
             uiState = DemoUiState(
                 imagePermissionLevel = ImagePermissionLevel.Full,
                 recentScreenshotUris = listOf(
-                    Uri.parse("content://com.chalkak.recap.preview/screenshot/1"),
-                    Uri.parse("content://com.chalkak.recap.preview/screenshot/2"),
-                    Uri.parse("content://com.chalkak.recap.preview/screenshot/3"),
-                    Uri.parse("content://com.chalkak.recap.preview/screenshot/4"),
-                    Uri.parse("content://com.chalkak.recap.preview/screenshot/5"),
+                    "content://com.chalkak.recap.preview/screenshot/1".toUri(),
+                    "content://com.chalkak.recap.preview/screenshot/2".toUri(),
+                    "content://com.chalkak.recap.preview/screenshot/3".toUri(),
+                    "content://com.chalkak.recap.preview/screenshot/4".toUri(),
+                    "content://com.chalkak.recap.preview/screenshot/5".toUri(),
                 ),
                 ocrState = OcrUiState(
                     engine = OcrEngine.Latin,

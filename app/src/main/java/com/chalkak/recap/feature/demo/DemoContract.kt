@@ -5,8 +5,8 @@ import androidx.annotation.StringRes
 import com.chalkak.recap.R
 
 data class DemoUiState(
-    @StringRes val titleResId: Int = R.string.demo_title,
-    @StringRes val descriptionResId: Int = R.string.demo_description,
+    @get:StringRes val titleResId: Int = R.string.demo_title,
+    @get:StringRes val descriptionResId: Int = R.string.demo_description,
     val imagePermissionLevel: ImagePermissionLevel = ImagePermissionLevel.Denied,
     val recentScreenshotUris: List<Uri> = emptyList(),
     val ocrState: OcrUiState = OcrUiState(),
@@ -31,8 +31,8 @@ data class OcrUiState(
 }
 
 enum class OcrEngine(
-    @StringRes val buttonLabelResId: Int,
-    @StringRes val resultLabelResId: Int,
+    @get:StringRes val buttonLabelResId: Int,
+    @get:StringRes val resultLabelResId: Int,
 ) {
     Latin(
         buttonLabelResId = R.string.demo_ocr_engine_latin,
@@ -57,8 +57,8 @@ data class OcrTextBlock(
 )
 
 enum class ImagePermissionLevel(
-    @StringRes val labelResId: Int,
-    @StringRes val descriptionResId: Int,
+    @get:StringRes val labelResId: Int,
+    @get:StringRes val descriptionResId: Int,
 ) {
     Full(
         labelResId = R.string.demo_image_permission_full_label,

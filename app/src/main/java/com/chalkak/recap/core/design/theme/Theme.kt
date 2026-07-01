@@ -11,32 +11,56 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = Purple80,
-    secondary = PurpleGrey80,
-    tertiary = Pink80
+    primary = RecapBlue300,
+    onPrimary = RecapGray900,
+    primaryContainer = RecapBlue900,
+    onPrimaryContainer = RecapBlue50,
+    secondary = RecapBlue500,
+    onSecondary = RecapGray100,
+    secondaryContainer = RecapGray700,
+    onSecondaryContainer = RecapGray100,
+    tertiary = RecapBlue50,
+    onTertiary = RecapGray900,
+    background = RecapGray900,
+    onBackground = RecapGray100,
+    surface = RecapGray900,
+    onSurface = RecapGray100,
+    surfaceVariant = RecapGray700,
+    onSurfaceVariant = RecapGray300,
+    surfaceContainer = RecapGray700,
+    surfaceContainerHighest = RecapGray500,
+    outline = RecapGray500,
+    outlineVariant = RecapGray700
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Purple40,
-    secondary = PurpleGrey40,
-    tertiary = Pink40
-
-    /* Other default colors to override
-    background = Color(0xFFFFFBFE),
-    surface = Color(0xFFFFFBFE),
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onTertiary = Color.White,
-    onBackground = Color(0xFF1C1B1F),
-    onSurface = Color(0xFF1C1B1F),
-    */
+    primary = RecapBlue500,
+    onPrimary = RecapGray100,
+    primaryContainer = RecapBlue50,
+    onPrimaryContainer = RecapBlue900,
+    secondary = RecapBlue300,
+    onSecondary = RecapGray900,
+    secondaryContainer = RecapBlue50,
+    onSecondaryContainer = RecapBlue900,
+    tertiary = RecapBlue900,
+    onTertiary = RecapGray100,
+    background = androidx.compose.ui.graphics.Color.White,
+    onBackground = RecapGray900,
+    surface = androidx.compose.ui.graphics.Color.White,
+    onSurface = RecapGray900,
+    surfaceVariant = RecapGray100,
+    onSurfaceVariant = RecapGray500,
+    surfaceContainer = RecapBlue50,
+    surfaceContainerHighest = RecapGray100,
+    outline = RecapGray300,
+    outlineVariant = RecapGray200
 )
 
 @Composable
 fun RECAPTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {

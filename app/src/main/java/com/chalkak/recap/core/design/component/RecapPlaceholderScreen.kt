@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -39,9 +38,10 @@ fun RecapPlaceholderScreen(
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (actionLabel != null && onActionClick != null) {
-                Button(onClick = onActionClick) {
-                    Text(text = actionLabel)
-                }
+                RecapButton(
+                    text = actionLabel,
+                    onClick = onActionClick,
+                )
             }
         }
     }
