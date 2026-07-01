@@ -3,11 +3,17 @@ package com.chalkak.recap.feature.onboarding
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.feature.onboarding.screen.OnboardingImagePolicyScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingLandingScreen
@@ -21,7 +27,10 @@ fun OnboardingScreen(
     uiState: OnboardingUiState,
     onAction: (OnboardingAction) -> Unit,
     modifier: Modifier = Modifier,
+    snackbarHostState: SnackbarHostState? = null,
 ) {
+    val resolvedSnackbarHostState = snackbarHostState ?: remember { SnackbarHostState() }
+
     Surface(
         modifier = modifier
             .fillMaxSize(),
@@ -47,6 +56,7 @@ fun OnboardingScreen(
                 )
 
                 OnboardingStep.FirstCleanup -> OnboardingFirstCleanupScreen(
+                    uiState = uiState,
                     onAction = onAction,
                 )
 
@@ -60,6 +70,12 @@ fun OnboardingScreen(
                     onAction = onAction,
                 )
             }
+            SnackbarHost(
+                hostState = resolvedSnackbarHostState,
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+            )
         }
     }
 }

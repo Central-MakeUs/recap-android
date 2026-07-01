@@ -29,6 +29,7 @@ import com.chalkak.recap.R
 import com.chalkak.recap.core.design.component.ImageLoadFailureBottomSheet
 import com.chalkak.recap.core.design.component.OrganizedCaptureCard
 import com.chalkak.recap.core.design.component.PhotoAccessPermissionBottomSheet
+import com.chalkak.recap.core.design.component.PhotoAccessPermissionBottomSheetText
 import com.chalkak.recap.core.design.component.RecapButton
 import com.chalkak.recap.core.design.component.RecapButtonSize
 import com.chalkak.recap.core.design.component.ReviewRequiredScreenshotCard
@@ -76,7 +77,7 @@ internal fun ComponentGardenScreen(
                 title = stringResource(R.string.component_garden_ui_components_section_title)
             ) {
                 RecapButton(
-                    text = stringResource(R.string.photo_access_permission_settings_button),
+                    text = stringResource(R.string.photo_access_permission_request_permission),
                     onClick = {},
                     modifier = Modifier.fillMaxWidth(),
                     size = RecapButtonSize.Medium,
@@ -113,8 +114,18 @@ internal fun ComponentGardenScreen(
     if (showPhotoAccessPermissionBottomSheet) {
         PhotoAccessPermissionBottomSheet(
             onDismissRequest = { showPhotoAccessPermissionBottomSheet = false },
-            onOpenSettingsClick = { showPhotoAccessPermissionBottomSheet = false },
+            onPrimaryButtonClick = { showPhotoAccessPermissionBottomSheet = false },
             onLaterClick = { showPhotoAccessPermissionBottomSheet = false },
+            text = PhotoAccessPermissionBottomSheetText(
+                iconContentDescription = stringResource(
+                    R.string.photo_access_permission_icon_content_description
+                ),
+                title = stringResource(R.string.photo_access_permission_title),
+                description = stringResource(R.string.photo_access_permission_description),
+                notice = stringResource(R.string.photo_access_permission_notice),
+                primaryButton = stringResource(R.string.photo_access_permission_request_permission),
+                laterButton = stringResource(R.string.photo_access_permission_later_button),
+            ),
         )
     }
     if (showImageLoadFailureBottomSheet) {
