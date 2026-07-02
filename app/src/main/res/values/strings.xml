@@ -1,8 +1,10 @@
 <resources>
     <string name="app_name">RECAP</string>
     <string name="bottom_nav_home">홈</string>
+    <string name="bottom_nav_cleanup">정리하기</string>
     <string name="bottom_nav_collection">컬렉션</string>
     <string name="bottom_nav_my_page">마이페이지</string>
+    <string name="main_top_bar_my_page_content_description">마이페이지로 이동</string>
     <string name="home_title">Home</string>
     <string name="home_description">Recent screenshot cards and cleanup status will appear here.</string>
     <string name="home_developer_options_button">개발자 옵션</string>

@@ -44,7 +44,7 @@ private val LightColorScheme = lightColorScheme(
     onSecondaryContainer = RecapBlue900,
     tertiary = RecapBlue900,
     onTertiary = RecapGray100,
-    background = androidx.compose.ui.graphics.Color.White,
+    background = RecapGray50,
     onBackground = RecapGray900,
     surface = androidx.compose.ui.graphics.Color.White,
     onSurface = RecapGray900,
@@ -74,7 +74,7 @@ fun RECAPTheme(
     }
 
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = LightColorScheme, // 라이트모드 강제
         typography = Typography,
         content = content
     )
