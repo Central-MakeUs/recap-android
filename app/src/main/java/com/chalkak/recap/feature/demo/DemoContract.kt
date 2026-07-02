@@ -3,6 +3,9 @@ package com.chalkak.recap.feature.demo
 import android.net.Uri
 import androidx.annotation.StringRes
 import com.chalkak.recap.R
+import com.chalkak.recap.core.model.RecapAnalysisBatchResult
+import com.chalkak.recap.core.model.RecapAnalysisInputMode
+import com.chalkak.recap.core.model.RecapAnalysisRequestMode
 
 data class DemoUiState(
     @get:StringRes val titleResId: Int = R.string.demo_title,
@@ -10,12 +13,19 @@ data class DemoUiState(
     val imagePermissionLevel: ImagePermissionLevel = ImagePermissionLevel.Denied,
     val recentScreenshotUris: List<Uri> = emptyList(),
     val ocrState: OcrUiState = OcrUiState(),
+    val selectedAnalysisInputMode: RecapAnalysisInputMode = RecapAnalysisInputMode.IMAGE_WITH_OCR_TEXT,
+    val selectedAnalysisRequestMode: RecapAnalysisRequestMode = RecapAnalysisRequestMode.SINGLE_PER_REQUEST,
+    val analysisState: RecapAnalysisUiState = RecapAnalysisUiState(),
+    val analysisHistory: List<RecapAnalysisRunSummary> = emptyList(),
 )
 
 sealed interface DemoAction {
     data object RequestImagePermission : DemoAction
     data object RefreshImagePermission : DemoAction
     data class RunOcr(val engine: OcrEngine) : DemoAction
+    data class SelectAnalysisInputMode(val inputMode: RecapAnalysisInputMode) : DemoAction
+    data class SelectAnalysisRequestMode(val requestMode: RecapAnalysisRequestMode) : DemoAction
+    data object RunGeminiAnalysis : DemoAction
 }
 
 data class OcrUiState(
@@ -29,6 +39,23 @@ data class OcrUiState(
     val progress: Float
         get() = if (totalCount == 0) 0f else completedCount.toFloat() / totalCount.toFloat()
 }
+
+data class RecapAnalysisUiState(
+    val isRunning: Boolean = false,
+    val result: RecapAnalysisBatchResult? = null,
+    val errorMessage: String? = null,
+)
+
+data class RecapAnalysisRunSummary(
+    val runIndex: Int,
+    val inputMode: RecapAnalysisInputMode,
+    val requestMode: RecapAnalysisRequestMode,
+    val screenshotCount: Int,
+    val durationMillis: Long,
+    val resultCount: Int,
+    val reviewRequiredCount: Int,
+    val errorMessage: String? = null,
+)
 
 enum class OcrEngine(
     @get:StringRes val buttonLabelResId: Int,

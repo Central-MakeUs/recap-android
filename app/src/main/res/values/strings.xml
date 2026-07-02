@@ -115,7 +115,7 @@
     <string name="demo_image_permission_denied_label">권한 없음</string>
     <string name="demo_image_permission_denied_description">이미지 자동 조회는 불가하며, 선택 플로우가 필요합니다.</string>
     <string name="demo_recent_screenshots_title">최근 스크린샷</string>
-    <string name="demo_recent_screenshots_path_label">DCIM/Screenshots · 최근 5개</string>
+    <string name="demo_recent_screenshots_path_label">DCIM/Screenshots · 최근 10개</string>
     <string name="demo_recent_screenshots_empty">표시할 이미지가 없습니다.</string>
     <string name="demo_recent_screenshot_content_description">최근 스크린샷 %1$d</string>
     <string name="demo_ocr_result_title">OCR Raw Result</string>
@@ -123,6 +123,31 @@
     <string name="demo_ocr_progress_count">%1$d/%2$d</string>
     <string name="demo_ocr_error_no_screenshots">OCR을 실행할 스크린샷이 없습니다.</string>
     <string name="demo_ocr_error_processing">OCR 처리 중 오류가 발생했습니다.</string>
+    <string name="demo_ocr_screenshot_label">스크린샷 %1$d</string>
+    <string name="demo_gemini_title">Gemini 분석 PoC</string>
+    <string name="demo_gemini_input_mode_title">제출 형태</string>
+    <string name="demo_gemini_input_mode_image_only">원본 이미지</string>
+    <string name="demo_gemini_input_mode_ocr_text_only">OCR 텍스트</string>
+    <string name="demo_gemini_input_mode_image_with_ocr_text">원본 이미지 + OCR 텍스트</string>
+    <string name="demo_gemini_request_mode_title">요청 단위</string>
+    <string name="demo_gemini_request_mode_single">이미지별 1회 요청</string>
+    <string name="demo_gemini_request_mode_batch">5장씩 묶어서 요청</string>
+    <string name="demo_gemini_run_button">Gemini 분석 실행</string>
+    <string name="demo_gemini_running">Gemini 분석 중입니다.</string>
+    <string name="demo_gemini_error_no_screenshots">Gemini 분석을 실행할 스크린샷이 없습니다.</string>
+    <string name="demo_gemini_error_processing">Gemini 분석 중 오류가 발생했습니다.</string>
+    <string name="demo_gemini_result_summary">%1$s · %2$s · batch=%3$d · results=%4$d</string>
+    <string name="demo_gemini_review_required">확인 필요</string>
+    <string name="demo_gemini_key_fields">핵심 필드</string>
+    <string name="demo_gemini_content_types">정보 유형</string>
+    <string name="demo_gemini_utility_tags">활용 태그</string>
+    <string name="demo_gemini_suggested_views">추천 뷰</string>
+    <string name="demo_gemini_review_reasons">확인 사유</string>
+    <string name="demo_gemini_confidence_summary">신뢰도 전체 %1$s · 제목 %2$s · 요약 %3$s · 유형 %4$s · 필드 %5$s · 추천 뷰 %6$s</string>
+    <string name="demo_gemini_history_title">실행 이력</string>
+    <string name="demo_gemini_history_header">#%1$d · %2$s · %3$s</string>
+    <string name="demo_gemini_history_meta">screenshots=%1$d · %2$dms · %3$s</string>
+    <string name="demo_gemini_history_success">results=%1$d · review=%2$d</string>
     <string name="photo_access_permission_icon_content_description">사진 접근 권한</string>
     <string name="photo_access_permission_title">사진 접근 권한이 필요해요</string>
     <string name="photo_access_permission_description">정리할 스크린샷을 선택하려면\n사진 접근 권한을 허용해주세요.</string>

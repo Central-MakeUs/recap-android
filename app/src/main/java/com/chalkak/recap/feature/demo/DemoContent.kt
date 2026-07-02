@@ -115,6 +115,16 @@ fun DemoContent(
                 ocrState = uiState.ocrState,
                 modifier = Modifier.fillMaxWidth(),
             )
+            RecapAnalysisPanel(
+                selectedInputMode = uiState.selectedAnalysisInputMode,
+                selectedRequestMode = uiState.selectedAnalysisRequestMode,
+                analysisState = uiState.analysisState,
+                analysisHistory = uiState.analysisHistory,
+                canRunAnalysis = uiState.recentScreenshotUris.isNotEmpty() &&
+                        !uiState.ocrState.isRunning,
+                onAction = onAction,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }

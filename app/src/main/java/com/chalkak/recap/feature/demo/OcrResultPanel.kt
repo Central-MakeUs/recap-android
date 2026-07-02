@@ -1,17 +1,20 @@
 package com.chalkak.recap.feature.demo
 
 import android.content.res.Configuration
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -81,73 +84,61 @@ fun OcrResultPanel(
                 )
             }
 
-            Text(
-                text = ocrState.toRawJsonLikeText(engineLabel),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                style = MaterialTheme.typography.bodySmall,
-                fontFamily = FontFamily.Monospace,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-        }
-    }
-}
-
-private fun OcrUiState.toRawJsonLikeText(engineLabel: String?): String {
-    return buildString {
-        appendLine("{")
-        appendLine("  \"engine\": ${engineLabel.quoteOrNull()},")
-        appendLine("  \"isRunning\": $isRunning,")
-        appendLine("  \"completedCount\": $completedCount,")
-        appendLine("  \"totalCount\": $totalCount,")
-        appendLine("  \"errorMessage\": ${errorMessage.quoteOrNull()},")
-        appendLine("  \"results\": [")
-        results.forEachIndexed { resultIndex, result ->
-            appendLine("    {")
-            appendLine("      \"imageIndex\": ${result.imageIndex},")
-            appendLine("      \"imageUri\": ${result.imageUri.quote()},")
-            appendLine("      \"text\": ${result.text.quote()},")
-            appendLine("      \"blocks\": [")
-            result.blocks.forEachIndexed { blockIndex, block ->
-                appendLine("        {")
-                appendLine("          \"text\": ${block.text.quote()},")
-                appendLine("          \"lines\": [")
-                block.lines.forEachIndexed { lineIndex, line ->
-                    append("            ${line.quote()}")
-                    appendLine(if (lineIndex == block.lines.lastIndex) "" else ",")
+            if (ocrState.results.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.demo_ocr_not_run),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            } else {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    ocrState.results.forEach { result ->
+                        OcrRawTextField(result = result)
+                    }
                 }
-                appendLine("          ]")
-                append("        }")
-                appendLine(if (blockIndex == result.blocks.lastIndex) "" else ",")
             }
-            appendLine("      ]")
-            append("    }")
-            appendLine(if (resultIndex == results.lastIndex) "" else ",")
         }
-        appendLine("  ]")
-        append("}")
     }
 }
 
-private fun String?.quoteOrNull(): String {
-    return this?.quote() ?: "null"
-}
-
-private fun String.quote(): String {
-    return buildString {
-        append('"')
-        this@quote.forEach { char ->
-            when (char) {
-                '\\' -> append("\\\\")
-                '"' -> append("\\\"")
-                '\n' -> append("\\n")
-                '\r' -> append("\\r")
-                '\t' -> append("\\t")
-                else -> append(char)
+@Composable
+private fun OcrRawTextField(
+    result: OcrImageResult,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(
+            text = stringResource(R.string.demo_ocr_screenshot_label, result.imageIndex),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.surface,
+        ) {
+            SelectionContainer {
+                Text(
+                    text = result.text.ifBlank {
+                        stringResource(R.string.developer_options_ocr_raw_result_blank)
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 72.dp, max = 128.dp)
+                        .verticalScroll(rememberScrollState())
+                        .padding(10.dp),
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = FontFamily.Monospace,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
             }
         }
-        append('"')
     }
 }
 

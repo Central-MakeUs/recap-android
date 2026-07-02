@@ -53,6 +53,9 @@ fun DemoScreen(
 
                 DemoAction.RefreshImagePermission -> viewModel.onAction(action)
                 is DemoAction.RunOcr -> viewModel.onAction(action)
+                is DemoAction.SelectAnalysisInputMode -> viewModel.onAction(action)
+                is DemoAction.SelectAnalysisRequestMode -> viewModel.onAction(action)
+                DemoAction.RunGeminiAnalysis -> viewModel.onAction(action)
             }
         },
     )
