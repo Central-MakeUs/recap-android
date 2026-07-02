@@ -468,7 +468,7 @@ private fun RecapButtonPreview() {
                 },
             )
             RecapButton(
-                text = stringResource(R.string.photo_access_permission_settings_button),
+                text = stringResource(R.string.photo_access_permission_request_permission),
                 onClick = {},
                 modifier = Modifier.fillMaxWidth(),
                 size = RecapButtonSize.Medium,

@@ -20,7 +20,7 @@ data class OnboardingUiState(
         get() = rangeCounts[selectedRange] ?: 0
 
     val canConfirmRange: Boolean
-        get() = imageAccessLevel != ImageAccessLevel.Denied &&
+        get() = imageAccessLevel == ImageAccessLevel.Full &&
                 selectedRangeCount > 0 &&
                 !isRangeCountLoading &&
                 !isLoading
@@ -37,6 +37,7 @@ sealed interface OnboardingAction {
     data object SelectFirstScreenshots : OnboardingAction
     data object SkipFirstCleanup : OnboardingAction
     data object GrantPermission : OnboardingAction
+    data object OpenPhotoPermissionSettings : OnboardingAction
     data object RefreshImagePermission : OnboardingAction
     data object SkipPermission : OnboardingAction
     data class SelectRange(val range: CleanupRange) : OnboardingAction

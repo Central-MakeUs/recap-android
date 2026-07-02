@@ -31,12 +31,22 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
+data class PhotoAccessPermissionBottomSheetText(
+    val iconContentDescription: String,
+    val title: String,
+    val description: String,
+    val notice: String,
+    val primaryButton: String,
+    val laterButton: String,
+)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhotoAccessPermissionBottomSheet(
     onDismissRequest: () -> Unit,
-    onOpenSettingsClick: () -> Unit,
+    onPrimaryButtonClick: () -> Unit,
     onLaterClick: () -> Unit,
+    text: PhotoAccessPermissionBottomSheetText,
     modifier: Modifier = Modifier,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
 ) {
@@ -55,8 +65,9 @@ fun PhotoAccessPermissionBottomSheet(
         },
     ) {
         PhotoAccessPermissionBottomSheetContent(
-            onOpenSettingsClick = onOpenSettingsClick,
+            onPrimaryButtonClick = onPrimaryButtonClick,
             onLaterClick = onLaterClick,
+            text = text,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
@@ -70,8 +81,9 @@ fun PhotoAccessPermissionBottomSheet(
 
 @Composable
 fun PhotoAccessPermissionBottomSheetContent(
-    onOpenSettingsClick: () -> Unit,
+    onPrimaryButtonClick: () -> Unit,
     onLaterClick: () -> Unit,
+    text: PhotoAccessPermissionBottomSheetText,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -88,9 +100,7 @@ fun PhotoAccessPermissionBottomSheetContent(
         ) {
             Icon(
                 imageVector = Icons.Outlined.Image,
-                contentDescription = stringResource(
-                    R.string.photo_access_permission_icon_content_description
-                ),
+                contentDescription = text.iconContentDescription,
                 modifier = Modifier
                     .padding(PhotoAccessPermissionBottomSheetTokens.IconPadding)
                     .size(PhotoAccessPermissionBottomSheetTokens.IconSize),
@@ -103,20 +113,20 @@ fun PhotoAccessPermissionBottomSheetContent(
             ),
         ) {
             Text(
-                text = stringResource(R.string.photo_access_permission_title),
+                text = text.title,
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
             )
             Text(
-                text = stringResource(R.string.photo_access_permission_description),
+                text = text.description,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyLarge,
             )
         }
 
         Text(
-            text = stringResource(R.string.photo_access_permission_notice),
+            text = text.notice,
             color = MaterialTheme.colorScheme.outline,
             style = MaterialTheme.typography.labelMedium,
         )
@@ -124,15 +134,15 @@ fun PhotoAccessPermissionBottomSheetContent(
         Spacer(modifier = Modifier.height(PhotoAccessPermissionBottomSheetTokens.ActionTopSpacing))
 
         RecapButton(
-            text = stringResource(R.string.photo_access_permission_settings_button),
-            onClick = onOpenSettingsClick,
+            text = text.primaryButton,
+            onClick = onPrimaryButtonClick,
             modifier = Modifier.fillMaxWidth(),
             size = RecapButtonSize.Medium,
             shadowElevation = PhotoAccessPermissionBottomSheetTokens.PrimaryButtonElevation,
         )
 
         RecapButton(
-            text = stringResource(R.string.photo_access_permission_later_button),
+            text = text.laterButton,
             onClick = onLaterClick,
             modifier = Modifier.fillMaxWidth(),
             size = RecapButtonSize.Compact,
@@ -202,8 +212,24 @@ private fun PhotoAccessPermissionBottomSheetPreview() {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     PhotoAccessPermissionBottomSheetDragHandle()
                     PhotoAccessPermissionBottomSheetContent(
-                        onOpenSettingsClick = {},
+                        onPrimaryButtonClick = {},
                         onLaterClick = {},
+                        text = PhotoAccessPermissionBottomSheetText(
+                            iconContentDescription = stringResource(
+                                R.string.photo_access_permission_icon_content_description
+                            ),
+                            title = stringResource(R.string.photo_access_permission_title),
+                            description = stringResource(
+                                R.string.photo_access_permission_description
+                            ),
+                            notice = stringResource(R.string.photo_access_permission_notice),
+                            primaryButton = stringResource(
+                                R.string.photo_access_permission_request_permission
+                            ),
+                            laterButton = stringResource(
+                                R.string.photo_access_permission_later_button
+                            ),
+                        ),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(

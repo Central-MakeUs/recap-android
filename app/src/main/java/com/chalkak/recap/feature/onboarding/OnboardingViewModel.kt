@@ -26,6 +26,18 @@ class OnboardingViewModel @Inject constructor(
 
     fun imagePermissionRequest(): Array<String> = ocrRepository.imagePermissionRequest()
 
+    fun refreshImagePermissionAndMove(): ImageAccessLevel {
+        val accessLevel = refreshImagePermissionLevel()
+        moveTo(
+            if (accessLevel == ImageAccessLevel.Full) {
+                OnboardingStep.CleanupRange
+            } else {
+                OnboardingStep.FirstCleanup
+            }
+        )
+        return accessLevel
+    }
+
     fun onAction(action: OnboardingAction) {
         when (action) {
             OnboardingAction.Back -> moveBack()
@@ -39,19 +51,23 @@ class OnboardingViewModel @Inject constructor(
                 moveTo(OnboardingStep.FirstCleanup)
             }
 
-            OnboardingAction.SelectFirstScreenshots,
-            OnboardingAction.SkipFirstCleanup -> moveTo(OnboardingStep.CleanupRange)
+            OnboardingAction.SelectFirstScreenshots -> {
+                val accessLevel = refreshImagePermissionLevel()
+                moveTo(
+                    if (accessLevel == ImageAccessLevel.Full) {
+                        OnboardingStep.CleanupRange
+                    } else {
+                        OnboardingStep.FirstCleanup
+                    }
+                )
+            }
+            OnboardingAction.SkipFirstCleanup -> Unit
 
             OnboardingAction.GrantPermission -> Unit
-            OnboardingAction.RefreshImagePermission -> {
-                refreshImagePermissionLevel()
-                moveTo(OnboardingStep.CleanupRange)
-            }
+            OnboardingAction.OpenPhotoPermissionSettings -> Unit
+            OnboardingAction.RefreshImagePermission -> refreshImagePermissionAndMove()
 
-            OnboardingAction.SkipPermission -> {
-                refreshImagePermissionLevel()
-                moveTo(OnboardingStep.CleanupRange)
-            }
+            OnboardingAction.SkipPermission -> refreshImagePermissionAndMove()
 
             is OnboardingAction.SelectRange -> {
                 _uiState.update { current ->
@@ -74,7 +90,7 @@ class OnboardingViewModel @Inject constructor(
         }
     }
 
-    private fun refreshImagePermissionLevel() {
+    private fun refreshImagePermissionLevel(): ImageAccessLevel {
         val accessLevel = ocrRepository.currentImageAccessLevel()
         _uiState.update { current ->
             current.copy(
@@ -89,7 +105,7 @@ class OnboardingViewModel @Inject constructor(
         }
 
         if (accessLevel == ImageAccessLevel.Denied) {
-            return
+            return accessLevel
         }
 
         viewModelScope.launch {
@@ -104,6 +120,8 @@ class OnboardingViewModel @Inject constructor(
                 )
             }
         }
+
+        return accessLevel
     }
 
     private fun startOcrAndMoveToCleanup() {

@@ -29,7 +29,7 @@ sealed interface RecapRoute : NavKey {
 
     companion object {
         val topLevelRoutes: List<RecapRoute>
-            get() = listOf(Home, Collection, MyPage)
+            get() = listOf(Home, Collection)
     }
 }
 

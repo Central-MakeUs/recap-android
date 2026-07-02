@@ -27,7 +27,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
-import com.chalkak.recap.core.model.OcrImageResult
 import com.chalkak.recap.core.model.OcrJob
 import com.chalkak.recap.core.model.OcrTextBlock
 
@@ -66,10 +65,6 @@ fun HomeScreen(
             uiState.latestOcrJob?.let { job ->
                 OcrProgressCard(
                     job = job,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                OcrRawResultList(
-                    results = job.results,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
@@ -134,135 +129,3 @@ private fun OcrProgressCard(
         }
     }
 }
-
-@Composable
-private fun OcrRawResultList(
-    results: List<OcrImageResult>,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.home_ocr_raw_result_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Bold,
-        )
-        if (results.isEmpty()) {
-            Text(
-                text = stringResource(R.string.home_ocr_raw_result_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            results.forEach { result ->
-                OcrRawResultItem(
-                    result = result,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun OcrRawResultItem(
-    result: OcrImageResult,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedCard(modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = result.displayName,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-            )
-            val blankText = stringResource(R.string.home_ocr_raw_result_blank)
-            OcrRawTextSection(
-                title = stringResource(R.string.home_entity_extraction_raw_result_title),
-                blocks = listOf(result.entityAnnotationsRaw.ifBlank { EmptyEntityAnnotationsRaw }),
-                blankText = blankText,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            val rawTextBlocks = result.rawTextBlocks.ifEmpty {
-                if (result.rawText.isBlank()) {
-                    emptyList()
-                } else {
-                    listOf(OcrTextBlock(result.rawText))
-                }
-            }
-            OcrRawTextSection(
-                title = stringResource(R.string.home_ocr_text_raw_result_title),
-                blocks = rawTextBlocks.map { it.text },
-                blankText = blankText,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
-}
-
-@Composable
-private fun OcrRawTextSection(
-    title: String,
-    blocks: List<String>,
-    blankText: String,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.Bold,
-        )
-        if (blocks.isEmpty()) {
-            Text(
-                text = blankText,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            blocks.forEach { block ->
-                OcrRawTextBlock(
-                    text = block.ifBlank { blankText },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun OcrRawTextBlock(
-    text: String,
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .border(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-                shape = RoundedCornerShape(4.dp),
-            )
-            .padding(10.dp),
-    ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-private const val EmptyEntityAnnotationsRaw = "[]"

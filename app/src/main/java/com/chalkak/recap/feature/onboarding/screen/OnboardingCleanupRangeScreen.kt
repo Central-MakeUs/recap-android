@@ -96,7 +96,10 @@ fun OnboardingCleanupRangeScreen(
 private fun OnboardingCleanupRangeScreenPreview() {
     OnboardingPreviewContainer {
         OnboardingCleanupRangeScreen(
-            uiState = OnboardingUiState(selectedRange = CleanupRange.Last30Days),
+            uiState = OnboardingUiState(
+                selectedRange = CleanupRange.Last30Days,
+                imageAccessLevel = ImageAccessLevel.Full,
+            ),
             onAction = {},
         )
     }

@@ -16,8 +16,10 @@ import kotlinx.serialization.Serializable
 fun DeveloperRoute(
     onResetOnboarding: () -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: DeveloperViewModel = hiltViewModel(),
 ) {
     val backStack = rememberNavBackStack(DeveloperDestination.Options)
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     NavDisplay(
         backStack = backStack,
@@ -30,6 +32,7 @@ fun DeveloperRoute(
                     val modelDownloadState by viewModel.modelDownloadState.collectAsStateWithLifecycle()
 
                     DeveloperOptionsScreen(
+                        ocrRawResults = uiState.ocrRawResults,
                         modelDownloadState = modelDownloadState,
                         onAction = { action ->
                             when (action) {

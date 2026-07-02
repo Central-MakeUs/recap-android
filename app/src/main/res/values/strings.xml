@@ -1,8 +1,10 @@
 <resources>
     <string name="app_name">RECAP</string>
     <string name="bottom_nav_home">홈</string>
+    <string name="bottom_nav_cleanup">정리하기</string>
     <string name="bottom_nav_collection">컬렉션</string>
     <string name="bottom_nav_my_page">마이페이지</string>
+    <string name="main_top_bar_my_page_content_description">마이페이지로 이동</string>
     <string name="home_title">Home</string>
     <string name="home_description">Recent screenshot cards and cleanup status will appear here.</string>
     <string name="home_developer_options_button">개발자 옵션</string>
@@ -15,11 +17,6 @@
     <string name="review_required_screenshot_card_action_content_description">확인 필요한 스크린샷으로 이동</string>
     <string name="organized_capture_card_title">%1$d개의 캡처가 정리됐어요</string>
     <string name="organized_capture_card_description">최근 정리된 캡처에서 확인하세요</string>
-    <string name="home_ocr_raw_result_title">OCR Raw Result</string>
-    <string name="home_entity_extraction_raw_result_title">Entity Extraction Raw</string>
-    <string name="home_ocr_text_raw_result_title">OCR Text Raw</string>
-    <string name="home_ocr_raw_result_empty">분석된 텍스트가 아직 없습니다.</string>
-    <string name="home_ocr_raw_result_blank">인식된 텍스트 없음</string>
     <string name="collection_title">Collections</string>
     <string name="collection_description">Saved purpose-based card collections will be organized here.</string>
     <string name="my_page_title">My Page</string>
@@ -28,6 +25,9 @@
     <string name="developer_options_technical_demo_button">기술 데모</string>
     <string name="developer_options_component_garden_button">컴포넌트 가든</string>
     <string name="developer_options_reset_onboarding_button">온보딩 초기화</string>
+    <string name="developer_options_ocr_raw_result_title">OCR Raw Result</string>
+    <string name="developer_options_ocr_raw_result_empty">분석된 텍스트가 아직 없습니다.</string>
+    <string name="developer_options_ocr_raw_result_blank">인식된 텍스트 없음</string>
     <string name="developer_options_download_entity_model_button">Entity Extraction 모델 다운로드</string>
     <string name="developer_options_entity_model_status_checking">모델 다운로드 상태를 확인 중입니다.</string>
     <string name="developer_options_entity_model_status_not_downloaded">Entity Extraction 한국어 모델이 아직 없습니다.</string>
@@ -36,7 +36,7 @@
     <string name="developer_options_entity_model_status_failed">모델 다운로드에 실패했습니다. 네트워크 상태를 확인한 뒤 다시 시도해주세요.</string>
     <string name="component_garden_title">컴포넌트 가든</string>
     <string name="component_garden_home_cards_section_title">홈 카드</string>
-    <string name="component_garden_ui_components_section_title"> 컴포넌트</string>
+    <string name="component_garden_ui_components_section_title">컴포넌트</string>
     <string name="component_garden_bottom_sheets_section_title">바텀시트</string>
     <string name="component_garden_photo_access_permission_bottom_sheet_button">사진 접근 권한 바텀시트 보기</string>
     <string name="component_garden_image_load_failure_bottom_sheet_button">이미지 로드 실패 바텀시트 보기</string>
@@ -95,6 +95,11 @@
     <string name="onboarding_cleanup_range_recommended_badge">추천</string>
     <string name="onboarding_cleanup_range_count_loading">확인 중</string>
     <string name="onboarding_cleanup_range_permission_required">사진 접근 권한을 허용해야 스크린샷을 정리할 수 있어요.</string>
+    <string name="onboarding_full_access_permission_title">사진 및 동영상 전체 권한이 필요해요</string>
+    <string name="onboarding_full_access_permission_description">스크린샷 범위를 정확히 확인하려면 설정에서 RE-CAP의 사진 및 동영상 권한을 전체 허용으로 변경해주세요.</string>
+    <string name="onboarding_full_access_permission_notice">전체 권한은 스크린샷 검색과 정리에만 사용돼요.</string>
+    <string name="onboarding_full_access_permission_settings_button">설정으로 이동</string>
+    <string name="onboarding_full_access_permission_snackbar">사진 및 동영상 전체 권한이 필요해요.</string>
     <string name="onboarding_cleanup_range_empty">선택한 범위에 정리할 스크린샷이 없어요.</string>
     <string name="onboarding_cleanup_start_title">선택 정리 시작</string>
     <string name="onboarding_cleanup_start_description">%1$s 범위의 스크린샷을 분석하고 있어요. 홈으로 이동해도 작업은 계속 진행됩니다.</string>
@@ -128,7 +133,7 @@
     <string name="photo_access_permission_title">사진 접근 권한이 필요해요</string>
     <string name="photo_access_permission_description">정리할 스크린샷을 선택하려면\n사진 접근 권한을 허용해주세요.</string>
     <string name="photo_access_permission_notice">선택한 이미지만 정리하며, 전체 사진첩을 가져오지 않아요.</string>
-    <string name="photo_access_permission_settings_button">설정으로 이동</string>
+    <string name="photo_access_permission_request_permission">권한 허용하기</string>
     <string name="photo_access_permission_later_button">나중에 하기</string>
     <string name="image_load_failure_title">이미지를 불러오지 못했어요</string>
     <string name="image_load_failure_description">공유된 이미지가 정상적으로 전달되지\n않았어요. 다시 공유해보세요.</string>
