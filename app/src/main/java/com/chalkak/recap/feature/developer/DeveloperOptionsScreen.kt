@@ -1,6 +1,5 @@
 package com.chalkak.recap.feature.developer
 
-import android.content.res.Configuration
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,26 +11,20 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
-import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.model.OcrImageResult
-import com.chalkak.recap.core.data.entity.EntityExtractionModelDownloadState
-import com.chalkak.recap.core.design.theme.RECAPTheme
 
 @Composable
 internal fun DeveloperOptionsScreen(
-    modelDownloadState: EntityExtractionModelDownloadState,
     onAction: (DeveloperOptionAction) -> Unit,
     modifier: Modifier = Modifier,
     ocrRawResults: List<OcrImageResult> = emptyList(),
@@ -62,18 +55,6 @@ internal fun DeveloperOptionsScreen(
                     Text(stringResource(option.labelResId))
                 }
             }
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                enabled = modelDownloadState != EntityExtractionModelDownloadState.Downloading,
-                onClick = { onAction(DeveloperOptionAction.DownloadEntityExtractionModel) },
-            ) {
-                Text(stringResource(R.string.developer_options_download_entity_model_button))
-            }
-            Text(
-                text = stringResource(modelDownloadState.labelResId),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
             OcrRawResultList(
                 results = ocrRawResults,
                 modifier = Modifier.fillMaxWidth(),
@@ -165,61 +146,4 @@ internal sealed interface DeveloperOptionAction {
     data object OpenTechnicalDemo : DeveloperOptionAction
     data object OpenComponentGarden : DeveloperOptionAction
     data object ResetOnboarding : DeveloperOptionAction
-    data object DownloadEntityExtractionModel : DeveloperOptionAction
-}
-
-private val EntityExtractionModelDownloadState.labelResId: Int
-    @StringRes get() = when (this) {
-        EntityExtractionModelDownloadState.Idle -> R.string.developer_options_entity_model_status_checking
-        EntityExtractionModelDownloadState.NotDownloaded -> R.string.developer_options_entity_model_status_not_downloaded
-        EntityExtractionModelDownloadState.Downloading -> R.string.developer_options_entity_model_status_downloading
-        EntityExtractionModelDownloadState.Downloaded -> R.string.developer_options_entity_model_status_downloaded
-        EntityExtractionModelDownloadState.Failed -> R.string.developer_options_entity_model_status_failed
-    }
-
-@Preview(name = "Developer Options", showBackground = true, widthDp = 360)
-@Preview(
-    name = "Developer Options - Dark",
-    showBackground = true,
-    widthDp = 360,
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-)
-@Composable
-private fun DeveloperOptionsScreenPreview() {
-    RECAPTheme(dynamicColor = false) {
-        DeveloperOptionsScreen(
-            modelDownloadState = EntityExtractionModelDownloadState.NotDownloaded,
-            onAction = {},
-        )
-    }
-}
-
-@Preview(name = "Developer Options", showSystemUi = true)
-@Preview(name = "Developer Options - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showSystemUi = true)
-@Composable
-private fun DeveloperOptionsScreenPreview2() {
-    RECAPTheme(dynamicColor = false) {
-        DeveloperOptionsScreen(
-            onAction = {},
-            ocrRawResults = listOf(
-                OcrImageResult(
-                    imageUri = "content://screenshots/1",
-                    displayName = "Screenshot_20260701_120000.png",
-                    rawText = "예약 확인\n서울 강남구\n오후 7:30",
-                    sortIndex = 0,
-                    entityAnnotationsRaw = TODO(),
-                    rawTextBlocks = TODO(),
-                ),
-                OcrImageResult(
-                    imageUri = "content://screenshots/2",
-                    displayName = "Screenshot_20260701_121500.png",
-                    rawText = "",
-                    sortIndex = 1,
-                    entityAnnotationsRaw = TODO(),
-                    rawTextBlocks = TODO(),
-                ),
-            ),
-            modelDownloadState = EntityExtractionModelDownloadState.NotDownloaded
-        )
-    }
 }

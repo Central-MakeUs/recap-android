@@ -42,7 +42,6 @@ data class OcrImageResult(
     val imageUri: String,
     val displayName: String,
     val rawText: String,
-    val entityAnnotationsRaw: String,
     val rawTextBlocks: List<OcrTextBlock>,
     val sortIndex: Int,
 )

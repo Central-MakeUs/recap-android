@@ -28,12 +28,8 @@ fun DeveloperRoute(
         entryProvider = { route ->
             when (route) {
                 DeveloperDestination.Options -> NavEntry(route) {
-                    val viewModel: DeveloperOptionsViewModel = hiltViewModel()
-                    val modelDownloadState by viewModel.modelDownloadState.collectAsStateWithLifecycle()
-
                     DeveloperOptionsScreen(
                         ocrRawResults = uiState.ocrRawResults,
-                        modelDownloadState = modelDownloadState,
                         onAction = { action ->
                             when (action) {
                                 DeveloperOptionAction.OpenTechnicalDemo -> {
@@ -45,9 +41,6 @@ fun DeveloperRoute(
                                 }
 
                                 DeveloperOptionAction.ResetOnboarding -> onResetOnboarding()
-                                DeveloperOptionAction.DownloadEntityExtractionModel -> {
-                                    viewModel.downloadEntityExtractionModel()
-                                }
                             }
                         },
                     )
