@@ -10,13 +10,13 @@ class RecapMainViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(RecapMainUiState())
     val uiState: StateFlow<RecapMainUiState> = _uiState.asStateFlow()
 
-    fun onRouteSelected(route: RecapRoute) {
+    fun onRouteSelected(route: MainTabRoute) {
         _uiState.update { current ->
             current.copy(selectedRoute = route)
         }
     }
 
-    fun onDestinationChanged(route: RecapRoute) {
+    fun onDestinationChanged(route: MainTabRoute) {
         _uiState.update { current ->
             if (current.selectedRoute == route) {
                 current

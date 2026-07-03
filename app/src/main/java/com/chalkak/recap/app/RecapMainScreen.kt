@@ -57,15 +57,16 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 fun RecapMainScreen(
     viewModel: RecapMainViewModel = viewModel(),
     onNavigateToDeveloper: () -> Unit = {},
+    onNavigateToMyPage: () -> Unit = {},
 ) {
-    val backStack = rememberNavBackStack(RecapRoute.Home)
-    val currentRoute = backStack.lastOrNull() as? RecapRoute ?: RecapRoute.Home
+    val backStack = rememberNavBackStack(MainTabRoute.Home)
+    val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
 
     LaunchedEffect(currentRoute) {
         viewModel.onDestinationChanged(currentRoute)
     }
 
-    fun navigateTo(route: RecapRoute) {
+    fun navigateTo(route: MainTabRoute) {
         viewModel.onRouteSelected(route)
         if (backStack.lastOrNull() != route) {
             backStack.clear()
@@ -76,7 +77,7 @@ fun RecapMainScreen(
     Scaffold(
         topBar = {
             RecapMainTopBar(
-                onMyPageClick = { navigateTo(RecapRoute.MyPage) },
+                onMyPageClick = onNavigateToMyPage,
             )
         },
         bottomBar = {
@@ -87,7 +88,7 @@ fun RecapMainScreen(
             )
         },
     ) { innerPadding ->
-        RecapNavHost(
+        RecapMainTabNavHost(
             backStack = backStack,
             onNavigateToDeveloper = onNavigateToDeveloper,
             modifier = Modifier.padding(innerPadding),
@@ -145,8 +146,8 @@ private fun RecapMainTopBar(
 
 @Composable
 private fun RecapBottomBar(
-    currentRoute: RecapRoute,
-    onRouteClick: (RecapRoute) -> Unit,
+    currentRoute: MainTabRoute,
+    onRouteClick: (MainTabRoute) -> Unit,
     onCleanupClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -175,16 +176,16 @@ private fun RecapBottomBar(
                 RecapBottomBarItem(
                     labelResId = R.string.bottom_nav_home,
                     icon = Icons.Outlined.Home,
-                    selected = currentRoute == RecapRoute.Home,
-                    onClick = { onRouteClick(RecapRoute.Home) },
+                    selected = currentRoute == MainTabRoute.Home,
+                    onClick = { onRouteClick(MainTabRoute.Home) },
                     modifier = Modifier.weight(1f),
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 RecapBottomBarItem(
                     labelResId = R.string.bottom_nav_collection,
                     icon = Icons.Outlined.GridView,
-                    selected = currentRoute == RecapRoute.Collection,
-                    onClick = { onRouteClick(RecapRoute.Collection) },
+                    selected = currentRoute == MainTabRoute.Collection,
+                    onClick = { onRouteClick(MainTabRoute.Collection) },
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -311,7 +312,7 @@ private fun RecapMainTopBarPreview() {
 private fun RecapBottomBarPreview() {
     RECAPTheme {
         RecapBottomBar(
-            currentRoute = RecapRoute.Home,
+            currentRoute = MainTabRoute.Home,
             onRouteClick = {},
             onCleanupClick = {},
         )
