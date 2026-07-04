@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Image
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
@@ -22,9 +24,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
-import com.chalkak.recap.core.design.component.PhotoAccessPermissionBottomSheet
-import com.chalkak.recap.core.design.component.PhotoAccessPermissionBottomSheetText
-import com.chalkak.recap.core.design.component.RecapButton
+import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheet
+import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheetDefaults
+import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
@@ -96,52 +98,48 @@ fun OnboardingFirstCleanupScreen(
     }
 
     if (showPhotoAccessPermissionBottomSheet) {
-        val permissionBottomSheetText = if (uiState.imageAccessLevel == ImageAccessLevel.Selected) {
-            PhotoAccessPermissionBottomSheetText(
-                iconContentDescription = stringResource(
-                    R.string.photo_access_permission_icon_content_description
-                ),
-                title = stringResource(
-                    R.string.onboarding_full_access_permission_title
-                ),
-                description = stringResource(
-                    R.string.onboarding_full_access_permission_description
-                ),
-                notice = stringResource(
-                    R.string.onboarding_full_access_permission_notice
-                ),
-                primaryButton = stringResource(
-                    R.string.onboarding_full_access_permission_settings_button
-                ),
-                laterButton = stringResource(R.string.photo_access_permission_later_button),
-            )
-        } else {
-            PhotoAccessPermissionBottomSheetText(
-                iconContentDescription = stringResource(
-                    R.string.photo_access_permission_icon_content_description
-                ),
-                title = stringResource(R.string.photo_access_permission_title),
-                description = stringResource(R.string.photo_access_permission_description),
-                notice = stringResource(R.string.photo_access_permission_notice),
-                primaryButton = stringResource(R.string.photo_access_permission_request_permission),
-                laterButton = stringResource(R.string.photo_access_permission_later_button),
-            )
-        }
-        PhotoAccessPermissionBottomSheet(
+        val isSelectedPhotoAccess = uiState.imageAccessLevel == ImageAccessLevel.Selected
+
+        RecapActionBottomSheet(
+            icon = Icons.Outlined.Image,
+            iconContentDescription = stringResource(
+                R.string.photo_access_permission_icon_content_description
+            ),
+            iconStyle = RecapActionBottomSheetDefaults.primaryIconStyle(),
+            title = if (isSelectedPhotoAccess) {
+                stringResource(R.string.onboarding_full_access_permission_title)
+            } else {
+                stringResource(R.string.photo_access_permission_title)
+            },
+            description = if (isSelectedPhotoAccess) {
+                stringResource(R.string.onboarding_full_access_permission_description)
+            } else {
+                stringResource(R.string.photo_access_permission_description)
+            },
+            topNotice = if (isSelectedPhotoAccess) {
+                stringResource(R.string.onboarding_full_access_permission_notice)
+            } else {
+                stringResource(R.string.photo_access_permission_notice)
+            },
+            primaryButtonText = if (isSelectedPhotoAccess) {
+                stringResource(R.string.onboarding_full_access_permission_settings_button)
+            } else {
+                stringResource(R.string.photo_access_permission_request_permission)
+            },
+            secondaryButtonText = stringResource(R.string.photo_access_permission_later_button),
             onDismissRequest = { showPhotoAccessPermissionBottomSheet = false },
-            onPrimaryButtonClick = {
+            onPrimaryClick = {
                 showPhotoAccessPermissionBottomSheet = false
-                if (uiState.imageAccessLevel == ImageAccessLevel.Selected) {
+                if (isSelectedPhotoAccess) {
                     onAction(OnboardingAction.OpenPhotoPermissionSettings)
                 } else {
                     onAction(OnboardingAction.GrantPermission)
                 }
             },
-            onLaterClick = {
+            onSecondaryClick = {
                 showPhotoAccessPermissionBottomSheet = false
                 onAction(OnboardingAction.SkipFirstCleanup)
             },
-            text = permissionBottomSheetText,
         )
     }
 }

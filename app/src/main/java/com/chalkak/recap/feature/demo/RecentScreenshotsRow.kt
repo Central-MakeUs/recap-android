@@ -1,6 +1,5 @@
 package com.chalkak.recap.feature.demo
 
-import android.content.res.Configuration
 import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -107,7 +106,6 @@ fun RecentScreenshotsRow(
 }
 
 @Preview(name = "Recent Screenshots - Empty")
-@Preview(name = "Recent Screenshots - Empty Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun RecentScreenshotsRowEmptyPreview() {
     RECAPTheme(dynamicColor = false) {

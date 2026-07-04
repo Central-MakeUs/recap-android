@@ -1,6 +1,5 @@
 package com.chalkak.recap.feature.demo
 
-import android.content.res.Configuration
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -62,7 +61,6 @@ fun DemoScreen(
 }
 
 @Preview(name = "Demo Screen", showSystemUi = true)
-@Preview(name = "Demo Screen - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showSystemUi = true)
 @Composable
 private fun DemoScreenPreview() {
     RECAPTheme(dynamicColor = false) {

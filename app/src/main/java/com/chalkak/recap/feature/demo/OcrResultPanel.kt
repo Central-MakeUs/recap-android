@@ -1,6 +1,5 @@
 package com.chalkak.recap.feature.demo
 
-import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -143,7 +142,6 @@ private fun OcrRawTextField(
 }
 
 @Preview(name = "OCR Result")
-@Preview(name = "OCR Result - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun OcrResultPanelPreview() {
     RECAPTheme(dynamicColor = false) {

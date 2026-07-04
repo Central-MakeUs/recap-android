@@ -1,6 +1,5 @@
 package com.chalkak.recap.feature.demo
 
-import android.content.res.Configuration
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -463,7 +462,6 @@ private fun ConfidenceLevel.koreanLabel(): String {
 }
 
 @Preview(name = "Recap Analysis Panel")
-@Preview(name = "Recap Analysis Panel - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun RecapAnalysisPanelPreview() {
     RECAPTheme(dynamicColor = false) {

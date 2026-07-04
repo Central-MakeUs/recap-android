@@ -1,6 +1,5 @@
 package com.chalkak.recap.feature.demo
 
-import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -130,11 +129,6 @@ fun DemoContent(
 }
 
 @Preview(name = "Demo Content - Default", showBackground = true)
-@Preview(
-    name = "Demo Content - Dark",
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    showBackground = true
-)
 @Composable
 private fun DemoContentPreview() {
     RECAPTheme(dynamicColor = false) {

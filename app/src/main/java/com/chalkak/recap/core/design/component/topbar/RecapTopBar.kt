@@ -1,4 +1,4 @@
-package com.chalkak.recap.core.design.component
+package com.chalkak.recap.core.design.component.topbar
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable

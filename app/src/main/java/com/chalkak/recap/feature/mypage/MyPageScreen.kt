@@ -50,8 +50,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.R
-import com.chalkak.recap.core.design.component.RecapButton
-import com.chalkak.recap.core.design.component.RecapTopBar
+import com.chalkak.recap.core.design.component.button.RecapButton
+import com.chalkak.recap.core.design.component.topbar.RecapTopBar
 
 @Composable
 fun MyPageScreen(
@@ -271,7 +271,7 @@ private fun SignedOutLoginContent(
             onClick = onLoginClick,
             modifier = Modifier
                 .fillMaxWidth(),
-            shadowElevation = 8.dp,
+            shadowElevation = 12.dp,
         )
     }
 }

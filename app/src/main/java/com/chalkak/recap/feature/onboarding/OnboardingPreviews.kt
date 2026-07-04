@@ -1,6 +1,5 @@
 package com.chalkak.recap.feature.onboarding
 
-import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -13,7 +12,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
 @Preview(name = "Light", showSystemUi = true)
-@Preview(name = "Dark", uiMode = Configuration.UI_MODE_NIGHT_YES, showSystemUi = true)
 annotation class OnboardingScreenPreview
 
 @Composable

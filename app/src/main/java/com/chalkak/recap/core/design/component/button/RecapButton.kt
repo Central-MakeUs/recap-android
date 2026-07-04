@@ -1,6 +1,5 @@
-package com.chalkak.recap.core.design.component
+package com.chalkak.recap.core.design.component.button
 
-import android.content.res.Configuration
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -394,12 +393,6 @@ private fun maxOfDp(first: Dp, second: Dp, third: Dp): Dp {
 @Preview(name = "RecapButton States compact", showBackground = true, widthDp = 240)
 @Preview(name = "RecapButton States medium", showBackground = true, widthDp = 360)
 @Preview(name = "RecapButton States large", showBackground = true, widthDp = 480)
-@Preview(
-    name = "RecapButton States - Dark",
-    showBackground = true,
-    widthDp = 360,
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-)
 @Composable
 private fun RecapButtonPreview() {
     RECAPTheme(dynamicColor = false) {
@@ -472,14 +465,14 @@ private fun RecapButtonPreview() {
                 onClick = {},
                 modifier = Modifier.fillMaxWidth(),
                 size = RecapButtonSize.Medium,
-                shadowElevation = 20.dp,
+                shadowElevation = 12.dp,
             )
 //            RecapButton(
 //                text = stringResource(R.string.onboarding_cleanup_start_home_button),
 //                onClick = {},
 //                modifier = Modifier.fillMaxWidth(),
 //                size = RecapButtonSize.Medium,
-//                shadowElevation = 20.dp,
+//                shadowElevation = 12.dp,
 //                dynamicShadowColor = false,
 //            )
         }
