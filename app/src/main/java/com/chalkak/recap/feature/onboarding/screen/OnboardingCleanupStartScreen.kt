@@ -45,8 +45,7 @@ fun OnboardingCleanupStartScreen(
 
     Column(
         modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
+            .fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         StepHeader(

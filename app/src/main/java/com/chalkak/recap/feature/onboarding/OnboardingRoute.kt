@@ -50,6 +50,7 @@ fun OnboardingRoute(
     OnboardingScreen(
         uiState = uiState,
         snackbarHostState = snackbarHostState,
+        illustrationSignalFlow = viewModel.illustrationSignals,
         onAction = { action ->
             when (action) {
                 OnboardingAction.GrantPermission -> {

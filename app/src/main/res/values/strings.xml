@@ -151,10 +151,25 @@
     <string name="onboarding_first_cleanup_description">나중에 찾기 어려웠던 캡처부터 정리해보세요.</string>
     <string name="onboarding_first_cleanup_select_button">스크린샷 선택하기</string>
     <string name="onboarding_first_cleanup_later_button">나중에 하기</string>
+    <string name="onboarding_first_cleanup_upload_title">필요한 캡처만\n골라 정리하세요</string>
+    <string name="onboarding_first_cleanup_upload_description">갤러리에서 선택하거나 다른 앱에서 공유하면, Recap이 캡처 속 내용을 읽어 정리해요.</string>
+    <string name="onboarding_first_cleanup_gallery_title">갤러리에서 선택하기</string>
+    <string name="onboarding_first_cleanup_gallery_description">직접 스크린샷을 골라 정리할 수 있어요</string>
+    <string name="onboarding_first_cleanup_share_title">공유하기로 보내기</string>
+    <string name="onboarding_first_cleanup_share_description">다른 앱에서 바로 Recap으로 보낼 수 있어요</string>
+    <string name="onboarding_first_cleanup_skip_top_button">건너뛰기</string>
+    <string name="onboarding_first_cleanup_next_button">다음으로</string>
     <string name="onboarding_email_login_button">이메일로 로그인</string>
     <string name="onboarding_kakao_login_full">카카오톡 계정으로 로그인</string>
     <string name="onboarding_kakao_login_short">로그인</string>
     <string name="onboarding_apple_login_button">Apple로 시작하기</string>
+    <string name="onboarding_splash_tagline_highlight">스크린샷 </string>
+    <string name="onboarding_splash_tagline_rest"> 재정리 서비스</string>
+    <string name="onboarding_splash_logo" translatable="false">Recap</string>
+    <string name="onboarding_splash_description">방치되었던 스크린샷 속\n핵심정보를 정리해, 분류하고 요약해요!</string>
+    <string name="onboarding_simple_login_label">간편로그인</string>
+    <string name="onboarding_kakao_login_content_description">카카오 로그인</string>
+    <string name="onboarding_apple_login_content_description">Apple 로그인</string>
     <string name="onboarding_brand_mark_initial">R</string>
     <string name="onboarding_brand_mark_name">RE-CAP</string>
     <string name="onboarding_screenshot_label">스크린샷</string>

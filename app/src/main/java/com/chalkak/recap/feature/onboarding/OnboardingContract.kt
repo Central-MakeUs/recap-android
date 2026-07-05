@@ -30,7 +30,6 @@ sealed interface OnboardingAction {
     data object Back : OnboardingAction
     data object StartOnboarding : OnboardingAction
     data object ContinuePolicy : OnboardingAction
-    data object OpenLogin : OnboardingAction
     data object LoginWithKakao : OnboardingAction
     data object LoginWithApple : OnboardingAction
     data object LoginWithEmail : OnboardingAction
@@ -48,10 +47,14 @@ sealed interface OnboardingAction {
 enum class OnboardingStep {
     Landing,
     ImagePolicy,
-    Login,
+    PermissionGuide,
     FirstCleanup,
     CleanupRange,
     CleanupStart,
+}
+
+sealed interface OnboardingIllustrationSignal {
+    data object Blink : OnboardingIllustrationSignal
 }
 
 enum class CleanupRange(

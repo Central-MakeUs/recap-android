@@ -45,8 +45,7 @@ fun OnboardingImagePolicyScreen(
 ) {
     Column(
         modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
+            .fillMaxSize(),
     ) {
         Column(
             modifier = Modifier

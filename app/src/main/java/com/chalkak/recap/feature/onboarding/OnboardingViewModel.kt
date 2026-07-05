@@ -6,9 +6,12 @@ import com.chalkak.recap.core.data.ocr.OcrRepository
 import com.chalkak.recap.core.model.ImageAccessLevel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
@@ -18,6 +21,11 @@ class OnboardingViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
+    private val _illustrationSignals = MutableSharedFlow<OnboardingIllustrationSignal>(
+        extraBufferCapacity = 1,
+    )
+    val illustrationSignals: SharedFlow<OnboardingIllustrationSignal> =
+        _illustrationSignals.asSharedFlow()
 
     init {
         refreshImagePermissionLevel()
@@ -25,6 +33,10 @@ class OnboardingViewModel @Inject constructor(
     }
 
     fun imagePermissionRequest(): Array<String> = ocrRepository.imagePermissionRequest()
+
+    fun broadcastIllustrationSignal(signal: OnboardingIllustrationSignal) {
+        _illustrationSignals.tryEmit(signal)
+    }
 
     fun refreshImagePermissionAndMove(): ImageAccessLevel {
         val accessLevel = refreshImagePermissionLevel()
@@ -42,13 +54,12 @@ class OnboardingViewModel @Inject constructor(
         when (action) {
             OnboardingAction.Back -> moveBack()
             OnboardingAction.StartOnboarding -> moveTo(OnboardingStep.ImagePolicy)
-            OnboardingAction.ContinuePolicy -> moveTo(OnboardingStep.Login)
-            OnboardingAction.OpenLogin -> moveTo(OnboardingStep.Login)
+            OnboardingAction.ContinuePolicy -> moveTo(OnboardingStep.Landing)
             OnboardingAction.LoginWithKakao,
             OnboardingAction.LoginWithApple,
             OnboardingAction.LoginWithEmail -> {
                 refreshImagePermissionLevel()
-                moveTo(OnboardingStep.FirstCleanup)
+                moveTo(OnboardingStep.PermissionGuide)
             }
 
             OnboardingAction.SelectFirstScreenshots -> {
@@ -165,8 +176,8 @@ private fun OnboardingStep.previousStep(): OnboardingStep =
     when (this) {
         OnboardingStep.Landing -> OnboardingStep.Landing
         OnboardingStep.ImagePolicy -> OnboardingStep.Landing
-        OnboardingStep.Login -> OnboardingStep.ImagePolicy
-        OnboardingStep.FirstCleanup -> OnboardingStep.Login
+        OnboardingStep.PermissionGuide -> OnboardingStep.Landing
+        OnboardingStep.FirstCleanup -> OnboardingStep.PermissionGuide
         OnboardingStep.CleanupRange -> OnboardingStep.FirstCleanup
         OnboardingStep.CleanupStart -> OnboardingStep.CleanupRange
     }

@@ -12,22 +12,21 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
 
 @Composable
 internal fun OnboardingTopBar(
-    progress: String,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    skipText: String? = null,
+    onSkip: (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -51,36 +50,17 @@ internal fun OnboardingTopBar(
             )
         }
         Spacer(modifier = Modifier.weight(1f))
-        OnboardingProgressText(progress = progress)
-    }
-}
-
-@Composable
-private fun OnboardingProgressText(
-    progress: String,
-    modifier: Modifier = Modifier,
-) {
-    val progressParts = progress.split("/", limit = 2)
-    val currentStep = progressParts.first().trim()
-    val totalSteps = progressParts.getOrNull(1)?.trim()
-    val progressText = buildAnnotatedString {
-        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-            append(currentStep)
-        }
-        if (totalSteps != null) {
-            withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
-                append(" / ")
-                append(totalSteps)
+        if (skipText != null && onSkip != null) {
+            TextButton(onClick = onSkip) {
+                Text(
+                    text = skipText,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontWeight = FontWeight.Bold,
+                )
             }
         }
     }
-
-    Text(
-        text = progressText,
-        modifier = modifier,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-    )
 }
 
 @OnboardingComponentPreview
@@ -88,8 +68,9 @@ private fun OnboardingProgressText(
 private fun OnboardingTopBarPreview() {
     OnboardingComponentPreviewContainer {
         OnboardingTopBar(
-            progress = "1 / 3",
             onBack = {},
+            skipText = stringResource(R.string.onboarding_first_cleanup_skip_top_button),
+            onSkip = {},
         )
     }
 }

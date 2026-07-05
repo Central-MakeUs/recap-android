@@ -30,11 +30,9 @@ fun OnboardingPermissionGuideScreen(
 ) {
     Column(
         modifier = modifier
-            .fillMaxSize()
-            .padding(24.dp),
+            .fillMaxSize(),
     ) {
         OnboardingTopBar(
-            progress = "1 / 3",
             onBack = { onAction(OnboardingAction.Back) },
         )
         Column(
