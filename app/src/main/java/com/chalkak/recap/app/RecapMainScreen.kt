@@ -151,52 +151,65 @@ private fun RecapBottomBar(
     onCleanupClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Box(
+    Column(
         modifier = modifier
             .fillMaxWidth()
-            .height(RecapBottomBarHeight + RecapCleanupButtonProtrusion),
+            .windowInsetsPadding(WindowInsets.navigationBars),
     ) {
-        Surface(
+        Box(
             modifier = Modifier
-                .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .shadow(
-                    elevation = 8.dp,
-                    spotColor = MaterialTheme.colorScheme.outlineVariant,
+                .height(
+                    RecapBottomBarHeight +
+                        RecapCleanupButtonProtrusion +
+                        RecapBottomBarBottomPadding,
                 ),
-            color = MaterialTheme.colorScheme.surface,
         ) {
-            Row(
+            Surface(
                 modifier = Modifier
+                    .align(Alignment.BottomCenter)
                     .fillMaxWidth()
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
+                    .padding(
+                        start = RecapBottomBarHorizontalPadding,
+                        end = RecapBottomBarHorizontalPadding,
+                        bottom = RecapBottomBarBottomPadding,
+                    ),
+                shape = RoundedCornerShape(percent = 50),
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                shadowElevation = 4.dp,
             ) {
-                RecapBottomBarItem(
-                    labelResId = R.string.bottom_nav_home,
-                    icon = Icons.Outlined.Home,
-                    selected = currentRoute == MainTabRoute.Home,
-                    onClick = { onRouteClick(MainTabRoute.Home) },
-                    modifier = Modifier.weight(1f),
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                RecapBottomBarItem(
-                    labelResId = R.string.bottom_nav_collection,
-                    icon = Icons.Outlined.GridView,
-                    selected = currentRoute == MainTabRoute.Collection,
-                    onClick = { onRouteClick(MainTabRoute.Collection) },
-                    modifier = Modifier.weight(1f),
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(RecapBottomBarHeight)
+                        .padding(horizontal = 24.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RecapBottomBarItem(
+                        labelResId = R.string.bottom_nav_home,
+                        icon = Icons.Outlined.Home,
+                        selected = currentRoute == MainTabRoute.Home,
+                        onClick = { onRouteClick(MainTabRoute.Home) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    RecapBottomBarItem(
+                        labelResId = R.string.bottom_nav_collection,
+                        icon = Icons.Outlined.GridView,
+                        selected = currentRoute == MainTabRoute.Collection,
+                        onClick = { onRouteClick(MainTabRoute.Collection) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
-        }
 
-        RecapCleanupBottomBarItem(
-            onClick = onCleanupClick,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .width(96.dp),
-        )
+            RecapCleanupBottomBarItem(
+                onClick = onCleanupClick,
+                modifier = Modifier
+                    .align(Alignment.TopCenter)
+                    .width(96.dp),
+            )
+        }
     }
 }
 
@@ -298,6 +311,8 @@ private fun RecapCleanupBottomBarItem(
 
 private val RecapBottomBarHeight: Dp = 80.dp
 private val RecapCleanupButtonProtrusion: Dp = 8.dp
+private val RecapBottomBarHorizontalPadding: Dp = 16.dp
+private val RecapBottomBarBottomPadding: Dp = 16.dp
 
 @Preview(name = "Main Top Bar", showBackground = true, widthDp = 360)
 @Composable
