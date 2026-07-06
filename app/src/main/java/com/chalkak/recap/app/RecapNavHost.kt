@@ -15,7 +15,7 @@ import com.chalkak.recap.feature.collection.CollectionScreen
 import com.chalkak.recap.feature.home.HomeRoute
 import com.chalkak.recap.feature.mypage.MyPageAction
 import com.chalkak.recap.feature.mypage.MyPageDataManagementScreen
-import com.chalkak.recap.feature.mypage.MyPageNotificationSettingsScreen
+import com.chalkak.recap.feature.mypage.MyPageNotificationSettingsRoute
 import com.chalkak.recap.feature.mypage.MyPagePrivacyGuideScreen
 import com.chalkak.recap.feature.mypage.MyPageScreen
 import com.chalkak.recap.feature.mypage.MyPageServiceInfoScreen
@@ -74,8 +74,8 @@ fun RecapNavHost(
                 }
 
                 AppRoute.MyPageNotificationSettings -> NavEntry(route) {
-                    MyPageNotificationSettingsScreen(
-                        onBackClick = { backStack.removeLastOrNull() },
+                    MyPageNotificationSettingsRoute(
+                        onNavigateBack = { backStack.removeLastOrNull() },
                     )
                 }
 

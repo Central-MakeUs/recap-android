@@ -24,7 +24,10 @@ private fun MyPageSignedOutPreview() {
 @Composable
 private fun MyPageNotificationSettingsScreenPreview() {
     RECAPTheme(dynamicColor = false) {
-        MyPageNotificationSettingsScreen(onBackClick = {})
+        MyPageNotificationSettingsScreen(
+            uiState = MyPageNotificationSettingsUiState(),
+            onAction = {},
+        )
     }
 }
 

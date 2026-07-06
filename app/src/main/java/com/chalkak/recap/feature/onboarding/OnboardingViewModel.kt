@@ -1,7 +1,8 @@
 package com.chalkak.recap.feature.onboarding
 
 import androidx.lifecycle.ViewModel
-import com.chalkak.recap.core.data.ocr.OcrRepository
+import androidx.lifecycle.SavedStateHandle
+import com.chalkak.recap.core.data.ocr.ImagePermissionRepository
 import com.chalkak.recap.core.model.ImageAccessLevel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -15,9 +16,12 @@ import kotlinx.coroutines.flow.update
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
-    private val ocrRepository: OcrRepository,
+    private val savedStateHandle: SavedStateHandle,
+    private val imagePermissionRepository: ImagePermissionRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(OnboardingUiState())
+    private val _uiState = MutableStateFlow(
+        OnboardingUiState(step = savedStateHandle.restoreOnboardingStep()),
+    )
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
     private val _illustrationSignals = MutableSharedFlow<OnboardingIllustrationSignal>(
         extraBufferCapacity = 1,
@@ -29,7 +33,7 @@ class OnboardingViewModel @Inject constructor(
         refreshImagePermissionLevel()
     }
 
-    fun imagePermissionRequest(): Array<String> = ocrRepository.imagePermissionRequest()
+    fun imagePermissionRequest(): Array<String> = imagePermissionRepository.imagePermissionRequest()
 
     fun broadcastIllustrationSignal(signal: OnboardingIllustrationSignal) {
         _illustrationSignals.tryEmit(signal)
@@ -88,7 +92,7 @@ class OnboardingViewModel @Inject constructor(
     }
 
     private fun refreshImagePermissionLevel(): ImageAccessLevel {
-        val accessLevel = ocrRepository.currentImageAccessLevel()
+        val accessLevel = imagePermissionRepository.currentImageAccessLevel()
         _uiState.update { current ->
             current.copy(
                 imageAccessLevel = accessLevel,
@@ -99,15 +103,14 @@ class OnboardingViewModel @Inject constructor(
     }
 
     private fun moveTo(step: OnboardingStep) {
+        savedStateHandle[ONBOARDING_STEP_SAVED_STATE_KEY] = step.name
         _uiState.update { current ->
             current.copy(step = step, errorMessage = null)
         }
     }
 
     private fun moveBack() {
-        _uiState.update { current ->
-            current.copy(step = current.step.previousStep(), errorMessage = null)
-        }
+        moveTo(_uiState.value.step.previousStep())
     }
 }
 
@@ -118,3 +121,11 @@ private fun OnboardingStep.previousStep(): OnboardingStep =
         OnboardingStep.AddToFavorite -> OnboardingStep.PermissionGuide
         OnboardingStep.StartFirstAnalyze -> OnboardingStep.AddToFavorite
     }
+
+internal const val ONBOARDING_STEP_SAVED_STATE_KEY = "onboarding_step"
+
+private fun SavedStateHandle.restoreOnboardingStep(): OnboardingStep {
+    val savedStepName = get<String>(ONBOARDING_STEP_SAVED_STATE_KEY) ?: return OnboardingStep.Landing
+    return runCatching { OnboardingStep.valueOf(savedStepName) }
+        .getOrDefault(OnboardingStep.Landing)
+}

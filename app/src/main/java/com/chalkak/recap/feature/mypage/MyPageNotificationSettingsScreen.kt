@@ -16,10 +16,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -31,16 +27,13 @@ import com.chalkak.recap.core.design.theme.RecapGray300
 
 @Composable
 fun MyPageNotificationSettingsScreen(
-    onBackClick: () -> Unit,
+    uiState: MyPageNotificationSettingsUiState,
+    onAction: (MyPageNotificationSettingsAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var cleanupCompleteEnabled by rememberSaveable { mutableStateOf(true) }
-    var reviewRequiredEnabled by rememberSaveable { mutableStateOf(true) }
-    var marketingEnabled by rememberSaveable { mutableStateOf(false) }
-
     MyPageDetailScreenScaffold(
         titleResId = R.string.my_page_notification_settings_title,
-        onBackClick = onBackClick,
+        onBackClick = { onAction(MyPageNotificationSettingsAction.NavigateBack) },
         bottomContent = {},
         modifier = modifier,
     ) {
@@ -50,14 +43,24 @@ fun MyPageNotificationSettingsScreen(
                 MyPageNotificationItemData(
                     titleResId = R.string.my_page_notification_cleanup_complete_title,
                     descriptionResId = R.string.my_page_notification_cleanup_complete_description,
-                    checked = cleanupCompleteEnabled,
-                    onCheckedChange = { cleanupCompleteEnabled = it },
+                    checked = uiState.cleanupCompleteEnabled,
+                    onCheckedChange = {
+                        onAction(
+                            MyPageNotificationSettingsAction
+                                .CleanupCompleteEnabledChanged(it),
+                        )
+                    },
                 ),
                 MyPageNotificationItemData(
                     titleResId = R.string.my_page_notification_review_required_title,
                     descriptionResId = R.string.my_page_notification_review_required_description,
-                    checked = reviewRequiredEnabled,
-                    onCheckedChange = { reviewRequiredEnabled = it },
+                    checked = uiState.reviewRequiredEnabled,
+                    onCheckedChange = {
+                        onAction(
+                            MyPageNotificationSettingsAction
+                                .ReviewRequiredEnabledChanged(it),
+                        )
+                    },
                 ),
             ),
         )
@@ -82,8 +85,12 @@ fun MyPageNotificationSettingsScreen(
                     titleResId = R.string.my_page_notification_marketing_title,
                     descriptionResId = R.string.my_page_notification_marketing_description,
                     badgeResId = R.string.my_page_notification_badge_optional,
-                    checked = marketingEnabled,
-                    onCheckedChange = { marketingEnabled = it },
+                    checked = uiState.marketingEnabled,
+                    onCheckedChange = {
+                        onAction(
+                            MyPageNotificationSettingsAction.MarketingEnabledChanged(it),
+                        )
+                    },
                 ),
             ),
         )

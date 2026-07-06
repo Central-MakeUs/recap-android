@@ -18,3 +18,22 @@ sealed interface MyPageAction {
     data object OpenPrivacyGuide : MyPageAction
     data object OpenServiceInfo : MyPageAction
 }
+
+data class MyPageNotificationSettingsUiState(
+    val cleanupCompleteEnabled: Boolean = true,
+    val reviewRequiredEnabled: Boolean = true,
+    val marketingEnabled: Boolean = false,
+)
+
+sealed interface MyPageNotificationSettingsAction {
+    data object NavigateBack : MyPageNotificationSettingsAction
+    data class CleanupCompleteEnabledChanged(
+        val enabled: Boolean,
+    ) : MyPageNotificationSettingsAction
+    data class ReviewRequiredEnabledChanged(
+        val enabled: Boolean,
+    ) : MyPageNotificationSettingsAction
+    data class MarketingEnabledChanged(
+        val enabled: Boolean,
+    ) : MyPageNotificationSettingsAction
+}
