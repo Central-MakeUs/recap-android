@@ -23,8 +23,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.GridView
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
@@ -41,7 +39,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -187,7 +187,7 @@ private fun RecapBottomBar(
                 ) {
                     RecapBottomBarItem(
                         labelResId = R.string.bottom_nav_home,
-                        icon = Icons.Outlined.Home,
+                        icon = rememberVectorPainter(Icons.Outlined.Home),
                         selected = currentRoute == MainTabRoute.Home,
                         onClick = { onRouteClick(MainTabRoute.Home) },
                         modifier = Modifier.weight(1f),
@@ -195,7 +195,7 @@ private fun RecapBottomBar(
                     Spacer(modifier = Modifier.weight(1f))
                     RecapBottomBarItem(
                         labelResId = R.string.bottom_nav_collection,
-                        icon = Icons.Outlined.GridView,
+                        icon = painterResource(R.drawable.ic_storage_24),
                         selected = currentRoute == MainTabRoute.Collection,
                         onClick = { onRouteClick(MainTabRoute.Collection) },
                         modifier = Modifier.weight(1f),
@@ -216,7 +216,7 @@ private fun RecapBottomBar(
 @Composable
 private fun RecapBottomBarItem(
     @StringRes labelResId: Int,
-    icon: ImageVector,
+    icon: Painter,
     selected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -245,7 +245,7 @@ private fun RecapBottomBarItem(
             verticalArrangement = Arrangement.Center,
         ) {
             Icon(
-                imageVector = icon,
+                painter = icon,
                 contentDescription = null,
                 modifier = Modifier.size(28.dp),
                 tint = contentColor,
@@ -293,7 +293,7 @@ private fun RecapCleanupBottomBarItem(
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                imageVector = Icons.Outlined.Add,
+                painter = painterResource(R.drawable.ic_plus_30),
                 contentDescription = null,
                 modifier = Modifier.size(32.dp),
                 tint = Color.White,
