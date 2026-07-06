@@ -9,9 +9,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -35,13 +38,11 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.chalkak.recap.R
+import com.chalkak.recap.core.design.component.RecapLogo
+import com.chalkak.recap.core.design.component.RecapLogoAspectRatio
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingIllustrationSignal
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
@@ -58,9 +59,6 @@ private val OnboardingGray500 = Color(0xFF4D586C)
 private val OnboardingGray300 = Color(0xFF99A0B0)
 private val KakaoYellow = Color(0xFFFEE500)
 private val AppleBlack = Color(0xFF0B111D)
-private val LexendBoldFontFamily = FontFamily(
-    Font(R.font.lexend_bold, weight = FontWeight.Bold),
-)
 
 @Composable
 fun OnboardingLandingScreen(
@@ -85,43 +83,43 @@ fun OnboardingLandingScreen(
             .background(MaterialTheme.colorScheme.background),
     ) {
         val contentWidth = minOf(maxWidth, 375.dp)
-        val logoTop by animateDpAsState(
-            targetValue = if (showLogin) 97.dp else 119.dp,
+        val topSpace by animateDpAsState(
+            targetValue = if (showLogin) 80.dp else 108.dp,
             animationSpec = tween(durationMillis = 500),
-            label = "onboarding_logo_top",
+            label = "onboarding_landing_top_space",
         )
-        val illustrationTop by animateDpAsState(
-            targetValue = if (showLogin) 195.dp else 260.dp,
+        val headlineIllustrationSpace by animateDpAsState(
+            targetValue = if (showLogin) 24.dp else 55.dp,
             animationSpec = tween(durationMillis = 500),
-            label = "onboarding_illustration_top",
+            label = "onboarding_landing_headline_illustration_space",
         )
-        val descriptionTop by animateDpAsState(
-            targetValue = if (showLogin) 420.dp else 544.dp,
+        val illustrationDescriptionSpace by animateDpAsState(
+            targetValue = if (showLogin) 16.dp else 74.dp,
             animationSpec = tween(durationMillis = 500),
-            label = "onboarding_description_top",
+            label = "onboarding_landing_illustration_description_space",
         )
 
-        BrandHeadline(
+        Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
-                .offset(y = logoTop),
-        )
-        OnboardingIllustration(
-            signalFlow = illustrationSignalFlow,
-            variant = OnboardingIllustrationVariant.Landing,
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(y = illustrationTop),
-        )
-        Text(
-            text = stringResource(R.string.onboarding_splash_description),
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(y = descriptionTop),
-            style = MaterialTheme.typography.bodyLarge,
-            color = OnboardingGray500,
-            textAlign = TextAlign.Center,
-        )
+                .width(contentWidth),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Spacer(modifier = Modifier.height(topSpace))
+            BrandHeadline()
+            Spacer(modifier = Modifier.height(headlineIllustrationSpace))
+            OnboardingIllustration(
+                signalFlow = illustrationSignalFlow,
+                variant = OnboardingIllustrationVariant.Landing,
+            )
+            Spacer(modifier = Modifier.height(illustrationDescriptionSpace))
+            Text(
+                text = stringResource(R.string.onboarding_splash_description),
+                style = MaterialTheme.typography.bodyLarge,
+                color = OnboardingGray500,
+                textAlign = TextAlign.Center,
+            )
+        }
         AnimatedVisibility(
             visible = showLogin,
             modifier = Modifier
@@ -143,29 +141,27 @@ fun OnboardingLandingScreen(
 private fun BrandHeadline(
     modifier: Modifier = Modifier,
 ) {
-    Box(
+    Column(
         modifier = modifier,
-        contentAlignment = Alignment.TopCenter,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
+        RecapLogo(
+            contentDescription = stringResource(R.string.app_name),
+            modifier = Modifier
+                .width(154.dp)
+                .aspectRatio(RecapLogoAspectRatio),
+        )
         Text(
             text = buildAnnotatedString {
                 pushStyle(SpanStyle(color = OnboardingBlue))
                 append(stringResource(R.string.onboarding_splash_tagline_highlight))
                 pop()
+                append(" ")
                 append(stringResource(R.string.onboarding_splash_tagline_rest))
             },
             style = MaterialTheme.typography.headlineMedium,
             color = OnboardingGray700,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = stringResource(R.string.onboarding_splash_logo),
-            modifier = Modifier.offset(y = 31.dp),
-            color = OnboardingBlue,
-            fontSize = 49.sp,
-            lineHeight = 58.sp,
-            fontFamily = LexendBoldFontFamily,
-            fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
         )
     }
@@ -274,7 +270,6 @@ private fun OnboardingLandingScreenPreview() {
     OnboardingPreviewContainer {
         OnboardingLandingScreen(
             onAction = {},
-            showLoginImmediately = true,
         )
     }
 }

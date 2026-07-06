@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
@@ -51,6 +52,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.chalkak.recap.R
+import com.chalkak.recap.core.design.component.RecapLogo
+import com.chalkak.recap.core.design.component.RecapLogoAspectRatio
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
 @Composable
@@ -114,13 +117,17 @@ private fun RecapMainTopBar(
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = stringResource(R.string.onboarding_brand_mark_name),
+                Box(
                     modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.headlineLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.ExtraBold,
-                )
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    RecapLogo(
+                        contentDescription = stringResource(R.string.app_name),
+                        modifier = Modifier
+                            .width(72.dp)
+                            .aspectRatio(RecapLogoAspectRatio),
+                    )
+                }
                 Surface(
                     modifier = Modifier.size(48.dp),
                     shape = CircleShape,

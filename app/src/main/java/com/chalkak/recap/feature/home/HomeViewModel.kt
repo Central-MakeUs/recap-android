@@ -1,25 +1,14 @@
 package com.chalkak.recap.feature.home
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.chalkak.recap.core.data.ocr.OcrRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.asStateFlow
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(
-    ocrRepository: OcrRepository,
-) : ViewModel() {
-    val uiState: StateFlow<HomeUiState> =
-        ocrRepository.observeLatestJob()
-            .map { job -> HomeUiState(latestOcrJob = job) }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = HomeUiState(),
-            )
+class HomeViewModel @Inject constructor() : ViewModel() {
+    private val _uiState = MutableStateFlow(HomeUiState())
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 }

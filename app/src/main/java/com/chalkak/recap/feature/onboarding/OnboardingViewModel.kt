@@ -1,13 +1,11 @@
 package com.chalkak.recap.feature.onboarding
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.ocr.OcrRepository
 import com.chalkak.recap.core.model.ImageAccessLevel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -29,7 +27,6 @@ class OnboardingViewModel @Inject constructor(
 
     init {
         refreshImagePermissionLevel()
-        observeOcrJob()
     }
 
     fun imagePermissionRequest(): Array<String> = ocrRepository.imagePermissionRequest()
@@ -42,19 +39,23 @@ class OnboardingViewModel @Inject constructor(
         val accessLevel = refreshImagePermissionLevel()
         moveTo(
             if (accessLevel == ImageAccessLevel.Full) {
-                OnboardingStep.CleanupRange
+                OnboardingStep.StartFirstAnalyze
             } else {
-                OnboardingStep.FirstCleanup
+                OnboardingStep.AddToFavorite
             }
         )
+        return accessLevel
+    }
+
+    fun refreshImagePermissionAndMoveToFirstCleanup(): ImageAccessLevel {
+        val accessLevel = refreshImagePermissionLevel()
+        moveTo(OnboardingStep.AddToFavorite)
         return accessLevel
     }
 
     fun onAction(action: OnboardingAction) {
         when (action) {
             OnboardingAction.Back -> moveBack()
-            OnboardingAction.StartOnboarding -> moveTo(OnboardingStep.ImagePolicy)
-            OnboardingAction.ContinuePolicy -> moveTo(OnboardingStep.Landing)
             OnboardingAction.LoginWithKakao,
             OnboardingAction.LoginWithApple,
             OnboardingAction.LoginWithEmail -> {
@@ -66,38 +67,23 @@ class OnboardingViewModel @Inject constructor(
                 val accessLevel = refreshImagePermissionLevel()
                 moveTo(
                     if (accessLevel == ImageAccessLevel.Full) {
-                        OnboardingStep.CleanupRange
+                        OnboardingStep.StartFirstAnalyze
                     } else {
-                        OnboardingStep.FirstCleanup
+                        OnboardingStep.AddToFavorite
                     }
                 )
             }
-            OnboardingAction.SkipFirstCleanup -> Unit
+            OnboardingAction.OpenAddToFavoriteGuide -> Unit
+            OnboardingAction.SkipFirstCleanup -> moveTo(OnboardingStep.StartFirstAnalyze)
 
             OnboardingAction.GrantPermission -> Unit
             OnboardingAction.OpenPhotoPermissionSettings -> Unit
             OnboardingAction.RefreshImagePermission -> refreshImagePermissionAndMove()
 
-            OnboardingAction.SkipPermission -> refreshImagePermissionAndMove()
+            OnboardingAction.SkipPermission -> refreshImagePermissionAndMoveToFirstCleanup()
 
-            is OnboardingAction.SelectRange -> {
-                _uiState.update { current ->
-                    current.copy(selectedRange = action.range)
-                }
-            }
-
-            OnboardingAction.ConfirmRange -> startOcrAndMoveToCleanup()
-            OnboardingAction.StartCleanup -> Unit
-        }
-    }
-
-    private fun observeOcrJob() {
-        viewModelScope.launch {
-            ocrRepository.observeLatestJob().collect { job ->
-                _uiState.update { current ->
-                    current.copy(activeOcrJob = job)
-                }
-            }
+            OnboardingAction.OpenScreenshotPicker,
+            OnboardingAction.SkipStartFirstAnalyze -> Unit
         }
     }
 
@@ -106,57 +92,10 @@ class OnboardingViewModel @Inject constructor(
         _uiState.update { current ->
             current.copy(
                 imageAccessLevel = accessLevel,
-                isRangeCountLoading = accessLevel != ImageAccessLevel.Denied,
-                rangeCounts = if (accessLevel == ImageAccessLevel.Denied) {
-                    CleanupRange.entries.associateWith { 0 }
-                } else {
-                    current.rangeCounts
-                },
             )
         }
 
-        if (accessLevel == ImageAccessLevel.Denied) {
-            return accessLevel
-        }
-
-        viewModelScope.launch {
-            val counts = CleanupRange.entries.associateWith { range ->
-                ocrRepository.countScreenshots(range.ocrRange)
-            }
-            _uiState.update { current ->
-                current.copy(
-                    rangeCounts = counts,
-                    isRangeCountLoading = false,
-                    errorMessage = null,
-                )
-            }
-        }
-
         return accessLevel
-    }
-
-    private fun startOcrAndMoveToCleanup() {
-        val selectedRange = _uiState.value.selectedRange
-        if (!_uiState.value.canConfirmRange) {
-            _uiState.update { current ->
-                current.copy(errorMessage = "cleanup_range_unavailable")
-            }
-            return
-        }
-
-        _uiState.update { current -> current.copy(activeOcrJob = null) }
-        moveTo(OnboardingStep.CleanupStart)
-        viewModelScope.launch {
-            _uiState.update { current -> current.copy(isLoading = true, errorMessage = null) }
-            runCatching {
-                ocrRepository.startOcr(selectedRange.ocrRange)
-            }.onFailure {
-                _uiState.update { current ->
-                    current.copy(errorMessage = "ocr_start_failed")
-                }
-            }
-            _uiState.update { current -> current.copy(isLoading = false) }
-        }
     }
 
     private fun moveTo(step: OnboardingStep) {
@@ -175,9 +114,7 @@ class OnboardingViewModel @Inject constructor(
 private fun OnboardingStep.previousStep(): OnboardingStep =
     when (this) {
         OnboardingStep.Landing -> OnboardingStep.Landing
-        OnboardingStep.ImagePolicy -> OnboardingStep.Landing
-        OnboardingStep.PermissionGuide -> OnboardingStep.Landing
-        OnboardingStep.FirstCleanup -> OnboardingStep.PermissionGuide
-        OnboardingStep.CleanupRange -> OnboardingStep.FirstCleanup
-        OnboardingStep.CleanupStart -> OnboardingStep.CleanupRange
+        OnboardingStep.PermissionGuide -> OnboardingStep.PermissionGuide
+        OnboardingStep.AddToFavorite -> OnboardingStep.PermissionGuide
+        OnboardingStep.StartFirstAnalyze -> OnboardingStep.AddToFavorite
     }

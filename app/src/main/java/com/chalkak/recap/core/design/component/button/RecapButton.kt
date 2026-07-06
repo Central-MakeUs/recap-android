@@ -406,7 +406,7 @@ private fun RecapButtonPreview() {
                 modifier = Modifier.fillMaxWidth(),
             )
             RecapButton(
-                text = stringResource(R.string.onboarding_cleanup_start_preview_button),
+                text = stringResource(R.string.onboarding_start_first_analyze_later_button),
                 onClick = {},
                 modifier = Modifier.fillMaxWidth(),
                 enabled = false,
@@ -467,14 +467,6 @@ private fun RecapButtonPreview() {
                 size = RecapButtonSize.Medium,
                 shadowElevation = 12.dp,
             )
-//            RecapButton(
-//                text = stringResource(R.string.onboarding_cleanup_start_home_button),
-//                onClick = {},
-//                modifier = Modifier.fillMaxWidth(),
-//                size = RecapButtonSize.Medium,
-//                shadowElevation = 12.dp,
-//                dynamicShadowColor = false,
-//            )
         }
     }
 }

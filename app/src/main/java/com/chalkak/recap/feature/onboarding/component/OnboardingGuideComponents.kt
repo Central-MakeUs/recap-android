@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -14,6 +15,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,28 +24,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.R
-
-@Composable
-internal fun PermissionIconTile(
-    modifier: Modifier = Modifier,
-) {
-    Box(
-        modifier = modifier
-            .size(88.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(MaterialTheme.colorScheme.primaryContainer),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(id = R.drawable.bid_landscape_24px),
-            contentDescription = null,
-            modifier = Modifier.size(60.dp),
-            tint = MaterialTheme.colorScheme.primary,
-        )
-    }
-}
+import com.chalkak.recap.core.design.component.button.RecapButton
 
 @Composable
 internal fun GuideBullet(
@@ -84,10 +68,12 @@ internal fun StepHeader(
     description: String? = null,
     titleStyle: TextStyle = MaterialTheme.typography.displaySmall,
     descriptionStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+    contentSpacing: Dp = 12.dp,
+    descriptionFontWeight: FontWeight? = null,
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(contentSpacing),
     ) {
         Text(
             text = title,
@@ -100,16 +86,44 @@ internal fun StepHeader(
                 text = description,
                 style = descriptionStyle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = descriptionFontWeight,
             )
         }
     }
 }
 
-@OnboardingComponentPreview
 @Composable
-private fun PermissionIconTilePreview() {
-    OnboardingComponentPreviewContainer {
-        PermissionIconTile()
+internal fun OnboardingBottomActions(
+    primaryText: String,
+    secondaryText: String,
+    onPrimaryClick: () -> Unit,
+    onSecondaryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+    ) {
+        RecapButton(
+            text = primaryText,
+            onClick = onPrimaryClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            shadowElevation = 12.dp,
+        )
+        TextButton(
+            onClick = onSecondaryClick,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 11.dp),
+        ) {
+            Text(
+                text = secondaryText,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Bold,
+            )
+        }
     }
 }
 
@@ -128,6 +142,19 @@ private fun StepHeaderPreview() {
         StepHeader(
             title = stringResource(R.string.onboarding_permission_title),
             description = stringResource(R.string.onboarding_permission_description),
+        )
+    }
+}
+
+@OnboardingComponentPreview
+@Composable
+private fun OnboardingBottomActionsPreview() {
+    OnboardingComponentPreviewContainer {
+        OnboardingBottomActions(
+            primaryText = stringResource(R.string.onboarding_permission_grant_button),
+            secondaryText = stringResource(R.string.onboarding_permission_skip_button),
+            onPrimaryClick = {},
+            onSecondaryClick = {},
         )
     }
 }
