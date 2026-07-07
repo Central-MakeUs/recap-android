@@ -1,6 +1,5 @@
-package com.chalkak.recap.core.design.component
+package com.chalkak.recap.core.design.component.card
 
-import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -113,12 +112,6 @@ private object OrganizedCaptureCardTokens {
 }
 
 @Preview(name = "Organized Capture Card", showBackground = true, widthDp = 360)
-@Preview(
-    name = "Organized Capture Card - Dark",
-    showBackground = true,
-    widthDp = 360,
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-)
 @Composable
 private fun OrganizedCaptureCardPreview() {
     RECAPTheme(dynamicColor = false) {

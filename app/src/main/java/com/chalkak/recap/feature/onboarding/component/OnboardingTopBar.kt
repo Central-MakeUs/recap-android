@@ -1,95 +1,78 @@
 package com.chalkak.recap.feature.onboarding.component
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.dp
-import com.chalkak.recap.R
+import kotlin.math.abs
+
+private val OnboardingProgressInactiveSize = 8.dp
+private val OnboardingProgressActiveWidth = 17.dp
 
 @Composable
 internal fun OnboardingTopBar(
-    progress: String,
-    onBack: () -> Unit,
+    currentStepIndex: Int,
     modifier: Modifier = Modifier,
+    stepCount: Int = 3,
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Button(
-            onClick = onBack,
-            modifier = Modifier.size(48.dp),
-            shape = RoundedCornerShape(18.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.primary,
-            ),
-            contentPadding = ButtonDefaults.TextButtonContentPadding,
-        ) {
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowLeft,
-                contentDescription = stringResource(
-                    R.string.onboarding_back_button_content_description
-                ),
-            )
-        }
-        Spacer(modifier = Modifier.weight(1f))
-        OnboardingProgressText(progress = progress)
-    }
+    OnboardingTopBar(
+        progress = currentStepIndex.toFloat(),
+        modifier = modifier,
+        stepCount = stepCount,
+    )
 }
 
 @Composable
-private fun OnboardingProgressText(
-    progress: String,
+internal fun OnboardingTopBar(
+    progress: Float,
     modifier: Modifier = Modifier,
+    stepCount: Int = 3,
 ) {
-    val progressParts = progress.split("/", limit = 2)
-    val currentStep = progressParts.first().trim()
-    val totalSteps = progressParts.getOrNull(1)?.trim()
-    val progressText = buildAnnotatedString {
-        withStyle(SpanStyle(color = MaterialTheme.colorScheme.primary)) {
-            append(currentStep)
-        }
-        if (totalSteps != null) {
-            withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurfaceVariant)) {
-                append(" / ")
-                append(totalSteps)
-            }
+    val resolvedStepCount = stepCount.coerceAtLeast(1)
+    val clampedProgress = progress.coerceIn(0f, (resolvedStepCount - 1).toFloat())
+    val inactiveColor = MaterialTheme.colorScheme.surfaceVariant
+    val activeColor = MaterialTheme.colorScheme.primary
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(48.dp),
+        horizontalArrangement = Arrangement.spacedBy(5.dp, Alignment.CenterHorizontally),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        repeat(resolvedStepCount) { index ->
+            val selectedFraction = (1f - abs(clampedProgress - index)).coerceIn(0f, 1f)
+            val width = OnboardingProgressInactiveSize +
+                (OnboardingProgressActiveWidth - OnboardingProgressInactiveSize) * selectedFraction
+            val color = lerp(inactiveColor, activeColor, selectedFraction)
+
+            Box(
+                modifier = Modifier
+                    .width(width)
+                    .height(OnboardingProgressInactiveSize)
+                    .background(
+                        color = color,
+                        shape = CircleShape,
+                    ),
+            )
         }
     }
-
-    Text(
-        text = progressText,
-        modifier = modifier,
-        style = MaterialTheme.typography.titleMedium,
-        fontWeight = FontWeight.Bold,
-    )
 }
 
 @OnboardingComponentPreview
 @Composable
 private fun OnboardingTopBarPreview() {
     OnboardingComponentPreviewContainer {
-        OnboardingTopBar(
-            progress = "1 / 3",
-            onBack = {},
-        )
+        OnboardingTopBar(progress = 0.5f)
     }
 }

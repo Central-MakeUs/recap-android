@@ -1,6 +1,5 @@
 package com.chalkak.recap.feature.demo
 
-import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -115,16 +114,21 @@ fun DemoContent(
                 ocrState = uiState.ocrState,
                 modifier = Modifier.fillMaxWidth(),
             )
+            RecapAnalysisPanel(
+                selectedInputMode = uiState.selectedAnalysisInputMode,
+                selectedRequestMode = uiState.selectedAnalysisRequestMode,
+                analysisState = uiState.analysisState,
+                analysisHistory = uiState.analysisHistory,
+                canRunAnalysis = uiState.recentScreenshotUris.isNotEmpty() &&
+                        !uiState.ocrState.isRunning,
+                onAction = onAction,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
 
 @Preview(name = "Demo Content - Default", showBackground = true)
-@Preview(
-    name = "Demo Content - Dark",
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-    showBackground = true
-)
 @Composable
 private fun DemoContentPreview() {
     RECAPTheme(dynamicColor = false) {

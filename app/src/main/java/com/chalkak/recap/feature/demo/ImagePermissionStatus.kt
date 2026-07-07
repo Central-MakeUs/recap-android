@@ -1,6 +1,5 @@
 package com.chalkak.recap.feature.demo
 
-import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -56,7 +55,6 @@ fun ImagePermissionStatus(
 }
 
 @Preview(name = "Image Permission - Full")
-@Preview(name = "Image Permission - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 private fun ImagePermissionStatusPreview() {
     RECAPTheme(dynamicColor = false) {

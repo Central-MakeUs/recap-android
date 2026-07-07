@@ -1,172 +1,131 @@
 package com.chalkak.recap.feature.onboarding
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.chalkak.recap.core.data.ocr.OcrRepository
+import androidx.lifecycle.SavedStateHandle
+import com.chalkak.recap.core.data.ocr.ImagePermissionRepository
 import com.chalkak.recap.core.model.ImageAccessLevel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
-    private val ocrRepository: OcrRepository,
+    private val savedStateHandle: SavedStateHandle,
+    private val imagePermissionRepository: ImagePermissionRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(OnboardingUiState())
+    private val _uiState = MutableStateFlow(
+        OnboardingUiState(step = savedStateHandle.restoreOnboardingStep()),
+    )
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
+    private val _illustrationSignals = MutableSharedFlow<OnboardingIllustrationSignal>(
+        extraBufferCapacity = 1,
+    )
+    val illustrationSignals: SharedFlow<OnboardingIllustrationSignal> =
+        _illustrationSignals.asSharedFlow()
 
     init {
         refreshImagePermissionLevel()
-        observeOcrJob()
     }
 
-    fun imagePermissionRequest(): Array<String> = ocrRepository.imagePermissionRequest()
+    fun imagePermissionRequest(): Array<String> = imagePermissionRepository.imagePermissionRequest()
+
+    fun broadcastIllustrationSignal(signal: OnboardingIllustrationSignal) {
+        _illustrationSignals.tryEmit(signal)
+    }
 
     fun refreshImagePermissionAndMove(): ImageAccessLevel {
         val accessLevel = refreshImagePermissionLevel()
         moveTo(
             if (accessLevel == ImageAccessLevel.Full) {
-                OnboardingStep.CleanupRange
+                OnboardingStep.StartFirstAnalyze
             } else {
-                OnboardingStep.FirstCleanup
+                OnboardingStep.AddToFavorite
             }
         )
+        return accessLevel
+    }
+
+    fun refreshImagePermissionAndMoveToFirstCleanup(): ImageAccessLevel {
+        val accessLevel = refreshImagePermissionLevel()
+        moveTo(OnboardingStep.AddToFavorite)
         return accessLevel
     }
 
     fun onAction(action: OnboardingAction) {
         when (action) {
             OnboardingAction.Back -> moveBack()
-            OnboardingAction.StartOnboarding -> moveTo(OnboardingStep.ImagePolicy)
-            OnboardingAction.ContinuePolicy -> moveTo(OnboardingStep.Login)
-            OnboardingAction.OpenLogin -> moveTo(OnboardingStep.Login)
             OnboardingAction.LoginWithKakao,
             OnboardingAction.LoginWithApple,
             OnboardingAction.LoginWithEmail -> {
                 refreshImagePermissionLevel()
-                moveTo(OnboardingStep.FirstCleanup)
+                moveTo(OnboardingStep.PermissionGuide)
             }
 
             OnboardingAction.SelectFirstScreenshots -> {
                 val accessLevel = refreshImagePermissionLevel()
                 moveTo(
                     if (accessLevel == ImageAccessLevel.Full) {
-                        OnboardingStep.CleanupRange
+                        OnboardingStep.StartFirstAnalyze
                     } else {
-                        OnboardingStep.FirstCleanup
+                        OnboardingStep.AddToFavorite
                     }
                 )
             }
-            OnboardingAction.SkipFirstCleanup -> Unit
+            OnboardingAction.OpenAddToFavoriteGuide -> Unit
+            OnboardingAction.SkipFirstCleanup -> moveTo(OnboardingStep.StartFirstAnalyze)
 
             OnboardingAction.GrantPermission -> Unit
             OnboardingAction.OpenPhotoPermissionSettings -> Unit
             OnboardingAction.RefreshImagePermission -> refreshImagePermissionAndMove()
 
-            OnboardingAction.SkipPermission -> refreshImagePermissionAndMove()
+            OnboardingAction.SkipPermission -> refreshImagePermissionAndMoveToFirstCleanup()
 
-            is OnboardingAction.SelectRange -> {
-                _uiState.update { current ->
-                    current.copy(selectedRange = action.range)
-                }
-            }
-
-            OnboardingAction.ConfirmRange -> startOcrAndMoveToCleanup()
-            OnboardingAction.StartCleanup -> Unit
-        }
-    }
-
-    private fun observeOcrJob() {
-        viewModelScope.launch {
-            ocrRepository.observeLatestJob().collect { job ->
-                _uiState.update { current ->
-                    current.copy(activeOcrJob = job)
-                }
-            }
+            OnboardingAction.OpenScreenshotPicker,
+            OnboardingAction.SkipStartFirstAnalyze -> Unit
         }
     }
 
     private fun refreshImagePermissionLevel(): ImageAccessLevel {
-        val accessLevel = ocrRepository.currentImageAccessLevel()
+        val accessLevel = imagePermissionRepository.currentImageAccessLevel()
         _uiState.update { current ->
             current.copy(
                 imageAccessLevel = accessLevel,
-                isRangeCountLoading = accessLevel != ImageAccessLevel.Denied,
-                rangeCounts = if (accessLevel == ImageAccessLevel.Denied) {
-                    CleanupRange.entries.associateWith { 0 }
-                } else {
-                    current.rangeCounts
-                },
             )
-        }
-
-        if (accessLevel == ImageAccessLevel.Denied) {
-            return accessLevel
-        }
-
-        viewModelScope.launch {
-            val counts = CleanupRange.entries.associateWith { range ->
-                ocrRepository.countScreenshots(range.ocrRange)
-            }
-            _uiState.update { current ->
-                current.copy(
-                    rangeCounts = counts,
-                    isRangeCountLoading = false,
-                    errorMessage = null,
-                )
-            }
         }
 
         return accessLevel
     }
 
-    private fun startOcrAndMoveToCleanup() {
-        val selectedRange = _uiState.value.selectedRange
-        if (!_uiState.value.canConfirmRange) {
-            _uiState.update { current ->
-                current.copy(errorMessage = "cleanup_range_unavailable")
-            }
-            return
-        }
-
-        _uiState.update { current -> current.copy(activeOcrJob = null) }
-        moveTo(OnboardingStep.CleanupStart)
-        viewModelScope.launch {
-            _uiState.update { current -> current.copy(isLoading = true, errorMessage = null) }
-            runCatching {
-                ocrRepository.startOcr(selectedRange.ocrRange)
-            }.onFailure {
-                _uiState.update { current ->
-                    current.copy(errorMessage = "ocr_start_failed")
-                }
-            }
-            _uiState.update { current -> current.copy(isLoading = false) }
-        }
-    }
-
     private fun moveTo(step: OnboardingStep) {
+        savedStateHandle[ONBOARDING_STEP_SAVED_STATE_KEY] = step.name
         _uiState.update { current ->
             current.copy(step = step, errorMessage = null)
         }
     }
 
     private fun moveBack() {
-        _uiState.update { current ->
-            current.copy(step = current.step.previousStep(), errorMessage = null)
-        }
+        moveTo(_uiState.value.step.previousStep())
     }
 }
 
 private fun OnboardingStep.previousStep(): OnboardingStep =
     when (this) {
         OnboardingStep.Landing -> OnboardingStep.Landing
-        OnboardingStep.ImagePolicy -> OnboardingStep.Landing
-        OnboardingStep.Login -> OnboardingStep.ImagePolicy
-        OnboardingStep.FirstCleanup -> OnboardingStep.Login
-        OnboardingStep.CleanupRange -> OnboardingStep.FirstCleanup
-        OnboardingStep.CleanupStart -> OnboardingStep.CleanupRange
+        OnboardingStep.PermissionGuide -> OnboardingStep.PermissionGuide
+        OnboardingStep.AddToFavorite -> OnboardingStep.PermissionGuide
+        OnboardingStep.StartFirstAnalyze -> OnboardingStep.AddToFavorite
     }
+
+internal const val ONBOARDING_STEP_SAVED_STATE_KEY = "onboarding_step"
+
+private fun SavedStateHandle.restoreOnboardingStep(): OnboardingStep {
+    val savedStepName = get<String>(ONBOARDING_STEP_SAVED_STATE_KEY) ?: return OnboardingStep.Landing
+    return runCatching { OnboardingStep.valueOf(savedStepName) }
+        .getOrDefault(OnboardingStep.Landing)
+}

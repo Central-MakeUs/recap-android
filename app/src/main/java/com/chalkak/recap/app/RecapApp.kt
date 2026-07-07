@@ -59,7 +59,7 @@ fun RecapApp(
                     }
 
                     RecapRootRoute.Main -> NavEntry(route) {
-                        RecapMainScreen(
+                        RecapNavHost(
                             onNavigateToDeveloper = {
                                 rootBackStack.add(RecapRootRoute.Developer)
                             },

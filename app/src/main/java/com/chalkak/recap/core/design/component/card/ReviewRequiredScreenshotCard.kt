@@ -1,6 +1,5 @@
-package com.chalkak.recap.core.design.component
+package com.chalkak.recap.core.design.component.card
 
-import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -123,12 +122,6 @@ private object ReviewRequiredScreenshotCardTokens {
 }
 
 @Preview(name = "Review Required Screenshot Card", showBackground = true, widthDp = 360)
-@Preview(
-    name = "Review Required Screenshot Card - Dark",
-    showBackground = true,
-    widthDp = 368,
-    uiMode = Configuration.UI_MODE_NIGHT_YES,
-)
 @Composable
 private fun ReviewRequiredScreenshotCardPreview() {
     RECAPTheme(dynamicColor = false) {

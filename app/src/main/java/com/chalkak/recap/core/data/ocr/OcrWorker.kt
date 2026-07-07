@@ -9,16 +9,18 @@ import androidx.work.workDataOf
 import com.chalkak.recap.core.data.LocalScreenshotDataSource
 import com.chalkak.recap.core.model.OcrCleanupRange
 import com.chalkak.recap.core.model.OcrJobStatus
+import com.chalkak.recap.core.model.OcrTextBlock
 import com.google.android.gms.tasks.Task
 import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.text.Text
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.korean.KoreanTextRecognizerOptions
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.coroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -49,9 +51,9 @@ class OcrWorker @AssistedInject constructor(
             setProgress(workDataOf(KEY_COMPLETED to 0, KEY_TOTAL to images.size))
 
             images.forEachIndexed { index, image ->
-                coroutineContext.ensureActive()
+                currentCoroutineContext().ensureActive()
                 val inputImage = InputImage.fromFilePath(applicationContext, image.uri.toUri())
-                val rawText = recognizer.process(inputImage).await().text
+                val recognizedText = recognizer.process(inputImage).await()
                 val completedCount = index + 1
 
                 ocrDao.insertResult(
@@ -59,7 +61,8 @@ class OcrWorker @AssistedInject constructor(
                         jobId = jobId,
                         imageUri = image.uri,
                         displayName = image.displayName,
-                        rawText = rawText,
+                        rawText = recognizedText.text,
+                        rawTextBlocksJson = recognizedText.toOcrTextBlocks().toJson(),
                         sortIndex = index,
                     ),
                 )
@@ -114,6 +117,12 @@ class OcrWorker @AssistedInject constructor(
         const val KEY_RANGE = "range"
         const val KEY_COMPLETED = "completed"
         const val KEY_TOTAL = "total"
+    }
+}
+
+private fun Text.toOcrTextBlocks(): List<OcrTextBlock> {
+    return textBlocks.map { block ->
+        OcrTextBlock(text = block.text)
     }
 }
 

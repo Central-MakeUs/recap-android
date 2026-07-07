@@ -23,10 +23,11 @@ class OcrRepository @Inject constructor(
     private val screenshotDataSource: LocalScreenshotDataSource,
     private val ocrDao: OcrDao,
     private val workManager: WorkManager,
-) {
-    fun imagePermissionRequest(): Array<String> = screenshotDataSource.imagePermissionRequest()
+) : ImagePermissionRepository {
+    override fun imagePermissionRequest(): Array<String> = screenshotDataSource.imagePermissionRequest()
 
-    fun currentImageAccessLevel(): ImageAccessLevel = screenshotDataSource.currentImageAccessLevel()
+    override fun currentImageAccessLevel(): ImageAccessLevel =
+        screenshotDataSource.currentImageAccessLevel()
 
     suspend fun countScreenshots(range: OcrCleanupRange): Int {
         return screenshotDataSource.countScreenshots(range)

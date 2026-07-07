@@ -6,6 +6,8 @@ import com.chalkak.recap.core.model.OcrCleanupRange
 import com.chalkak.recap.core.model.OcrImageResult
 import com.chalkak.recap.core.model.OcrJob
 import com.chalkak.recap.core.model.OcrJobStatus
+import com.chalkak.recap.core.model.OcrTextBlock
+import org.json.JSONArray
 
 @Entity(tableName = "ocr_jobs")
 data class OcrJobEntity(
@@ -27,6 +29,7 @@ data class OcrResultEntity(
     val imageUri: String,
     val displayName: String,
     val rawText: String,
+    val rawTextBlocksJson: String = EmptyTextBlocksJson,
     val sortIndex: Int,
 )
 
@@ -50,6 +53,28 @@ fun OcrResultEntity.toDomain(): OcrImageResult {
         imageUri = imageUri,
         displayName = displayName,
         rawText = rawText,
+        rawTextBlocks = rawTextBlocksJson.toOcrTextBlocks(),
         sortIndex = sortIndex,
     )
 }
+
+fun List<OcrTextBlock>.toJson(): String {
+    val jsonArray = JSONArray()
+    forEach { block ->
+        jsonArray.put(block.text)
+    }
+    return jsonArray.toString()
+}
+
+private fun String.toOcrTextBlocks(): List<OcrTextBlock> {
+    return runCatching {
+        val jsonArray = JSONArray(this)
+        buildList {
+            repeat(jsonArray.length()) { index ->
+                add(OcrTextBlock(text = jsonArray.optString(index)))
+            }
+        }
+    }.getOrDefault(emptyList())
+}
+
+private const val EmptyTextBlocksJson = "[]"
