@@ -11,6 +11,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.feature.collection.CollectionScreen
 import com.chalkak.recap.feature.home.HomeRoute
 import com.chalkak.recap.feature.mypage.MyPageAction
@@ -44,6 +45,7 @@ fun RecapNavHost(
 
                 AppRoute.MyPage -> NavEntry(route) {
                     MyPageScreen(
+                        isDebugBuild = BuildConfig.DEBUG,
                         onAction = { action ->
                             when (action) {
                                 MyPageAction.NavigateBack -> backStack.removeLastOrNull()
