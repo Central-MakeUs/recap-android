@@ -31,3 +31,12 @@ dependencyResolutionManagement {
 
 rootProject.name = "RECAP"
 include(":app")
+include(":core:model")
+include(":core:data")
+include(":core:design")
+include(":feature:home")
+include(":feature:collection")
+include(":feature:demo")
+include(":feature:developer")
+include(":feature:mypage")
+include(":feature:onboarding")

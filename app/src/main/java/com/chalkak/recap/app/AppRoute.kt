@@ -2,7 +2,7 @@ package com.chalkak.recap.app
 
 import androidx.annotation.StringRes
 import androidx.navigation3.runtime.NavKey
-import com.chalkak.recap.R
+import com.chalkak.recap.core.design.R
 import kotlinx.serialization.Serializable
 
 @Serializable

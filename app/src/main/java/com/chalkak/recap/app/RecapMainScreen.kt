@@ -49,7 +49,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.rememberNavBackStack
-import com.chalkak.recap.R
+import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.RecapLogo
 import com.chalkak.recap.core.design.component.RecapLogoAspectRatio
 import com.chalkak.recap.core.design.theme.RECAPTheme
