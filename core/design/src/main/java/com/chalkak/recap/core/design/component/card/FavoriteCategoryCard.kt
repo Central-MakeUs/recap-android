@@ -51,7 +51,6 @@ fun FavoriteCategoryCard(
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(FavoriteCategoryCardTokens.ContainerCornerRadius),
         color = MaterialTheme.colorScheme.surface,
         contentColor = RecapGray900,
     ) {
@@ -166,7 +165,6 @@ private fun FavoriteCategoryStarButton(
 }
 
 private object FavoriteCategoryCardTokens {
-    val ContainerCornerRadius = 12.dp
     val ContainerPadding = 16.dp
     val ContentSpacing = 12.dp
     val ThumbnailSize = 72.dp

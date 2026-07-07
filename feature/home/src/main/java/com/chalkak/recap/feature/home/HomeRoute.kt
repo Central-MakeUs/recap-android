@@ -18,6 +18,14 @@ fun HomeRoute(
             when (action) {
                 HomeAction.StartImport -> Unit
                 HomeAction.EnterDeveloperOptions -> onNavigateToDeveloper()
+                // TODO: Connect home mock card actions when destinations are defined.
+                HomeAction.OpenRecentScreenshots -> Unit
+                is HomeAction.SelectRecentScreenshot -> Unit
+                HomeAction.OpenFavoriteCategories -> Unit
+                is HomeAction.SelectFavoriteCategory -> Unit
+                is HomeAction.ToggleFavoriteCategory -> Unit
+                HomeAction.OpenFrequentSaveTypes -> Unit
+                is HomeAction.SelectFrequentSaveType -> Unit
             }
         },
     )

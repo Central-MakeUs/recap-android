@@ -44,7 +44,9 @@ import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard
+import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
 import com.chalkak.recap.core.design.component.card.OrganizedCaptureCard
+import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
@@ -93,6 +95,17 @@ internal fun ComponentGardenScreen(
                 )
                 OrganizedCaptureCard(
                     organizedCaptureCount = ComponentGardenOrganizedCaptureCount,
+                    onClick = {},
+                )
+                RecentOrganizedScreenshotCard(
+                    thumbnailModel = R.drawable.mock_home_screenshot_return,
+                    title = stringResource(R.string.home_recent_screenshot_return_title),
+                    categoryLabel = stringResource(R.string.home_category_shopping_product),
+                    onClick = {},
+                )
+                FrequentSaveTypeFolderCard(
+                    categoryLabel = stringResource(R.string.home_category_shopping_product),
+                    recapCount = ComponentGardenFrequentSaveTypeCount,
                     onClick = {},
                 )
             }
@@ -373,3 +386,4 @@ private fun ComponentGardenScreenPreview() {
 
 private const val ComponentGardenReviewRequiredCount = 3
 private const val ComponentGardenOrganizedCaptureCount = 12
+private const val ComponentGardenFrequentSaveTypeCount = 12

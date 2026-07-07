@@ -43,6 +43,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.rememberNavBackStack
+import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.topbar.RecapMainTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
@@ -68,6 +69,11 @@ fun RecapMainScreen(
             RecapMainTopBar(
                 onSettingsClick = onNavigateToMyPage,
                 onSearchClick = onNavigateToSearch,
+                onLogoClick = if (BuildConfig.DEBUG && currentRoute == MainTabRoute.Home) {
+                    onNavigateToDeveloper
+                } else {
+                    null
+                },
             )
         },
         bottomBar = {
