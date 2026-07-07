@@ -34,9 +34,7 @@ google-services.json
 *.hprof
 
 # Project-local generated/context files
-/docs
 /plan
-AGENTS.md
 /.codex
 /.cursor
 /.opencode
