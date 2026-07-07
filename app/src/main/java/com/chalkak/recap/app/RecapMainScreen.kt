@@ -1,7 +1,6 @@
 package com.chalkak.recap.app
 
 import androidx.annotation.StringRes
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,24 +9,19 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -50,14 +44,14 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.component.RecapLogo
-import com.chalkak.recap.core.design.component.RecapLogoAspectRatio
+import com.chalkak.recap.core.design.component.topbar.RecapMainTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
 @Composable
 fun RecapMainScreen(
     onNavigateToDeveloper: () -> Unit = {},
     onNavigateToMyPage: () -> Unit = {},
+    onNavigateToSearch: () -> Unit = {},
 ) {
     val backStack = rememberNavBackStack(MainTabRoute.Home)
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
@@ -72,7 +66,8 @@ fun RecapMainScreen(
     Scaffold(
         topBar = {
             RecapMainTopBar(
-                onMyPageClick = onNavigateToMyPage,
+                onSettingsClick = onNavigateToMyPage,
+                onSearchClick = onNavigateToSearch,
             )
         },
         bottomBar = {
@@ -88,58 +83,6 @@ fun RecapMainScreen(
             onNavigateToDeveloper = onNavigateToDeveloper,
             modifier = Modifier.padding(innerPadding),
         )
-    }
-}
-
-@Composable
-private fun RecapMainTopBar(
-    onMyPageClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.background,
-    ) {
-        Column {
-            Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.CenterStart,
-                ) {
-                    RecapLogo(
-                        contentDescription = stringResource(R.string.app_name),
-                        modifier = Modifier
-                            .width(72.dp)
-                            .aspectRatio(RecapLogoAspectRatio),
-                    )
-                }
-                Surface(
-                    modifier = Modifier.size(48.dp),
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surface,
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                    shadowElevation = 2.dp,
-                ) {
-                    IconButton(onClick = onMyPageClick) {
-                        Icon(
-                            imageVector = Icons.Outlined.Person, // TODO: 변경
-                            contentDescription = stringResource(
-                                R.string.main_top_bar_my_page_content_description,
-                            ),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                }
-            }
-        }
     }
 }
 
@@ -312,14 +255,6 @@ private val RecapBottomBarHeight: Dp = 80.dp
 private val RecapCleanupButtonProtrusion: Dp = 8.dp
 private val RecapBottomBarHorizontalPadding: Dp = 16.dp
 private val RecapBottomBarBottomPadding: Dp = 16.dp
-
-@Preview(name = "Main Top Bar", showBackground = true, widthDp = 360)
-@Composable
-private fun RecapMainTopBarPreview() {
-    RECAPTheme {
-        RecapMainTopBar(onMyPageClick = {})
-    }
-}
 
 @Preview(name = "Main Bottom Bar", showBackground = true, widthDp = 360)
 @Composable

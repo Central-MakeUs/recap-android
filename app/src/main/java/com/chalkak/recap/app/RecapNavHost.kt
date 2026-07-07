@@ -14,6 +14,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.feature.collection.CollectionScreen
 import com.chalkak.recap.feature.home.HomeRoute
+import com.chalkak.recap.feature.home.SearchRoute
 import com.chalkak.recap.feature.mypage.MyPageAction
 import com.chalkak.recap.feature.mypage.MyPageDataManagementScreen
 import com.chalkak.recap.feature.mypage.MyPageNotificationSettingsRoute
@@ -40,6 +41,7 @@ fun RecapNavHost(
                     RecapMainScreen(
                         onNavigateToDeveloper = onNavigateToDeveloper,
                         onNavigateToMyPage = { backStack.add(AppRoute.MyPage) },
+                        onNavigateToSearch = { backStack.add(AppRoute.Search) },
                     )
                 }
 
@@ -118,6 +120,12 @@ fun RecapNavHost(
                         onTermsClick = {},
                         onPrivacyPolicyClick = {},
                         onOpenSourceLicenseClick = {},
+                    )
+                }
+
+                AppRoute.Search -> NavEntry(route) {
+                    SearchRoute(
+                        onNavigateBack = { backStack.removeLastOrNull() },
                     )
                 }
 

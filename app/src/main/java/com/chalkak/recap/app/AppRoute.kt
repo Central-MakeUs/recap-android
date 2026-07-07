@@ -38,6 +38,9 @@ sealed interface AppRoute : NavKey {
 
     @Serializable
     data object MyPageServiceInfo : AppRoute
+
+    @Serializable
+    data object Search : AppRoute
 }
 
 sealed interface MainTabRoute : NavKey {

@@ -43,8 +43,10 @@ import com.chalkak.recap.core.design.component.bottomsheet.WithdrawalConfirmatio
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
+import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard
 import com.chalkak.recap.core.design.component.card.OrganizedCaptureCard
 import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
+import com.chalkak.recap.core.design.component.search.RecapSearchBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -61,6 +63,8 @@ internal fun ComponentGardenScreen(
     var showLogoutConfirmationBottomSheet by remember { mutableStateOf(false) }
     var showWithdrawalConfirmationBottomSheet by remember { mutableStateOf(false) }
     var withdrawalConfirmationChecked by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var isFavoriteCategoryCardFavorited by remember { mutableStateOf(false) }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -95,6 +99,25 @@ internal fun ComponentGardenScreen(
             ComponentGardenSection(
                 title = stringResource(R.string.component_garden_ui_components_section_title)
             ) {
+                RecapSearchBar(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                )
+                FavoriteCategoryCard(
+                    thumbnailModel = R.drawable.bid_landscape_24px,
+                    categoryLabel = stringResource(
+                        R.string.component_garden_favorite_category_card_category_label
+                    ),
+                    title = stringResource(R.string.component_garden_favorite_category_card_title),
+                    description = stringResource(
+                        R.string.component_garden_favorite_category_card_description
+                    ),
+                    isFavorite = isFavoriteCategoryCardFavorited,
+                    onClick = {},
+                    onFavoriteClick = {
+                        isFavoriteCategoryCardFavorited = !isFavoriteCategoryCardFavorited
+                    },
+                )
                 RecapButton(
                     text = stringResource(R.string.photo_access_permission_request_permission),
                     onClick = {},
