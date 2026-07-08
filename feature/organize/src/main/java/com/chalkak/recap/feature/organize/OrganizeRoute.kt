@@ -8,7 +8,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -17,19 +16,18 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.chalkak.recap.core.design.R
-import kotlinx.coroutines.launch
+import com.chalkak.recap.core.model.LocalImage
 import kotlinx.serialization.Serializable
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun OrganizeRoute(
     onNavigateBack: () -> Unit,
-    onOrganizeComplete: () -> Unit,
+    onOrganizeComplete: (List<LocalImage>) -> Unit,
     viewModel: OrganizeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val coroutineScope = rememberCoroutineScope()
     val organizeBackStack = rememberNavBackStack(OrganizeDestination.Selection)
     val currentDestination = organizeBackStack.lastOrNull() as? OrganizeDestination
         ?: OrganizeDestination.Selection
@@ -37,8 +35,6 @@ fun OrganizeRoute(
         R.string.organize_max_selection_message,
         MAX_SELECTION_COUNT,
     )
-    val startPlaceholderMessage = stringResource(R.string.organize_start_placeholder_message)
-
     LaunchedEffect(uiState.showMaxSelectionReached) {
         if (uiState.showMaxSelectionReached) {
             snackbarHostState.showSnackbar(maxSelectionMessage)
@@ -87,10 +83,10 @@ fun OrganizeRoute(
                             onAddMoreClick = { organizeBackStack.removeLastOrNull() },
                             onStartOrganizingClick = {
                                 if (uiState.canProceed) {
-                                    coroutineScope.launch {
-                                        snackbarHostState.showSnackbar(startPlaceholderMessage)
-                                        onOrganizeComplete()
-                                    }
+                                    val selectedScreenshots = uiState.availableScreenshots
+                                        .filter { screenshot -> screenshot.uri in uiState.selectedUris }
+                                        .sortedBy { screenshot -> uiState.selectedUris.indexOf(screenshot.uri) }
+                                    onOrganizeComplete(selectedScreenshots)
                                 }
                             },
                         )

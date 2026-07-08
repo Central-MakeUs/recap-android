@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,6 +42,7 @@ import com.chalkak.recap.core.design.theme.RecapGray900
 fun HomeScreen(
     modifier: Modifier = Modifier,
     uiState: HomeUiState = HomeUiState(),
+    analysisProgress: HomeAnalysisProgressUiModel = HomeAnalysisProgressUiModel(),
     onAction: (HomeAction) -> Unit = {},
 ) {
     Surface(
@@ -57,6 +59,22 @@ fun HomeScreen(
                 ),
             verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.SectionSpacing),
         ) {
+            if (analysisProgress.isRunning) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.AnalysisProgressSpacing),
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_analysis_progress_label),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = RecapGray900,
+                    )
+                    LinearProgressIndicator(
+                        progress = { analysisProgress.progress },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
             RecentOrganizedScreenshotsSection(
                 screenshots = uiState.recentScreenshots,
                 onMoreClick = { onAction(HomeAction.OpenRecentScreenshots) },
@@ -240,6 +258,7 @@ private object HomeScreenTokens {
     val RecentCardSpacing = 12.dp
     val FrequentTypeCardSpacing = 16.dp
     val FavoriteDividerThickness = 1.dp
+    val AnalysisProgressSpacing = 8.dp
 }
 
 @Preview(name = "Home Screen", showBackground = true, widthDp = 360, heightDp = 720)
@@ -247,5 +266,18 @@ private object HomeScreenTokens {
 private fun HomeScreenPreview() {
     RECAPTheme(dynamicColor = false) {
         HomeScreen()
+    }
+}
+
+@Preview(name = "Home Screen - Analysis Progress", showBackground = true, widthDp = 360, heightDp = 720)
+@Composable
+private fun HomeScreenAnalysisProgressPreview() {
+    RECAPTheme(dynamicColor = false) {
+        HomeScreen(
+            analysisProgress = HomeAnalysisProgressUiModel(
+                isRunning = true,
+                progress = 0.4f,
+            ),
+        )
     }
 }

@@ -4,6 +4,11 @@ import androidx.annotation.StringRes
 import androidx.annotation.DrawableRes
 import com.chalkak.recap.core.design.R
 
+data class HomeAnalysisProgressUiModel(
+    val isRunning: Boolean = false,
+    val progress: Float = 0f,
+)
+
 data class HomeUiState(
     val recentScreenshots: List<HomeRecentScreenshotUiModel> = HomeMockRecentScreenshots,
     val favoriteCategories: List<HomeFavoriteCategoryUiModel> = HomeMockFavoriteCategories,

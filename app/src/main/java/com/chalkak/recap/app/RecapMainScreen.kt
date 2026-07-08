@@ -3,12 +3,16 @@ package com.chalkak.recap.app
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBar
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDestination
 import com.chalkak.recap.core.design.component.topbar.RecapMainTopBar
+import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun RecapMainScreen(
@@ -16,6 +20,8 @@ fun RecapMainScreen(
     onNavigateToMyPage: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
     onNavigateToOrganize: () -> Unit = {},
+    homeNavigationRequestId: Int = 0,
+    analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
 ) {
     val backStack = rememberNavBackStack(MainTabRoute.Home)
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
@@ -24,6 +30,12 @@ fun RecapMainScreen(
         if (backStack.lastOrNull() != route) {
             backStack.clear()
             backStack.add(route)
+        }
+    }
+
+    LaunchedEffect(homeNavigationRequestId) {
+        if (homeNavigationRequestId > 0) {
+            navigateTo(MainTabRoute.Home)
         }
     }
 
@@ -52,6 +64,7 @@ fun RecapMainScreen(
         RecapMainTabNavHost(
             backStack = backStack,
             onNavigateToDeveloper = onNavigateToDeveloper,
+            analysisProgressFlow = analysisProgressFlow,
             modifier = Modifier.padding(innerPadding),
         )
     }

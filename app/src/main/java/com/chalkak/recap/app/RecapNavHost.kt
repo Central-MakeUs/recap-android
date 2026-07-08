@@ -4,8 +4,13 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -14,6 +19,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.feature.collection.CollectionScreen
 import com.chalkak.recap.feature.organize.OrganizeRoute
+import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
 import com.chalkak.recap.feature.home.SearchRoute
 import com.chalkak.recap.feature.mypage.MyPageAction
@@ -23,6 +29,9 @@ import com.chalkak.recap.feature.mypage.MyPagePrivacyGuideScreen
 import com.chalkak.recap.feature.mypage.MyPageScreen
 import com.chalkak.recap.feature.mypage.MyPageServiceInfoScreen
 import com.chalkak.recap.feature.mypage.MyPageUploadGuideScreen
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 
 @Composable
 fun RecapNavHost(
@@ -31,6 +40,16 @@ fun RecapNavHost(
 ) {
     val context = LocalContext.current
     val backStack = rememberNavBackStack(AppRoute.MainTabs)
+    val analysisProgressViewModel: ScreenshotAnalysisProgressViewModel = hiltViewModel()
+    var homeNavigationRequestId by remember { mutableIntStateOf(0) }
+    val analysisProgressFlow = remember(analysisProgressViewModel) {
+        analysisProgressViewModel.uiState.map { state ->
+            HomeAnalysisProgressUiModel(
+                isRunning = state.isRunning,
+                progress = state.progress,
+            )
+        }
+    }
 
     NavDisplay(
         backStack = backStack,
@@ -44,6 +63,8 @@ fun RecapNavHost(
                         onNavigateToMyPage = { backStack.add(AppRoute.MyPage) },
                         onNavigateToSearch = { backStack.add(AppRoute.Search) },
                         onNavigateToOrganize = { backStack.add(AppRoute.Organize) },
+                        homeNavigationRequestId = homeNavigationRequestId,
+                        analysisProgressFlow = analysisProgressFlow,
                     )
                 }
 
@@ -134,7 +155,11 @@ fun RecapNavHost(
                 AppRoute.Organize -> NavEntry(route) {
                     OrganizeRoute(
                         onNavigateBack = { backStack.removeLastOrNull() },
-                        onOrganizeComplete = { backStack.removeLastOrNull() },
+                        onOrganizeComplete = { selectedScreenshots ->
+                            analysisProgressViewModel.startMockAnalysis(selectedScreenshots)
+                            backStack.removeLastOrNull()
+                            homeNavigationRequestId += 1
+                        },
                     )
                 }
 
@@ -148,6 +173,7 @@ fun RecapNavHost(
 fun RecapMainTabNavHost(
     backStack: NavBackStack<NavKey>,
     onNavigateToDeveloper: () -> Unit,
+    analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
     modifier: Modifier = Modifier,
 ) {
     NavDisplay(
@@ -157,7 +183,10 @@ fun RecapMainTabNavHost(
         entryProvider = { route ->
             when (route) {
                 MainTabRoute.Home -> NavEntry(route) {
-                    HomeRoute(onNavigateToDeveloper = onNavigateToDeveloper)
+                    HomeRoute(
+                        onNavigateToDeveloper = onNavigateToDeveloper,
+                        analysisProgressFlow = analysisProgressFlow,
+                    )
                 }
 
                 MainTabRoute.Collection -> NavEntry(route) {

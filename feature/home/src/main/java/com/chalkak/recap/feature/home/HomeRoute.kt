@@ -4,16 +4,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 @Composable
 fun HomeRoute(
     onNavigateToDeveloper: () -> Unit,
+    analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
     viewModel: HomeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val analysisProgress by analysisProgressFlow.collectAsStateWithLifecycle(
+        initialValue = HomeAnalysisProgressUiModel(),
+    )
 
     HomeScreen(
         uiState = uiState,
+        analysisProgress = analysisProgress,
         onAction = { action ->
             when (action) {
                 HomeAction.StartImport -> Unit
