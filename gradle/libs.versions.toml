@@ -24,6 +24,7 @@ coil = "3.5.0"
 mlkitTextRecognition = "16.0.1"
 mockk = "1.14.11"
 room = "2.8.4"
+robolectric = "4.14.1"
 turbine = "1.2.1"
 work = "2.11.2"
 androidxHilt = "1.4.0"
@@ -78,6 +79,7 @@ junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform
 junit-vintage-engine = { group = "org.junit.vintage", name = "junit-vintage-engine" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
 
 [plugins]

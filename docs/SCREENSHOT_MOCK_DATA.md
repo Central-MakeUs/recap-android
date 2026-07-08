@@ -38,7 +38,8 @@ mock repository는 이미지 바이트, 픽셀, URI 내용을 읽지 않는다.
       "is_sensitive": true
     }
   ],
-  "confidence": "HIGH"
+  "confidence": "HIGH",
+  "is_favorite": false
 }
 ```
 
@@ -54,6 +55,7 @@ mock repository는 이미지 바이트, 픽셀, URI 내용을 읽지 않는다.
 | `key_fields[].display_priority` | `ScreenshotKeyField.displayPriority` |
 | `key_fields[].is_sensitive` | `ScreenshotKeyField.isSensitive` |
 | `confidence` | `ScreenshotAnalysisResult.confidence` |
+| `is_favorite` | `ScreenshotAnalysisResult.isFavorite` |
 
 `secondary_content_types`는 현재 mock 계약에 포함하지 않는다.
 
@@ -88,6 +90,9 @@ mock repository는 이미지 바이트, 픽셀, URI 내용을 읽지 않는다.
    - `[0.0, 0.6)` → `HIGH` (60%)
    - `[0.6, 0.85)` → `MEDIUM` (25%)
    - `[0.85, 1.0]` → `LOW` (15%)
+7. `is_favorite`
+   - 기본값: `false`
+   - 테스트용 randomizer나 명시적 생성 경로가 다른 값을 주입하지 않는 한 `false`
 
 배치 분석 시 입력 순서를 그대로 유지한다.
 
@@ -133,14 +138,26 @@ core/data/src/main/java/com/chalkak/recap/core/data/screenshot/
 ├── ScreenshotAnalysisInput.kt
 ├── ScreenshotAnalysisModule.kt
 ├── ScreenshotAnalysisRepository.kt
-└── ScreenshotMockRandomizer.kt
+├── ScreenshotMockRandomizer.kt
+├── image/
+│   └── ScreenshotImageStorage.kt
+└── persistence/
+    ├── ScreenshotCardDao.kt
+    ├── ScreenshotCardEntities.kt
+    ├── ScreenshotCardMappers.kt
+    ├── ScreenshotCardModule.kt
+    └── ScreenshotCardRepository.kt
 ```
 
 ### 테스트
 
 ```text
 core/data/src/test/java/com/chalkak/recap/core/data/screenshot/
-└── MockScreenshotAnalysisRepositoryTest.kt
+├── MockScreenshotAnalysisRepositoryTest.kt
+├── image/
+│   └── ScreenshotImageStorageTest.kt
+└── persistence/
+    └── ScreenshotCardDaoTest.kt
 ```
 
 ## 테스트 가능한 랜덤성
@@ -153,10 +170,18 @@ core/data/src/test/java/com/chalkak/recap/core/data/screenshot/
 
 단위 테스트는 경계값만 검증하며, 반복 샘플링으로 확률 분포를 검증하지 않는다.
 
+## 저장 계약 (이번 작업 범위)
+
+- Room `screenshot_cards` / `screenshot_key_fields` 테이블에 분석 카드와 key field를 저장한다.
+- `is_favorite`는 카드 테이블 컬럼으로 저장되며, 분석 결과와 독립적으로 갱신할 수 있다.
+- 이미지 바이트는 Room BLOB으로 저장하지 않는다. `ScreenshotImageStorage`가 `files/recap/images/`, `files/recap/thumbnails/` 경로를 관리하고, Room에는 URI/경로 문자열만 둔다.
+- `user_preferences` PreferenceDataStore는 Hilt로 단일 인스턴스를 주입한다.
+
 ## 범위 밖
 
 - 실제 OCR
 - Firebase AI 호출
 - 이미지 디코딩
-- Room/DataStore 저장
-- UI 표시
+- Home/Collection UI를 Room 데이터로 교체
+- 실제 OCR/Firebase AI 결과 저장 연결
+- 썸네일 생성 파이프라인

@@ -7,4 +7,5 @@ data class ScreenshotAnalysisResult(
     val contentTypes: ScreenshotContentTypes,
     val keyFields: List<ScreenshotKeyField>,
     val confidence: ScreenshotAnalysisConfidence,
+    val isFavorite: Boolean,
 )

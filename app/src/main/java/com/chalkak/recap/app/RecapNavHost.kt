@@ -171,10 +171,10 @@ fun RecapNavHost(
 
 @Composable
 fun RecapMainTabNavHost(
+    modifier: Modifier = Modifier,
     backStack: NavBackStack<NavKey>,
     onNavigateToDeveloper: () -> Unit,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
-    modifier: Modifier = Modifier,
 ) {
     NavDisplay(
         backStack = backStack,

@@ -149,4 +149,5 @@ com.chalkak.recap
 - `docs/PROJECT.md`: 프로젝트 사실과 컨벤션
 - `docs/BACKLOG.md`: 두 에이전트가 공유해야 하는 후속 항목
 - `docs/TESTING.md`: 테스트/검증 정책
+- `docs/LOCAL_DATA.md`: 로컬 데이터 구현체와 저장 정책
 - `docs/handoff/HANDOFF.md`: Codex가 작성하고 Cursor가 구현할 작업 스펙

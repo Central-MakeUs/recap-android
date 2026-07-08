@@ -134,6 +134,17 @@ class MockScreenshotAnalysisRepositoryTest {
     }
 
     @Test
+    fun `analyze defaults isFavorite to false`() {
+        val repository = repository(
+            unitDoubles = listOf(0.0, 0.0, 0.0, 0.0),
+        )
+
+        val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
+
+        assertFalse(result.isFavorite)
+    }
+
+    @Test
     fun `analyze batch preserves input order`() {
         val repository = repository(
             imageIds = listOf("first-id", "second-id"),

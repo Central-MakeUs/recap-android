@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ScreenshotAnalysisProgressViewModelTest {
@@ -71,12 +72,12 @@ class ScreenshotAnalysisProgressViewModelTest {
         viewModel.startMockAnalysis(sampleImages(count = 2))
         runCurrent()
 
-        advanceTimeBy(500)
+        advanceTimeBy(500.milliseconds)
         runCurrent()
         assertEquals(1, viewModel.uiState.value.completedCount)
         assertEquals(0.5f, viewModel.uiState.value.progress)
 
-        advanceTimeBy(500)
+        advanceTimeBy(500.milliseconds)
         runCurrent()
         assertEquals(2, viewModel.uiState.value.completedCount)
         assertEquals(1f, viewModel.uiState.value.progress)
@@ -94,9 +95,9 @@ class ScreenshotAnalysisProgressViewModelTest {
 
         viewModel.startMockAnalysis(images)
         runCurrent()
-        advanceTimeBy(500)
+        advanceTimeBy(500.milliseconds)
         runCurrent()
-        advanceTimeBy(500)
+        advanceTimeBy(500.milliseconds)
         runCurrent()
 
         verify(exactly = 1) { repository.analyze(ScreenshotAnalysisInput(fileName = "first.png")) }
@@ -109,7 +110,7 @@ class ScreenshotAnalysisProgressViewModelTest {
 
         viewModel.startMockAnalysis(sampleImages(count = 3))
         runCurrent()
-        advanceTimeBy(500)
+        advanceTimeBy(500.milliseconds)
         runCurrent()
         assertEquals(1, viewModel.uiState.value.completedCount)
 
@@ -119,7 +120,7 @@ class ScreenshotAnalysisProgressViewModelTest {
         assertEquals(0, viewModel.uiState.value.completedCount)
         assertEquals(0f, viewModel.uiState.value.progress)
 
-        advanceTimeBy(500)
+        advanceTimeBy(500.milliseconds)
         runCurrent()
         assertEquals(1, viewModel.uiState.value.completedCount)
         assertEquals(1f, viewModel.uiState.value.progress)

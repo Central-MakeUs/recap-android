@@ -30,6 +30,7 @@ class MockScreenshotAnalysisRepository @Inject constructor(
             ),
             keyFields = buildKeyFields(),
             confidence = resolveConfidence(randomizer.unitDouble()),
+            isFavorite = false,
         )
     }
 
