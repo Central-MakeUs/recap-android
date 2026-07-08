@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.cleanup
+package com.chalkak.recap.feature.organize
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,21 +12,21 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class CleanupViewModel @Inject constructor(
+class OrganizeViewModel @Inject constructor(
     private val localScreenshotDataSource: LocalScreenshotDataSource,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(CleanupUiState())
-    val uiState: StateFlow<CleanupUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(OrganizeUiState())
+    val uiState: StateFlow<OrganizeUiState> = _uiState.asStateFlow()
 
     init {
         loadScreenshots()
     }
 
-    fun onAction(action: CleanupAction) {
+    fun onAction(action: OrganizeAction) {
         when (action) {
-            is CleanupAction.ToggleSelection -> toggleSelection(action.uri)
-            is CleanupAction.RemoveSelection -> removeSelection(action.uri)
-            CleanupAction.DismissMaxSelectionMessage -> {
+            is OrganizeAction.ToggleSelection -> toggleSelection(action.uri)
+            is OrganizeAction.RemoveSelection -> removeSelection(action.uri)
+            OrganizeAction.DismissMaxSelectionMessage -> {
                 _uiState.update { it.copy(showMaxSelectionReached = false) }
             }
         }

@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.cleanup
+package com.chalkak.recap.feature.organize
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -50,8 +50,8 @@ import com.chalkak.recap.core.model.LocalImage
 
 @Composable
 fun ScreenshotSelectionScreen(
-    uiState: CleanupUiState,
-    onAction: (CleanupAction) -> Unit,
+    uiState: OrganizeUiState,
+    onAction: (OrganizeAction) -> Unit,
     onCancelClick: () -> Unit,
     onNextClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -82,7 +82,7 @@ fun ScreenshotSelectionScreen(
 
                     uiState.availableScreenshots.isEmpty() -> {
                         Text(
-                            text = stringResource(R.string.cleanup_selection_empty),
+                            text = stringResource(R.string.organize_selection_empty),
                             style = MaterialTheme.typography.bodyMedium,
                             color = RecapGray300,
                             textAlign = TextAlign.Center,
@@ -115,7 +115,7 @@ fun ScreenshotSelectionScreen(
                                     screenshot = screenshot,
                                     selectionOrder = uiState.selectionOrder(screenshot.uri),
                                     onClick = {
-                                        onAction(CleanupAction.ToggleSelection(screenshot.uri))
+                                        onAction(OrganizeAction.ToggleSelection(screenshot.uri))
                                     },
                                 )
                             }
@@ -125,7 +125,7 @@ fun ScreenshotSelectionScreen(
             }
             RecapButton(
                 text = stringResource(
-                    R.string.cleanup_selection_complete_with_count,
+                    R.string.organize_selection_complete_with_count,
                     uiState.selectionCount,
                 ),
                 onClick = onNextClick,
@@ -163,12 +163,12 @@ private fun ScreenshotSelectionTopBar(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             ScreenshotSelectionTopBarTextButton(
-                text = stringResource(R.string.cleanup_cancel),
+                text = stringResource(R.string.organize_cancel),
                 color = RecapGray900,
                 onClick = onCancelClick,
             )
             Text(
-                text = stringResource(R.string.cleanup_screenshot_selection_title),
+                text = stringResource(R.string.organize_screenshot_selection_title),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = RecapGray900,
@@ -176,7 +176,7 @@ private fun ScreenshotSelectionTopBar(
                 modifier = Modifier.weight(1f),
             )
             ScreenshotSelectionTopBarTextButton(
-                text = stringResource(R.string.cleanup_next_with_count, selectionCount),
+                text = stringResource(R.string.organize_next_with_count, selectionCount),
                 color = if (canProceed) {
                     MaterialTheme.colorScheme.primary
                 } else {
@@ -239,7 +239,7 @@ private fun ScreenshotSelectionGridItem(
         AsyncImage(
             model = screenshot.uri.toUri(),
             contentDescription = stringResource(
-                R.string.cleanup_screenshot_item_content_description,
+                R.string.organize_screenshot_item_content_description,
                 selectionOrder ?: 0,
             ),
             contentScale = ContentScale.Crop,
@@ -288,13 +288,13 @@ private object ScreenshotSelectionTokens {
 private fun ScreenshotSelectionScreenPreview() {
     RECAPTheme(dynamicColor = false) {
         ScreenshotSelectionScreen(
-            uiState = CleanupUiState(
+            uiState = OrganizeUiState(
                 isLoading = false,
-                availableScreenshots = CleanupPreviewScreenshots,
+                availableScreenshots = OrganizePreviewScreenshots,
                 selectedUris = listOf(
-                    CleanupPreviewScreenshots[0].uri,
-                    CleanupPreviewScreenshots[1].uri,
-                    CleanupPreviewScreenshots[2].uri,
+                    OrganizePreviewScreenshots[0].uri,
+                    OrganizePreviewScreenshots[1].uri,
+                    OrganizePreviewScreenshots[2].uri,
                 ),
             ),
             onAction = {},
@@ -309,7 +309,7 @@ private fun ScreenshotSelectionScreenPreview() {
 private fun ScreenshotSelectionScreenEmptyPreview() {
     RECAPTheme(dynamicColor = false) {
         ScreenshotSelectionScreen(
-            uiState = CleanupUiState(isLoading = false),
+            uiState = OrganizeUiState(isLoading = false),
             onAction = {},
             onCancelClick = {},
             onNextClick = {},
@@ -317,7 +317,7 @@ private fun ScreenshotSelectionScreenEmptyPreview() {
     }
 }
 
-internal val CleanupPreviewScreenshots = listOf(
+internal val OrganizePreviewScreenshots = listOf(
     LocalImage(
         uri = "content://com.chalkak.recap.preview/screenshot/1",
         displayName = "screenshot-1",

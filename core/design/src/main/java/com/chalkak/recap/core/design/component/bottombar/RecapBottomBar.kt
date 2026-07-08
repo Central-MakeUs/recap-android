@@ -43,8 +43,8 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
 enum class RecapBottomBarDestination(
-    @StringRes val labelResId: Int,
-    @DrawableRes val iconResId: Int,
+    @get:StringRes val labelResId: Int,
+    @get:DrawableRes val iconResId: Int,
 ) {
     Home(
         labelResId = R.string.bottom_nav_home,
@@ -60,7 +60,7 @@ enum class RecapBottomBarDestination(
 fun RecapBottomBar(
     currentDestination: RecapBottomBarDestination,
     onDestinationClick: (RecapBottomBarDestination) -> Unit,
-    onCleanupClick: () -> Unit,
+    onOrganizeClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -73,7 +73,7 @@ fun RecapBottomBar(
                 .fillMaxWidth()
                 .height(
                     RecapBottomBarHeight +
-                        RecapCleanupButtonProtrusion +
+                        RecapOrganizeButtonProtrusion +
                         RecapBottomBarBottomPadding,
                 ),
         ) {
@@ -115,8 +115,8 @@ fun RecapBottomBar(
                 }
             }
 
-            RecapCleanupBottomBarItem(
-                onClick = onCleanupClick,
+            RecapOrganizeBottomBarItem(
+                onClick = onOrganizeClick,
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .width(96.dp),
@@ -174,7 +174,7 @@ private fun RecapBottomBarItem(
 }
 
 @Composable
-private fun RecapCleanupBottomBarItem(
+private fun RecapOrganizeBottomBarItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -213,7 +213,7 @@ private fun RecapCleanupBottomBarItem(
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text(
-            text = stringResource(R.string.bottom_nav_cleanup),
+            text = stringResource(R.string.bottom_nav_organize),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
             fontWeight = FontWeight.Bold,
@@ -222,7 +222,7 @@ private fun RecapCleanupBottomBarItem(
 }
 
 private val RecapBottomBarHeight: Dp = 80.dp
-private val RecapCleanupButtonProtrusion: Dp = 8.dp
+private val RecapOrganizeButtonProtrusion: Dp = 8.dp
 private val RecapBottomBarHorizontalPadding: Dp = 16.dp
 private val RecapBottomBarBottomPadding: Dp = 16.dp
 
@@ -233,7 +233,7 @@ private fun RecapBottomBarPreview() {
         RecapBottomBar(
             currentDestination = RecapBottomBarDestination.Home,
             onDestinationClick = {},
-            onCleanupClick = {},
+            onOrganizeClick = {},
         )
     }
 }

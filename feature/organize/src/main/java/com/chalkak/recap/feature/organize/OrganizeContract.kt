@@ -1,8 +1,8 @@
-package com.chalkak.recap.feature.cleanup
+package com.chalkak.recap.feature.organize
 
 import com.chalkak.recap.core.model.LocalImage
 
-data class CleanupUiState(
+data class OrganizeUiState(
     val isLoading: Boolean = true,
     val availableScreenshots: List<LocalImage> = emptyList(),
     val selectedUris: List<String> = emptyList(),
@@ -20,10 +20,10 @@ data class CleanupUiState(
     }
 }
 
-sealed interface CleanupAction {
-    data class ToggleSelection(val uri: String) : CleanupAction
-    data class RemoveSelection(val uri: String) : CleanupAction
-    data object DismissMaxSelectionMessage : CleanupAction
+sealed interface OrganizeAction {
+    data class ToggleSelection(val uri: String) : OrganizeAction
+    data class RemoveSelection(val uri: String) : OrganizeAction
+    data object DismissMaxSelectionMessage : OrganizeAction
 }
 
 internal const val MIN_SELECTION_COUNT = 1

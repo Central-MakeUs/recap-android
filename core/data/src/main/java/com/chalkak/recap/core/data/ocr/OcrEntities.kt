@@ -2,7 +2,7 @@ package com.chalkak.recap.core.data.ocr
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.chalkak.recap.core.model.OcrCleanupRange
+import com.chalkak.recap.core.model.OcrOrganizeRange
 import com.chalkak.recap.core.model.OcrImageResult
 import com.chalkak.recap.core.model.OcrJob
 import com.chalkak.recap.core.model.OcrJobStatus
@@ -37,7 +37,7 @@ fun OcrJobEntity.toDomain(results: List<OcrResultEntity>): OcrJob {
     return OcrJob(
         jobId = jobId,
         workId = workId,
-        range = OcrCleanupRange.valueOf(range),
+        range = OcrOrganizeRange.valueOf(range),
         status = OcrJobStatus.valueOf(status),
         completedCount = completedCount,
         totalCount = totalCount,

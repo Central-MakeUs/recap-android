@@ -45,7 +45,7 @@ hilt {
     enableAggregatingTask = true
 }
 
-tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
@@ -59,7 +59,7 @@ dependencies {
     implementation(project(":feature:developer"))
     implementation(project(":feature:mypage"))
     implementation(project(":feature:onboarding"))
-    implementation(project(":feature:cleanup"))
+    implementation(project(":feature:organize"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

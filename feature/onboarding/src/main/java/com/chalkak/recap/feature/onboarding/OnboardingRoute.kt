@@ -41,7 +41,7 @@ fun OnboardingRoute(
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
     ) {
-        val accessLevel = viewModel.refreshImagePermissionAndMoveToFirstCleanup()
+        val accessLevel = viewModel.refreshImagePermissionAndMoveToFirstOrganize()
         if (accessLevel != ImageAccessLevel.Full) {
             coroutineScope.launch {
                 snackbarHostState.showSnackbar(permissionRequiredMessage)
@@ -51,7 +51,7 @@ fun OnboardingRoute(
     val appSettingsLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.StartActivityForResult(),
     ) {
-        viewModel.refreshImagePermissionAndMoveToFirstCleanup()
+        viewModel.refreshImagePermissionAndMoveToFirstOrganize()
     }
     val screenshotPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickMultipleVisualMedia(),
@@ -110,7 +110,7 @@ fun OnboardingRoute(
                                     )
                                 }
 
-                                OnboardingAction.SkipFirstCleanup -> {
+                                OnboardingAction.SkipFirstOrganize -> {
                                     viewModel.onAction(action)
                                 }
 

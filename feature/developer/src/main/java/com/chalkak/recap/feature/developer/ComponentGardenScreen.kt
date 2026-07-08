@@ -34,7 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.component.bottomsheet.CleanupNotificationPermissionBottomSheet
+import com.chalkak.recap.core.design.component.bottomsheet.OrganizeNotificationPermissionBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.LogoutConfirmationBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheetDefaults
@@ -58,7 +58,7 @@ internal fun ComponentGardenScreen(
 ) {
     var showPhotoAccessPermissionBottomSheet by remember { mutableStateOf(false) }
     var showImageLoadFailureBottomSheet by remember { mutableStateOf(false) }
-    var showCleanupNotificationPermissionBottomSheet by remember { mutableStateOf(false) }
+    var showOrganizeNotificationPermissionBottomSheet by remember { mutableStateOf(false) }
     var showNotificationDisabledBottomSheet by remember { mutableStateOf(false) }
     var showDeletionConfirmationActionBottomSheet by remember { mutableStateOf(false) }
     var showUnsavedChangesBottomSheet by remember { mutableStateOf(false) }
@@ -164,11 +164,11 @@ internal fun ComponentGardenScreen(
                 }
                 Button(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = { showCleanupNotificationPermissionBottomSheet = true },
+                    onClick = { showOrganizeNotificationPermissionBottomSheet = true },
                 ) {
                     Text(
                         text = stringResource(
-                            R.string.component_garden_cleanup_notification_permission_bottom_sheet_button
+                            R.string.component_garden_organize_notification_permission_bottom_sheet_button
                         ),
                     )
                 }
@@ -267,11 +267,11 @@ internal fun ComponentGardenScreen(
             },
         )
     }
-    if (showCleanupNotificationPermissionBottomSheet) {
-        CleanupNotificationPermissionBottomSheet(
-            onDismissRequest = { showCleanupNotificationPermissionBottomSheet = false },
-            onAllowNotificationClick = { showCleanupNotificationPermissionBottomSheet = false },
-            onLaterClick = { showCleanupNotificationPermissionBottomSheet = false },
+    if (showOrganizeNotificationPermissionBottomSheet) {
+        OrganizeNotificationPermissionBottomSheet(
+            onDismissRequest = { showOrganizeNotificationPermissionBottomSheet = false },
+            onAllowNotificationClick = { showOrganizeNotificationPermissionBottomSheet = false },
+            onLaterClick = { showOrganizeNotificationPermissionBottomSheet = false },
         )
     }
     if (showNotificationDisabledBottomSheet) {

@@ -7,7 +7,7 @@ import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 import androidx.work.workDataOf
 import com.chalkak.recap.core.data.LocalScreenshotDataSource
-import com.chalkak.recap.core.model.OcrCleanupRange
+import com.chalkak.recap.core.model.OcrOrganizeRange
 import com.chalkak.recap.core.model.OcrJobStatus
 import com.chalkak.recap.core.model.OcrTextBlock
 import com.google.android.gms.tasks.Task
@@ -34,7 +34,7 @@ class OcrWorker @AssistedInject constructor(
     override suspend fun doWork(): Result {
         val jobId = inputData.getString(KEY_JOB_ID) ?: return Result.failure()
         val range = inputData.getString(KEY_RANGE)
-            ?.let { runCatching { OcrCleanupRange.valueOf(it) }.getOrNull() }
+            ?.let { runCatching { OcrOrganizeRange.valueOf(it) }.getOrNull() }
             ?: return Result.failure()
 
         val recognizer = TextRecognition.getClient(KoreanTextRecognizerOptions.Builder().build())

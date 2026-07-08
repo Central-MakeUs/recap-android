@@ -1,5 +1,6 @@
-package com.chalkak.recap.feature.cleanup
+package com.chalkak.recap.feature.organize
 
+import android.annotation.SuppressLint
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -19,34 +20,35 @@ import com.chalkak.recap.core.design.R
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
-fun CleanupRoute(
+fun OrganizeRoute(
     onNavigateBack: () -> Unit,
-    onCleanupComplete: () -> Unit,
-    viewModel: CleanupViewModel = hiltViewModel(),
+    onOrganizeComplete: () -> Unit,
+    viewModel: OrganizeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
-    val cleanupBackStack = rememberNavBackStack(CleanupDestination.Selection)
-    val currentDestination = cleanupBackStack.lastOrNull() as? CleanupDestination
-        ?: CleanupDestination.Selection
+    val organizeBackStack = rememberNavBackStack(OrganizeDestination.Selection)
+    val currentDestination = organizeBackStack.lastOrNull() as? OrganizeDestination
+        ?: OrganizeDestination.Selection
     val maxSelectionMessage = stringResource(
-        R.string.cleanup_max_selection_message,
+        R.string.organize_max_selection_message,
         MAX_SELECTION_COUNT,
     )
-    val startPlaceholderMessage = stringResource(R.string.cleanup_start_placeholder_message)
+    val startPlaceholderMessage = stringResource(R.string.organize_start_placeholder_message)
 
     LaunchedEffect(uiState.showMaxSelectionReached) {
         if (uiState.showMaxSelectionReached) {
             snackbarHostState.showSnackbar(maxSelectionMessage)
-            viewModel.onAction(CleanupAction.DismissMaxSelectionMessage)
+            viewModel.onAction(OrganizeAction.DismissMaxSelectionMessage)
         }
     }
 
     LaunchedEffect(uiState.selectedUris, currentDestination) {
-        if (currentDestination == CleanupDestination.Confirmation && uiState.selectedUris.isEmpty()) {
-            cleanupBackStack.removeLastOrNull()
+        if (currentDestination == OrganizeDestination.Confirmation && uiState.selectedUris.isEmpty()) {
+            organizeBackStack.removeLastOrNull()
         }
     }
 
@@ -54,47 +56,47 @@ fun CleanupRoute(
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
     ) { _ ->
         NavDisplay(
-            backStack = cleanupBackStack,
+            backStack = organizeBackStack,
             onBack = {
-                if (cleanupBackStack.size > 1) {
-                    cleanupBackStack.removeLastOrNull()
+                if (organizeBackStack.size > 1) {
+                    organizeBackStack.removeLastOrNull()
                 } else {
                     onNavigateBack()
                 }
             },
             entryProvider = { destination ->
                 when (destination) {
-                    CleanupDestination.Selection -> NavEntry(destination) {
+                    OrganizeDestination.Selection -> NavEntry(destination) {
                         ScreenshotSelectionScreen(
                             uiState = uiState,
                             onAction = viewModel::onAction,
                             onCancelClick = onNavigateBack,
                             onNextClick = {
                                 if (uiState.canProceed) {
-                                    cleanupBackStack.add(CleanupDestination.Confirmation)
+                                    organizeBackStack.add(OrganizeDestination.Confirmation)
                                 }
                             },
                         )
                     }
 
-                    CleanupDestination.Confirmation -> NavEntry(destination) {
+                    OrganizeDestination.Confirmation -> NavEntry(destination) {
                         ScreenshotConfirmationScreen(
                             uiState = uiState,
                             onAction = viewModel::onAction,
-                            onBackClick = { cleanupBackStack.removeLastOrNull() },
-                            onAddMoreClick = { cleanupBackStack.removeLastOrNull() },
+                            onBackClick = { organizeBackStack.removeLastOrNull() },
+                            onAddMoreClick = { organizeBackStack.removeLastOrNull() },
                             onStartOrganizingClick = {
                                 if (uiState.canProceed) {
                                     coroutineScope.launch {
                                         snackbarHostState.showSnackbar(startPlaceholderMessage)
-                                        onCleanupComplete()
+                                        onOrganizeComplete()
                                     }
                                 }
                             },
                         )
                     }
 
-                    else -> error("Unknown cleanup destination: $destination")
+                    else -> error("Unknown organize destination: $destination")
                 }
             },
         )
@@ -102,10 +104,10 @@ fun CleanupRoute(
 }
 
 @Serializable
-private sealed interface CleanupDestination : NavKey {
+private sealed interface OrganizeDestination : NavKey {
     @Serializable
-    data object Selection : CleanupDestination
+    data object Selection : OrganizeDestination
 
     @Serializable
-    data object Confirmation : CleanupDestination
+    data object Confirmation : OrganizeDestination
 }

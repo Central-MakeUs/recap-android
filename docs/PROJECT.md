@@ -49,13 +49,23 @@ $env:GRADLE_USER_HOME="$env:USERPROFILE\.gradle"; .\gradlew.bat assembleDebug
 
 ## 모듈 맵
 
-현재는 단일 Android application 모듈이다.
+현재는 Android application 모듈과 core/feature library 모듈로 구성된 멀티모듈 구조다.
 
 ```text
 :app
+:core:data
+:core:design
+:core:model
+:feature:collection
+:feature:demo
+:feature:developer
+:feature:home
+:feature:mypage
+:feature:onboarding
+:feature:organize
 ```
 
-현재 package map:
+현재 주요 package / feature map:
 
 ```text
 com.chalkak.recap
@@ -70,14 +80,15 @@ com.chalkak.recap
     ├── developer          # 개발자 옵션 / component garden
     ├── home               # 홈
     ├── mypage             # 마이페이지 및 하위 설정 화면
+    ├── organize           # 정리/분류 관련 화면
     └── onboarding         # 온보딩 플로우
 ```
 
 ## 목표 아키텍처
 
-추후 멀티모듈 MVVM + UDF/MVI 스타일로 전환할 예정이다.
+현재 멀티모듈 MVVM + UDF/MVI 스타일을 목표 구조로 유지한다.
 
-목표 방향:
+모듈 방향:
 
 - `:app`은 app shell, navigation composition, DI entry point 중심으로 유지한다.
 - `:core:*`는 design, model, data, common util 등 재사용 계층으로 분리한다.
@@ -86,8 +97,6 @@ com.chalkak.recap
 - UI 이벤트는 Action/Event로 명시한다.
 - ViewModel은 state 생산과 action 처리에 집중한다.
 - Repository는 데이터 소스와 외부 연동 세부사항을 감춘다.
-
-아직 멀티모듈은 구현하지 않았다. 새 작업에서 모듈 분리가 필요하면 `docs/handoff/HANDOFF.md`에 별도 스펙으로 먼저 정의한다.
 
 ## 현재 앱 흐름
 

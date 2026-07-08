@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.cleanup
+package com.chalkak.recap.feature.organize
 
 import com.chalkak.recap.core.data.LocalScreenshotDataSource
 import com.chalkak.recap.core.model.LocalImage
@@ -19,7 +19,7 @@ import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class CleanupViewModelTest {
+class OrganizeViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val screenshots = List(22) { index ->
         LocalImage(
@@ -43,12 +43,12 @@ class CleanupViewModelTest {
     fun loadScreenshots_populatesAvailableScreenshots() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(3)
-        val viewModel = CleanupViewModel(dataSource)
+        val viewModel = OrganizeViewModel(dataSource)
 
         advanceUntilIdle()
 
         assertEquals(
-            CleanupUiState(
+            OrganizeUiState(
                 isLoading = false,
                 availableScreenshots = screenshots.take(3),
             ),
@@ -60,12 +60,12 @@ class CleanupViewModelTest {
     fun toggleSelection_addsAndRemovesInSelectionOrder() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(3)
-        val viewModel = CleanupViewModel(dataSource)
+        val viewModel = OrganizeViewModel(dataSource)
         advanceUntilIdle()
 
-        viewModel.onAction(CleanupAction.ToggleSelection(screenshots[0].uri))
-        viewModel.onAction(CleanupAction.ToggleSelection(screenshots[1].uri))
-        viewModel.onAction(CleanupAction.ToggleSelection(screenshots[2].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[1].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[2].uri))
 
         assertEquals(
             listOf(
@@ -79,7 +79,7 @@ class CleanupViewModelTest {
         assertEquals(2, viewModel.uiState.value.selectionOrder(screenshots[1].uri))
         assertEquals(3, viewModel.uiState.value.selectionOrder(screenshots[2].uri))
 
-        viewModel.onAction(CleanupAction.ToggleSelection(screenshots[1].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[1].uri))
 
         assertEquals(
             listOf(
@@ -96,13 +96,13 @@ class CleanupViewModelTest {
     fun toggleSelection_enforcesMaxSelectionCount() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         coEvery { dataSource.queryAllScreenshots() } returns screenshots
-        val viewModel = CleanupViewModel(dataSource)
+        val viewModel = OrganizeViewModel(dataSource)
         advanceUntilIdle()
 
         screenshots.take(MAX_SELECTION_COUNT).forEach { screenshot ->
-            viewModel.onAction(CleanupAction.ToggleSelection(screenshot.uri))
+            viewModel.onAction(OrganizeAction.ToggleSelection(screenshot.uri))
         }
-        viewModel.onAction(CleanupAction.ToggleSelection(screenshots[MAX_SELECTION_COUNT].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[MAX_SELECTION_COUNT].uri))
 
         assertEquals(MAX_SELECTION_COUNT, viewModel.uiState.value.selectionCount)
         assertTrue(viewModel.uiState.value.showMaxSelectionReached)
@@ -112,13 +112,13 @@ class CleanupViewModelTest {
     fun removeSelection_reordersRemainingSelections() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(3)
-        val viewModel = CleanupViewModel(dataSource)
+        val viewModel = OrganizeViewModel(dataSource)
         advanceUntilIdle()
 
-        viewModel.onAction(CleanupAction.ToggleSelection(screenshots[0].uri))
-        viewModel.onAction(CleanupAction.ToggleSelection(screenshots[1].uri))
-        viewModel.onAction(CleanupAction.ToggleSelection(screenshots[2].uri))
-        viewModel.onAction(CleanupAction.RemoveSelection(screenshots[1].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[1].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[2].uri))
+        viewModel.onAction(OrganizeAction.RemoveSelection(screenshots[1].uri))
 
         assertEquals(
             listOf(
@@ -135,12 +135,12 @@ class CleanupViewModelTest {
     fun canProceed_requiresAtLeastOneSelection() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(1)
-        val viewModel = CleanupViewModel(dataSource)
+        val viewModel = OrganizeViewModel(dataSource)
         advanceUntilIdle()
 
         assertFalse(viewModel.uiState.value.canProceed)
 
-        viewModel.onAction(CleanupAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
 
         assertTrue(viewModel.uiState.value.canProceed)
     }

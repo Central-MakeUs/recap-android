@@ -13,7 +13,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.feature.collection.CollectionScreen
-import com.chalkak.recap.feature.cleanup.CleanupRoute
+import com.chalkak.recap.feature.organize.OrganizeRoute
 import com.chalkak.recap.feature.home.HomeRoute
 import com.chalkak.recap.feature.home.SearchRoute
 import com.chalkak.recap.feature.mypage.MyPageAction
@@ -43,7 +43,7 @@ fun RecapNavHost(
                         onNavigateToDeveloper = onNavigateToDeveloper,
                         onNavigateToMyPage = { backStack.add(AppRoute.MyPage) },
                         onNavigateToSearch = { backStack.add(AppRoute.Search) },
-                        onNavigateToCleanup = { backStack.add(AppRoute.Cleanup) },
+                        onNavigateToOrganize = { backStack.add(AppRoute.Organize) },
                     )
                 }
 
@@ -131,10 +131,10 @@ fun RecapNavHost(
                     )
                 }
 
-                AppRoute.Cleanup -> NavEntry(route) {
-                    CleanupRoute(
+                AppRoute.Organize -> NavEntry(route) {
+                    OrganizeRoute(
                         onNavigateBack = { backStack.removeLastOrNull() },
-                        onCleanupComplete = { backStack.removeLastOrNull() },
+                        onOrganizeComplete = { backStack.removeLastOrNull() },
                     )
                 }
 

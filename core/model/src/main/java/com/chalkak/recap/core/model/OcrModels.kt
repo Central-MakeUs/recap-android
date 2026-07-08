@@ -3,7 +3,7 @@ package com.chalkak.recap.core.model
 data class OcrJob(
     val jobId: String,
     val workId: String,
-    val range: OcrCleanupRange,
+    val range: OcrOrganizeRange,
     val status: OcrJobStatus,
     val completedCount: Int,
     val totalCount: Int,
@@ -22,7 +22,7 @@ data class OcrJob(
         get() = status == OcrJobStatus.Completed
 }
 
-enum class OcrCleanupRange(
+enum class OcrOrganizeRange(
     val days: Long,
 ) {
     Last7Days(days = 7),

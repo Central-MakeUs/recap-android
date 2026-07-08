@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.chalkak.recap.feature.cleanup"
+    namespace = "com.chalkak.recap.feature.organize"
     compileSdk {
         version = release(37)
     }

@@ -43,7 +43,7 @@ sealed interface AppRoute : NavKey {
     data object Search : AppRoute
 
     @Serializable
-    data object Cleanup : AppRoute
+    data object Organize : AppRoute
 }
 
 sealed interface MainTabRoute : NavKey {

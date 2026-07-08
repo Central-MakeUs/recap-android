@@ -37,7 +37,7 @@ import com.chalkak.recap.core.design.theme.RecapSheetHandle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CleanupNotificationPermissionBottomSheet(
+fun OrganizeNotificationPermissionBottomSheet(
     onDismissRequest: () -> Unit,
     onAllowNotificationClick: () -> Unit,
     onLaterClick: () -> Unit,
@@ -49,32 +49,32 @@ fun CleanupNotificationPermissionBottomSheet(
         modifier = modifier,
         sheetState = sheetState,
         shape = RoundedCornerShape(
-            topStart = CleanupNotificationPermissionBottomSheetTokens.ContainerCornerRadius,
-            topEnd = CleanupNotificationPermissionBottomSheetTokens.ContainerCornerRadius,
+            topStart = OrganizeNotificationPermissionBottomSheetTokens.ContainerCornerRadius,
+            topEnd = OrganizeNotificationPermissionBottomSheetTokens.ContainerCornerRadius,
         ),
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
         dragHandle = {
-            CleanupNotificationPermissionBottomSheetDragHandle()
+            OrganizeNotificationPermissionBottomSheetDragHandle()
         },
     ) {
-        CleanupNotificationPermissionBottomSheetContent(
+        OrganizeNotificationPermissionBottomSheetContent(
             onAllowNotificationClick = onAllowNotificationClick,
             onLaterClick = onLaterClick,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    start = CleanupNotificationPermissionBottomSheetTokens.HorizontalPadding,
-                    top = CleanupNotificationPermissionBottomSheetTokens.ContentTopPadding,
-                    end = CleanupNotificationPermissionBottomSheetTokens.HorizontalPadding,
-                    bottom = CleanupNotificationPermissionBottomSheetTokens.BottomPadding,
+                    start = OrganizeNotificationPermissionBottomSheetTokens.HorizontalPadding,
+                    top = OrganizeNotificationPermissionBottomSheetTokens.ContentTopPadding,
+                    end = OrganizeNotificationPermissionBottomSheetTokens.HorizontalPadding,
+                    bottom = OrganizeNotificationPermissionBottomSheetTokens.BottomPadding,
                 ),
         )
     }
 }
 
 @Composable
-fun CleanupNotificationPermissionBottomSheetContent(
+fun OrganizeNotificationPermissionBottomSheetContent(
     onAllowNotificationClick: () -> Unit,
     onLaterClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -83,41 +83,41 @@ fun CleanupNotificationPermissionBottomSheetContent(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(
-            CleanupNotificationPermissionBottomSheetTokens.SectionSpacing
+            OrganizeNotificationPermissionBottomSheetTokens.SectionSpacing
         ),
     ) {
         Surface(
-            modifier = Modifier.size(CleanupNotificationPermissionBottomSheetTokens.IconContainerSize),
-            shape = RoundedCornerShape(CleanupNotificationPermissionBottomSheetTokens.IconContainerRadius),
+            modifier = Modifier.size(OrganizeNotificationPermissionBottomSheetTokens.IconContainerSize),
+            shape = RoundedCornerShape(OrganizeNotificationPermissionBottomSheetTokens.IconContainerRadius),
             color = MaterialTheme.colorScheme.primaryContainer,
             contentColor = MaterialTheme.colorScheme.primary,
         ) {
             Icon(
                 imageVector = Icons.Outlined.Notifications,
                 contentDescription = stringResource(
-                    R.string.cleanup_notification_permission_icon_content_description
+                    R.string.organize_notification_permission_icon_content_description
                 ),
                 modifier = Modifier
-                    .padding(CleanupNotificationPermissionBottomSheetTokens.IconPadding)
-                    .size(CleanupNotificationPermissionBottomSheetTokens.IconSize),
+                    .padding(OrganizeNotificationPermissionBottomSheetTokens.IconPadding)
+                    .size(OrganizeNotificationPermissionBottomSheetTokens.IconSize),
             )
         }
 
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(
-                CleanupNotificationPermissionBottomSheetTokens.TextSpacing
+                OrganizeNotificationPermissionBottomSheetTokens.TextSpacing
             ),
         ) {
             Text(
-                text = stringResource(R.string.cleanup_notification_permission_title),
+                text = stringResource(R.string.organize_notification_permission_title),
                 color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center,
             )
             Text(
-                text = stringResource(R.string.cleanup_notification_permission_description),
+                text = stringResource(R.string.organize_notification_permission_description),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 style = MaterialTheme.typography.bodyMedium,
                 textAlign = TextAlign.Center,
@@ -126,20 +126,20 @@ fun CleanupNotificationPermissionBottomSheetContent(
 
         Spacer(
             modifier = Modifier.height(
-                CleanupNotificationPermissionBottomSheetTokens.ActionTopSpacing
+                OrganizeNotificationPermissionBottomSheetTokens.ActionTopSpacing
             )
         )
 
         RecapButton(
-            text = stringResource(R.string.cleanup_notification_permission_allow_button),
+            text = stringResource(R.string.organize_notification_permission_allow_button),
             onClick = onAllowNotificationClick,
             modifier = Modifier.fillMaxWidth(),
             size = RecapButtonSize.Medium,
-            shadowElevation = CleanupNotificationPermissionBottomSheetTokens.PrimaryButtonElevation,
+            shadowElevation = OrganizeNotificationPermissionBottomSheetTokens.PrimaryButtonElevation,
         )
 
         RecapButton(
-            text = stringResource(R.string.cleanup_notification_permission_later_button),
+            text = stringResource(R.string.organize_notification_permission_later_button),
             onClick = onLaterClick,
             modifier = Modifier.fillMaxWidth(),
             size = RecapButtonSize.Compact,
@@ -147,7 +147,7 @@ fun CleanupNotificationPermissionBottomSheetContent(
         )
 
         Text(
-            text = stringResource(R.string.cleanup_notification_permission_notice),
+            text = stringResource(R.string.organize_notification_permission_notice),
             color = MaterialTheme.colorScheme.outline,
             style = MaterialTheme.typography.labelMedium,
             textAlign = TextAlign.Center,
@@ -156,25 +156,25 @@ fun CleanupNotificationPermissionBottomSheetContent(
 }
 
 @Composable
-private fun CleanupNotificationPermissionBottomSheetDragHandle(
+private fun OrganizeNotificationPermissionBottomSheetDragHandle(
     modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier
             .padding(
-                vertical = CleanupNotificationPermissionBottomSheetTokens.DragHandleVerticalPadding
+                vertical = OrganizeNotificationPermissionBottomSheetTokens.DragHandleVerticalPadding
             )
             .size(
-                width = CleanupNotificationPermissionBottomSheetTokens.DragHandleWidth,
-                height = CleanupNotificationPermissionBottomSheetTokens.DragHandleHeight,
+                width = OrganizeNotificationPermissionBottomSheetTokens.DragHandleWidth,
+                height = OrganizeNotificationPermissionBottomSheetTokens.DragHandleHeight,
             ),
-        shape = RoundedCornerShape(CleanupNotificationPermissionBottomSheetTokens.DragHandleHeight),
+        shape = RoundedCornerShape(OrganizeNotificationPermissionBottomSheetTokens.DragHandleHeight),
         color = RecapSheetHandle,
         content = {},
     )
 }
 
-private object CleanupNotificationPermissionBottomSheetTokens {
+private object OrganizeNotificationPermissionBottomSheetTokens {
     val ContainerCornerRadius = 24.dp
     val DragHandleWidth = 48.dp
     val DragHandleHeight = 6.dp
@@ -193,9 +193,9 @@ private object CleanupNotificationPermissionBottomSheetTokens {
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(name = "Cleanup Notification Permission Bottom Sheet", showBackground = true, widthDp = 360)
+@Preview(name = "Organize Notification Permission Bottom Sheet", showBackground = true, widthDp = 360)
 @Composable
-private fun CleanupNotificationPermissionBottomSheetPreview() {
+private fun OrganizeNotificationPermissionBottomSheetPreview() {
     RECAPTheme(dynamicColor = false) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -204,24 +204,24 @@ private fun CleanupNotificationPermissionBottomSheetPreview() {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(
-                    topStart = CleanupNotificationPermissionBottomSheetTokens.ContainerCornerRadius,
-                    topEnd = CleanupNotificationPermissionBottomSheetTokens.ContainerCornerRadius,
+                    topStart = OrganizeNotificationPermissionBottomSheetTokens.ContainerCornerRadius,
+                    topEnd = OrganizeNotificationPermissionBottomSheetTokens.ContainerCornerRadius,
                 ),
                 color = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.onSurface,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    CleanupNotificationPermissionBottomSheetDragHandle()
-                    CleanupNotificationPermissionBottomSheetContent(
+                    OrganizeNotificationPermissionBottomSheetDragHandle()
+                    OrganizeNotificationPermissionBottomSheetContent(
                         onAllowNotificationClick = {},
                         onLaterClick = {},
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(
-                                start = CleanupNotificationPermissionBottomSheetTokens.HorizontalPadding,
-                                top = CleanupNotificationPermissionBottomSheetTokens.ContentTopPadding,
-                                end = CleanupNotificationPermissionBottomSheetTokens.HorizontalPadding,
-                                bottom = CleanupNotificationPermissionBottomSheetTokens.BottomPadding,
+                                start = OrganizeNotificationPermissionBottomSheetTokens.HorizontalPadding,
+                                top = OrganizeNotificationPermissionBottomSheetTokens.ContentTopPadding,
+                                end = OrganizeNotificationPermissionBottomSheetTokens.HorizontalPadding,
+                                bottom = OrganizeNotificationPermissionBottomSheetTokens.BottomPadding,
                             ),
                     )
                 }

@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.cleanup
+package com.chalkak.recap.feature.organize
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -59,8 +59,8 @@ import com.chalkak.recap.core.model.LocalImage
 
 @Composable
 fun ScreenshotConfirmationScreen(
-    uiState: CleanupUiState,
-    onAction: (CleanupAction) -> Unit,
+    uiState: OrganizeUiState,
+    onAction: (OrganizeAction) -> Unit,
     onBackClick: () -> Unit,
     onAddMoreClick: () -> Unit,
     onStartOrganizingClick: () -> Unit,
@@ -106,7 +106,7 @@ fun ScreenshotConfirmationScreen(
                         screenshot = screenshot,
                         selectionOrder = selectionOrder,
                         onRemoveClick = {
-                            onAction(CleanupAction.RemoveSelection(screenshot.uri))
+                            onAction(OrganizeAction.RemoveSelection(screenshot.uri))
                         },
                     )
                 }
@@ -117,7 +117,7 @@ fun ScreenshotConfirmationScreen(
                 }
             }
             RecapButton(
-                text = stringResource(R.string.cleanup_start_organizing),
+                text = stringResource(R.string.organize_start_organizing),
                 onClick = onStartOrganizingClick,
                 enabled = uiState.canProceed,
                 modifier = Modifier
@@ -165,19 +165,19 @@ private fun ScreenshotConfirmationTopBar(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.ic_chevron_left_24),
-                    contentDescription = stringResource(R.string.cleanup_back_content_description),
+                    contentDescription = stringResource(R.string.organize_back_content_description),
                     tint = MaterialTheme.colorScheme.onBackground,
                 )
             }
             Text(
-                text = stringResource(R.string.cleanup_confirm_title),
+                text = stringResource(R.string.organize_confirm_title),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
                 color = RecapGray900,
             )
             Spacer(modifier = Modifier.weight(1f))
             Text(
-                text = stringResource(R.string.cleanup_confirm_count, selectionCount),
+                text = stringResource(R.string.organize_confirm_count, selectionCount),
                 style = MaterialTheme.typography.bodyMedium,
                 color = RecapGray300,
                 modifier = Modifier.padding(end = 12.dp),
@@ -201,7 +201,7 @@ private fun ScreenshotConfirmationGridItem(
         AsyncImage(
             model = screenshot.uri.toUri(),
             contentDescription = stringResource(
-                R.string.cleanup_selected_screenshot_item_content_description,
+                R.string.organize_selected_screenshot_item_content_description,
                 selectionOrder,
             ),
             contentScale = ContentScale.Crop,
@@ -241,7 +241,7 @@ private fun ScreenshotConfirmationRemoveButton(
     ) {
         Icon(
             imageVector = Icons.Outlined.Close,
-            contentDescription = stringResource(R.string.cleanup_remove_selection_content_description),
+            contentDescription = stringResource(R.string.organize_remove_selection_content_description),
             modifier = Modifier.size(14.dp),
             tint = RecapGray50,
         )
@@ -291,7 +291,7 @@ private fun ScreenshotConfirmationAddItem(
     ) {
         Icon(
             painter = painterResource(R.drawable.ic_plus_30),
-            contentDescription = stringResource(R.string.cleanup_add_more_content_description),
+            contentDescription = stringResource(R.string.organize_add_more_content_description),
             modifier = Modifier.size(28.dp),
             tint = MaterialTheme.colorScheme.primary,
         )
@@ -322,13 +322,13 @@ private object ScreenshotConfirmationTokens {
 private fun ScreenshotConfirmationScreenPreview() {
     RECAPTheme(dynamicColor = false) {
         ScreenshotConfirmationScreen(
-            uiState = CleanupUiState(
+            uiState = OrganizeUiState(
                 isLoading = false,
-                availableScreenshots = CleanupPreviewScreenshots,
+                availableScreenshots = OrganizePreviewScreenshots,
                 selectedUris = listOf(
-                    CleanupPreviewScreenshots[0].uri,
-                    CleanupPreviewScreenshots[1].uri,
-                    CleanupPreviewScreenshots[2].uri,
+                    OrganizePreviewScreenshots[0].uri,
+                    OrganizePreviewScreenshots[1].uri,
+                    OrganizePreviewScreenshots[2].uri,
                 ),
             ),
             onAction = {},

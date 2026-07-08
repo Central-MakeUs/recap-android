@@ -11,7 +11,7 @@ class MyPageNotificationSettingsViewModelTest {
 
         assertEquals(
             MyPageNotificationSettingsUiState(
-                cleanupCompleteEnabled = true,
+                organizeCompleteEnabled = true,
                 reviewRequiredEnabled = true,
                 marketingEnabled = false,
             ),
@@ -25,7 +25,7 @@ class MyPageNotificationSettingsViewModelTest {
         val viewModel = MyPageNotificationSettingsViewModel(savedStateHandle)
 
         viewModel.onAction(
-            MyPageNotificationSettingsAction.CleanupCompleteEnabledChanged(false),
+            MyPageNotificationSettingsAction.OrganizeCompleteEnabledChanged(false),
         )
         viewModel.onAction(
             MyPageNotificationSettingsAction.ReviewRequiredEnabledChanged(false),
@@ -36,7 +36,7 @@ class MyPageNotificationSettingsViewModelTest {
 
         assertEquals(
             MyPageNotificationSettingsUiState(
-                cleanupCompleteEnabled = false,
+                organizeCompleteEnabled = false,
                 reviewRequiredEnabled = false,
                 marketingEnabled = true,
             ),
@@ -44,7 +44,7 @@ class MyPageNotificationSettingsViewModelTest {
         )
         assertEquals(
             false,
-            savedStateHandle.get<Boolean>(MY_PAGE_NOTIFICATION_CLEANUP_COMPLETE_ENABLED_KEY),
+            savedStateHandle.get<Boolean>(MY_PAGE_NOTIFICATION_ORGANIZE_COMPLETE_ENABLED_KEY),
         )
         assertEquals(
             false,
@@ -60,7 +60,7 @@ class MyPageNotificationSettingsViewModelTest {
     fun recreatedViewModel_restoresToggleValuesFromSameSavedStateHandle() {
         val savedStateHandle = SavedStateHandle()
         MyPageNotificationSettingsViewModel(savedStateHandle).apply {
-            onAction(MyPageNotificationSettingsAction.CleanupCompleteEnabledChanged(false))
+            onAction(MyPageNotificationSettingsAction.OrganizeCompleteEnabledChanged(false))
             onAction(MyPageNotificationSettingsAction.ReviewRequiredEnabledChanged(false))
             onAction(MyPageNotificationSettingsAction.MarketingEnabledChanged(true))
         }
@@ -69,7 +69,7 @@ class MyPageNotificationSettingsViewModelTest {
 
         assertEquals(
             MyPageNotificationSettingsUiState(
-                cleanupCompleteEnabled = false,
+                organizeCompleteEnabled = false,
                 reviewRequiredEnabled = false,
                 marketingEnabled = true,
             ),
