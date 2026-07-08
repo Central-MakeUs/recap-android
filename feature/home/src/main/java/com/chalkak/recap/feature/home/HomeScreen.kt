@@ -1,12 +1,17 @@
 package com.chalkak.recap.feature.home
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -17,7 +22,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -30,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard
 import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
@@ -37,25 +42,38 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray900
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
+    hazeState: HazeState,
     uiState: HomeUiState = HomeUiState(),
     analysisProgress: HomeAnalysisProgressUiModel = HomeAnalysisProgressUiModel(),
     onAction: (HomeAction) -> Unit = {},
 ) {
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
+    val navigationBarBottomPadding = WindowInsets.navigationBars
+        .asPaddingValues()
+        .calculateBottomPadding()
+    val bottomContentPadding = RecapBottomBarDefaults.ContentScrollPadding +
+        navigationBarBottomPadding
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .hazeSource(state = hazeState)
+            .background(MaterialTheme.colorScheme.background),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
+                .padding(horizontal = HomeScreenTokens.HorizontalPadding)
                 .padding(
-                    horizontal = HomeScreenTokens.HorizontalPadding,
-                    vertical = HomeScreenTokens.VerticalPadding,
+                    top = HomeScreenTokens.VerticalPadding,
+                    bottom = HomeScreenTokens.VerticalPadding + bottomContentPadding,
                 ),
             verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.SectionSpacing),
         ) {
@@ -265,7 +283,7 @@ private object HomeScreenTokens {
 @Composable
 private fun HomeScreenPreview() {
     RECAPTheme(dynamicColor = false) {
-        HomeScreen()
+        HomeScreen(hazeState = rememberHazeState())
     }
 }
 
@@ -274,6 +292,7 @@ private fun HomeScreenPreview() {
 private fun HomeScreenAnalysisProgressPreview() {
     RECAPTheme(dynamicColor = false) {
         HomeScreen(
+            hazeState = rememberHazeState(),
             analysisProgress = HomeAnalysisProgressUiModel(
                 isRunning = true,
                 progress = 0.4f,

@@ -1,16 +1,21 @@
 package com.chalkak.recap.app
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBar
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDestination
 import com.chalkak.recap.core.design.component.topbar.RecapMainTopBar
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazePositionStrategy
+import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
@@ -25,6 +30,7 @@ fun RecapMainScreen(
 ) {
     val backStack = rememberNavBackStack(MainTabRoute.Home)
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
+    val hazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
 
     fun navigateTo(route: MainTabRoute) {
         if (backStack.lastOrNull() != route) {
@@ -53,6 +59,7 @@ fun RecapMainScreen(
         },
         bottomBar = {
             RecapBottomBar(
+                hazeState = hazeState,
                 currentDestination = currentRoute.toBottomBarDestination(),
                 onDestinationClick = { destination ->
                     navigateTo(destination.toMainTabRoute())
@@ -62,11 +69,14 @@ fun RecapMainScreen(
         },
     ) { innerPadding ->
         RecapMainTabNavHost(
+            hazeState = hazeState,
             backStack = backStack,
             onNavigateToDeveloper = onNavigateToDeveloper,
             onNavigateToOrganize = onNavigateToOrganize,
             analysisProgressFlow = analysisProgressFlow,
-            modifier = Modifier.padding(innerPadding),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = innerPadding.calculateTopPadding()),
         )
     }
 }

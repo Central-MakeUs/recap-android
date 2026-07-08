@@ -28,6 +28,7 @@ robolectric = "4.16.1"
 turbine = "1.2.1"
 work = "2.11.2"
 androidxHilt = "1.4.0"
+haze = "2.0.0-alpha03"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -81,6 +82,9 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+chrisbanes-haze = { group = "dev.chrisbanes.haze", name = "haze", version.ref = "haze" }
+chrisbanes-haze-blur = { group = "dev.chrisbanes.haze", name = "haze-blur", version.ref = "haze" }
+chrisbanes-haze-blur-materials = { group = "dev.chrisbanes.haze", name = "haze-blur-materials", version.ref = "haze" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

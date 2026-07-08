@@ -4,8 +4,11 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -26,22 +29,29 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 
 @Composable
 fun CollectionScreen(
+    hazeState: HazeState,
     uiState: CollectionUiState,
     onAction: (CollectionAction) -> Unit,
     onNavigateToOrganize: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .hazeSource(state = hazeState),
         color = MaterialTheme.colorScheme.background,
     ) {
         when {
@@ -141,11 +151,21 @@ private fun CollectionOverviewContent(
     onAction: (CollectionAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val navigationBarBottomPadding = WindowInsets.navigationBars
+        .asPaddingValues()
+        .calculateBottomPadding()
+    val bottomContentPadding = RecapBottomBarDefaults.ContentScrollPadding +
+        navigationBarBottomPadding
+
     Column(
         modifier = modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(horizontal = 24.dp, vertical = 24.dp),
+            .padding(horizontal = 24.dp)
+            .padding(
+                top = 24.dp,
+                bottom = 24.dp + bottomContentPadding,
+            ),
         verticalArrangement = Arrangement.spacedBy(24.dp),
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -218,6 +238,7 @@ private fun CollectionOverviewContent(
 private fun CollectionEmptyPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionScreen(
+            hazeState = rememberHazeState(),
             uiState = CollectionUiState(
                 isLoading = false,
                 hasStoredScreenshots = false,
@@ -233,6 +254,7 @@ private fun CollectionEmptyPreview() {
 private fun CollectionNoFavoritePreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionScreen(
+            hazeState = rememberHazeState(),
             uiState = CollectionUiState(
                 isLoading = false,
                 hasStoredScreenshots = true,
@@ -261,6 +283,7 @@ private fun CollectionNoFavoritePreview() {
 private fun CollectionPopulatedPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionScreen(
+            hazeState = rememberHazeState(),
             uiState = CollectionUiState(
                 isLoading = false,
                 hasStoredScreenshots = true,

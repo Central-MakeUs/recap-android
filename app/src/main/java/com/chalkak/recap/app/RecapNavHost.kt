@@ -23,6 +23,7 @@ import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
 import com.chalkak.recap.feature.home.SearchRoute
 import com.chalkak.recap.feature.mypage.MyPageAction
+import dev.chrisbanes.haze.HazeState
 import com.chalkak.recap.feature.mypage.MyPageDataManagementScreen
 import com.chalkak.recap.feature.mypage.MyPageNotificationSettingsRoute
 import com.chalkak.recap.feature.mypage.MyPagePrivacyGuideScreen
@@ -171,6 +172,7 @@ fun RecapNavHost(
 
 @Composable
 fun RecapMainTabNavHost(
+    hazeState: HazeState,
     modifier: Modifier = Modifier,
     backStack: NavBackStack<NavKey>,
     onNavigateToDeveloper: () -> Unit,
@@ -185,6 +187,7 @@ fun RecapMainTabNavHost(
             when (route) {
                 MainTabRoute.Home -> NavEntry(route) {
                     HomeRoute(
+                        hazeState = hazeState,
                         onNavigateToDeveloper = onNavigateToDeveloper,
                         analysisProgressFlow = analysisProgressFlow,
                     )
@@ -192,6 +195,7 @@ fun RecapMainTabNavHost(
 
                 MainTabRoute.Collection -> NavEntry(route) {
                     CollectionRoute(
+                        hazeState = hazeState,
                         onNavigateToOrganize = onNavigateToOrganize,
                     )
                 }

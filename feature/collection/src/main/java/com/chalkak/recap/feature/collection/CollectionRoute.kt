@@ -1,5 +1,6 @@
 package com.chalkak.recap.feature.collection
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -9,10 +10,12 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import dev.chrisbanes.haze.HazeState
 import kotlinx.serialization.Serializable
 
 @Composable
 fun CollectionRoute(
+    hazeState: HazeState,
     onNavigateToOrganize: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: CollectionViewModel = hiltViewModel(),
@@ -48,11 +51,12 @@ fun CollectionRoute(
                 navigateBackFromDetail()
             }
         },
-        modifier = modifier,
+        modifier = modifier.fillMaxSize(),
         entryProvider = { route ->
             when (route) {
                 CollectionDestination.Overview -> NavEntry(route) {
                     CollectionScreen(
+                        hazeState = hazeState,
                         uiState = uiState,
                         onAction = ::handleAction,
                         onNavigateToOrganize = onNavigateToOrganize,
