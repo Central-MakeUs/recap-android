@@ -1,9 +1,13 @@
 package com.chalkak.recap.app
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisInput
 import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisRepository
+import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
+import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
+import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -26,6 +30,8 @@ data class ScreenshotAnalysisProgressUiState(
 @HiltViewModel
 class ScreenshotAnalysisProgressViewModel @Inject constructor(
     private val screenshotAnalysisRepository: ScreenshotAnalysisRepository,
+    private val screenshotCardRepository: ScreenshotCardRepository,
+    private val screenshotImageStorage: ScreenshotImageStorage,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ScreenshotAnalysisProgressUiState())
     val uiState: StateFlow<ScreenshotAnalysisProgressUiState> = _uiState.asStateFlow()
@@ -54,6 +60,7 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                 val result = screenshotAnalysisRepository.analyze(
                     ScreenshotAnalysisInput(fileName = image.displayName),
                 )
+                persistAnalysisResult(image = image, result = result)
                 results.add(result)
                 val completedCount = index + 1
                 _uiState.value = _uiState.value.copy(
@@ -64,6 +71,29 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
             }
 
             _uiState.value = _uiState.value.copy(isRunning = false, progress = 1f)
+        }
+    }
+
+    private suspend fun persistAnalysisResult(
+        image: LocalImage,
+        result: ScreenshotAnalysisResult,
+    ) {
+        val copiedPath = runCatching {
+            screenshotImageStorage.copyImageFromUri(
+                imageId = result.imageId,
+                sourceUri = Uri.parse(image.uri),
+            )
+        }.getOrNull()
+        val imageRefs = ScreenshotCardImageRefs(
+            sourceImageUri = image.uri,
+            storedImagePath = copiedPath,
+            thumbnailPath = null,
+        )
+        runCatching {
+            screenshotCardRepository.saveAnalysisResults(
+                results = listOf(result),
+                imageRefsByImageId = mapOf(result.imageId to imageRefs),
+            )
         }
     }
 

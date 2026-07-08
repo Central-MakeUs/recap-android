@@ -30,6 +30,7 @@ fun DeveloperRoute(
                 DeveloperDestination.Options -> NavEntry(route) {
                     DeveloperOptionsScreen(
                         ocrRawResults = uiState.ocrRawResults,
+                        feedbackMessageResId = uiState.feedbackMessageResId,
                         onAction = { action ->
                             when (action) {
                                 DeveloperOptionAction.OpenTechnicalDemo -> {
@@ -41,6 +42,9 @@ fun DeveloperRoute(
                                 }
 
                                 DeveloperOptionAction.ResetOnboarding -> onResetOnboarding()
+                                DeveloperOptionAction.ResetScreenshotData -> {
+                                    viewModel.resetScreenshotData()
+                                }
                             }
                         },
                     )

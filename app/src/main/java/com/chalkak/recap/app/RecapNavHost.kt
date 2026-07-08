@@ -17,7 +17,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.chalkak.recap.BuildConfig
-import com.chalkak.recap.feature.collection.CollectionScreen
+import com.chalkak.recap.feature.collection.CollectionRoute
 import com.chalkak.recap.feature.organize.OrganizeRoute
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
@@ -174,6 +174,7 @@ fun RecapMainTabNavHost(
     modifier: Modifier = Modifier,
     backStack: NavBackStack<NavKey>,
     onNavigateToDeveloper: () -> Unit,
+    onNavigateToOrganize: () -> Unit,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
 ) {
     NavDisplay(
@@ -190,7 +191,9 @@ fun RecapMainTabNavHost(
                 }
 
                 MainTabRoute.Collection -> NavEntry(route) {
-                    CollectionScreen()
+                    CollectionRoute(
+                        onNavigateToOrganize = onNavigateToOrganize,
+                    )
                 }
 
                 else -> error("Unknown main tab route: $route")

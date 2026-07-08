@@ -111,6 +111,35 @@ class ScreenshotCardDaoTest {
     }
 
     @Test
+    fun deleteAllCards_removesAllCardsAndKeyFields() = runBlocking {
+        val firstResult = sampleResult(imageId = "first")
+        val secondResult = sampleResult(imageId = "second")
+        dao.saveAnalysisResults(
+            listOf(
+                ScreenshotCardSaveEntry(firstResult),
+                ScreenshotCardSaveEntry(secondResult),
+            ),
+        )
+
+        dao.deleteAllCards()
+
+        assertTrue(dao.observeAllCards().first().isEmpty())
+        assertNull(dao.getCardByImageId("first"))
+        assertNull(dao.getCardByImageId("second"))
+    }
+
+    @Test
+    fun repositoryDeleteAllCards_removesAllStoredCards() = runBlocking {
+        val repository = DefaultScreenshotCardRepository(dao)
+        repository.saveAnalysisResults(listOf(sampleResult(imageId = "card-1")))
+        repository.saveAnalysisResults(listOf(sampleResult(imageId = "card-2")))
+
+        repository.deleteAllCards()
+
+        assertTrue(repository.observeStoredCards().first().isEmpty())
+    }
+
+    @Test
     fun deleteByImageId_removesCardAndKeyFields() = runBlocking {
         val result = sampleResult(imageId = "delete-me")
         dao.saveAnalysisResults(listOf(ScreenshotCardSaveEntry(result)))

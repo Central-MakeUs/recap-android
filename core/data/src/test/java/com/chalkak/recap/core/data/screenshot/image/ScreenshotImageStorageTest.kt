@@ -2,6 +2,7 @@ package com.chalkak.recap.core.data.screenshot.image
 
 import android.content.Context
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -53,6 +54,23 @@ class ScreenshotImageStorageTest {
             File(storage.resolveImagesDirectory(), "image-123"),
             imagePath,
         )
+    }
+
+    @Test
+    fun clearStoredImages_deletesFilesUnderRecapDirectories() {
+        val imageFile = storage.buildImagePath("image-1").apply {
+            parentFile?.mkdirs()
+            writeText("image")
+        }
+        val thumbnailFile = storage.buildThumbnailPath("image-1").apply {
+            parentFile?.mkdirs()
+            writeText("thumbnail")
+        }
+
+        storage.clearStoredImages()
+
+        assertFalse(imageFile.exists())
+        assertFalse(thumbnailFile.exists())
     }
 
     @Test

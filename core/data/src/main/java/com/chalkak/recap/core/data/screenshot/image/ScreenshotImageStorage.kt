@@ -43,6 +43,21 @@ class ScreenshotImageStorage @Inject constructor(
         }.getOrNull()
     }
 
+    fun clearStoredImages() {
+        clearDirectory(resolveImagesDirectory())
+        clearDirectory(resolveThumbnailsDirectory())
+    }
+
+    private fun clearDirectory(directory: File) {
+        runCatching {
+            directory.listFiles()?.forEach { file ->
+                if (file.isFile) {
+                    file.delete()
+                }
+            }
+        }
+    }
+
     private companion object {
         const val IMAGES_DIRECTORY = "recap/images"
         const val THUMBNAILS_DIRECTORY = "recap/thumbnails"

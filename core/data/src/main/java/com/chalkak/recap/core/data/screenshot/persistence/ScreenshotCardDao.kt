@@ -45,6 +45,9 @@ abstract class ScreenshotCardDao {
     @Query("DELETE FROM screenshot_cards WHERE imageId = :imageId")
     abstract suspend fun deleteByImageId(imageId: String)
 
+    @Query("DELETE FROM screenshot_cards")
+    abstract suspend fun deleteAllCards()
+
     @Transaction
     open suspend fun saveAnalysisResults(entries: List<ScreenshotCardSaveEntry>) {
         val baseTimeMillis = System.currentTimeMillis()

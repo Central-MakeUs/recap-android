@@ -64,6 +64,7 @@ fun RecapMainScreen(
         RecapMainTabNavHost(
             backStack = backStack,
             onNavigateToDeveloper = onNavigateToDeveloper,
+            onNavigateToOrganize = onNavigateToOrganize,
             analysisProgressFlow = analysisProgressFlow,
             modifier = Modifier.padding(innerPadding),
         )

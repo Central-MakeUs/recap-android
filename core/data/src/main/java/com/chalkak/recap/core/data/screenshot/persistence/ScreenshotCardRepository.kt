@@ -19,6 +19,8 @@ interface ScreenshotCardRepository {
     suspend fun updateFavorite(imageId: String, isFavorite: Boolean)
 
     suspend fun deleteCard(imageId: String)
+
+    suspend fun deleteAllCards()
 }
 
 @Singleton
@@ -61,5 +63,9 @@ class DefaultScreenshotCardRepository @Inject constructor(
 
     override suspend fun deleteCard(imageId: String) {
         screenshotCardDao.deleteByImageId(imageId)
+    }
+
+    override suspend fun deleteAllCards() {
+        screenshotCardDao.deleteAllCards()
     }
 }
