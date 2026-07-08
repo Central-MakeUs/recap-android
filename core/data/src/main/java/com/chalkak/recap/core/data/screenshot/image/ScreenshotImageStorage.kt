@@ -6,6 +6,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 
 @Singleton
 class ScreenshotImageStorage @Inject constructor(
@@ -32,7 +33,7 @@ class ScreenshotImageStorage @Inject constructor(
     }
 
     fun copyImageFromUri(imageId: String, sourceUri: Uri): String? {
-        return runCatching {
+        return try {
             val targetFile = buildImagePath(imageId)
             context.contentResolver.openInputStream(sourceUri)?.use { input ->
                 targetFile.outputStream().use { output ->
@@ -40,7 +41,11 @@ class ScreenshotImageStorage @Inject constructor(
                 }
             } ?: return null
             targetFile.absolutePath
-        }.getOrNull()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Exception) {
+            null
+        }
     }
 
     fun clearStoredImages() {

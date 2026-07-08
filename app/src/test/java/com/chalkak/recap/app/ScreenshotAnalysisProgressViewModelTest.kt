@@ -49,7 +49,9 @@ class ScreenshotAnalysisProgressViewModelTest {
             screenshotAnalysisRepository = repository,
             screenshotCardRepository = screenshotCardRepository,
             screenshotImageStorage = screenshotImageStorage,
-        )
+        ).apply {
+            ioDispatcher = testDispatcher
+        }
     }
 
     @AfterEach
@@ -199,6 +201,49 @@ class ScreenshotAnalysisProgressViewModelTest {
         }
         assertEquals(2, viewModel.uiState.value.completedCount)
         assertFalse(viewModel.uiState.value.isRunning)
+
+        unmockkStatic(Uri::class)
+    }
+
+    @Test
+    fun `repository save failure exposes error state and skips completed progress`() = runTest(testDispatcher) {
+        mockkStatic(Uri::class)
+        val firstUri = mockk<Uri>()
+        val secondUri = mockk<Uri>()
+        every { Uri.parse("content://1") } returns firstUri
+        every { Uri.parse("content://2") } returns secondUri
+
+        val firstResult = analysisResult(imageId = "result-1")
+        val secondResult = analysisResult(imageId = "result-2")
+        every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png")) } returns firstResult
+        every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_2.png")) } returns secondResult
+        every { screenshotImageStorage.copyImageFromUri(any(), any()) } returns "/files/image"
+        coEvery {
+            screenshotCardRepository.saveAnalysisResults(
+                results = listOf(firstResult),
+                imageRefsByImageId = any(),
+            )
+        } throws RuntimeException("room failure")
+        coEvery {
+            screenshotCardRepository.saveAnalysisResults(
+                results = listOf(secondResult),
+                imageRefsByImageId = any(),
+            )
+        } returns Unit
+
+        viewModel.startMockAnalysis(sampleImages(count = 2))
+        runCurrent()
+        advanceTimeBy(500.milliseconds)
+        runCurrent()
+        advanceTimeBy(500.milliseconds)
+        runCurrent()
+
+        val state = viewModel.uiState.value
+        assertEquals("Failed to save screenshot analysis result", state.errorMessage)
+        assertEquals(1, state.completedCount)
+        assertEquals(0.5f, state.progress)
+        assertEquals(listOf(secondResult), state.results)
+        assertFalse(state.isRunning)
 
         unmockkStatic(Uri::class)
     }
