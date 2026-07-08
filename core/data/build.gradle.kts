@@ -20,6 +20,10 @@ android {
     }
 }
 
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    useJUnitPlatform()
+}
+
 dependencies {
     implementation(project(":core:model"))
     implementation(libs.androidx.core.ktx)
@@ -39,4 +43,8 @@ dependencies {
     ksp(libs.hilt.compiler)
     testImplementation(libs.json)
     testImplementation(libs.junit)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testRuntimeOnly(libs.junit.vintage.engine)
 }
