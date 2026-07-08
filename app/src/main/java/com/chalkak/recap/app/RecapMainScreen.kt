@@ -15,6 +15,7 @@ fun RecapMainScreen(
     onNavigateToDeveloper: () -> Unit = {},
     onNavigateToMyPage: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
+    onNavigateToCleanup: () -> Unit = {},
 ) {
     val backStack = rememberNavBackStack(MainTabRoute.Home)
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
@@ -44,7 +45,7 @@ fun RecapMainScreen(
                 onDestinationClick = { destination ->
                     navigateTo(destination.toMainTabRoute())
                 },
-                onCleanupClick = {},
+                onCleanupClick = onNavigateToCleanup,
             )
         },
     ) { innerPadding ->

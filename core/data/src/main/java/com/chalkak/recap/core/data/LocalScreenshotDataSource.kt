@@ -69,6 +69,13 @@ class LocalScreenshotDataSource @Inject constructor(
         )
     }
 
+    suspend fun queryAllScreenshots(): List<LocalImage> = withContext(Dispatchers.IO) {
+        queryScreenshotImages(
+            cutoffSeconds = null,
+            limit = null,
+        )
+    }
+
     suspend fun queryScreenshots(range: OcrCleanupRange): List<LocalImage> = withContext(Dispatchers.IO) {
         val cutoffSeconds = (System.currentTimeMillis() / MILLIS_PER_SECOND) - (range.days * SECONDS_PER_DAY)
         queryScreenshotImages(

@@ -41,6 +41,9 @@ sealed interface AppRoute : NavKey {
 
     @Serializable
     data object Search : AppRoute
+
+    @Serializable
+    data object Cleanup : AppRoute
 }
 
 sealed interface MainTabRoute : NavKey {
