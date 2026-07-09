@@ -49,6 +49,14 @@
     <string name="organized_capture_card_description">최근 정리된 캡처에서 확인하세요</string>
     <string name="recap_search_bar_placeholder_collection">이 보관함 내에서 검색</string>
     <string name="recap_search_bar_clear_content_description">검색어 지우기</string>
+    <string name="recap_input_field_character_counter">%1$d/%2$d</string>
+    <string name="recap_input_field_preview_label">레이블</string>
+    <string name="recap_input_field_preview_placeholder">텍스트</string>
+    <string name="recap_input_field_preview_text">텍스트</string>
+    <string name="recap_input_field_preview_typing_text">텍스</string>
+    <string name="recap_input_field_preview_error_message">필수 입력 항목입니다</string>
+    <string name="recap_input_field_preview_multiline_text">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.</string>
+    <string name="component_garden_input_field_section_title">인풋 필드</string>
     <string name="favorite_category_card_add_favorite_content_description">즐겨찾기에 추가</string>
     <string name="favorite_category_card_remove_favorite_content_description">즐겨찾기 해제</string>
     <string name="collection_title">보관함</string>

@@ -57,6 +57,7 @@ import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChipType
 import com.chalkak.recap.core.design.component.chip.RecapFilterTag
 import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
+import com.chalkak.recap.core.design.component.input.RecapInputField
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
 import com.chalkak.recap.core.design.component.toast.RecapToast
 import com.chalkak.recap.core.design.component.toast.RecapToastHost
@@ -80,6 +81,8 @@ internal fun ComponentGardenScreen(
     var showWithdrawalConfirmationBottomSheet by remember { mutableStateOf(false) }
     var withdrawalConfirmationChecked by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
+    var inputFieldValue by remember { mutableStateOf("") }
+    var multilineInputFieldValue by remember { mutableStateOf("") }
     var isFavoriteCategoryCardFavorited by remember { mutableStateOf(false) }
     var selectedFilterTagOptionId by remember { mutableStateOf("latest") }
     var isFilterTagExpanded by remember { mutableStateOf(false) }
@@ -154,6 +157,33 @@ internal fun ComponentGardenScreen(
                     onOptionSelected = { selectedFilterTagOptionId = it.id },
                     expanded = isFilterTagExpanded,
                     onExpandedChange = { isFilterTagExpanded = it },
+                )
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_input_field_section_title),
+            ) {
+                RecapInputField(
+                    value = inputFieldValue,
+                    onValueChange = { inputFieldValue = it },
+                    label = stringResource(R.string.recap_input_field_preview_label),
+                    placeholder = stringResource(R.string.recap_input_field_preview_placeholder),
+                )
+                RecapInputField(
+                    value = "",
+                    onValueChange = {},
+                    label = stringResource(R.string.recap_input_field_preview_label),
+                    placeholder = stringResource(R.string.recap_input_field_preview_placeholder),
+                    isError = true,
+                    errorMessage = stringResource(R.string.recap_input_field_preview_error_message),
+                )
+                RecapInputField(
+                    value = multilineInputFieldValue,
+                    onValueChange = { multilineInputFieldValue = it },
+                    label = stringResource(R.string.recap_input_field_preview_label),
+                    placeholder = stringResource(R.string.recap_input_field_preview_placeholder),
+                    singleLine = false,
+                    minLines = 4,
+                    maxLength = 300,
                 )
             }
             ComponentGardenSection(
