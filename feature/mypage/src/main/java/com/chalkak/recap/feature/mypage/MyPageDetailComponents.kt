@@ -41,7 +41,6 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.topbar.RecapTopBar
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
-import com.chalkak.recap.core.design.theme.RecapGray50
 
 @Composable
 internal fun MyPageDetailScreenScaffold(
@@ -53,7 +52,7 @@ internal fun MyPageDetailScreenScaffold(
 ) {
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = RecapGray50,
+        color = MaterialTheme.colorScheme.background,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             RecapTopBar(
@@ -62,7 +61,7 @@ internal fun MyPageDetailScreenScaffold(
                 backButtonContentDescription = stringResource(
                     R.string.my_page_back_content_description,
                 ),
-                containerColor = RecapGray50,
+                containerColor = MaterialTheme.colorScheme.background,
             )
             Column(
                 modifier = Modifier

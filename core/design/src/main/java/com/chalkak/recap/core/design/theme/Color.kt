@@ -15,6 +15,8 @@ val RecapGray200 = Color(0xFFCED2DE)
 val RecapGray100 = Color(0xFFE2E6ED)
 val RecapGray50 = Color(0xFFF4F5F8)
 
+val RecapBackground = Color(0xFFFDFDFD)
+
 val RecapSheetHandle = Color(0xFFE2E6EE)
 
 val RecapCategoryShoppingProductBorder = Color(0xFFA9CDFF)
@@ -34,8 +36,8 @@ val RecapCategoryRecordCaptureContent = Color(0xFF6354A7)
 
 val RecapToastBackground = RecapGray900
 val RecapToastContent = Color(0xFFFFFFFF)
-val RecapToastSuccessIconContainer = Color(0xFF1FCD70)
-val RecapToastErrorIconContainer = Color(0xFFFB3D3D)
+val RecapSuccess = Color(0xFF1FCD70)
+val RecapError = Color(0xFFFB3D3D)
 
 val Black = Color(0xFF000000)
 val White = Color(0xFFFFFFFF)

@@ -37,8 +37,8 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapToastBackground
 import com.chalkak.recap.core.design.theme.RecapToastContent
-import com.chalkak.recap.core.design.theme.RecapToastErrorIconContainer
-import com.chalkak.recap.core.design.theme.RecapToastSuccessIconContainer
+import com.chalkak.recap.core.design.theme.RecapError
+import com.chalkak.recap.core.design.theme.RecapSuccess
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -46,16 +46,16 @@ import kotlin.time.Duration.Companion.milliseconds
 
 enum class RecapToastType(
     val iconTint: Color,
-    @DrawableRes val iconResId: Int,
-    @StringRes val iconContentDescriptionResId: Int,
+    @get:DrawableRes val iconResId: Int,
+    @get:StringRes val iconContentDescriptionResId: Int,
 ) {
     Success(
-        iconTint = RecapToastSuccessIconContainer,
+        iconTint = RecapSuccess,
         iconResId = R.drawable.ic_check_circle_24,
         iconContentDescriptionResId = R.string.recap_toast_success_icon_content_description,
     ),
     Error(
-        iconTint = RecapToastErrorIconContainer,
+        iconTint = RecapError,
         iconResId = R.drawable.ic_error_circle_24,
         iconContentDescriptionResId = R.string.recap_toast_error_icon_content_description,
     ),

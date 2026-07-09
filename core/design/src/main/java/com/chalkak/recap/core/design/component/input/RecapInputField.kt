@@ -40,7 +40,7 @@ import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray900
-import com.chalkak.recap.core.design.theme.RecapToastErrorIconContainer
+import com.chalkak.recap.core.design.theme.RecapError
 
 @Composable
 fun RecapInputField(
@@ -189,12 +189,12 @@ private fun RecapInputFieldErrorMessage(
             painter = painterResource(R.drawable.ic_error_circle_16),
             contentDescription = null,
             modifier = Modifier.size(RecapInputFieldTokens.ErrorIconSize),
-            tint = RecapToastErrorIconContainer,
+            tint = RecapError,
         )
         Text(
             text = message,
             style = MaterialTheme.typography.labelMedium,
-            color = RecapToastErrorIconContainer,
+            color = RecapError,
         )
     }
 }
