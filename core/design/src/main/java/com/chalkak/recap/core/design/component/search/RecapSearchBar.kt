@@ -1,5 +1,7 @@
 package com.chalkak.recap.core.design.component.search
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -15,11 +17,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -85,7 +89,44 @@ fun RecapSearchBar(
                     }
                 },
             )
+            if (value.isNotEmpty()) {
+                RecapSearchBarClearButton(
+                    enabled = enabled,
+                    onClick = { onValueChange("") },
+                )
+            }
         }
+    }
+}
+
+@Composable
+private fun RecapSearchBarClearButton(
+    onClick: () -> Unit,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Box(
+        modifier = modifier
+            .size(RecapSearchBarTokens.ClearIconSize)
+            .clickable(
+                enabled = enabled,
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_cancel_circle_16),
+            contentDescription = stringResource(
+                R.string.recap_search_bar_clear_content_description,
+            ),
+            modifier = Modifier.size(RecapSearchBarTokens.ClearIconSize),
+            tint = RecapGray300,
+        )
     }
 }
 
@@ -94,6 +135,7 @@ private object RecapSearchBarTokens {
     val HorizontalPadding = 16.dp
     val IconTextSpacing = 8.dp
     val IconSize = 24.dp
+    val ClearIconSize = 16.dp
     val Shape = RoundedCornerShape(percent = 50)
 }
 

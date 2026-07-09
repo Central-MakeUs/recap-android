@@ -45,6 +45,7 @@
     <string name="organized_capture_card_title">%1$d개의 캡처가 정리됐어요</string>
     <string name="organized_capture_card_description">최근 정리된 캡처에서 확인하세요</string>
     <string name="recap_search_bar_placeholder_collection">이 보관함 내에서 검색</string>
+    <string name="recap_search_bar_clear_content_description">검색어 지우기</string>
     <string name="favorite_category_card_add_favorite_content_description">즐겨찾기에 추가</string>
     <string name="favorite_category_card_remove_favorite_content_description">즐겨찾기 해제</string>
     <string name="collection_title">보관함</string>
