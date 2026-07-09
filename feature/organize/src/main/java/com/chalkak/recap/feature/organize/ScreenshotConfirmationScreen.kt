@@ -290,7 +290,7 @@ private fun ScreenshotConfirmationAddItem(
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            painter = painterResource(R.drawable.ic_plus_30),
+            painter = painterResource(R.drawable.ic_plus_32),
             contentDescription = stringResource(R.string.organize_add_more_content_description),
             modifier = Modifier.size(28.dp),
             tint = MaterialTheme.colorScheme.primary,

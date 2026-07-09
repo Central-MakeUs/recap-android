@@ -245,7 +245,7 @@ private fun RecapOrganizeButton(
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            painter = painterResource(R.drawable.ic_plus_30),
+            painter = painterResource(R.drawable.ic_plus_32),
             contentDescription = stringResource(R.string.bottom_nav_organize),
             modifier = Modifier.size(28.dp),
             tint = Color.White,
