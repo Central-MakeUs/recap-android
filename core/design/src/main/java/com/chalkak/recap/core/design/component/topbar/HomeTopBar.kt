@@ -38,7 +38,7 @@ import com.chalkak.recap.core.design.component.RecapLogoAspectRatio
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
 @Composable
-fun RecapMainTopBar(
+fun HomeTopBar(
     onSettingsClick: () -> Unit,
     onSearchClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -53,7 +53,7 @@ fun RecapMainTopBar(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(RecapMainTopBarHeight)
+                    .height(HomeTopBarHeight)
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -84,7 +84,7 @@ fun RecapMainTopBar(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    RecapMainTopBarIconButton(onClick = onSettingsClick) {
+                    HomeTopBarIconButton(onClick = onSettingsClick) {
                         Icon(
                             imageVector = Icons.Outlined.Settings,
                             contentDescription = stringResource(
@@ -94,7 +94,7 @@ fun RecapMainTopBar(
                             modifier = Modifier.size(24.dp),
                         )
                     }
-                    RecapMainTopBarIconButton(onClick = onSearchClick) {
+                    HomeTopBarIconButton(onClick = onSearchClick) {
                         Icon(
                             painter = painterResource(R.drawable.ic_search_24),
                             contentDescription = stringResource(
@@ -111,7 +111,7 @@ fun RecapMainTopBar(
 }
 
 @Composable
-private fun RecapMainTopBarIconButton(
+private fun HomeTopBarIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
@@ -130,13 +130,13 @@ private fun RecapMainTopBarIconButton(
     }
 }
 
-private val RecapMainTopBarHeight = 64.dp
+private val HomeTopBarHeight = 64.dp
 
-@Preview(name = "Recap Main Top Bar", showBackground = true, widthDp = 360)
+@Preview(name = "Home Top Bar", showBackground = true, widthDp = 360)
 @Composable
-private fun RecapMainTopBarPreview() {
+private fun HomeTopBarPreview() {
     RECAPTheme {
-        RecapMainTopBar(
+        HomeTopBar(
             onSettingsClick = {},
             onSearchClick = {},
         )

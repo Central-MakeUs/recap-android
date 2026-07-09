@@ -43,6 +43,8 @@ data class HomeFrequentSaveTypeUiModel(
 sealed interface HomeAction {
     data object StartImport : HomeAction
     data object EnterDeveloperOptions : HomeAction
+    data object OpenSettings : HomeAction
+    data object OpenSearch : HomeAction
     data object OpenRecentScreenshots : HomeAction
     data class SelectRecentScreenshot(val id: String) : HomeAction
     data object OpenFavoriteCategories : HomeAction

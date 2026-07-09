@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
+import com.chalkak.recap.core.design.component.topbar.CollectionTypeViewMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +23,10 @@ class CollectionViewModel @Inject constructor(
     private var storedCards: List<StoredScreenshotCard> = emptyList()
     private var detailFilter: CollectionDetailFilter? = null
     private var detailSort: CollectionListSort = CollectionListSort.Latest
+    private var searchQuery: String = ""
+    private var selectedTab: CollectionTab = CollectionTab.Favorites
+    private var typeViewMode: CollectionTypeViewMode = CollectionTypeViewMode.Grid
+    private var othersSort: CollectionListSort = CollectionListSort.Latest
     private var hasReceivedFirstEmission = false
 
     init {
@@ -36,10 +41,38 @@ class CollectionViewModel @Inject constructor(
 
     fun onAction(action: CollectionAction) {
         when (action) {
+            is CollectionAction.UpdateSearchQuery -> {
+                searchQuery = action.query
+                publishState()
+            }
+
+            is CollectionAction.SelectTab -> {
+                selectedTab = action.tab
+                publishState()
+            }
+
+            is CollectionAction.SetTypeViewMode -> {
+                typeViewMode = action.viewMode
+                publishState()
+            }
+
+            is CollectionAction.SetOthersSort -> {
+                othersSort = action.sort
+                publishState()
+            }
+
             CollectionAction.OpenFavoriteDetail -> {
                 detailFilter = CollectionDetailFilter.Favorites
                 detailSort = CollectionListSort.Latest
                 publishState()
+            }
+
+            is CollectionAction.OpenFavoriteItem -> {
+                // TODO: Connect favorite item destination when detail route is defined.
+            }
+
+            is CollectionAction.OpenOtherItem -> {
+                // TODO: Connect other item destination when detail route is defined.
             }
 
             is CollectionAction.OpenTypeDetail -> {
@@ -77,7 +110,10 @@ class CollectionViewModel @Inject constructor(
 
     private fun publishState() {
         val hasStoredScreenshots = storedCards.isNotEmpty()
-        val overview = storedCards.toOverviewUiModel()
+        val overview = storedCards.toOverviewUiModel(
+            searchQuery = searchQuery,
+            othersSort = othersSort,
+        )
         val detail = detailFilter?.let { filter ->
             storedCards.toDetailUiModel(filter = filter, sort = detailSort)
         }
@@ -86,6 +122,10 @@ class CollectionViewModel @Inject constructor(
             CollectionUiState(
                 isLoading = !hasReceivedFirstEmission,
                 hasStoredScreenshots = hasStoredScreenshots,
+                searchQuery = searchQuery,
+                selectedTab = selectedTab,
+                typeViewMode = typeViewMode,
+                othersSort = othersSort,
                 overview = overview,
                 detail = detail,
             )

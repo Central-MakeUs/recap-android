@@ -1,24 +1,23 @@
 package com.chalkak.recap.app
 
+import android.annotation.SuppressLint
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBar
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDestination
-import com.chalkak.recap.core.design.component.topbar.RecapMainTopBar
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
-import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun RecapMainScreen(
     onNavigateToDeveloper: () -> Unit = {},
@@ -46,17 +45,7 @@ fun RecapMainScreen(
     }
 
     Scaffold(
-        topBar = {
-            RecapMainTopBar(
-                onSettingsClick = onNavigateToMyPage,
-                onSearchClick = onNavigateToSearch,
-                onLogoClick = if (BuildConfig.DEBUG && currentRoute == MainTabRoute.Home) {
-                    onNavigateToDeveloper
-                } else {
-                    null
-                },
-            )
-        },
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             RecapBottomBar(
                 hazeState = hazeState,
@@ -67,16 +56,17 @@ fun RecapMainScreen(
                 onOrganizeClick = onNavigateToOrganize,
             )
         },
-    ) { innerPadding ->
+    ) { _ ->
         RecapMainTabNavHost(
             hazeState = hazeState,
             backStack = backStack,
             onNavigateToDeveloper = onNavigateToDeveloper,
+            onNavigateToMyPage = onNavigateToMyPage,
+            onNavigateToSearch = onNavigateToSearch,
             onNavigateToOrganize = onNavigateToOrganize,
+            showDeveloperLogoShortcut = BuildConfig.DEBUG,
             analysisProgressFlow = analysisProgressFlow,
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = innerPadding.calculateTopPadding()),
+            modifier = Modifier.fillMaxSize(),
         )
     }
 }

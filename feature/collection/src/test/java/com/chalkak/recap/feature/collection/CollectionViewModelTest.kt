@@ -138,6 +138,41 @@ class CollectionViewModelTest {
     }
 
     @Test
+    fun `other content type cards appear only in others tab`() = runTest(testDispatcher) {
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    imageId = "other-1",
+                    title = "연말정산 서류 목록",
+                    contentType = ScreenshotContentType.OTHER,
+                    createdAtMillis = 300L,
+                ),
+                storedCard(
+                    imageId = "shopping-1",
+                    title = "택배 반품 절차",
+                    contentType = ScreenshotContentType.SHOPPING_PRODUCT,
+                    createdAtMillis = 200L,
+                ),
+                storedCard(
+                    imageId = "other-2",
+                    title = "미분류 메모",
+                    contentType = ScreenshotContentType.OTHER,
+                    createdAtMillis = 100L,
+                ),
+            ),
+        )
+        advanceUntilIdle()
+
+        val overview = viewModel.uiState.value.overview
+        assertEquals(1, overview.typeSummaries.size)
+        assertEquals(ScreenshotContentType.SHOPPING_PRODUCT, overview.typeSummaries.single().contentType)
+        assertEquals(
+            listOf("other-1", "other-2"),
+            overview.otherItems.map { it.imageId },
+        )
+    }
+
+    @Test
     fun `open favorite detail filters favorite cards latest first`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(

@@ -13,9 +13,12 @@ import kotlinx.coroutines.flow.flowOf
 fun HomeRoute(
     hazeState: HazeState,
     onNavigateToDeveloper: () -> Unit,
+    onNavigateToMyPage: () -> Unit,
+    onNavigateToSearch: () -> Unit,
     modifier: Modifier = Modifier,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
     viewModel: HomeViewModel = hiltViewModel(),
+    showDeveloperLogoShortcut: Boolean = false,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val analysisProgress by analysisProgressFlow.collectAsStateWithLifecycle(
@@ -27,10 +30,13 @@ fun HomeRoute(
         hazeState = hazeState,
         uiState = uiState,
         analysisProgress = analysisProgress,
+        onLogoClick = onNavigateToDeveloper.takeIf { showDeveloperLogoShortcut },
         onAction = { action ->
             when (action) {
                 HomeAction.StartImport -> Unit
                 HomeAction.EnterDeveloperOptions -> onNavigateToDeveloper()
+                HomeAction.OpenSettings -> onNavigateToMyPage()
+                HomeAction.OpenSearch -> onNavigateToSearch()
                 // TODO: Connect home mock card actions when destinations are defined.
                 HomeAction.OpenRecentScreenshots -> Unit
                 is HomeAction.SelectRecentScreenshot -> Unit

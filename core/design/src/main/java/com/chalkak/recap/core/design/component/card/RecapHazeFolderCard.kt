@@ -35,6 +35,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.PathParser
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -71,6 +73,7 @@ fun RecapHazeFolderCard(
     recapCount: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    scale: Float = 1f,
 ) {
     val hazeState = rememberHazeState()
     val glassStyle = CupertinoMaterials.ultraThin()
@@ -84,12 +87,13 @@ fun RecapHazeFolderCard(
         R.plurals.recap_haze_folder_card_recap_label,
         recapCount,
     )
+    val safeScale = scale.coerceAtLeast(0.1f)
 
     Box(
         modifier = modifier
             .size(
-                width = RecapHazeFolderCardTokens.CardWidth,
-                height = RecapHazeFolderCardTokens.CardHeight,
+                width = RecapHazeFolderCardTokens.CardWidth * safeScale,
+                height = RecapHazeFolderCardTokens.CardHeight * safeScale,
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -99,77 +103,90 @@ fun RecapHazeFolderCard(
     ) {
         Box(
             modifier = Modifier
-                .align(Alignment.TopStart)
                 .size(
-                    width = RecapHazeFolderCardTokens.BackWidth,
-                    height = RecapHazeFolderCardTokens.BackHeight,
+                    width = RecapHazeFolderCardTokens.CardWidth,
+                    height = RecapHazeFolderCardTokens.CardHeight,
                 )
-                .clip(backShape)
-                .hazeSource(hazeState)
-                .border(
-                    width = RecapHazeFolderCardTokens.BackBorderWidth,
-                    color = category.borderColor,
-                    shape = backShape,
-                ),
-        )
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .offset(
-                    x = RecapHazeFolderCardTokens.FolderLayerOffsetX,
-                    y = RecapHazeFolderCardTokens.FolderLayerOffsetY,
-                )
-                .size(
-                    width = RecapHazeFolderCardTokens.FolderWidth,
-                    height = RecapHazeFolderCardTokens.FolderHeight,
-                )
-                .clip(folderShape)
-                .hazeEffect(state = hazeState) {
-                    blurEffect {
-                        blurEnabled = true
-                        blurRadius = RecapHazeFolderCardTokens.BlurRadius
-                        style = glassStyle
-                        colorEffects = listOf(
-                            HazeColorEffect.tint(brush = tintBrush),
-                        )
-                        noiseFactor = RecapHazeFolderCardTokens.NoiseFactor
-                    }
-                }
-                .border(
-                    width = RecapHazeFolderCardTokens.FrontBorderWidth,
-                    color = RecapHazeFolderCardTokens.GlassBorderColor,
-                    shape = folderShape,
-                ),
+                .graphicsLayer {
+                    scaleX = safeScale
+                    scaleY = safeScale
+                    transformOrigin = TransformOrigin(0f, 0f)
+                },
         ) {
-            Icon(
-                painter = painterResource(category.iconResId),
-                contentDescription = null,
-                tint = White,
+            Box(
                 modifier = Modifier
                     .align(Alignment.TopStart)
-                    .padding(RecapHazeFolderCardTokens.ContentPadding)
-                    .size(RecapHazeFolderCardTokens.IconSize),
+                    .size(
+                        width = RecapHazeFolderCardTokens.BackWidth,
+                        height = RecapHazeFolderCardTokens.BackHeight,
+                    )
+                    .clip(backShape)
+                    .hazeSource(hazeState)
+                    .border(
+                        width = RecapHazeFolderCardTokens.BackBorderWidth,
+                        color = category.borderColor,
+                        shape = backShape,
+                    ),
             )
 
-            Row(
-                verticalAlignment = Alignment.Bottom,
+            Box(
                 modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .padding(RecapHazeFolderCardTokens.ContentPadding),
+                    .align(Alignment.TopStart)
+                    .offset(
+                        x = RecapHazeFolderCardTokens.FolderLayerOffsetX,
+                        y = RecapHazeFolderCardTokens.FolderLayerOffsetY,
+                    )
+                    .size(
+                        width = RecapHazeFolderCardTokens.FolderWidth,
+                        height = RecapHazeFolderCardTokens.FolderHeight,
+                    )
+                    .clip(folderShape)
+                    .hazeEffect(state = hazeState) {
+                        blurEffect {
+                            blurEnabled = true
+                            blurRadius = RecapHazeFolderCardTokens.BlurRadius
+                            style = glassStyle
+                            colorEffects = listOf(
+                                HazeColorEffect.tint(brush = tintBrush),
+                            )
+                            noiseFactor = RecapHazeFolderCardTokens.NoiseFactor
+                        }
+                    }
+                    .border(
+                        width = RecapHazeFolderCardTokens.FrontBorderWidth,
+                        color = RecapHazeFolderCardTokens.GlassBorderColor,
+                        shape = folderShape,
+                    ),
             ) {
-                Text(
-                    text = recapCount.toString(),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                    color = category.contentColor,
+                Icon(
+                    painter = painterResource(category.iconResId),
+                    contentDescription = null,
+                    tint = White,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(RecapHazeFolderCardTokens.ContentPadding)
+                        .size(RecapHazeFolderCardTokens.IconSize),
                 )
-                Text(
-                    text = " $recapLabel",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = category.contentColor,
-                )
+
+                Row(
+                    verticalAlignment = Alignment.Bottom,
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(RecapHazeFolderCardTokens.ContentPadding),
+                ) {
+                    Text(
+                        text = recapCount.toString(),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = category.contentColor,
+                    )
+                    Text(
+                        text = " $recapLabel",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = category.contentColor,
+                    )
+                }
             }
         }
     }

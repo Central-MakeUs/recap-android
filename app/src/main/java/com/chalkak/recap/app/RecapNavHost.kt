@@ -176,7 +176,10 @@ fun RecapMainTabNavHost(
     modifier: Modifier = Modifier,
     backStack: NavBackStack<NavKey>,
     onNavigateToDeveloper: () -> Unit,
+    onNavigateToMyPage: () -> Unit,
+    onNavigateToSearch: () -> Unit,
     onNavigateToOrganize: () -> Unit,
+    showDeveloperLogoShortcut: Boolean = false,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
 ) {
     NavDisplay(
@@ -189,6 +192,9 @@ fun RecapMainTabNavHost(
                     HomeRoute(
                         hazeState = hazeState,
                         onNavigateToDeveloper = onNavigateToDeveloper,
+                        onNavigateToMyPage = onNavigateToMyPage,
+                        onNavigateToSearch = onNavigateToSearch,
+                        showDeveloperLogoShortcut = showDeveloperLogoShortcut,
                         analysisProgressFlow = analysisProgressFlow,
                     )
                 }

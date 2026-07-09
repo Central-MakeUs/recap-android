@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
@@ -39,6 +38,7 @@ import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard
 import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
 import com.chalkak.recap.core.design.component.card.OrganizedRelativeTimeFormatter
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
+import com.chalkak.recap.core.design.component.topbar.HomeTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
@@ -54,6 +54,7 @@ fun HomeScreen(
     uiState: HomeUiState = HomeUiState(),
     analysisProgress: HomeAnalysisProgressUiModel = HomeAnalysisProgressUiModel(),
     onAction: (HomeAction) -> Unit = {},
+    onLogoClick: (() -> Unit)? = null,
 ) {
     val navigationBarBottomPadding = WindowInsets.navigationBars
         .asPaddingValues()
@@ -61,12 +62,17 @@ fun HomeScreen(
     val bottomContentPadding = RecapBottomBarDefaults.ContentScrollPadding +
         navigationBarBottomPadding
 
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
             .hazeSource(state = hazeState)
             .background(MaterialTheme.colorScheme.background),
     ) {
+        HomeTopBar(
+            onSettingsClick = { onAction(HomeAction.OpenSettings) },
+            onSearchClick = { onAction(HomeAction.OpenSearch) },
+            onLogoClick = onLogoClick,
+        )
         Column(
             modifier = Modifier
                 .fillMaxSize()
