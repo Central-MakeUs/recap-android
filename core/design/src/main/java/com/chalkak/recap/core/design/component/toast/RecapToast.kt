@@ -42,6 +42,7 @@ import com.chalkak.recap.core.design.theme.RecapToastSuccessIconContainer
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.time.Duration.Companion.milliseconds
 
 enum class RecapToastType(
     val iconTint: Color,
@@ -108,7 +109,7 @@ class RecapToastHostState {
                     message = message,
                     type = type,
                 )
-                delay(duration.millis)
+                delay(duration.millis.milliseconds)
             } finally {
                 currentToastData = null
             }

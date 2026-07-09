@@ -37,6 +37,7 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard
 import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
+import com.chalkak.recap.core.design.component.card.OrganizedRelativeTimeFormatter
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray100
@@ -136,7 +137,7 @@ private fun RecentOrganizedScreenshotsSection(
                 RecentOrganizedScreenshotCard(
                     thumbnailModel = screenshot.thumbnailResId,
                     title = stringResource(screenshot.titleResId),
-                    categoryLabel = stringResource(screenshot.categoryLabelResId),
+                    categoryType = screenshot.categoryType,
                     onClick = { onScreenshotClick(screenshot.id) },
                 )
             }
@@ -157,22 +158,33 @@ private fun FavoriteCategoriesSection(
         onMoreClick = onMoreClick,
         modifier = modifier,
     ) {
+        val nowMillis = remember { System.currentTimeMillis() }
+        val visibleCategories = remember(categories, nowMillis) {
+            categories.filter { category ->
+                OrganizedRelativeTimeFormatter.isVisible(
+                    organizedAtMillis = category.organizedAtMillis,
+                    nowMillis = nowMillis,
+                )
+            }
+        }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(HomeScreenTokens.HomeSectionRadius)),
         ) {
-            categories.forEachIndexed { index, category ->
+            visibleCategories.forEachIndexed { index, category ->
                 FavoriteCategoryCard(
                     thumbnailModel = category.thumbnailResId,
-                    categoryLabel = stringResource(category.categoryLabelResId),
+                    categoryType = category.categoryType,
                     title = stringResource(category.titleResId),
                     description = stringResource(category.descriptionResId),
+                    organizedAtMillis = category.organizedAtMillis,
                     isFavorite = category.isFavorite,
                     onClick = { onCategoryClick(category.id) },
                     onFavoriteClick = { onFavoriteClick(category.id) },
+                    nowMillis = nowMillis,
                 )
-                if (index < categories.lastIndex) {
+                if (index < visibleCategories.lastIndex) {
                     HorizontalDivider(
                         color = RecapGray100,
                         thickness = HomeScreenTokens.FavoriteDividerThickness,

@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -20,16 +21,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
+import com.chalkak.recap.core.design.component.chip.RecapCategoryChipType
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.core.design.theme.RecapBlue50
-import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray900
 
 @Composable
 fun RecentOrganizedScreenshotCard(
     thumbnailModel: Any?,
     title: String,
-    categoryLabel: String,
+    categoryType: RecapCategoryChipType,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     thumbnailContentDescription: String? = null,
@@ -38,7 +39,7 @@ fun RecentOrganizedScreenshotCard(
         onClick = onClick,
         modifier = modifier.width(RecentOrganizedScreenshotCardTokens.CardWidth),
         shape = RoundedCornerShape(RecentOrganizedScreenshotCardTokens.ContainerCornerRadius),
-        color = MaterialTheme.colorScheme.background ,
+        color = Color.Transparent,
         contentColor = RecapGray900,
     ) {
         Column(
@@ -62,55 +63,27 @@ fun RecentOrganizedScreenshotCard(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.fillMaxWidth(),
             )
-            RecentOrganizedScreenshotCategoryBadge(label = categoryLabel)
+            RecapCategoryChip(type = categoryType)
         }
     }
 }
 
-@Composable
-private fun RecentOrganizedScreenshotCategoryBadge(
-    label: String,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(percent = 50),
-        color = RecentOrganizedScreenshotCardTokens.BadgeBackgroundColor,
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(
-                horizontal = RecentOrganizedScreenshotCardTokens.BadgeHorizontalPadding,
-                vertical = RecentOrganizedScreenshotCardTokens.BadgeVerticalPadding,
-            ),
-            style = MaterialTheme.typography.labelSmall,
-            color = RecentOrganizedScreenshotCardTokens.BadgeTextColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
 private object RecentOrganizedScreenshotCardTokens {
-    val CardWidth = 120.dp
+    val CardWidth = 111.dp
     val ContainerCornerRadius = 12.dp
     val ContentSpacing = 8.dp
     val ThumbnailCornerRadius = 12.dp
-    val BadgeHorizontalPadding = 8.dp
-    val BadgeVerticalPadding = 4.dp
-    val BadgeBackgroundColor = RecapBlue50
-    val BadgeTextColor = RecapBlue500
     const val TitleMaxLines = 1
 }
 
-@Preview(name = "Recent Organized Screenshot Card", showBackground = true)
+@Preview(name = "Recent Organized Screenshot Card", showBackground = false)
 @Composable
 private fun RecentOrganizedScreenshotCardPreview() {
     RECAPTheme(dynamicColor = false) {
         RecentOrganizedScreenshotCard(
-            thumbnailModel = R.drawable.mock_home_screenshot_return,
+            thumbnailModel = R.drawable.bid_landscape_24px,
             title = RecentOrganizedScreenshotCardPreviewTitle,
-            categoryLabel = RecentOrganizedScreenshotCardPreviewCategoryLabel,
+            categoryType = RecapCategoryChipType.ShoppingProduct,
             onClick = {},
             modifier = Modifier.padding(24.dp),
         )
@@ -118,4 +91,3 @@ private fun RecentOrganizedScreenshotCardPreview() {
 }
 
 private const val RecentOrganizedScreenshotCardPreviewTitle = "택배 반품 절차 정리"
-private const val RecentOrganizedScreenshotCardPreviewCategoryLabel = "쇼핑 · 상품"

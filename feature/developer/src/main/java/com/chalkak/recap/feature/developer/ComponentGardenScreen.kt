@@ -53,6 +53,7 @@ import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
 import com.chalkak.recap.core.design.component.card.OrganizedCaptureCard
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
+import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChipType
 import com.chalkak.recap.core.design.component.chip.RecapFilterTag
@@ -84,6 +85,7 @@ internal fun ComponentGardenScreen(
     var inputFieldValue by remember { mutableStateOf("") }
     var multilineInputFieldValue by remember { mutableStateOf("") }
     var isFavoriteCategoryCardFavorited by remember { mutableStateOf(false) }
+    var isScreenshotCardFavorited by remember { mutableStateOf(false) }
     var selectedFilterTagOptionId by remember { mutableStateOf("latest") }
     var isFilterTagExpanded by remember { mutableStateOf(false) }
     val toastHostState = rememberRecapToastHostState()
@@ -123,9 +125,9 @@ internal fun ComponentGardenScreen(
                     onClick = {},
                 )
                 RecentOrganizedScreenshotCard(
-                    thumbnailModel = R.drawable.mock_home_screenshot_return,
+                    thumbnailModel = R.drawable.bid_landscape_24px,
                     title = stringResource(R.string.home_recent_screenshot_return_title),
-                    categoryLabel = stringResource(R.string.home_category_shopping_product),
+                    categoryType = RecapCategoryChipType.ShoppingProduct,
                     onClick = {},
                 )
                 FrequentSaveTypeFolderCard(
@@ -195,17 +197,32 @@ internal fun ComponentGardenScreen(
                 )
                 FavoriteCategoryCard(
                     thumbnailModel = R.drawable.bid_landscape_24px,
-                    categoryLabel = stringResource(
-                        R.string.component_garden_favorite_category_card_category_label
-                    ),
+                    categoryType = RecapCategoryChipType.ShoppingProduct,
                     title = stringResource(R.string.component_garden_favorite_category_card_title),
                     description = stringResource(
                         R.string.component_garden_favorite_category_card_description
                     ),
+                    organizedAtMillis = System.currentTimeMillis() -
+                        java.util.concurrent.TimeUnit.HOURS.toMillis(1),
                     isFavorite = isFavoriteCategoryCardFavorited,
                     onClick = {},
                     onFavoriteClick = {
                         isFavoriteCategoryCardFavorited = !isFavoriteCategoryCardFavorited
+                    },
+                )
+                ScreenshotCard(
+                    thumbnailModel = R.drawable.bid_landscape_24px,
+                    title = stringResource(R.string.component_garden_screenshot_card_title),
+                    description = stringResource(
+                        R.string.component_garden_screenshot_card_description
+                    ),
+                    organizedDate = stringResource(
+                        R.string.component_garden_screenshot_card_organized_date
+                    ),
+                    isFavorite = isScreenshotCardFavorited,
+                    onClick = {},
+                    onFavoriteClick = {
+                        isScreenshotCardFavorited = !isScreenshotCardFavorited
                     },
                 )
                 RecapButton(

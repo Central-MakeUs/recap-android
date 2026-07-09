@@ -52,6 +52,7 @@ import com.chalkak.recap.feature.onboarding.component.OnboardingIllustrationVari
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlin.time.Duration.Companion.milliseconds
 
 private val OnboardingBlue = Color(0xFF5C74FF)
 private val OnboardingGray700 = Color(0xFF222B3C)
@@ -72,7 +73,7 @@ fun OnboardingLandingScreen(
         if (showLoginImmediately) {
             showLogin = true
         } else {
-            delay(900)
+            delay(900.milliseconds)
             showLogin = true
         }
     }

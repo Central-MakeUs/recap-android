@@ -3,7 +3,6 @@ package com.chalkak.recap.core.design.component.card
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -29,33 +29,48 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
+import com.chalkak.recap.core.design.component.chip.RecapCategoryChipType
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray200
+import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
+import java.util.concurrent.TimeUnit
 
 @Composable
 fun FavoriteCategoryCard(
     thumbnailModel: Any?,
-    categoryLabel: String,
+    categoryType: RecapCategoryChipType,
     title: String,
     description: String,
+    organizedAtMillis: Long,
     isFavorite: Boolean,
     onClick: () -> Unit,
     onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier,
+    nowMillis: Long = System.currentTimeMillis(),
     thumbnailContentDescription: String? = null,
 ) {
+    val relativeTimeLabel = remember(organizedAtMillis, nowMillis) {
+        OrganizedRelativeTimeFormatter.label(
+            organizedAtMillis = organizedAtMillis,
+            nowMillis = nowMillis,
+        )
+    } ?: return
+
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
+        color = Color.Transparent,
         contentColor = RecapGray900,
     ) {
         Row(
-            modifier = Modifier.padding(FavoriteCategoryCardTokens.ContainerPadding),
+            modifier = Modifier.padding(
+                horizontal = FavoriteCategoryCardTokens.ContainerHorizontalPadding,
+                vertical = FavoriteCategoryCardTokens.ContainerVerticalPadding,
+            ),
             horizontalArrangement = Arrangement.spacedBy(FavoriteCategoryCardTokens.ContentSpacing),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -67,37 +82,54 @@ fun FavoriteCategoryCard(
                     .size(FavoriteCategoryCardTokens.ThumbnailSize)
                     .clip(RoundedCornerShape(FavoriteCategoryCardTokens.ThumbnailCornerRadius)),
             )
-            Box(modifier = Modifier.weight(1f)) {
-                Column(
-                    modifier = Modifier.padding(end = FavoriteCategoryCardTokens.FavoriteIconTouchSize),
-                    verticalArrangement = Arrangement.spacedBy(FavoriteCategoryCardTokens.TextSpacing),
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(FavoriteCategoryCardTokens.TextSpacing),
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    RecapCategoryChip(
+                        type = categoryType,
+                        modifier = Modifier
+                            .weight(1f, fill = false)
+                            .padding(end = FavoriteCategoryCardTokens.TrailingContentSpacing),
+                    )
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            FavoriteCategoryCardTokens.TrailingContentSpacing,
+                        ),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        FavoriteCategoryBadge(label = categoryLabel)
+                        Text(
+                            text = relativeTimeLabel.toDisplayText(),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = RecapGray300,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        FavoriteCategoryStarButton(
+                            isFavorite = isFavorite,
+                            onClick = onFavoriteClick,
+                        )
                     }
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = RecapGray900,
-                        maxLines = FavoriteCategoryCardTokens.TitleMaxLines,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.labelMedium,
-                        color = RecapGray500,
-                        maxLines = FavoriteCategoryCardTokens.DescriptionMaxLines,
-                        overflow = TextOverflow.Ellipsis,
-                    )
                 }
-                FavoriteCategoryStarButton(
-                    isFavorite = isFavorite,
-                    onClick = onFavoriteClick,
-                    modifier = Modifier.align(Alignment.TopEnd),
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = RecapGray900,
+                    maxLines = FavoriteCategoryCardTokens.TitleMaxLines,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = RecapGray500,
+                    maxLines = FavoriteCategoryCardTokens.DescriptionMaxLines,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
@@ -105,26 +137,23 @@ fun FavoriteCategoryCard(
 }
 
 @Composable
-private fun FavoriteCategoryBadge(
-    label: String,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier,
-        shape = RoundedCornerShape(percent = 50),
-        color = FavoriteCategoryCardTokens.BadgeBackgroundColor,
-    ) {
-        Text(
-            text = label,
-            modifier = Modifier.padding(
-                horizontal = FavoriteCategoryCardTokens.BadgeHorizontalPadding,
-                vertical = FavoriteCategoryCardTokens.BadgeVerticalPadding,
-            ),
-            style = MaterialTheme.typography.labelSmall,
-            color = FavoriteCategoryCardTokens.BadgeTextColor,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
+private fun OrganizedRelativeTimeLabel.toDisplayText(): String {
+    return when (this) {
+        OrganizedRelativeTimeLabel.JustNow -> {
+            stringResource(R.string.organized_relative_time_just_now)
+        }
+        is OrganizedRelativeTimeLabel.MinutesAgo -> {
+            stringResource(R.string.organized_relative_time_minutes_ago, minutes)
+        }
+        is OrganizedRelativeTimeLabel.HoursAgo -> {
+            stringResource(R.string.organized_relative_time_hours_ago, hours)
+        }
+        OrganizedRelativeTimeLabel.Yesterday -> {
+            stringResource(R.string.organized_relative_time_yesterday)
+        }
+        is OrganizedRelativeTimeLabel.DaysAgo -> {
+            stringResource(R.string.organized_relative_time_days_ago, days)
+        }
     }
 }
 
@@ -165,18 +194,16 @@ private fun FavoriteCategoryStarButton(
 }
 
 private object FavoriteCategoryCardTokens {
-    val ContainerPadding = 16.dp
-    val ContentSpacing = 12.dp
-    val ThumbnailSize = 72.dp
+    val ContainerHorizontalPadding = 16.dp
+    val ContainerVerticalPadding = 10.dp
+    val ContentSpacing = 15.dp
+    val ThumbnailSize = 68.dp
     val ThumbnailCornerRadius = 12.dp
     val TextSpacing = 4.dp
-    val BadgeHorizontalPadding = 8.dp
-    val BadgeVerticalPadding = 4.dp
+    val TrailingContentSpacing = 4.dp
     val FavoriteIconTouchSize = 32.dp
     val FavoriteIconPadding = 4.dp
     val FavoriteIconSize = 24.dp
-    val BadgeBackgroundColor = RecapBlue50
-    val BadgeTextColor = RecapBlue500
     const val TitleMaxLines = 1
     const val DescriptionMaxLines = 2
 }
@@ -187,12 +214,15 @@ private fun FavoriteCategoryCardPreview() {
     RECAPTheme(dynamicColor = false) {
         FavoriteCategoryCard(
             thumbnailModel = R.drawable.bid_landscape_24px,
-            categoryLabel = FavoriteCategoryCardPreviewCategoryLabel,
+            categoryType = RecapCategoryChipType.ShoppingProduct,
             title = FavoriteCategoryCardPreviewTitle,
             description = FavoriteCategoryCardPreviewDescription,
+            organizedAtMillis = FavoriteCategoryCardPreviewNowMillis -
+                TimeUnit.HOURS.toMillis(1),
             isFavorite = false,
             onClick = {},
             onFavoriteClick = {},
+            nowMillis = FavoriteCategoryCardPreviewNowMillis,
             modifier = Modifier.padding(24.dp),
         )
     }
@@ -204,17 +234,20 @@ private fun FavoriteCategoryCardFavoritedPreview() {
     RECAPTheme(dynamicColor = false) {
         FavoriteCategoryCard(
             thumbnailModel = R.drawable.bid_landscape_24px,
-            categoryLabel = FavoriteCategoryCardPreviewCategoryLabel,
+            categoryType = RecapCategoryChipType.ShoppingProduct,
             title = FavoriteCategoryCardPreviewTitle,
             description = FavoriteCategoryCardPreviewDescription,
+            organizedAtMillis = FavoriteCategoryCardPreviewNowMillis -
+                TimeUnit.MINUTES.toMillis(30),
             isFavorite = true,
             onClick = {},
             onFavoriteClick = {},
+            nowMillis = FavoriteCategoryCardPreviewNowMillis,
             modifier = Modifier.padding(24.dp),
         )
     }
 }
 
-private const val FavoriteCategoryCardPreviewCategoryLabel = "카테고리 01"
-private const val FavoriteCategoryCardPreviewTitle = "무선 키보드 후보"
-private const val FavoriteCategoryCardPreviewDescription = "가격과 배송 정보가 포함된 상품 캡처"
+private const val FavoriteCategoryCardPreviewTitle = "택배 반품 절차 정리"
+private const val FavoriteCategoryCardPreviewDescription = "한 줄 요약"
+private const val FavoriteCategoryCardPreviewNowMillis = 1_720_000_000_000L
