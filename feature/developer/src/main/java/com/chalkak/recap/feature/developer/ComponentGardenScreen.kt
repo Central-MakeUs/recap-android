@@ -4,6 +4,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -48,6 +50,8 @@ import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
 import com.chalkak.recap.core.design.component.card.OrganizedCaptureCard
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
+import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
+import com.chalkak.recap.core.design.component.chip.RecapCategoryChipType
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
@@ -108,6 +112,11 @@ internal fun ComponentGardenScreen(
                     recapCount = ComponentGardenFrequentSaveTypeCount,
                     onClick = {},
                 )
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_category_chips_section_title),
+            ) {
+                ComponentGardenCategoryChips()
             }
             ComponentGardenSection(
                 title = stringResource(R.string.component_garden_ui_components_section_title)
@@ -354,6 +363,22 @@ internal fun ComponentGardenScreen(
             onCancelClick = { showWithdrawalConfirmationBottomSheet = false },
             onWithdrawClick = { showWithdrawalConfirmationBottomSheet = false },
         )
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ComponentGardenCategoryChips(
+    modifier: Modifier = Modifier,
+) {
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        RecapCategoryChipType.entries.forEach { type ->
+            RecapCategoryChip(type = type)
+        }
     }
 }
 

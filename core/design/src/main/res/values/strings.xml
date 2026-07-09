@@ -38,6 +38,9 @@
     <string name="home_category_info_knowledge">정보 · 지식</string>
     <string name="home_category_category_01">카테고리 01</string>
     <string name="home_category_place_restaurant">장소 · 맛집</string>
+    <string name="home_category_book_content">책 · 컨텐츠</string>
+    <string name="home_category_benefit_event">혜택 · 이벤트</string>
+    <string name="home_category_record_capture">기록 · 캡처</string>
     <string name="frequent_save_type_folder_card_recap_count">%1$d recaps</string>
     <string name="review_required_screenshot_card_title">확인 필요한 스크린샷이 %1$d개 있어요</string>
     <string name="review_required_screenshot_card_description">스크린샷을 최종 점검해주세요</string>
@@ -175,6 +178,7 @@
     <string name="component_garden_title">컴포넌트 가든</string>
     <string name="component_garden_home_cards_section_title">홈 카드</string>
     <string name="component_garden_ui_components_section_title">컴포넌트</string>
+    <string name="component_garden_category_chips_section_title">카테고리 칩</string>
     <string name="component_garden_favorite_category_card_category_label">카테고리 01</string>
     <string name="component_garden_favorite_category_card_title">무선 키보드 후보</string>
     <string name="component_garden_favorite_category_card_description">가격과 배송 정보가 포함된 상품 캡처</string>
