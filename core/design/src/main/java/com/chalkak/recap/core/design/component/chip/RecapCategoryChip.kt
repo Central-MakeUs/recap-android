@@ -1,6 +1,5 @@
 package com.chalkak.recap.core.design.component.chip
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -19,64 +18,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.core.design.theme.RecapCategoryBenefitEventBorder
-import com.chalkak.recap.core.design.theme.RecapCategoryBenefitEventContent
-import com.chalkak.recap.core.design.theme.RecapCategoryBookContentBorder
-import com.chalkak.recap.core.design.theme.RecapCategoryBookContentContent
-import com.chalkak.recap.core.design.theme.RecapCategoryInfoKnowledgeBorder
-import com.chalkak.recap.core.design.theme.RecapCategoryInfoKnowledgeContent
-import com.chalkak.recap.core.design.theme.RecapCategoryPlaceRestaurantBorder
-import com.chalkak.recap.core.design.theme.RecapCategoryPlaceRestaurantContent
-import com.chalkak.recap.core.design.theme.RecapCategoryRecordCaptureBorder
-import com.chalkak.recap.core.design.theme.RecapCategoryRecordCaptureContent
-import com.chalkak.recap.core.design.theme.RecapCategoryScheduleReservationBorder
-import com.chalkak.recap.core.design.theme.RecapCategoryScheduleReservationContent
-import com.chalkak.recap.core.design.theme.RecapCategoryShoppingProductBorder
-import com.chalkak.recap.core.design.theme.RecapCategoryShoppingProductContent
-
-enum class RecapCategoryChipType(
-    @get:StringRes val labelResId: Int,
-    val borderColor: Color,
-    val contentColor: Color,
-) {
-    ShoppingProduct(
-        labelResId = R.string.home_category_shopping_product,
-        borderColor = RecapCategoryShoppingProductBorder,
-        contentColor = RecapCategoryShoppingProductContent,
-    ),
-    PlaceRestaurant(
-        labelResId = R.string.home_category_place_restaurant,
-        borderColor = RecapCategoryPlaceRestaurantBorder,
-        contentColor = RecapCategoryPlaceRestaurantContent,
-    ),
-    ScheduleReservation(
-        labelResId = R.string.home_category_schedule_reservation,
-        borderColor = RecapCategoryScheduleReservationBorder,
-        contentColor = RecapCategoryScheduleReservationContent,
-    ),
-    InfoKnowledge(
-        labelResId = R.string.home_category_info_knowledge,
-        borderColor = RecapCategoryInfoKnowledgeBorder,
-        contentColor = RecapCategoryInfoKnowledgeContent,
-    ),
-    BookContent(
-        labelResId = R.string.home_category_book_content,
-        borderColor = RecapCategoryBookContentBorder,
-        contentColor = RecapCategoryBookContentContent,
-    ),
-    BenefitEvent(
-        labelResId = R.string.home_category_benefit_event,
-        borderColor = RecapCategoryBenefitEventBorder,
-        contentColor = RecapCategoryBenefitEventContent,
-    ),
-    RecordCapture(
-        labelResId = R.string.home_category_record_capture,
-        borderColor = RecapCategoryRecordCaptureBorder,
-        contentColor = RecapCategoryRecordCaptureContent,
-    ),
-}
 
 @Immutable
 data class RecapCategoryChipColors(
@@ -89,7 +32,7 @@ object RecapCategoryChipDefaults {
     val HorizontalPadding = 10.dp
     val VerticalPadding = 4.dp
 
-    fun colors(type: RecapCategoryChipType): RecapCategoryChipColors {
+    fun colors(type: RecapCategoryType): RecapCategoryChipColors {
         return RecapCategoryChipColors(
             border = type.borderColor,
             content = type.contentColor,
@@ -99,7 +42,7 @@ object RecapCategoryChipDefaults {
 
 @Composable
 fun RecapCategoryChip(
-    type: RecapCategoryChipType,
+    type: RecapCategoryType,
     modifier: Modifier = Modifier,
     colors: RecapCategoryChipColors = RecapCategoryChipDefaults.colors(type),
 ) {
@@ -158,7 +101,7 @@ private fun RecapCategoryChipsPreviewContent() {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            RecapCategoryChipType.entries.forEach { type ->
+            RecapCategoryType.entries.forEach { type ->
                 RecapCategoryChip(type = type)
             }
         }

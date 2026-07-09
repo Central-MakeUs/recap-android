@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -36,9 +37,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.bottomsheet.OrganizeNotificationPermissionBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.LogoutConfirmationBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheet
@@ -51,11 +54,11 @@ import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard
 import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
 import com.chalkak.recap.core.design.component.card.OrganizedCaptureCard
+import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
-import com.chalkak.recap.core.design.component.chip.RecapCategoryChipType
 import com.chalkak.recap.core.design.component.chip.RecapFilterTag
 import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
 import com.chalkak.recap.core.design.component.input.RecapInputField
@@ -127,7 +130,7 @@ internal fun ComponentGardenScreen(
                 RecentOrganizedScreenshotCard(
                     thumbnailModel = R.drawable.bid_landscape_24px,
                     title = stringResource(R.string.home_recent_screenshot_return_title),
-                    categoryType = RecapCategoryChipType.ShoppingProduct,
+                    categoryType = RecapCategoryType.ShoppingProduct,
                     onClick = {},
                 )
                 FrequentSaveTypeFolderCard(
@@ -135,6 +138,11 @@ internal fun ComponentGardenScreen(
                     recapCount = ComponentGardenFrequentSaveTypeCount,
                     onClick = {},
                 )
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_haze_folder_cards_section_title),
+            ) {
+                ComponentGardenHazeFolderCards()
             }
             ComponentGardenSection(
                 title = stringResource(R.string.component_garden_category_chips_section_title),
@@ -197,7 +205,7 @@ internal fun ComponentGardenScreen(
                 )
                 FavoriteCategoryCard(
                     thumbnailModel = R.drawable.bid_landscape_24px,
-                    categoryType = RecapCategoryChipType.ShoppingProduct,
+                    categoryType = RecapCategoryType.ShoppingProduct,
                     title = stringResource(R.string.component_garden_favorite_category_card_title),
                     description = stringResource(
                         R.string.component_garden_favorite_category_card_description
@@ -507,8 +515,41 @@ private fun ComponentGardenCategoryChips(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        RecapCategoryChipType.entries.forEach { type ->
+        RecapCategoryType.entries.forEach { type ->
             RecapCategoryChip(type = type)
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ComponentGardenHazeFolderCards(
+    modifier: Modifier = Modifier,
+) {
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        maxItemsInEachRow = 3,
+    ) {
+        ComponentGardenHazeFolderCardItems.forEach { item ->
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.width(ComponentGardenHazeFolderCardWidth),
+            ) {
+                RecapHazeFolderCard(
+                    category = item.category,
+                    recapCount = item.recapCount,
+                    onClick = {},
+                )
+                Text(
+                    text = stringResource(item.category.labelResId),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                )
+            }
         }
     }
 }
@@ -543,3 +584,19 @@ private fun ComponentGardenScreenPreview() {
 private const val ComponentGardenReviewRequiredCount = 3
 private const val ComponentGardenOrganizedCaptureCount = 12
 private const val ComponentGardenFrequentSaveTypeCount = 12
+private val ComponentGardenHazeFolderCardWidth = 99.dp
+
+private data class ComponentGardenHazeFolderCardItem(
+    val category: RecapCategoryType,
+    val recapCount: Int,
+)
+
+private val ComponentGardenHazeFolderCardItems = listOf(
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.ShoppingProduct, 20),
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.PlaceRestaurant, 23),
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.ScheduleReservation, 10),
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.InfoKnowledge, 12),
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.BookContent, 1),
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.BenefitEvent, 5),
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.RecordCapture, 12),
+)

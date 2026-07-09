@@ -21,8 +21,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
-import com.chalkak.recap.core.design.component.chip.RecapCategoryChipType
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray900
 
@@ -30,7 +30,7 @@ import com.chalkak.recap.core.design.theme.RecapGray900
 fun RecentOrganizedScreenshotCard(
     thumbnailModel: Any?,
     title: String,
-    categoryType: RecapCategoryChipType,
+    categoryType: RecapCategoryType,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     thumbnailContentDescription: String? = null,
@@ -83,7 +83,7 @@ private fun RecentOrganizedScreenshotCardPreview() {
         RecentOrganizedScreenshotCard(
             thumbnailModel = R.drawable.bid_landscape_24px,
             title = RecentOrganizedScreenshotCardPreviewTitle,
-            categoryType = RecapCategoryChipType.ShoppingProduct,
+            categoryType = RecapCategoryType.ShoppingProduct,
             onClick = {},
             modifier = Modifier.padding(24.dp),
         )

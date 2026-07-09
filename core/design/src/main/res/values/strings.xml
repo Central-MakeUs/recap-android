@@ -42,6 +42,10 @@
     <string name="home_category_benefit_event">혜택 · 이벤트</string>
     <string name="home_category_record_capture">기록 · 캡처</string>
     <string name="frequent_save_type_folder_card_recap_count">%1$d recaps</string>
+    <plurals name="recap_haze_folder_card_recap_label">
+        <item quantity="one">recap</item>
+        <item quantity="other">recaps</item>
+    </plurals>
     <string name="review_required_screenshot_card_title">확인 필요한 스크린샷이 %1$d개 있어요</string>
     <string name="review_required_screenshot_card_description">스크린샷을 최종 점검해주세요</string>
     <string name="review_required_screenshot_card_action_content_description">확인 필요한 스크린샷으로 이동</string>
@@ -190,6 +194,7 @@
     <string name="developer_options_ocr_raw_result_blank">인식된 텍스트 없음</string>
     <string name="component_garden_title">컴포넌트 가든</string>
     <string name="component_garden_home_cards_section_title">홈 카드</string>
+    <string name="component_garden_haze_folder_cards_section_title">헤이즈 폴더 카드</string>
     <string name="component_garden_ui_components_section_title">컴포넌트</string>
     <string name="component_garden_category_chips_section_title">카테고리 칩</string>
     <string name="component_garden_filter_tag_section_title">필터 태그</string>

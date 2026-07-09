@@ -29,8 +29,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
-import com.chalkak.recap.core.design.component.chip.RecapCategoryChipType
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray200
@@ -42,7 +42,7 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun FavoriteCategoryCard(
     thumbnailModel: Any?,
-    categoryType: RecapCategoryChipType,
+    categoryType: RecapCategoryType,
     title: String,
     description: String,
     organizedAtMillis: Long,
@@ -214,7 +214,7 @@ private fun FavoriteCategoryCardPreview() {
     RECAPTheme(dynamicColor = false) {
         FavoriteCategoryCard(
             thumbnailModel = R.drawable.bid_landscape_24px,
-            categoryType = RecapCategoryChipType.ShoppingProduct,
+            categoryType = RecapCategoryType.ShoppingProduct,
             title = FavoriteCategoryCardPreviewTitle,
             description = FavoriteCategoryCardPreviewDescription,
             organizedAtMillis = FavoriteCategoryCardPreviewNowMillis -
@@ -234,7 +234,7 @@ private fun FavoriteCategoryCardFavoritedPreview() {
     RECAPTheme(dynamicColor = false) {
         FavoriteCategoryCard(
             thumbnailModel = R.drawable.bid_landscape_24px,
-            categoryType = RecapCategoryChipType.ShoppingProduct,
+            categoryType = RecapCategoryType.ShoppingProduct,
             title = FavoriteCategoryCardPreviewTitle,
             description = FavoriteCategoryCardPreviewDescription,
             organizedAtMillis = FavoriteCategoryCardPreviewNowMillis -

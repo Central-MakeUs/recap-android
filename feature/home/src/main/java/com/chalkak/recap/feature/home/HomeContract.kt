@@ -3,7 +3,7 @@ package com.chalkak.recap.feature.home
 import androidx.annotation.StringRes
 import androidx.annotation.DrawableRes
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.component.chip.RecapCategoryChipType
+import com.chalkak.recap.core.design.category.RecapCategoryType
 import java.util.concurrent.TimeUnit
 
 data class HomeAnalysisProgressUiModel(
@@ -21,13 +21,13 @@ data class HomeRecentScreenshotUiModel(
     val id: String,
     @get:DrawableRes val thumbnailResId: Int,
     @get:StringRes val titleResId: Int,
-    val categoryType: RecapCategoryChipType,
+    val categoryType: RecapCategoryType,
 )
 
 data class HomeFavoriteCategoryUiModel(
     val id: String,
     @get:DrawableRes val thumbnailResId: Int,
-    val categoryType: RecapCategoryChipType,
+    val categoryType: RecapCategoryType,
     @get:StringRes val titleResId: Int,
     @get:StringRes val descriptionResId: Int,
     val organizedAtMillis: Long,
@@ -57,19 +57,19 @@ private val HomeMockRecentScreenshots = listOf(
         id = "return",
         thumbnailResId = R.drawable.mock_home_screenshot_return,
         titleResId = R.string.home_recent_screenshot_return_title,
-        categoryType = RecapCategoryChipType.ShoppingProduct,
+        categoryType = RecapCategoryType.ShoppingProduct,
     ),
     HomeRecentScreenshotUiModel(
         id = "hotel",
         thumbnailResId = R.drawable.mock_home_screenshot_hotel,
         titleResId = R.string.home_recent_screenshot_hotel_title,
-        categoryType = RecapCategoryChipType.ScheduleReservation,
+        categoryType = RecapCategoryType.ScheduleReservation,
     ),
     HomeRecentScreenshotUiModel(
         id = "recipe",
         thumbnailResId = R.drawable.mock_home_screenshot_recipe,
         titleResId = R.string.home_recent_screenshot_recipe_title,
-        categoryType = RecapCategoryChipType.InfoKnowledge,
+        categoryType = RecapCategoryType.InfoKnowledge,
     ),
 )
 
@@ -77,7 +77,7 @@ private val HomeMockFavoriteCategories = listOf(
     HomeFavoriteCategoryUiModel(
         id = "tax",
         thumbnailResId = R.drawable.mock_home_screenshot_tax,
-        categoryType = RecapCategoryChipType.InfoKnowledge,
+        categoryType = RecapCategoryType.InfoKnowledge,
         titleResId = R.string.home_favorite_year_end_tax_title,
         descriptionResId = R.string.home_favorite_year_end_tax_description,
         organizedAtMillis = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
@@ -86,7 +86,7 @@ private val HomeMockFavoriteCategories = listOf(
     HomeFavoriteCategoryUiModel(
         id = "moving",
         thumbnailResId = R.drawable.mock_home_screenshot_hotel,
-        categoryType = RecapCategoryChipType.ScheduleReservation,
+        categoryType = RecapCategoryType.ScheduleReservation,
         titleResId = R.string.home_favorite_moving_checklist_title,
         descriptionResId = R.string.home_favorite_moving_checklist_description,
         organizedAtMillis = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(2),
@@ -95,7 +95,7 @@ private val HomeMockFavoriteCategories = listOf(
     HomeFavoriteCategoryUiModel(
         id = "keyboard",
         thumbnailResId = R.drawable.mock_home_screenshot_return,
-        categoryType = RecapCategoryChipType.ShoppingProduct,
+        categoryType = RecapCategoryType.ShoppingProduct,
         titleResId = R.string.home_favorite_keyboard_title,
         descriptionResId = R.string.home_favorite_keyboard_description,
         organizedAtMillis = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(30),
