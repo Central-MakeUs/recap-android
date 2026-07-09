@@ -5,7 +5,7 @@
 
     <style name="Theme.RECAP.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/white</item>
-        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/recap_logo</item>
         <item name="postSplashScreenTheme">@style/Theme.RECAP</item>
     </style>
 </resources>
