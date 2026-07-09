@@ -2,6 +2,7 @@ package com.chalkak.recap.feature.developer
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -30,7 +31,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -53,7 +56,12 @@ import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChipType
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
+import com.chalkak.recap.core.design.component.toast.RecapToast
+import com.chalkak.recap.core.design.component.toast.RecapToastHost
+import com.chalkak.recap.core.design.component.toast.RecapToastType
+import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,11 +79,17 @@ internal fun ComponentGardenScreen(
     var withdrawalConfirmationChecked by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var isFavoriteCategoryCardFavorited by remember { mutableStateOf(false) }
+    val toastHostState = rememberRecapToastHostState()
+    val coroutineScope = rememberCoroutineScope()
+    val toastPreviewMessage = stringResource(R.string.recap_toast_preview_login_failed_message)
 
-    Surface(
+    Box(
         modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
     ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background,
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -147,6 +161,44 @@ internal fun ComponentGardenScreen(
                     size = RecapButtonSize.Medium,
                     shadowElevation = 12.dp
                 )
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_toasts_section_title),
+            ) {
+                RecapToast(
+                    message = toastPreviewMessage,
+                    type = RecapToastType.Success,
+                )
+                RecapToast(
+                    message = toastPreviewMessage,
+                    type = RecapToastType.Error,
+                )
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        coroutineScope.launch {
+                            toastHostState.showToast(
+                                message = toastPreviewMessage,
+                                type = RecapToastType.Success,
+                            )
+                        }
+                    },
+                ) {
+                    Text(text = stringResource(R.string.component_garden_toast_success_button))
+                }
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        coroutineScope.launch {
+                            toastHostState.showToast(
+                                message = toastPreviewMessage,
+                                type = RecapToastType.Error,
+                            )
+                        }
+                    },
+                ) {
+                    Text(text = stringResource(R.string.component_garden_toast_error_button))
+                }
             }
             ComponentGardenSection(
                 title = stringResource(R.string.component_garden_bottom_sheets_section_title),
@@ -236,6 +288,14 @@ internal fun ComponentGardenScreen(
                 }
             }
         }
+        }
+
+        RecapToastHost(
+            hostState = toastHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+        )
     }
 
     if (showPhotoAccessPermissionBottomSheet) {

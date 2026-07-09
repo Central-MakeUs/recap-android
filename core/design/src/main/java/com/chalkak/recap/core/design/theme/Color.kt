@@ -31,3 +31,8 @@ val RecapCategoryBenefitEventBorder = Color(0xFF94DBE7)
 val RecapCategoryBenefitEventContent = Color(0xFF398B98)
 val RecapCategoryRecordCaptureBorder = Color(0xFFBEB2F3)
 val RecapCategoryRecordCaptureContent = Color(0xFF6354A7)
+
+val RecapToastBackground = RecapGray900
+val RecapToastContent = Color(0xFFFFFFFF)
+val RecapToastSuccessIconContainer = Color(0xFF1FCD70)
+val RecapToastErrorIconContainer = Color(0xFFFB3D3D)
