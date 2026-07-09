@@ -179,6 +179,9 @@
     <string name="component_garden_home_cards_section_title">홈 카드</string>
     <string name="component_garden_ui_components_section_title">컴포넌트</string>
     <string name="component_garden_category_chips_section_title">카테고리 칩</string>
+    <string name="component_garden_filter_tag_section_title">필터 태그</string>
+    <string name="recap_filter_tag_expand_content_description">필터 옵션 펼치기</string>
+    <string name="recap_filter_tag_collapse_content_description">필터 옵션 접기</string>
     <string name="component_garden_favorite_category_card_category_label">카테고리 01</string>
     <string name="component_garden_favorite_category_card_title">무선 키보드 후보</string>
     <string name="component_garden_favorite_category_card_description">가격과 배송 정보가 포함된 상품 캡처</string>

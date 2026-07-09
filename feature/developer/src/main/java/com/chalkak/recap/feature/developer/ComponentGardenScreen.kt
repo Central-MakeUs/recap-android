@@ -55,6 +55,8 @@ import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCar
 import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChipType
+import com.chalkak.recap.core.design.component.chip.RecapFilterTag
+import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
 import com.chalkak.recap.core.design.component.toast.RecapToast
 import com.chalkak.recap.core.design.component.toast.RecapToastHost
@@ -79,6 +81,8 @@ internal fun ComponentGardenScreen(
     var withdrawalConfirmationChecked by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var isFavoriteCategoryCardFavorited by remember { mutableStateOf(false) }
+    var selectedFilterTagOptionId by remember { mutableStateOf("latest") }
+    var isFilterTagExpanded by remember { mutableStateOf(false) }
     val toastHostState = rememberRecapToastHostState()
     val coroutineScope = rememberCoroutineScope()
     val toastPreviewMessage = stringResource(R.string.recap_toast_preview_login_failed_message)
@@ -131,6 +135,26 @@ internal fun ComponentGardenScreen(
                 title = stringResource(R.string.component_garden_category_chips_section_title),
             ) {
                 ComponentGardenCategoryChips()
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_filter_tag_section_title),
+            ) {
+                RecapFilterTag(
+                    options = listOf(
+                        RecapFilterTagOption(
+                            id = "latest",
+                            label = stringResource(R.string.collection_sort_latest),
+                        ),
+                        RecapFilterTagOption(
+                            id = "favorite",
+                            label = stringResource(R.string.home_favorites_title),
+                        ),
+                    ),
+                    selectedOptionId = selectedFilterTagOptionId,
+                    onOptionSelected = { selectedFilterTagOptionId = it.id },
+                    expanded = isFilterTagExpanded,
+                    onExpandedChange = { isFilterTagExpanded = it },
+                )
             }
             ComponentGardenSection(
                 title = stringResource(R.string.component_garden_ui_components_section_title)
