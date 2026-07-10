@@ -212,6 +212,7 @@ fun RecapMainTabNavHost(
                         onNavigateToSearch = onNavigateToSearch,
                         onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
                         onNavigateToCollectionFavorites = onNavigateToCollectionFavorites,
+                        onNavigateToOrganize = onNavigateToOrganize,
                         showDeveloperLogoShortcut = showDeveloperLogoShortcut,
                         analysisProgressFlow = analysisProgressFlow,
                     )

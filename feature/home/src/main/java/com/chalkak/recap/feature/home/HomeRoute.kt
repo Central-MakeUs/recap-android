@@ -17,6 +17,7 @@ fun HomeRoute(
     onNavigateToSearch: () -> Unit,
     onNavigateToRecentOrganizedScreenshots: () -> Unit,
     onNavigateToCollectionFavorites: () -> Unit,
+    onNavigateToOrganize: () -> Unit,
     modifier: Modifier = Modifier,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
     viewModel: HomeViewModel = hiltViewModel(),
@@ -35,7 +36,7 @@ fun HomeRoute(
         onLogoClick = onNavigateToDeveloper.takeIf { showDeveloperLogoShortcut },
         onAction = { action ->
             when (action) {
-                HomeAction.StartImport -> Unit
+                HomeAction.StartImport -> onNavigateToOrganize()
                 HomeAction.EnterDeveloperOptions -> onNavigateToDeveloper()
                 HomeAction.OpenSettings -> onNavigateToMyPage()
                 HomeAction.OpenSearch -> onNavigateToSearch()

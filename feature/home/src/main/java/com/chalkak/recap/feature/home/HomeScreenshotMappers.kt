@@ -4,7 +4,7 @@ import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 
-private const val HomeRecentScreenshotLimit = 10
+private const val HomeRecentScreenshotLimit = 3
 private const val HomeFavoriteItemLimit = 3
 private const val HomeFrequentSaveTypeLimit = 3
 
