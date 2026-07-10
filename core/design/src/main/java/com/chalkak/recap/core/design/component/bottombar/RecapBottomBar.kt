@@ -2,6 +2,8 @@ package com.chalkak.recap.core.design.component.bottombar
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
@@ -23,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -74,6 +79,7 @@ fun RecapBottomBar(
     onDestinationClick: (RecapBottomBarDestination) -> Unit,
     onOrganizeClick: () -> Unit,
     modifier: Modifier = Modifier,
+    predictiveBackProgress: Float = 0f,
 ) {
     Row(
         modifier = modifier
@@ -90,6 +96,7 @@ fun RecapBottomBar(
         RecapBottomBarNavPill(
             hazeState = hazeState,
             currentDestination = currentDestination,
+            predictiveBackProgress = predictiveBackProgress,
             onDestinationClick = onDestinationClick,
         )
 
@@ -103,11 +110,38 @@ fun RecapBottomBar(
 private fun RecapBottomBarNavPill(
     hazeState: HazeState,
     currentDestination: RecapBottomBarDestination,
+    predictiveBackProgress: Float,
     onDestinationClick: (RecapBottomBarDestination) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val pillShape = RoundedCornerShape(percent = 50)
     val pillBlurStyle = CupertinoMaterials.ultraThin()
+    val itemSpan = RecapBottomBarItemWidth + RecapBottomBarNavItemSpacing
+    val selectionFraction = remember {
+        Animatable(currentDestination.ordinal.toFloat())
+    }
+
+    LaunchedEffect(currentDestination, predictiveBackProgress) {
+        val clampedProgress = predictiveBackProgress.coerceIn(0f, 1f)
+        if (
+            clampedProgress > 0f &&
+            currentDestination == RecapBottomBarDestination.Collection
+        ) {
+            selectionFraction.snapTo(
+                targetValue = 1f - clampedProgress * RecapBottomBarPredictiveMaxFraction,
+            )
+        } else {
+            selectionFraction.animateTo(
+                targetValue = currentDestination.ordinal.toFloat(),
+                animationSpec = tween(RecapBottomBarHighlightDurationMillis),
+            )
+        }
+    }
+
+    val highlightShape = RoundedCornerShape(percent = 50)
+    val highlightOffset = itemSpan * selectionFraction.value
+    val homeSelectedStrength = (1f - selectionFraction.value).coerceIn(0f, 1f)
+    val collectionSelectedStrength = selectionFraction.value.coerceIn(0f, 1f)
 
     Box(
         modifier = modifier
@@ -137,25 +171,39 @@ private fun RecapBottomBarNavPill(
             )
             .clip(pillShape),
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .height(RecapBottomBarHeight)
                 .padding(horizontal = 8.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            RecapBottomBarItem(
-                labelResId = RecapBottomBarDestination.Home.labelResId,
-                icon = painterResource(RecapBottomBarDestination.Home.iconResId),
-                selected = currentDestination == RecapBottomBarDestination.Home,
-                onClick = { onDestinationClick(RecapBottomBarDestination.Home) },
+            Box(
+                modifier = Modifier
+                    .offset(x = highlightOffset)
+                    .size(
+                        width = RecapBottomBarItemWidth,
+                        height = RecapBottomBarItemHeight,
+                    )
+                    .clip(highlightShape)
+                    .background(RecapBlue50),
             )
-            RecapBottomBarItem(
-                labelResId = RecapBottomBarDestination.Collection.labelResId,
-                icon = painterResource(RecapBottomBarDestination.Collection.iconResId),
-                selected = currentDestination == RecapBottomBarDestination.Collection,
-                onClick = { onDestinationClick(RecapBottomBarDestination.Collection) },
-            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(RecapBottomBarNavItemSpacing),
+            ) {
+                RecapBottomBarItem(
+                    labelResId = RecapBottomBarDestination.Home.labelResId,
+                    icon = painterResource(RecapBottomBarDestination.Home.iconResId),
+                    selectedStrength = homeSelectedStrength,
+                    onClick = { onDestinationClick(RecapBottomBarDestination.Home) },
+                )
+                RecapBottomBarItem(
+                    labelResId = RecapBottomBarDestination.Collection.labelResId,
+                    icon = painterResource(RecapBottomBarDestination.Collection.iconResId),
+                    selectedStrength = collectionSelectedStrength,
+                    onClick = { onDestinationClick(RecapBottomBarDestination.Collection) },
+                )
+            }
         }
     }
 }
@@ -164,31 +212,18 @@ private fun RecapBottomBarNavPill(
 private fun RecapBottomBarItem(
     @StringRes labelResId: Int,
     icon: Painter,
-    selected: Boolean,
+    selectedStrength: Float,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val contentColor = if (selected) {
-       RecapBlue300
-    } else {
-        RecapGray200
-    }
-    val itemShape = RoundedCornerShape(percent = 50)
+    val contentColor = lerp(RecapGray200, RecapBlue300, selectedStrength.coerceIn(0f, 1f))
 
     Box(
         modifier = modifier
             .size(
                 width = RecapBottomBarItemWidth,
                 height = RecapBottomBarItemHeight,
-            )
-            .clip(itemShape)
-            .background(
-                color = if (selected) {
-                    RecapBlue50
-                } else {
-                    Color.Transparent
-                },
             )
             .clickable(
                 interactionSource = interactionSource,
@@ -267,9 +302,13 @@ object RecapBottomBarDefaults {
     const val GlassNoiseFactor: Float = 0.12f
 }
 
+private const val RecapBottomBarHighlightDurationMillis = 250
+private const val RecapBottomBarPredictiveMaxFraction = 1f / 3f
+
 private val RecapBottomBarHeight: Dp = RecapBottomBarDefaults.Height
 private val RecapBottomBarItemWidth: Dp = 72.dp
 private val RecapBottomBarItemHeight: Dp = 46.dp
+private val RecapBottomBarNavItemSpacing: Dp = 4.dp
 private val RecapBottomBarItemGap: Dp = 12.dp
 private val RecapBottomBarHorizontalPadding: Dp = 32.dp
 private val RecapBottomBarBottomPadding: Dp = RecapBottomBarDefaults.BottomPadding

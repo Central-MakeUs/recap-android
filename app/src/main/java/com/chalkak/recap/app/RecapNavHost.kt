@@ -3,6 +3,15 @@ package com.chalkak.recap.app
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -35,6 +44,10 @@ import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+
+private const val MainTabSlideDurationMillis = 300
+private const val MainTabFadeDurationMillis = 250
+private const val MainTabSlideFraction = 6
 
 @Composable
 fun RecapNavHost(
@@ -197,11 +210,17 @@ fun RecapMainTabNavHost(
     collectionInitialTab: CollectionTab = CollectionTab.Favorites,
     showDeveloperLogoShortcut: Boolean = false,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
+    onCollectionPredictiveBackProgress: (Float) -> Unit = {},
 ) {
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
         modifier = modifier,
+        transitionSpec = { mainTabForwardTransition() },
+        popTransitionSpec = { mainTabPopTransition() },
+        predictivePopTransitionSpec = {
+            EnterTransition.None togetherWith ExitTransition.None
+        },
         entryProvider = { route ->
             when (route) {
                 MainTabRoute.Home -> NavEntry(route) {
@@ -225,6 +244,7 @@ fun RecapMainTabNavHost(
                         onNavigateBack = { backStack.removeLastOrNull() },
                         initialTab = collectionInitialTab,
                         favoritesNavigationRequestId = collectionFavoritesNavigationRequestId,
+                        onPredictiveBackProgress = onCollectionPredictiveBackProgress,
                     )
                 }
 
@@ -233,3 +253,29 @@ fun RecapMainTabNavHost(
         },
     )
 }
+
+private fun mainTabForwardTransition(): ContentTransform =
+    slideInHorizontally(
+        animationSpec = tween(MainTabSlideDurationMillis),
+        initialOffsetX = { fullWidth -> fullWidth / MainTabSlideFraction },
+    ) + fadeIn(
+        animationSpec = tween(MainTabFadeDurationMillis),
+    ) togetherWith slideOutHorizontally(
+        animationSpec = tween(MainTabSlideDurationMillis),
+        targetOffsetX = { fullWidth -> -fullWidth / MainTabSlideFraction },
+    ) + fadeOut(
+        animationSpec = tween(MainTabFadeDurationMillis),
+    )
+
+private fun mainTabPopTransition(): ContentTransform =
+    slideInHorizontally(
+        animationSpec = tween(MainTabSlideDurationMillis),
+        initialOffsetX = { fullWidth -> -fullWidth / MainTabSlideFraction },
+    ) + fadeIn(
+        animationSpec = tween(MainTabFadeDurationMillis),
+    ) togetherWith slideOutHorizontally(
+        animationSpec = tween(MainTabSlideDurationMillis),
+        targetOffsetX = { fullWidth -> fullWidth / MainTabSlideFraction },
+    ) + fadeOut(
+        animationSpec = tween(MainTabFadeDurationMillis),
+    )

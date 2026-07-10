@@ -7,6 +7,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -37,6 +38,7 @@ fun RecapMainScreen(
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
     val hazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
     var collectionFavoritesNavigationRequestId by remember { mutableIntStateOf(0) }
+    var collectionPredictiveBackProgress by remember { mutableFloatStateOf(0f) }
 
     fun navigateTo(route: MainTabRoute) {
         if (backStack.lastOrNull() == route) return
@@ -70,12 +72,19 @@ fun RecapMainScreen(
         }
     }
 
+    LaunchedEffect(currentRoute) {
+        if (currentRoute != MainTabRoute.Collection) {
+            collectionPredictiveBackProgress = 0f
+        }
+    }
+
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
             RecapBottomBar(
                 hazeState = hazeState,
                 currentDestination = currentRoute.toBottomBarDestination(),
+                predictiveBackProgress = collectionPredictiveBackProgress,
                 onDestinationClick = { destination ->
                     navigateTo(destination.toMainTabRoute())
                 },
@@ -96,6 +105,9 @@ fun RecapMainScreen(
             collectionInitialTab = CollectionTab.Favorites,
             showDeveloperLogoShortcut = BuildConfig.DEBUG,
             analysisProgressFlow = analysisProgressFlow,
+            onCollectionPredictiveBackProgress = { progress ->
+                collectionPredictiveBackProgress = progress
+            },
             modifier = Modifier.fillMaxSize(),
         )
     }
