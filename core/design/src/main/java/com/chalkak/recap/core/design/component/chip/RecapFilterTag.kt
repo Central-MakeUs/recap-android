@@ -1,6 +1,8 @@
 package com.chalkak.recap.core.design.component.chip
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.MutableTransitionState
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -10,6 +12,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -43,7 +46,10 @@ import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray300
@@ -57,12 +63,13 @@ data class RecapFilterTagOption(
 )
 
 object RecapFilterTagDefaults {
-    val Shape = RoundedCornerShape(10.dp)
+    val Shape = RoundedCornerShape(size = 16.dp)
     val ItemHeight = 32.dp
     val HorizontalPadding = 10.dp
     val VerticalPadding = 5.dp
     val LabelIconSpacing = 10.dp
     val IconSize = 16.dp
+    val ExpandedElevation = 2.dp
     const val AnimationDurationMillis = 180
 }
 
@@ -88,10 +95,25 @@ fun RecapFilterTag(
 
     val selectedOption = options.firstOrNull { it.id == selectedOptionId } ?: options.first()
     val unselectedOptions = options.filter { it.id != selectedOption.id }
+    val menuVisibleState = remember { MutableTransitionState(false) }
+    menuVisibleState.targetState = isExpanded && unselectedOptions.isNotEmpty()
+    val isMenuShowing = menuVisibleState.currentState ||
+        menuVisibleState.targetState ||
+        !menuVisibleState.isIdle
+
     val caretRotation by animateFloatAsState(
         targetValue = if (isExpanded) 180f else 0f,
         animationSpec = tween(durationMillis = RecapFilterTagDefaults.AnimationDurationMillis),
         label = "RecapFilterTagCaretRotation",
+    )
+    val expandedElevation by animateDpAsState(
+        targetValue = if (menuVisibleState.targetState) {
+            RecapFilterTagDefaults.ExpandedElevation
+        } else {
+            0.dp
+        },
+        animationSpec = tween(durationMillis = RecapFilterTagDefaults.AnimationDurationMillis),
+        label = "RecapFilterTagExpandedElevation",
     )
     val toggleDescription = if (isExpanded) {
         stringResource(R.string.recap_filter_tag_collapse_content_description)
@@ -99,16 +121,62 @@ fun RecapFilterTag(
         stringResource(R.string.recap_filter_tag_expand_content_description)
     }
 
+    Box(modifier = modifier) {
+        // Keeps layout size collapsed so siblings are not pushed down.
+        RecapFilterTagSurface(
+            selectedOption = selectedOption,
+            caretRotation = caretRotation,
+            toggleDescription = toggleDescription,
+            onSelectedClick = { setExpanded(!isExpanded) },
+        )
+
+        if (isMenuShowing) {
+            Popup(
+                alignment = Alignment.TopStart,
+                onDismissRequest = { setExpanded(false) },
+                properties = PopupProperties(focusable = true),
+            ) {
+                RecapFilterTagSurface(
+                    selectedOption = selectedOption,
+                    caretRotation = caretRotation,
+                    toggleDescription = toggleDescription,
+                    onSelectedClick = { setExpanded(false) },
+                    unselectedOptions = unselectedOptions,
+                    onOptionSelected = { option ->
+                        onOptionSelected(option)
+                        setExpanded(false)
+                    },
+                    optionsVisibleState = menuVisibleState,
+                    shadowElevation = expandedElevation,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecapFilterTagSurface(
+    selectedOption: RecapFilterTagOption,
+    caretRotation: Float,
+    toggleDescription: String,
+    onSelectedClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    unselectedOptions: List<RecapFilterTagOption> = emptyList(),
+    onOptionSelected: (RecapFilterTagOption) -> Unit = {},
+    optionsVisibleState: MutableTransitionState<Boolean>? = null,
+    shadowElevation: Dp = 0.dp,
+) {
     Surface(
         modifier = modifier,
         shape = RecapFilterTagDefaults.Shape,
         color = RecapGray50,
+        shadowElevation = shadowElevation,
     ) {
         Column(modifier = Modifier.width(IntrinsicSize.Max)) {
             RecapFilterTagItem(
                 label = selectedOption.label,
                 labelColor = RecapGray700,
-                onClick = { setExpanded(!isExpanded) },
+                onClick = onSelectedClick,
                 modifier = Modifier.semantics {
                     contentDescription = toggleDescription
                     stateDescription = selectedOption.label
@@ -125,37 +193,38 @@ fun RecapFilterTag(
                 },
             )
 
-            AnimatedVisibility(
-                visible = isExpanded && unselectedOptions.isNotEmpty(),
-                enter = expandVertically(
-                    animationSpec = tween(
-                        durationMillis = RecapFilterTagDefaults.AnimationDurationMillis,
+            if (optionsVisibleState != null) {
+                AnimatedVisibility(
+                    visibleState = optionsVisibleState,
+                    enter = expandVertically(
+                        animationSpec = tween(
+                            durationMillis = RecapFilterTagDefaults.AnimationDurationMillis,
+                        ),
+                        expandFrom = Alignment.Top,
+                    ) + fadeIn(
+                        animationSpec = tween(
+                            durationMillis = RecapFilterTagDefaults.AnimationDurationMillis,
+                        ),
                     ),
-                ) + fadeIn(
-                    animationSpec = tween(
-                        durationMillis = RecapFilterTagDefaults.AnimationDurationMillis,
+                    exit = shrinkVertically(
+                        animationSpec = tween(
+                            durationMillis = RecapFilterTagDefaults.AnimationDurationMillis,
+                        ),
+                        shrinkTowards = Alignment.Top,
+                    ) + fadeOut(
+                        animationSpec = tween(
+                            durationMillis = RecapFilterTagDefaults.AnimationDurationMillis,
+                        ),
                     ),
-                ),
-                exit = shrinkVertically(
-                    animationSpec = tween(
-                        durationMillis = RecapFilterTagDefaults.AnimationDurationMillis,
-                    ),
-                ) + fadeOut(
-                    animationSpec = tween(
-                        durationMillis = RecapFilterTagDefaults.AnimationDurationMillis,
-                    ),
-                ),
-            ) {
-                Column {
-                    unselectedOptions.forEach { option ->
-                        RecapFilterTagItem(
-                            label = option.label,
-                            labelColor = RecapGray300,
-                            onClick = {
-                                onOptionSelected(option)
-                                setExpanded(false)
-                            },
-                        )
+                ) {
+                    Column {
+                        unselectedOptions.forEach { option ->
+                            RecapFilterTagItem(
+                                label = option.label,
+                                labelColor = RecapGray300,
+                                onClick = { onOptionSelected(option) },
+                            )
+                        }
                     }
                 }
             }
@@ -238,16 +307,23 @@ private fun RecapFilterTagPreviewContent(
         ),
         RecapFilterTagOption(
             id = "favorite",
-            label = stringResource(R.string.home_favorites_title),
+            label = stringResource(R.string.collection_sort_oldest),
         ),
     )
 
-    RecapFilterTag(
-        options = options,
-        selectedOptionId = selectedOptionId,
-        onOptionSelected = { selectedOptionId = it.id },
-        expanded = isExpanded,
-        onExpandedChange = { isExpanded = it },
-        modifier = Modifier.padding(24.dp),
-    )
+    Column(modifier = Modifier.padding(24.dp)) {
+        RecapFilterTag(
+            options = options,
+            selectedOptionId = selectedOptionId,
+            onOptionSelected = { selectedOptionId = it.id },
+            expanded = isExpanded,
+            onExpandedChange = { isExpanded = it },
+        )
+        Text(
+            text = "Below content stays put",
+            style = MaterialTheme.typography.bodyMedium,
+            color = RecapGray300,
+            modifier = Modifier.padding(top = 12.dp),
+        )
+    }
 }

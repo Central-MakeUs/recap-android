@@ -81,6 +81,10 @@
     <string name="collection_view_grid_content_description">그리드 보기</string>
     <string name="collection_view_list_content_description">리스트 보기</string>
     <string name="collection_select_action">선택</string>
+    <string name="collection_cancel_selection_action">취소</string>
+    <string name="collection_delete_selected_action">선택 삭제 (%1$d)</string>
+    <string name="collection_select_all_action">전체 선택</string>
+    <string name="collection_selection_item_content_description">%1$s, %2$s</string>
     <string name="collection_recap_count">%1$d recaps</string>
     <string name="collection_type_folder_count">%1$d개의 유형 폴더</string>
     <string name="collection_type_examples_separator"> · </string>
@@ -91,7 +95,7 @@
     <string name="collection_detail_capture_count">%1$d개의 캡처</string>
     <string name="collection_detail_organized_date">%1$s 정리</string>
     <string name="collection_sort_latest">최신순</string>
-    <string name="collection_sort_name">이름순</string>
+    <string name="collection_sort_oldest">오래된순</string>
     <string name="collection_detail_empty">보관된 캡처가 없어요.</string>
     <string name="collection_favorites_detail_title">즐겨찾기</string>
     <string name="collection_back_content_description">이전 화면으로 이동</string>

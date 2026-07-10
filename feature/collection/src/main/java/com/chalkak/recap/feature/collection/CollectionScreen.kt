@@ -44,7 +44,6 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.button.RecapButton
-import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard
 import com.chalkak.recap.core.design.component.card.OrganizedRelativeTimeFormatter
 import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
 import com.chalkak.recap.core.design.component.chip.RecapFilterTag
@@ -52,8 +51,9 @@ import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
 import com.chalkak.recap.core.design.component.topbar.CollectionTopBar
 import com.chalkak.recap.core.design.component.topbar.CollectionTypeViewMode
+import com.chalkak.recap.core.design.theme.Black
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.core.design.theme.RecapBlue500
+import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray50
@@ -74,7 +74,7 @@ fun CollectionScreen(
     modifier: Modifier = Modifier,
 ) {
     val showViewModeToggle = uiState.hasStoredScreenshots &&
-        uiState.selectedTab == CollectionTab.Types
+            uiState.selectedTab == CollectionTab.Types
 
     Surface(
         modifier = modifier
@@ -189,27 +189,30 @@ private fun CollectionOverviewContent(
         .asPaddingValues()
         .calculateBottomPadding()
     val bottomContentPadding = RecapBottomBarDefaults.ContentScrollPadding +
-        navigationBarBottomPadding
+            navigationBarBottomPadding
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = CollectionScreenTokens.HorizontalPadding),
+        modifier = modifier.fillMaxSize(),
     ) {
         RecapSearchBar(
             value = uiState.searchQuery,
             onValueChange = { query -> onAction(CollectionAction.UpdateSearchQuery(query)) },
-            modifier = Modifier.padding(top = CollectionScreenTokens.SearchTopPadding),
+            modifier = Modifier
+                .padding(horizontal = CollectionScreenTokens.HorizontalPadding)
+                .padding(top = CollectionScreenTokens.SearchTopPadding),
         )
         CollectionTabRow(
             selectedTab = uiState.selectedTab,
             onTabSelected = { tab -> onAction(CollectionAction.SelectTab(tab)) },
-            modifier = Modifier.padding(top = CollectionScreenTokens.ChipTopPadding),
+            modifier = Modifier
+                .padding(horizontal = CollectionScreenTokens.HorizontalPadding)
+                .padding(top = CollectionScreenTokens.ChipTopPadding),
         )
         when (uiState.selectedTab) {
             CollectionTab.Favorites -> {
                 CollectionFavoritesContent(
                     favoriteItems = uiState.overview.favoriteItems,
+                    selection = uiState.selection,
                     onAction = onAction,
                     bottomContentPadding = bottomContentPadding,
                     modifier = Modifier
@@ -236,6 +239,7 @@ private fun CollectionOverviewContent(
                 CollectionOthersContent(
                     otherItems = uiState.overview.otherItems,
                     selectedSort = uiState.othersSort,
+                    selection = uiState.selection,
                     onAction = onAction,
                     bottomContentPadding = bottomContentPadding,
                     modifier = Modifier
@@ -286,7 +290,7 @@ private fun CollectionTabChip(
         onClick = onClick,
         modifier = modifier,
         shape = RoundedCornerShape(percent = 50),
-        color = if (selected) RecapBlue500 else RecapGray50,
+        color = if (selected) RecapBlue300 else RecapGray50,
         contentColor = if (selected) {
             MaterialTheme.colorScheme.background
         } else {
@@ -306,6 +310,7 @@ private fun CollectionTabChip(
 private fun CollectionOthersContent(
     otherItems: List<CollectionCardItemUiModel>,
     selectedSort: CollectionListSort,
+    selection: CollectionSelectionUiState,
     onAction: (CollectionAction) -> Unit,
     bottomContentPadding: Dp,
     modifier: Modifier = Modifier,
@@ -331,10 +336,13 @@ private fun CollectionOthersContent(
             label = stringResource(R.string.collection_sort_latest),
         ),
         RecapFilterTagOption(
-            id = CollectionListSort.Name.name,
-            label = stringResource(R.string.collection_sort_name),
+            id = CollectionListSort.Oldest.name,
+            label = stringResource(R.string.collection_sort_oldest),
         ),
     )
+    val itemImageIds = remember(otherItems) {
+        otherItems.mapTo(linkedSetOf()) { item -> item.imageId }
+    }
 
     Column(modifier = modifier.fillMaxSize()) {
         RecapFilterTag(
@@ -345,15 +353,34 @@ private fun CollectionOthersContent(
                     ?: return@RecapFilterTag
                 onAction(CollectionAction.SetOthersSort(sort))
             },
-            modifier = Modifier.padding(bottom = 12.dp),
+            modifier = Modifier
+                .padding(horizontal = CollectionScreenTokens.ListHorizontalPadding)
+                .padding(bottom = 12.dp),
         )
         CollectionSectionHeader(
             leadingText = stringResource(
                 R.string.collection_recap_count,
                 otherItems.size,
             ),
-            trailingText = stringResource(R.string.collection_select_action),
-            onTrailingClick = {},
+            trailingContent = {
+                CollectionSelectionActions(
+                    selection = selection,
+                    onStartSelection = { onAction(CollectionAction.StartSelection) },
+                    onCancelSelection = { onAction(CollectionAction.CancelSelection) },
+                    onDeleteSelected = { onAction(CollectionAction.DeleteSelected) },
+                )
+            },
+            modifier = Modifier.padding(horizontal = CollectionScreenTokens.ListHorizontalPadding),
+        )
+        CollectionSelectAllRow(
+            visible = selection.isActive,
+            itemImageIds = itemImageIds,
+            selectedImageIds = selection.selectedImageIds,
+            onToggleAll = {
+                onAction(CollectionAction.ToggleAllSelection(itemImageIds))
+            },
+            modifier = Modifier.padding(horizontal = CollectionScreenTokens.ListHorizontalPadding),
+            enabled = !selection.isDeleting,
         )
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -367,6 +394,13 @@ private fun CollectionOthersContent(
                     card = item,
                     onClick = { onAction(CollectionAction.OpenOtherItem(item.imageId)) },
                     onFavoriteClick = { onAction(CollectionAction.ToggleFavorite(item.imageId)) },
+                    selection = selection,
+                    onSelectionToggle = {
+                        onAction(CollectionAction.ToggleItemSelection(item.imageId))
+                    },
+                    modifier = Modifier.padding(
+                        horizontal = CollectionScreenTokens.ListHorizontalPadding,
+                    ),
                 )
                 if (index < otherItems.lastIndex) {
                     HorizontalDivider(
@@ -382,6 +416,7 @@ private fun CollectionOthersContent(
 @Composable
 private fun CollectionFavoritesContent(
     favoriteItems: List<CollectionFavoriteItemUiModel>,
+    selection: CollectionSelectionUiState,
     onAction: (CollectionAction) -> Unit,
     bottomContentPadding: Dp,
     modifier: Modifier = Modifier,
@@ -394,6 +429,9 @@ private fun CollectionFavoritesContent(
                 nowMillis = nowMillis,
             )
         }
+    }
+    val itemImageIds = remember(visibleItems) {
+        visibleItems.mapTo(linkedSetOf()) { item -> item.imageId }
     }
 
     if (visibleItems.isEmpty()) {
@@ -417,8 +455,25 @@ private fun CollectionFavoritesContent(
                 R.string.collection_recap_count,
                 visibleItems.size,
             ),
-            trailingText = stringResource(R.string.collection_select_action),
-            onTrailingClick = {},
+            trailingContent = {
+                CollectionSelectionActions(
+                    selection = selection,
+                    onStartSelection = { onAction(CollectionAction.StartSelection) },
+                    onCancelSelection = { onAction(CollectionAction.CancelSelection) },
+                    onDeleteSelected = { onAction(CollectionAction.DeleteSelected) },
+                )
+            },
+            modifier = Modifier.padding(horizontal = CollectionScreenTokens.ListHorizontalPadding),
+        )
+        CollectionSelectAllRow(
+            visible = selection.isActive,
+            itemImageIds = itemImageIds,
+            selectedImageIds = selection.selectedImageIds,
+            onToggleAll = {
+                onAction(CollectionAction.ToggleAllSelection(itemImageIds))
+            },
+            modifier = Modifier.padding(horizontal = CollectionScreenTokens.ListHorizontalPadding),
+            enabled = !selection.isDeleting,
         )
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -428,16 +483,22 @@ private fun CollectionFavoritesContent(
                 items = visibleItems,
                 key = { _, item -> item.imageId },
             ) { index, item ->
-                FavoriteCategoryCard(
-                    thumbnailModel = item.thumbnailModel,
-                    categoryType = item.categoryType,
-                    title = item.title,
-                    description = item.summary,
-                    organizedAtMillis = item.createdAtMillis,
-                    isFavorite = item.isFavorite,
-                    onClick = { onAction(CollectionAction.OpenFavoriteItem(item.imageId)) },
-                    onFavoriteClick = { onAction(CollectionAction.ToggleFavorite(item.imageId)) },
+                CollectionSelectableFavoriteItem(
+                    item = item,
+                    selection = selection,
                     nowMillis = nowMillis,
+                    onOpenClick = {
+                        onAction(CollectionAction.OpenFavoriteItem(item.imageId))
+                    },
+                    onFavoriteClick = {
+                        onAction(CollectionAction.ToggleFavorite(item.imageId))
+                    },
+                    onSelectionToggle = {
+                        onAction(CollectionAction.ToggleItemSelection(item.imageId))
+                    },
+                    modifier = Modifier.padding(
+                        horizontal = CollectionScreenTokens.ListHorizontalPadding,
+                    ),
                 )
                 if (index < visibleItems.lastIndex) {
                     HorizontalDivider(
@@ -474,40 +535,53 @@ private fun CollectionTypesContent(
     }
 
     Column(modifier = modifier.fillMaxSize()) {
-        CollectionSectionHeader(
-            leadingText = stringResource(
-                R.string.collection_type_folder_count,
-                typeSummaries.size,
-            ),
-        )
         when (viewMode) {
             CollectionTypeViewMode.Grid -> {
-                LazyVerticalGrid(
-                    columns = GridCells.Fixed(3),
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = bottomContentPadding),
-                    horizontalArrangement = Arrangement.spacedBy(
-                        CollectionScreenTokens.TypeGridSpacing,
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(
-                        CollectionScreenTokens.TypeGridRowSpacing,
-                    ),
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = CollectionScreenTokens.HorizontalPadding),
                 ) {
-                    items(
-                        items = typeSummaries,
-                        key = { summary -> summary.contentType.name },
-                    ) { summary ->
-                        CollectionTypeGridItem(
-                            summary = summary,
-                            onClick = {
-                                onAction(CollectionAction.OpenTypeDetail(summary.contentType))
-                            },
-                        )
+                    CollectionSectionHeader(
+                        leadingText = stringResource(
+                            R.string.collection_type_folder_count,
+                            typeSummaries.size,
+                        ),
+                    )
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = bottomContentPadding),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            CollectionScreenTokens.TypeGridSpacing,
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(
+                            CollectionScreenTokens.TypeGridRowSpacing,
+                        ),
+                    ) {
+                        items(
+                            items = typeSummaries,
+                            key = { summary -> summary.contentType.name },
+                        ) { summary ->
+                            CollectionTypeGridItem(
+                                summary = summary,
+                                onClick = {
+                                    onAction(CollectionAction.OpenTypeDetail(summary.contentType))
+                                },
+                            )
+                        }
                     }
                 }
             }
 
             CollectionTypeViewMode.List -> {
+                CollectionSectionHeader(
+                    leadingText = stringResource(
+                        R.string.collection_type_folder_count,
+                        typeSummaries.size,
+                    ),
+                    modifier = Modifier.padding(horizontal = CollectionScreenTokens.HorizontalPadding),
+                )
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(bottom = bottomContentPadding),
@@ -539,8 +613,7 @@ private fun CollectionTypesContent(
 private fun CollectionSectionHeader(
     leadingText: String,
     modifier: Modifier = Modifier,
-    trailingText: String? = null,
-    onTrailingClick: (() -> Unit)? = null,
+    trailingContent: (@Composable () -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
@@ -554,18 +627,8 @@ private fun CollectionSectionHeader(
             style = MaterialTheme.typography.labelLarge,
             color = RecapGray500,
         )
-        if (trailingText != null && onTrailingClick != null) {
-            Text(
-                text = trailingText,
-                style = MaterialTheme.typography.labelLarge,
-                color = RecapGray500,
-                modifier = Modifier.clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    role = Role.Button,
-                    onClick = onTrailingClick,
-                ),
-            )
+        if (trailingContent != null) {
+            trailingContent()
         }
     }
 }
@@ -589,7 +652,7 @@ private fun CollectionTypeGridItem(
         )
         Text(
             text = stringResource(summary.labelResId),
-            style = MaterialTheme.typography.labelLarge,
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
             color = RecapGray900,
             textAlign = TextAlign.Center,
@@ -618,8 +681,11 @@ private fun CollectionTypeListItem(
                 role = Role.Button,
                 onClick = onClick,
             )
-            .padding(vertical = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+            .padding(
+                vertical = 12.dp,
+                horizontal = CollectionScreenTokens.HorizontalPadding,
+            ),
+        horizontalArrangement = Arrangement.spacedBy(27.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RecapHazeFolderCard(
@@ -630,20 +696,20 @@ private fun CollectionTypeListItem(
         )
         Column(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            verticalArrangement = Arrangement.spacedBy(5.dp),
         ) {
             Text(
                 text = stringResource(summary.labelResId),
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = RecapGray900,
+                color = Black,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
             if (exampleText.isNotBlank()) {
                 Text(
                     text = exampleText,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelLarge,
                     color = RecapGray500,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -655,11 +721,12 @@ private fun CollectionTypeListItem(
 
 private object CollectionScreenTokens {
     val HorizontalPadding = 20.dp
+    val ListHorizontalPadding = 16.dp
     val SearchTopPadding = 8.dp
     val ChipTopPadding = 16.dp
     val ContentTopPadding = 20.dp
-    val TypeGridSpacing = 12.dp
-    val TypeGridRowSpacing = 20.dp
+    val TypeGridSpacing = 19.dp
+    val TypeGridRowSpacing = 39.dp
     const val TypeListFolderScale = 0.72f
 }
 
@@ -685,36 +752,28 @@ private fun CollectionFavoritesPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionScreen(
             hazeState = rememberHazeState(),
-            uiState = CollectionUiState(
-                isLoading = false,
-                hasStoredScreenshots = true,
-                selectedTab = CollectionTab.Favorites,
-                overview = CollectionOverviewUiModel(
-                    favoriteSummary = CollectionFavoriteSummaryUiModel(
-                        count = 3,
-                        previewThumbnailModels = emptyList(),
-                    ),
-                    favoriteItems = listOf(
-                        CollectionFavoriteItemUiModel(
-                            imageId = "1",
-                            title = "연말정산 서류 목록",
-                            summary = "연말정산 제출에 필요한 서류 정리",
-                            categoryType = RecapCategoryType.RecordCapture,
-                            createdAtMillis = System.currentTimeMillis(),
-                            isFavorite = true,
-                            thumbnailModel = null,
-                        ),
-                        CollectionFavoriteItemUiModel(
-                            imageId = "2",
-                            title = "택배 반품 절차",
-                            summary = "반품 신청 전 확인해야 할 체크리스트",
-                            categoryType = RecapCategoryType.ShoppingProduct,
-                            createdAtMillis = System.currentTimeMillis(),
-                            isFavorite = true,
-                            thumbnailModel = null,
-                        ),
-                    ),
-                    typeSummaries = emptyList(),
+            uiState = previewFavoritesUiState(),
+            onAction = {},
+            onNavigateToOrganize = {},
+        )
+    }
+}
+
+@Preview(
+    name = "Collection Favorites Selection",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 800,
+)
+@Composable
+private fun CollectionFavoritesSelectionPreview() {
+    RECAPTheme(dynamicColor = false) {
+        CollectionScreen(
+            hazeState = rememberHazeState(),
+            uiState = previewFavoritesUiState(
+                selection = CollectionSelectionUiState(
+                    isActive = true,
+                    selectedImageIds = setOf("1"),
                 ),
             ),
             onAction = {},
@@ -755,32 +814,28 @@ private fun CollectionOthersPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionScreen(
             hazeState = rememberHazeState(),
-            uiState = CollectionUiState(
-                isLoading = false,
-                hasStoredScreenshots = true,
-                selectedTab = CollectionTab.Others,
-                othersSort = CollectionListSort.Latest,
-                overview = CollectionOverviewUiModel(
-                    otherItems = listOf(
-                        CollectionCardItemUiModel(
-                            imageId = "other-1",
-                            title = "연말정산 서류 목록",
-                            summary = "연말정산 제출에 필요한 서류 정리",
-                            contentTypeLabelResId = R.string.collection_content_type_other,
-                            createdAtMillis = 1_719_446_400_000L,
-                            isFavorite = false,
-                            thumbnailModel = null,
-                        ),
-                        CollectionCardItemUiModel(
-                            imageId = "other-2",
-                            title = "미분류 메모",
-                            summary = "카테고리를 특정하기 어려운 캡처",
-                            contentTypeLabelResId = R.string.collection_content_type_other,
-                            createdAtMillis = 1_718_208_000_000L,
-                            isFavorite = false,
-                            thumbnailModel = null,
-                        ),
-                    ),
+            uiState = previewOthersUiState(),
+            onAction = {},
+            onNavigateToOrganize = {},
+        )
+    }
+}
+
+@Preview(
+    name = "Collection Others Selection",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 800,
+)
+@Composable
+private fun CollectionOthersSelectionPreview() {
+    RECAPTheme(dynamicColor = false) {
+        CollectionScreen(
+            hazeState = rememberHazeState(),
+            uiState = previewOthersUiState(
+                selection = CollectionSelectionUiState(
+                    isActive = true,
+                    selectedImageIds = setOf("other-1"),
                 ),
             ),
             onAction = {},
@@ -826,5 +881,76 @@ private fun previewTypesUiState(viewMode: CollectionTypeViewMode): CollectionUiS
                 ),
             ),
         ),
+    )
+}
+
+private fun previewFavoritesUiState(
+    selection: CollectionSelectionUiState = CollectionSelectionUiState(),
+): CollectionUiState {
+    return CollectionUiState(
+        isLoading = false,
+        hasStoredScreenshots = true,
+        selectedTab = CollectionTab.Favorites,
+        overview = CollectionOverviewUiModel(
+            favoriteSummary = CollectionFavoriteSummaryUiModel(
+                count = 2,
+                previewThumbnailModels = emptyList(),
+            ),
+            favoriteItems = listOf(
+                CollectionFavoriteItemUiModel(
+                    imageId = "1",
+                    title = "연말정산 서류 목록",
+                    summary = "연말정산 제출에 필요한 서류 정리",
+                    categoryType = RecapCategoryType.RecordCapture,
+                    createdAtMillis = System.currentTimeMillis(),
+                    isFavorite = true,
+                    thumbnailModel = null,
+                ),
+                CollectionFavoriteItemUiModel(
+                    imageId = "2",
+                    title = "택배 반품 절차",
+                    summary = "반품 신청 전 확인해야 할 체크리스트",
+                    categoryType = RecapCategoryType.ShoppingProduct,
+                    createdAtMillis = System.currentTimeMillis(),
+                    isFavorite = true,
+                    thumbnailModel = null,
+                ),
+            ),
+        ),
+        selection = selection,
+    )
+}
+
+private fun previewOthersUiState(
+    selection: CollectionSelectionUiState = CollectionSelectionUiState(),
+): CollectionUiState {
+    return CollectionUiState(
+        isLoading = false,
+        hasStoredScreenshots = true,
+        selectedTab = CollectionTab.Others,
+        othersSort = CollectionListSort.Latest,
+        overview = CollectionOverviewUiModel(
+            otherItems = listOf(
+                CollectionCardItemUiModel(
+                    imageId = "other-1",
+                    title = "연말정산 서류 목록",
+                    summary = "연말정산 제출에 필요한 서류 정리",
+                    contentTypeLabelResId = R.string.collection_content_type_other,
+                    createdAtMillis = 1_719_446_400_000L,
+                    isFavorite = false,
+                    thumbnailModel = null,
+                ),
+                CollectionCardItemUiModel(
+                    imageId = "other-2",
+                    title = "미분류 메모",
+                    summary = "카테고리를 특정하기 어려운 캡처",
+                    contentTypeLabelResId = R.string.collection_content_type_other,
+                    createdAtMillis = 1_718_208_000_000L,
+                    isFavorite = false,
+                    thumbnailModel = null,
+                ),
+            ),
+        ),
+        selection = selection,
     )
 }

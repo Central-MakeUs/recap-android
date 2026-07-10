@@ -1,5 +1,6 @@
 package com.chalkak.recap.feature.collection
 
+import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
@@ -8,16 +9,22 @@ import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentTypes
 import com.chalkak.recap.core.model.screenshot.ScreenshotKeyField
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.verify
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -32,6 +39,7 @@ import org.junit.Test
 class CollectionViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val repository = mockk<ScreenshotCardRepository>()
+    private val imageStorage = mockk<ScreenshotImageStorage>()
     private val cardsFlow = MutableSharedFlow<List<StoredScreenshotCard>>(replay = 1)
     private lateinit var viewModel: CollectionViewModel
 
@@ -39,7 +47,10 @@ class CollectionViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         every { repository.observeStoredCards() } returns cardsFlow
-        viewModel = CollectionViewModel(repository)
+        every { imageStorage.deleteStoredImages(any()) } just Runs
+        viewModel = CollectionViewModel(repository, imageStorage).apply {
+            ioDispatcher = testDispatcher
+        }
     }
 
     @After
@@ -226,6 +237,194 @@ class CollectionViewModelTest {
         coVerify(exactly = 1) {
             repository.updateFavorite(imageId = "card-1", isFavorite = true)
         }
+    }
+
+    @Test
+    fun `selection mode toggles items and cancel clears selection`() = runTest(testDispatcher) {
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    imageId = "card-1",
+                    title = "Card",
+                    createdAtMillis = 100L,
+                ),
+            ),
+        )
+        advanceUntilIdle()
+
+        viewModel.onAction(CollectionAction.StartSelection)
+        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+
+        assertTrue(viewModel.uiState.value.selection.isActive)
+        assertEquals(setOf("card-1"), viewModel.uiState.value.selection.selectedImageIds)
+
+        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+        assertTrue(viewModel.uiState.value.selection.selectedImageIds.isEmpty())
+
+        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+        viewModel.onAction(CollectionAction.CancelSelection)
+
+        assertEquals(CollectionSelectionUiState(), viewModel.uiState.value.selection)
+    }
+
+    @Test
+    fun `toggle all selection affects only visible stored ids`() = runTest(testDispatcher) {
+        cardsFlow.emit(
+            listOf(
+                storedCard(imageId = "card-1", title = "First", createdAtMillis = 200L),
+                storedCard(imageId = "card-2", title = "Second", createdAtMillis = 100L),
+            ),
+        )
+        advanceUntilIdle()
+
+        viewModel.onAction(CollectionAction.StartSelection)
+        viewModel.onAction(
+            CollectionAction.ToggleAllSelection(setOf("card-1", "card-2", "missing")),
+        )
+
+        assertEquals(
+            setOf("card-1", "card-2"),
+            viewModel.uiState.value.selection.selectedImageIds,
+        )
+
+        viewModel.onAction(
+            CollectionAction.ToggleAllSelection(setOf("card-1", "card-2", "missing")),
+        )
+
+        assertTrue(viewModel.uiState.value.selection.selectedImageIds.isEmpty())
+    }
+
+    @Test
+    fun `delete selected removes Room cards then stored files and exits selection`() =
+        runTest(testDispatcher) {
+            coEvery { repository.deleteCards(any()) } returns Unit
+            cardsFlow.emit(
+                listOf(
+                    storedCard(imageId = "card-1", title = "First", createdAtMillis = 200L),
+                    storedCard(imageId = "card-2", title = "Second", createdAtMillis = 100L),
+                ),
+            )
+            advanceUntilIdle()
+            viewModel.onAction(CollectionAction.StartSelection)
+            viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+            viewModel.onAction(CollectionAction.ToggleItemSelection("card-2"))
+
+            viewModel.onAction(CollectionAction.DeleteSelected)
+            advanceUntilIdle()
+
+            coVerify(exactly = 1) {
+                repository.deleteCards(setOf("card-1", "card-2"))
+            }
+            verify(exactly = 1) {
+                imageStorage.deleteStoredImages(setOf("card-1", "card-2"))
+            }
+            coVerifyOrder {
+                repository.deleteCards(setOf("card-1", "card-2"))
+                imageStorage.deleteStoredImages(setOf("card-1", "card-2"))
+            }
+            assertEquals(CollectionSelectionUiState(), viewModel.uiState.value.selection)
+        }
+
+    @Test
+    fun `delete selected failure keeps selection available for retry`() = runTest(testDispatcher) {
+        coEvery { repository.deleteCards(any()) } throws IllegalStateException("database failure")
+        cardsFlow.emit(
+            listOf(
+                storedCard(imageId = "card-1", title = "First", createdAtMillis = 100L),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.StartSelection)
+        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+
+        viewModel.onAction(CollectionAction.DeleteSelected)
+        advanceUntilIdle()
+
+        verify(exactly = 0) { imageStorage.deleteStoredImages(any()) }
+        assertTrue(viewModel.uiState.value.selection.isActive)
+        assertFalse(viewModel.uiState.value.selection.isDeleting)
+        assertEquals(setOf("card-1"), viewModel.uiState.value.selection.selectedImageIds)
+    }
+
+    @Test
+    fun `completed delete does not clear a newer selection generation`() = runTest(testDispatcher) {
+        val deleteGate = CompletableDeferred<Unit>()
+        coEvery { repository.deleteCards(any()) } coAnswers { deleteGate.await() }
+        cardsFlow.emit(
+            listOf(
+                storedCard(imageId = "card-1", title = "First", createdAtMillis = 200L),
+                storedCard(imageId = "card-2", title = "Second", createdAtMillis = 100L),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.StartSelection)
+        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+        viewModel.onAction(CollectionAction.DeleteSelected)
+        runCurrent()
+
+        viewModel.onAction(CollectionAction.CancelSelection)
+        viewModel.onAction(CollectionAction.StartSelection)
+        viewModel.onAction(CollectionAction.ToggleItemSelection("card-2"))
+        deleteGate.complete(Unit)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.selection.isActive)
+        assertEquals(setOf("card-2"), viewModel.uiState.value.selection.selectedImageIds)
+    }
+
+    @Test
+    fun `delete selected with no items does not call repository`() = runTest(testDispatcher) {
+        cardsFlow.emit(
+            listOf(
+                storedCard(imageId = "card-1", title = "First", createdAtMillis = 100L),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.StartSelection)
+
+        viewModel.onAction(CollectionAction.DeleteSelected)
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) { repository.deleteCards(any()) }
+    }
+
+    @Test
+    fun `changing tabs clears selection`() = runTest(testDispatcher) {
+        cardsFlow.emit(
+            listOf(
+                storedCard(imageId = "card-1", title = "First", createdAtMillis = 100L),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.StartSelection)
+        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+
+        viewModel.onAction(CollectionAction.SelectTab(CollectionTab.Types))
+
+        assertEquals(CollectionSelectionUiState(), viewModel.uiState.value.selection)
+    }
+
+    @Test
+    fun `closing detail clears selection`() = runTest(testDispatcher) {
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    imageId = "card-1",
+                    title = "First",
+                    contentType = ScreenshotContentType.SHOPPING_PRODUCT,
+                    createdAtMillis = 100L,
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING_PRODUCT))
+        viewModel.onAction(CollectionAction.StartSelection)
+        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+
+        viewModel.onAction(CollectionAction.CloseDetail)
+
+        assertNull(viewModel.uiState.value.detail)
+        assertEquals(CollectionSelectionUiState(), viewModel.uiState.value.selection)
     }
 
     private fun storedCard(

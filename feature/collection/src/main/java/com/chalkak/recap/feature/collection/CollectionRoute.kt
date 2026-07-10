@@ -2,6 +2,7 @@ package com.chalkak.recap.feature.collection
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -17,11 +18,18 @@ import kotlinx.serialization.Serializable
 fun CollectionRoute(
     hazeState: HazeState,
     onNavigateToOrganize: () -> Unit,
+    onNavigateBack: () -> Unit = {},
     modifier: Modifier = Modifier,
     viewModel: CollectionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val backStack = rememberNavBackStack(CollectionDestination.Overview)
+
+    DisposableEffect(viewModel) {
+        onDispose {
+            viewModel.onAction(CollectionAction.CloseDetail)
+        }
+    }
 
     fun handleAction(action: CollectionAction) {
         when (action) {
@@ -44,13 +52,18 @@ fun CollectionRoute(
         viewModel.onAction(CollectionAction.CloseDetail)
     }
 
+    fun handleBack() {
+        when {
+            uiState.selection.isActive -> viewModel.onAction(CollectionAction.CancelSelection)
+            uiState.isDetailSearchVisible -> viewModel.onAction(CollectionAction.HideDetailSearch)
+            backStack.size > 1 -> navigateBackFromDetail()
+            else -> onNavigateBack()
+        }
+    }
+
     NavDisplay(
         backStack = backStack,
-        onBack = {
-            if (backStack.size > 1) {
-                navigateBackFromDetail()
-            }
-        },
+        onBack = ::handleBack,
         modifier = modifier.fillMaxSize(),
         entryProvider = { route ->
             when (route) {
@@ -67,13 +80,11 @@ fun CollectionRoute(
                     uiState.detail?.let { detail ->
                         CollectionDetailScreen(
                             detail = detail,
-                            onBackClick = ::navigateBackFromDetail,
-                            onSortSelected = { sort ->
-                                viewModel.onAction(CollectionAction.SetDetailSort(sort))
-                            },
-                            onFavoriteClick = { imageId ->
-                                viewModel.onAction(CollectionAction.ToggleFavorite(imageId))
-                            },
+                            selection = uiState.selection,
+                            onBackClick = ::handleBack,
+                            onAction = viewModel::onAction,
+                            searchQuery = uiState.detailSearchQuery,
+                            isSearchVisible = uiState.isDetailSearchVisible,
                         )
                     }
                 }
@@ -82,13 +93,11 @@ fun CollectionRoute(
                     uiState.detail?.let { detail ->
                         CollectionDetailScreen(
                             detail = detail,
-                            onBackClick = ::navigateBackFromDetail,
-                            onSortSelected = { sort ->
-                                viewModel.onAction(CollectionAction.SetDetailSort(sort))
-                            },
-                            onFavoriteClick = { imageId ->
-                                viewModel.onAction(CollectionAction.ToggleFavorite(imageId))
-                            },
+                            selection = uiState.selection,
+                            onBackClick = ::handleBack,
+                            onAction = viewModel::onAction,
+                            searchQuery = uiState.detailSearchQuery,
+                            isSearchVisible = uiState.isDetailSearchVisible,
                         )
                     }
                 }

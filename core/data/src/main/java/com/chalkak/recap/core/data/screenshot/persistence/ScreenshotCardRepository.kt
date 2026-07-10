@@ -20,6 +20,8 @@ interface ScreenshotCardRepository {
 
     suspend fun deleteCard(imageId: String)
 
+    suspend fun deleteCards(imageIds: Set<String>)
+
     suspend fun deleteAllCards()
 }
 
@@ -63,6 +65,13 @@ class DefaultScreenshotCardRepository @Inject constructor(
 
     override suspend fun deleteCard(imageId: String) {
         screenshotCardDao.deleteByImageId(imageId)
+    }
+
+    override suspend fun deleteCards(imageIds: Set<String>) {
+        if (imageIds.isEmpty()) {
+            return
+        }
+        screenshotCardDao.deleteByImageIds(imageIds.toList())
     }
 
     override suspend fun deleteAllCards() {

@@ -26,6 +26,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.chalkak.recap.core.design.R
@@ -52,6 +53,7 @@ fun FavoriteCategoryCard(
     modifier: Modifier = Modifier,
     nowMillis: Long = System.currentTimeMillis(),
     thumbnailContentDescription: String? = null,
+    horizontalContentPadding: Dp = FavoriteCategoryCardTokens.ContainerHorizontalPadding,
 ) {
     val relativeTimeLabel = remember(organizedAtMillis, nowMillis) {
         OrganizedRelativeTimeFormatter.label(
@@ -68,7 +70,7 @@ fun FavoriteCategoryCard(
     ) {
         Row(
             modifier = Modifier.padding(
-                horizontal = FavoriteCategoryCardTokens.ContainerHorizontalPadding,
+                horizontal = horizontalContentPadding,
                 vertical = FavoriteCategoryCardTokens.ContainerVerticalPadding,
             ),
             horizontalArrangement = Arrangement.spacedBy(FavoriteCategoryCardTokens.ContentSpacing),

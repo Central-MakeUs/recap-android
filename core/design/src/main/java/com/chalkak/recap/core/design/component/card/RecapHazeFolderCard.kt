@@ -36,14 +36,15 @@ import androidx.compose.ui.graphics.Shader
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -59,6 +60,7 @@ import dev.chrisbanes.haze.blur.materials.CupertinoMaterials
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import kotlin.math.roundToInt
 
 /**
  * 뒤쪽에 radius가 적용된 둥근 직사각형 border 레이어를 두고,
@@ -66,6 +68,8 @@ import dev.chrisbanes.haze.rememberHazeState
  *
  * [category]의 border/content/tint 색과 아이콘을 사용한다.
  * tint는 Figma/SVG와 같이 좌하단이 강하고 우상단 바깥으로 빠지는 대각 linear gradient다.
+ *
+ * [scale]은 렌더링뿐 아니라 레이아웃에서 차지하는 크기도 함께 줄인다.
  */
 @Composable
 fun RecapHazeFolderCard(
@@ -91,10 +95,7 @@ fun RecapHazeFolderCard(
 
     Box(
         modifier = modifier
-            .size(
-                width = RecapHazeFolderCardTokens.CardWidth * safeScale,
-                height = RecapHazeFolderCardTokens.CardHeight * safeScale,
-            )
+            .recapHazeFolderCardScale(safeScale)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
@@ -102,16 +103,10 @@ fun RecapHazeFolderCard(
             ),
     ) {
         Box(
-            modifier = Modifier
-                .size(
-                    width = RecapHazeFolderCardTokens.CardWidth,
-                    height = RecapHazeFolderCardTokens.CardHeight,
-                )
-                .graphicsLayer {
-                    scaleX = safeScale
-                    scaleY = safeScale
-                    transformOrigin = TransformOrigin(0f, 0f)
-                },
+            modifier = Modifier.size(
+                width = RecapHazeFolderCardTokens.CardWidth,
+                height = RecapHazeFolderCardTokens.CardHeight,
+            ),
         ) {
             Box(
                 modifier = Modifier
@@ -188,6 +183,25 @@ fun RecapHazeFolderCard(
                     )
                 }
             }
+        }
+    }
+}
+
+/**
+ * 카드 콘텐츠는 원본 크기로 측정한 뒤, 부모 레이아웃에는 [scale]이 반영된 크기를 보고한다.
+ */
+private fun Modifier.recapHazeFolderCardScale(scale: Float): Modifier = layout { measurable, constraints ->
+    val cardWidthPx = RecapHazeFolderCardTokens.CardWidth.roundToPx()
+    val cardHeightPx = RecapHazeFolderCardTokens.CardHeight.roundToPx()
+    val scaledWidthPx = (cardWidthPx * scale).roundToInt()
+    val scaledHeightPx = (cardHeightPx * scale).roundToInt()
+
+    val placeable = measurable.measure(Constraints.fixed(cardWidthPx, cardHeightPx))
+    layout(scaledWidthPx, scaledHeightPx) {
+        placeable.placeWithLayer(0, 0) {
+            scaleX = scale
+            scaleY = scale
+            transformOrigin = TransformOrigin(0f, 0f)
         }
     }
 }
@@ -279,6 +293,19 @@ private object RecapHazeFolderCardTokens {
         "M9.40039 0.170898H33.7227C34.9527 0.170919 36.1246 0.413203 37.2402 0.897461C38.3564 1.38198 39.3359 2.06749 40.1787 2.95605V2.95703L46.877 9.99219L46.9268 10.0459H84.5996C87.136 10.0459 89.3058 10.9928 91.1172 12.8955C92.9289 14.7987 93.8322 17.0808 93.8291 19.75V69.125C93.8291 71.7977 92.9258 74.0812 91.1172 75.9844C89.3091 77.8869 87.14 78.8322 84.6006 78.8291H9.40039C6.86373 78.8291 4.69496 77.884 2.88672 75.9844C1.0783 74.0846 0.174028 71.801 0.170898 69.125V9.875C0.170898 7.20236 1.07513 4.9204 2.88672 3.02051C4.69821 1.12075 6.86687 0.174128 9.40039 0.170898Z"
 }
 
+
+@Preview(name = "Recap Haze Folder Card Scaled", showBackground = true, widthDp = 120, heightDp = 100)
+@Composable
+private fun RecapHazeFolderCardScaledPreview() {
+    RECAPTheme(dynamicColor = false) {
+        RecapHazeFolderCard(
+            category = RecapCategoryType.ShoppingProduct,
+            recapCount = 20,
+            onClick = {},
+            scale = 0.72f,
+        )
+    }
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Preview(name = "Recap Haze Folder Cards All", showBackground = true, widthDp = 300, heightDp = 600)

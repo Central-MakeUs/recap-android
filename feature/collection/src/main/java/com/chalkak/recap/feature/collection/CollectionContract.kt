@@ -7,7 +7,7 @@ import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 
 enum class CollectionListSort {
     Latest,
-    Name,
+    Oldest,
 }
 
 enum class CollectionTab {
@@ -67,19 +67,34 @@ data class CollectionDetailUiModel(
     val categoryType: RecapCategoryType? = null,
 )
 
+data class CollectionSelectionUiState(
+    val isActive: Boolean = false,
+    val selectedImageIds: Set<String> = emptySet(),
+    val isDeleting: Boolean = false,
+) {
+    val selectedCount: Int
+        get() = selectedImageIds.size
+}
+
 data class CollectionUiState(
     val isLoading: Boolean = true,
     val hasStoredScreenshots: Boolean = false,
     val searchQuery: String = "",
+    val detailSearchQuery: String = "",
+    val isDetailSearchVisible: Boolean = false,
     val selectedTab: CollectionTab = CollectionTab.Favorites,
     val typeViewMode: CollectionTypeViewMode = CollectionTypeViewMode.Grid,
     val othersSort: CollectionListSort = CollectionListSort.Latest,
     val overview: CollectionOverviewUiModel = CollectionOverviewUiModel(),
     val detail: CollectionDetailUiModel? = null,
+    val selection: CollectionSelectionUiState = CollectionSelectionUiState(),
 )
 
 sealed interface CollectionAction {
     data class UpdateSearchQuery(val query: String) : CollectionAction
+    data object ShowDetailSearch : CollectionAction
+    data object HideDetailSearch : CollectionAction
+    data class UpdateDetailSearchQuery(val query: String) : CollectionAction
     data class SelectTab(val tab: CollectionTab) : CollectionAction
     data class SetTypeViewMode(val viewMode: CollectionTypeViewMode) : CollectionAction
     data class SetOthersSort(val sort: CollectionListSort) : CollectionAction
@@ -90,6 +105,11 @@ sealed interface CollectionAction {
     data object CloseDetail : CollectionAction
     data class SetDetailSort(val sort: CollectionListSort) : CollectionAction
     data class ToggleFavorite(val imageId: String) : CollectionAction
+    data object StartSelection : CollectionAction
+    data object CancelSelection : CollectionAction
+    data class ToggleItemSelection(val imageId: String) : CollectionAction
+    data class ToggleAllSelection(val imageIds: Set<String>) : CollectionAction
+    data object DeleteSelected : CollectionAction
 }
 
 internal fun StoredScreenshotCard.toThumbnailModel(): Any? {
@@ -172,7 +192,7 @@ internal fun List<StoredScreenshotCard>.toOverviewUiModel(
     }
     val otherItems = when (othersSort) {
         CollectionListSort.Latest -> otherCards
-        CollectionListSort.Name -> otherCards.sortedBy { card -> card.analysisResult.title }
+        CollectionListSort.Oldest -> otherCards.sortedBy { card -> card.createdAtMillis }
     }.map(StoredScreenshotCard::toCardItemUiModel)
 
     return CollectionOverviewUiModel(
@@ -186,6 +206,7 @@ internal fun List<StoredScreenshotCard>.toOverviewUiModel(
 internal fun List<StoredScreenshotCard>.toDetailUiModel(
     filter: CollectionDetailFilter,
     sort: CollectionListSort,
+    searchQuery: String = "",
 ): CollectionDetailUiModel {
     val filteredCards = when (filter) {
         is CollectionDetailFilter.ByType -> filter { card ->
@@ -193,9 +214,18 @@ internal fun List<StoredScreenshotCard>.toDetailUiModel(
         }
         CollectionDetailFilter.Favorites -> filter { card -> card.analysisResult.isFavorite }
     }
+    val normalizedQuery = searchQuery.trim()
+    val queryFilteredCards = if (normalizedQuery.isEmpty()) {
+        filteredCards
+    } else {
+        filteredCards.filter { card ->
+            card.analysisResult.title.contains(normalizedQuery, ignoreCase = true) ||
+                card.analysisResult.summary.contains(normalizedQuery, ignoreCase = true)
+        }
+    }
     val sortedCards = when (sort) {
-        CollectionListSort.Latest -> filteredCards.sortedByDescending { card -> card.createdAtMillis }
-        CollectionListSort.Name -> filteredCards.sortedBy { card -> card.analysisResult.title }
+        CollectionListSort.Latest -> queryFilteredCards.sortedByDescending { card -> card.createdAtMillis }
+        CollectionListSort.Oldest -> queryFilteredCards.sortedBy { card -> card.createdAtMillis }
     }
     val titleResId = when (filter) {
         is CollectionDetailFilter.ByType -> filter.contentType.toLabelResId()

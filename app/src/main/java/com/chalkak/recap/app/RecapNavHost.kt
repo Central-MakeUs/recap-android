@@ -203,6 +203,7 @@ fun RecapMainTabNavHost(
                     CollectionRoute(
                         hazeState = hazeState,
                         onNavigateToOrganize = onNavigateToOrganize,
+                        onNavigateBack = { backStack.removeLastOrNull() },
                     )
                 }
 

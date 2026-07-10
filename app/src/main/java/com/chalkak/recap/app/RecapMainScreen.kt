@@ -32,9 +32,23 @@ fun RecapMainScreen(
     val hazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
 
     fun navigateTo(route: MainTabRoute) {
-        if (backStack.lastOrNull() != route) {
-            backStack.clear()
-            backStack.add(route)
+        if (backStack.lastOrNull() == route) return
+        when (route) {
+            MainTabRoute.Home -> {
+                backStack.clear()
+                backStack.add(MainTabRoute.Home)
+            }
+            MainTabRoute.Collection -> {
+                // Keep Home under Collection so system back returns to Home.
+                while (backStack.size > 1) {
+                    backStack.removeLastOrNull()
+                }
+                if (backStack.lastOrNull() != MainTabRoute.Home) {
+                    backStack.clear()
+                    backStack.add(MainTabRoute.Home)
+                }
+                backStack.add(MainTabRoute.Collection)
+            }
         }
     }
 

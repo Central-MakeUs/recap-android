@@ -97,6 +97,18 @@ private fun CollectionViewModeToggle(
     onViewModeChange: (CollectionTypeViewMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val nextViewMode = when (viewMode) {
+        CollectionTypeViewMode.Grid -> CollectionTypeViewMode.List
+        CollectionTypeViewMode.List -> CollectionTypeViewMode.Grid
+    }
+    val toggleContentDescription = stringResource(
+        when (nextViewMode) {
+            CollectionTypeViewMode.Grid -> R.string.collection_view_grid_content_description
+            CollectionTypeViewMode.List -> R.string.collection_view_list_content_description
+        },
+    )
+    val interactionSource = remember { MutableInteractionSource() }
+
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
@@ -113,39 +125,35 @@ private fun CollectionViewModeToggle(
                     color = RecapGray100,
                     shape = RoundedCornerShape(8.dp),
                 )
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = null,
+                    role = Role.Button,
+                    onClickLabel = toggleContentDescription,
+                    onClick = { onViewModeChange(nextViewMode) },
+                )
                 .padding(2.dp),
             horizontalArrangement = Arrangement.spacedBy(2.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            CollectionViewModeButton(
+            CollectionViewModeIcon(
                 selected = viewMode == CollectionTypeViewMode.Grid,
-                onClick = { onViewModeChange(CollectionTypeViewMode.Grid) },
                 iconResId = R.drawable.ic_grid_24,
-                contentDescription = stringResource(
-                    R.string.collection_view_grid_content_description,
-                ),
             )
-            CollectionViewModeButton(
+            CollectionViewModeIcon(
                 selected = viewMode == CollectionTypeViewMode.List,
-                onClick = { onViewModeChange(CollectionTypeViewMode.List) },
                 iconResId = R.drawable.ic_list_24,
-                contentDescription = stringResource(
-                    R.string.collection_view_list_content_description,
-                ),
             )
         }
     }
 }
 
 @Composable
-private fun CollectionViewModeButton(
+private fun CollectionViewModeIcon(
     selected: Boolean,
-    onClick: () -> Unit,
     iconResId: Int,
-    contentDescription: String,
     modifier: Modifier = Modifier,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
             .size(28.dp)
@@ -156,18 +164,12 @@ private fun CollectionViewModeButton(
                     RecapGray100
                 },
                 shape = RoundedCornerShape(6.dp),
-            )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                role = Role.Button,
-                onClick = onClick,
             ),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             painter = painterResource(iconResId),
-            contentDescription = contentDescription,
+            contentDescription = null,
             tint = if (selected) RecapGray700 else RecapGray500,
             modifier = Modifier.size(16.dp),
         )

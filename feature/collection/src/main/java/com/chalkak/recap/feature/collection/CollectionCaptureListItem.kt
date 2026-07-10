@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,75 +41,110 @@ internal fun CollectionCaptureListItem(
     onClick: () -> Unit,
     onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier,
+    selection: CollectionSelectionUiState = CollectionSelectionUiState(),
+    onSelectionToggle: () -> Unit = {},
 ) {
+    val isSelected = card.imageId in selection.selectedImageIds
+    val itemInteractionModifier = if (selection.isActive) {
+        Modifier.toggleable(
+            value = isSelected,
+            enabled = !selection.isDeleting,
+            role = Role.Checkbox,
+            onValueChange = { onSelectionToggle() },
+        )
+    } else {
+        Modifier.clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            role = Role.Button,
+            onClick = onClick,
+        )
+    }
+
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                role = Role.Button,
-                onClick = onClick,
-            )
+            .then(itemInteractionModifier)
             .padding(vertical = CollectionCaptureListItemTokens.VerticalPadding),
-        horizontalArrangement = Arrangement.spacedBy(CollectionCaptureListItemTokens.ContentSpacing),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        CollectionThumbnail(
-            model = card.thumbnailModel,
-            modifier = Modifier.size(CollectionCaptureListItemTokens.ThumbnailSize),
+        CollectionSelectionCheckbox(
+            visible = selection.isActive,
+            checked = isSelected,
         )
-        Column(
+        Row(
             modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(
+                CollectionCaptureListItemTokens.ContentSpacing,
+            ),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = card.title,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold,
-                color = RecapGray900,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            CollectionThumbnail(
+                model = card.thumbnailModel,
+                modifier = Modifier.size(CollectionCaptureListItemTokens.ThumbnailSize),
             )
-            Text(
-                text = card.summary,
-                style = MaterialTheme.typography.labelLarge,
-                color = RecapGray500,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                text = stringResource(
-                    R.string.collection_detail_organized_date,
-                    formatCollectionOrganizedDate(card.createdAtMillis),
-                ),
-                style = MaterialTheme.typography.labelSmall,
-                color = RecapGray300,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = card.title,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = RecapGray900,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = card.summary,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = RecapGray500,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = stringResource(
+                        R.string.collection_detail_organized_date,
+                        formatCollectionOrganizedDate(card.createdAtMillis),
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = RecapGray300,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Icon(
+                painter = painterResource(R.drawable.ic_star_24),
+                contentDescription = if (selection.isActive) {
+                    null
+                } else {
+                    stringResource(
+                        if (card.isFavorite) {
+                            R.string.favorite_category_card_remove_favorite_content_description
+                        } else {
+                            R.string.favorite_category_card_add_favorite_content_description
+                        },
+                    )
+                },
+                modifier = Modifier
+                    .size(32.dp)
+                    .then(
+                        if (selection.isActive) {
+                            Modifier
+                        } else {
+                            Modifier.clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                                role = Role.Button,
+                                onClick = onFavoriteClick,
+                            )
+                        },
+                    )
+                    .padding(4.dp)
+                    .size(24.dp),
+                tint = if (card.isFavorite) RecapBlue500 else RecapGray200,
             )
         }
-        Icon(
-            painter = painterResource(R.drawable.ic_star_24),
-            contentDescription = stringResource(
-                if (card.isFavorite) {
-                    R.string.favorite_category_card_remove_favorite_content_description
-                } else {
-                    R.string.favorite_category_card_add_favorite_content_description
-                },
-            ),
-            modifier = Modifier
-                .size(32.dp)
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                    role = Role.Button,
-                    onClick = onFavoriteClick,
-                )
-                .padding(4.dp)
-                .size(24.dp),
-            tint = if (card.isFavorite) RecapBlue500 else RecapGray200,
-        )
     }
 }
 
@@ -120,7 +156,7 @@ internal fun formatCollectionOrganizedDate(createdAtMillis: Long): String {
 }
 
 private object CollectionCaptureListItemTokens {
-    val VerticalPadding = 14.dp
+    val VerticalPadding = 10.dp
     val ContentSpacing = 14.dp
     val ThumbnailSize = 72.dp
 }
@@ -155,6 +191,24 @@ private fun CollectionCaptureListItemPreview() {
                 ),
                 onClick = {},
                 onFavoriteClick = {},
+            )
+            CollectionCaptureListItem(
+                card = CollectionCardItemUiModel(
+                    imageId = "3",
+                    title = "노트북 가격 비교",
+                    summary = "여러 쇼핑몰의 가격을 비교한 캡처",
+                    contentTypeLabelResId = R.string.collection_content_type_shopping_product,
+                    createdAtMillis = 1_717_862_400_000L,
+                    isFavorite = false,
+                    thumbnailModel = null,
+                ),
+                onClick = {},
+                onFavoriteClick = {},
+                selection = CollectionSelectionUiState(
+                    isActive = true,
+                    selectedImageIds = setOf("3"),
+                ),
+                onSelectionToggle = {},
             )
         }
     }

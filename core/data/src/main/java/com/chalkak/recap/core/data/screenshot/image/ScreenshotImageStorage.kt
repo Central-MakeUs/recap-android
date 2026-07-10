@@ -7,6 +7,7 @@ import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
+import timber.log.Timber
 
 @Singleton
 class ScreenshotImageStorage @Inject constructor(
@@ -51,6 +52,31 @@ class ScreenshotImageStorage @Inject constructor(
     fun clearStoredImages() {
         clearDirectory(resolveImagesDirectory())
         clearDirectory(resolveThumbnailsDirectory())
+    }
+
+    fun deleteStoredImages(imageIds: Set<String>) {
+        deleteFiles(resolveImagesDirectory(), imageIds)
+        deleteFiles(resolveThumbnailsDirectory(), imageIds)
+    }
+
+    private fun deleteFiles(directory: File, imageIds: Set<String>) {
+        val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull() ?: return
+        imageIds.forEach { imageId ->
+            runCatching {
+                val candidate = File(canonicalDirectory, imageId).canonicalFile
+                when {
+                    candidate.parentFile != canonicalDirectory -> {
+                        Timber.w("Skipped screenshot file deletion outside managed directory")
+                    }
+
+                    candidate.isFile && !candidate.delete() -> {
+                        Timber.w("Failed to delete a stored screenshot file")
+                    }
+                }
+            }.onFailure { throwable ->
+                Timber.w(throwable, "Failed to resolve a stored screenshot file for deletion")
+            }
+        }
     }
 
     private fun clearDirectory(directory: File) {

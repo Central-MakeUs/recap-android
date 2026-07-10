@@ -151,6 +151,48 @@ class ScreenshotCardDaoTest {
     }
 
     @Test
+    fun repositoryDeleteCards_removesOnlySelectedCardsAndKeyFields() = runBlocking {
+        val repository = DefaultScreenshotCardRepository(dao)
+        repository.saveAnalysisResults(
+            listOf(
+                sampleResult(imageId = "selected-1"),
+                sampleResult(imageId = "kept"),
+                sampleResult(imageId = "selected-2"),
+            ),
+        )
+
+        repository.deleteCards(setOf("selected-1", "selected-2"))
+
+        val remainingCards = repository.observeStoredCards().first()
+        assertEquals(listOf("kept"), remainingCards.map { it.analysisResult.imageId })
+        assertNull(dao.getCardByImageId("selected-1"))
+        assertNull(dao.getCardByImageId("selected-2"))
+        assertNotNull(dao.getCardByImageId("kept"))
+        database.openHelper.readableDatabase.query(
+            "SELECT COUNT(*) FROM screenshot_key_fields WHERE imageId IN (?, ?)",
+            arrayOf<Any?>("selected-1", "selected-2"),
+        ).use { cursor ->
+            assertTrue(cursor.moveToFirst())
+            assertEquals(0, cursor.getInt(0))
+        }
+    }
+
+    @Test
+    fun repositoryDeleteCards_chunksSelectionsAboveSqliteBindLimit() = runBlocking {
+        val repository = DefaultScreenshotCardRepository(dao)
+        val imageIds = (0..900).mapTo(linkedSetOf()) { index -> "selected-$index" }
+        repository.saveAnalysisResults(
+            imageIds.map { imageId ->
+                sampleResult(imageId = imageId, keyFields = emptyList())
+            },
+        )
+
+        repository.deleteCards(imageIds)
+
+        assertTrue(repository.observeStoredCards().first().isEmpty())
+    }
+
+    @Test
     fun repositorySaveAndObserve_roundTripPreservesAnalysisResult() = runBlocking {
         val repository = DefaultScreenshotCardRepository(dao)
         val result = sampleResult(

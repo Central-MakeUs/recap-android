@@ -45,8 +45,18 @@ abstract class ScreenshotCardDao {
     @Query("DELETE FROM screenshot_cards WHERE imageId = :imageId")
     abstract suspend fun deleteByImageId(imageId: String)
 
+    @Query("DELETE FROM screenshot_cards WHERE imageId IN (:imageIds)")
+    abstract suspend fun deleteByImageIdsChunk(imageIds: List<String>)
+
     @Query("DELETE FROM screenshot_cards")
     abstract suspend fun deleteAllCards()
+
+    @Transaction
+    open suspend fun deleteByImageIds(imageIds: List<String>) {
+        imageIds.chunked(DeleteBatchSize).forEach { chunk ->
+            deleteByImageIdsChunk(chunk)
+        }
+    }
 
     @Transaction
     open suspend fun saveAnalysisResults(entries: List<ScreenshotCardSaveEntry>) {
@@ -64,5 +74,9 @@ abstract class ScreenshotCardDao {
             deleteKeyFieldsByImageId(cardEntity.imageId)
             insertKeyFields(entry.analysisResult.toKeyFieldEntities())
         }
+    }
+
+    private companion object {
+        const val DeleteBatchSize = 900
     }
 }

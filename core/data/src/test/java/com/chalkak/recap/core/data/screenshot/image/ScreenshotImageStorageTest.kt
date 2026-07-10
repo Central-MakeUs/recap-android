@@ -22,6 +22,7 @@ class ScreenshotImageStorageTest {
     fun setUp() {
         context = RuntimeEnvironment.getApplication()
         storage = ScreenshotImageStorage(context)
+        storage.clearStoredImages()
     }
 
     @Test
@@ -71,6 +72,41 @@ class ScreenshotImageStorageTest {
 
         assertFalse(imageFile.exists())
         assertFalse(thumbnailFile.exists())
+    }
+
+    @Test
+    fun deleteStoredImages_deletesOnlySelectedImageAndThumbnailFiles() {
+        val selectedImage = storage.buildImagePath("selected").apply { writeText("image") }
+        val selectedThumbnail = storage.buildThumbnailPath("selected").apply {
+            writeText("thumbnail")
+        }
+        val keptImage = storage.buildImagePath("kept").apply { writeText("image") }
+        val keptThumbnail = storage.buildThumbnailPath("kept").apply { writeText("thumbnail") }
+
+        storage.deleteStoredImages(setOf("selected"))
+
+        assertFalse(selectedImage.exists())
+        assertFalse(selectedThumbnail.exists())
+        assertTrue(keptImage.exists())
+        assertTrue(keptThumbnail.exists())
+    }
+
+    @Test
+    fun deleteStoredImages_rejectsTraversalAndContinuesDeletingValidFiles() {
+        val outsideFile = File(storage.resolveImagesDirectory().parentFile, "outside").apply {
+            writeText("outside")
+        }
+        val selectedImage = storage.buildImagePath("selected").apply { writeText("image") }
+        val selectedThumbnail = storage.buildThumbnailPath("selected").apply {
+            writeText("thumbnail")
+        }
+
+        storage.deleteStoredImages(linkedSetOf("../outside", "selected"))
+
+        assertTrue(outsideFile.exists())
+        assertFalse(selectedImage.exists())
+        assertFalse(selectedThumbnail.exists())
+        outsideFile.delete()
     }
 
     @Test
