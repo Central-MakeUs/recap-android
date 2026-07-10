@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">RECAP</string>
     <string name="bottom_nav_home">홈</string>
-    <string name="bottom_nav_organize">정리하기</string>
+    <string name="bottom_nav_organize">업로드</string>
     <string name="bottom_nav_collection">보관함</string>
     <string name="bottom_nav_my_page">마이페이지</string>
     <string name="main_top_bar_my_page_content_description">마이페이지로 이동</string>

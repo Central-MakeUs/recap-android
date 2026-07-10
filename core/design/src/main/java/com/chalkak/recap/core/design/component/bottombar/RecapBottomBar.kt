@@ -9,7 +9,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -19,7 +18,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -42,15 +40,18 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapGray100
+import com.chalkak.recap.core.design.theme.RecapGray200
+import com.chalkak.recap.core.design.theme.White
 import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeEffect
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.blurEffect
 import dev.chrisbanes.haze.blur.materials.CupertinoMaterials
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 
 enum class RecapBottomBarDestination(
     @get:StringRes val labelResId: Int,
@@ -88,10 +89,11 @@ fun RecapBottomBar(
     ) {
         RecapBottomBarNavPill(
             hazeState = hazeState,
-            modifier = Modifier.weight(1f),
             currentDestination = currentDestination,
             onDestinationClick = onDestinationClick,
         )
+
+        Spacer(modifier = Modifier.weight(1f))
 
         RecapOrganizeButton(onClick = onOrganizeClick)
     }
@@ -118,14 +120,14 @@ private fun RecapBottomBarNavPill(
             .hazeEffect(state = hazeState) {
                 blurEffect {
                     blurEnabled = true
-                    blurRadius = 20.dp
+                    blurRadius = RecapBottomBarDefaults.GlassBlurRadius
                     style = pillBlurStyle
                     colorEffects = listOf(
                         HazeColorEffect.tint(
                             Color.White.copy(alpha = RecapBottomBarDefaults.GlassTintAlpha),
                         ),
                     )
-                    noiseFactor = 0.05f
+                    noiseFactor = RecapBottomBarDefaults.GlassNoiseFactor
                 }
             }
             .border(
@@ -140,20 +142,19 @@ private fun RecapBottomBarNavPill(
                 .height(RecapBottomBarHeight)
                 .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             RecapBottomBarItem(
                 labelResId = RecapBottomBarDestination.Home.labelResId,
                 icon = painterResource(RecapBottomBarDestination.Home.iconResId),
                 selected = currentDestination == RecapBottomBarDestination.Home,
                 onClick = { onDestinationClick(RecapBottomBarDestination.Home) },
-                modifier = Modifier.weight(1f),
             )
             RecapBottomBarItem(
                 labelResId = RecapBottomBarDestination.Collection.labelResId,
                 icon = painterResource(RecapBottomBarDestination.Collection.iconResId),
                 selected = currentDestination == RecapBottomBarDestination.Collection,
                 onClick = { onDestinationClick(RecapBottomBarDestination.Collection) },
-                modifier = Modifier.weight(1f),
             )
         }
     }
@@ -169,21 +170,22 @@ private fun RecapBottomBarItem(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val contentColor = if (selected) {
-        MaterialTheme.colorScheme.primary
+       RecapBlue300
     } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
+        RecapGray200
     }
     val itemShape = RoundedCornerShape(percent = 50)
 
     Box(
         modifier = modifier
-            .height(RecapBottomBarItemHeight)
+            .size(
+                width = RecapBottomBarItemWidth,
+                height = RecapBottomBarItemHeight,
+            )
             .clip(itemShape)
             .background(
                 color = if (selected) {
-                    MaterialTheme.colorScheme.primary.copy(
-                        alpha = RecapBottomBarDefaults.GlassSelectedTintAlpha,
-                    )
+                    RecapBlue50
                 } else {
                     Color.Transparent
                 },
@@ -196,24 +198,12 @@ private fun RecapBottomBarItem(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Icon(
-                painter = icon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = contentColor,
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = stringResource(labelResId),
-                style = MaterialTheme.typography.labelMedium,
-                color = contentColor,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.SemiBold,
-            )
-        }
+        Icon(
+            painter = icon,
+            contentDescription = stringResource(labelResId),
+            modifier = Modifier.size(24.dp),
+            tint = contentColor,
+        )
     }
 }
 
@@ -223,53 +213,65 @@ private fun RecapOrganizeButton(
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val pillShape = RoundedCornerShape(percent = 50)
 
-    Box(
+    Row(
         modifier = modifier
-            .size(RecapOrganizeButtonSize)
+            .height(RecapBottomBarHeight)
             .shadow(
-                elevation = 8.dp,
-                shape = CircleShape,
-                spotColor = MaterialTheme.colorScheme.outlineVariant,
+                elevation = RecapBottomBarDefaults.GlassShadowElevation,
+                shape = pillShape,
+                ambientColor = RecapBottomBarDefaults.GlassShadowColor,
+                spotColor = RecapBottomBarDefaults.GlassShadowColor,
             )
             .background(
-                color = MaterialTheme.colorScheme.primary,
-                shape = CircleShape,
+                color = RecapBlue300,
+                shape = pillShape,
             )
+            .clip(pillShape)
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 role = Role.Button,
                 onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
+            )
+            .padding(horizontal = 20.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         Icon(
-            painter = painterResource(R.drawable.ic_plus_32),
-            contentDescription = stringResource(R.string.bottom_nav_organize),
-            modifier = Modifier.size(28.dp),
-            tint = Color.White,
+            painter = painterResource(R.drawable.ic_upload_24),
+            contentDescription = null,
+            modifier = Modifier.size(24.dp),
+            tint = White,
+        )
+        Text(
+            text = stringResource(R.string.bottom_nav_organize),
+            style = MaterialTheme.typography.labelLarge,
+            color = White,
+            fontWeight = FontWeight.SemiBold,
         )
     }
 }
 
 object RecapBottomBarDefaults {
-    val Height: Dp = 64.dp
-    val BottomPadding: Dp = 16.dp
+    val Height: Dp = 58.dp
+    val BottomPadding: Dp = 28.dp
     val ContentScrollPadding: Dp = (Height + BottomPadding) * 2
 
-    val GlassBorderColor: Color = Color.White.copy(alpha = 0.35f)
-    val GlassShadowColor: Color = Color.Black.copy(alpha = 0.08f)
-    val GlassShadowElevation: Dp = 8.dp
-    const val GlassTintAlpha: Float = 0.15f
-    const val GlassSelectedTintAlpha: Float = 0.08f
+    val GlassBorderColor: Color = Color.White.copy(alpha = 0.55f)
+    val GlassShadowColor: Color = Color.Black.copy(alpha = 0.45f)
+    val GlassShadowElevation: Dp = 20.dp
+    val GlassBlurRadius: Dp = 24.dp
+    const val GlassTintAlpha: Float = 0.62f
+    const val GlassNoiseFactor: Float = 0.12f
 }
 
 private val RecapBottomBarHeight: Dp = RecapBottomBarDefaults.Height
-private val RecapBottomBarItemHeight: Dp = 52.dp
-private val RecapOrganizeButtonSize: Dp = 56.dp
+private val RecapBottomBarItemWidth: Dp = 72.dp
+private val RecapBottomBarItemHeight: Dp = 46.dp
 private val RecapBottomBarItemGap: Dp = 12.dp
-private val RecapBottomBarHorizontalPadding: Dp = 16.dp
+private val RecapBottomBarHorizontalPadding: Dp = 32.dp
 private val RecapBottomBarBottomPadding: Dp = RecapBottomBarDefaults.BottomPadding
 
 @Preview(name = "Recap Bottom Bar - Home", showBackground = true, widthDp = 360, heightDp = 140)
