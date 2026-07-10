@@ -56,6 +56,12 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapBlue500
+import com.chalkak.recap.core.design.theme.RecapGray100
+import com.chalkak.recap.core.design.theme.RecapGray300
+import com.chalkak.recap.core.design.theme.RecapGray500
+import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.White
 
 /*
  * RecapButton parameter mini docs
@@ -65,6 +71,7 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
  * - modifier: Caller-owned layout. Use Modifier.fillMaxWidth() for full-width buttons.
  * - size: Height, corner radius, padding, icon size, and default text style preset.
  * - colors: Enabled/disabled container and content colors.
+ *   Pass RecapButtonColors, or a Color for container (content defaults to White).
  * - border: Optional outline drawn with the same shape.
  * - leadingIcon: Optional icon slot. The slot is constrained to the size preset's icon size.
  * - iconPlacement: Inline keeps icon+text centered together; FixedStart pins the icon at the left.
@@ -177,6 +184,57 @@ fun RecapButton(
     }
 }
 
+@Composable
+fun RecapButton(
+    text: String,
+    onClick: () -> Unit,
+    colors: Color,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    size: RecapButtonSize = RecapButtonSize.Large,
+    contentColor: Color = White,
+    border: BorderStroke? = null,
+    leadingIcon: (@Composable () -> Unit)? = null,
+    iconPlacement: RecapButtonIconPlacement = RecapButtonIconPlacement.Inline,
+    compactText: String? = null,
+    fixedIconStartPadding: Dp = RecapButtonDefaults.FixedIconStartPadding,
+    pressedScale: Float = RecapButtonDefaults.PressedScale,
+    shadowElevation: Dp = 0.dp,
+    pressedShadowElevationScale: Float = RecapButtonDefaults.PressedShadowElevationScale,
+    dynamicShadowColor: Boolean = true,
+    shape: Shape = RoundedCornerShape(size.cornerRadius),
+    textStyle: TextStyle = RecapButtonDefaults.textStyle(size),
+    fontWeight: FontWeight? = FontWeight.Bold,
+    contentPadding: PaddingValues = RecapButtonDefaults.contentPadding(size),
+    interactionSource: MutableInteractionSource? = null,
+) {
+    RecapButton(
+        text = text,
+        onClick = onClick,
+        modifier = modifier,
+        enabled = enabled,
+        size = size,
+        colors = RecapButtonDefaults.colors(
+            containerColor = colors,
+            contentColor = contentColor,
+        ),
+        border = border,
+        leadingIcon = leadingIcon,
+        iconPlacement = iconPlacement,
+        compactText = compactText,
+        fixedIconStartPadding = fixedIconStartPadding,
+        pressedScale = pressedScale,
+        shadowElevation = shadowElevation,
+        pressedShadowElevationScale = pressedShadowElevationScale,
+        dynamicShadowColor = dynamicShadowColor,
+        shape = shape,
+        textStyle = textStyle,
+        fontWeight = fontWeight,
+        contentPadding = contentPadding,
+        interactionSource = interactionSource,
+    )
+}
+
 @Immutable
 data class RecapButtonColors(
     val containerColor: Color,
@@ -236,44 +294,52 @@ object RecapButtonDefaults {
     const val PressAnimationDurationMillis = 100
     val FixedIconStartPadding = 28.dp
 
+    fun colors(
+        containerColor: Color,
+        contentColor: Color = White,
+        disabledContainerColor: Color = containerColor.copy(alpha = 0.12f),
+        disabledContentColor: Color = RecapGray900.copy(alpha = 0.38f),
+    ): RecapButtonColors = RecapButtonColors(
+        containerColor = containerColor,
+        contentColor = contentColor,
+        disabledContainerColor = disabledContainerColor,
+        disabledContentColor = disabledContentColor,
+    )
+
     @Composable
-    fun primaryColors(): RecapButtonColors = RecapButtonColors(
-        containerColor = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
-        disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-        disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+    fun primaryColors(): RecapButtonColors = colors(
+        containerColor = RecapBlue500,
+        contentColor = RecapGray100,
     )
 
     @Composable
     fun textColors(): RecapButtonColors = RecapButtonColors(
         containerColor = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        contentColor = RecapGray500,
         disabledContainerColor = Color.Transparent,
-        disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+        disabledContentColor = RecapGray900.copy(alpha = 0.38f),
     )
 
     @Composable
     fun outlinedColors(): RecapButtonColors = RecapButtonColors(
-        containerColor = MaterialTheme.colorScheme.surface,
-        contentColor = MaterialTheme.colorScheme.primary,
-        disabledContainerColor = MaterialTheme.colorScheme.surface,
-        disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+        containerColor = White,
+        contentColor = RecapBlue500,
+        disabledContainerColor = White,
+        disabledContentColor = RecapGray900.copy(alpha = 0.38f),
     )
 
     @Composable
-    fun appleColors(): RecapButtonColors = RecapButtonColors(
+    fun appleColors(): RecapButtonColors = colors(
         containerColor = Color(0xFF111827),
-        contentColor = Color.White,
-        disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-        disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+        contentColor = White,
     )
 
     @Composable
     fun kakaoColors(): RecapButtonColors = RecapButtonColors(
         containerColor = Color(0xFFFEE500),
         contentColor = Color(0xD9000000),
-        disabledContainerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-        disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+        disabledContainerColor = RecapGray900.copy(alpha = 0.12f),
+        disabledContentColor = RecapGray900.copy(alpha = 0.38f),
     )
 
     @Composable
@@ -451,7 +517,7 @@ private fun RecapButtonPreview() {
                 onClick = {},
                 modifier = Modifier.fillMaxWidth(),
                 colors = RecapButtonDefaults.outlinedColors(),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                border = BorderStroke(1.dp, RecapGray300),
                 leadingIcon = {
                     Icon(
                         imageVector = Icons.Filled.Refresh,
