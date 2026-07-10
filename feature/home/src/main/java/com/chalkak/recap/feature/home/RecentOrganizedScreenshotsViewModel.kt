@@ -11,24 +11,24 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 @HiltViewModel
-class HomeViewModel @Inject constructor(
+class RecentOrganizedScreenshotsViewModel @Inject constructor(
     private val screenshotCardRepository: ScreenshotCardRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(HomeUiState())
-    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(RecentOrganizedScreenshotsUiState())
+    val uiState: StateFlow<RecentOrganizedScreenshotsUiState> = _uiState.asStateFlow()
 
     init {
         viewModelScope.launch {
             screenshotCardRepository.observeStoredCards().collect { cards ->
-                _uiState.value = cards.toHomeUiState()
+                _uiState.value = cards.toRecentOrganizedScreenshotsUiState()
             }
         }
     }
 
-    fun onAction(action: HomeAction) {
+    fun onAction(action: RecentOrganizedScreenshotsAction) {
         when (action) {
-            is HomeAction.ToggleFavoriteItem -> {
-                val currentItem = _uiState.value.favoriteItems.firstOrNull { item ->
+            is RecentOrganizedScreenshotsAction.ToggleFavorite -> {
+                val currentItem = _uiState.value.items.firstOrNull { item ->
                     item.id == action.id
                 } ?: return
                 viewModelScope.launch {

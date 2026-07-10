@@ -6,11 +6,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBar
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDestination
+import com.chalkak.recap.feature.collection.CollectionTab
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.rememberHazeState
@@ -23,6 +28,7 @@ fun RecapMainScreen(
     onNavigateToDeveloper: () -> Unit = {},
     onNavigateToMyPage: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
+    onNavigateToRecentOrganizedScreenshots: () -> Unit = {},
     onNavigateToOrganize: () -> Unit = {},
     homeNavigationRequestId: Int = 0,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
@@ -30,6 +36,7 @@ fun RecapMainScreen(
     val backStack = rememberNavBackStack(MainTabRoute.Home)
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
     val hazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
+    var collectionFavoritesNavigationRequestId by remember { mutableIntStateOf(0) }
 
     fun navigateTo(route: MainTabRoute) {
         if (backStack.lastOrNull() == route) return
@@ -50,6 +57,11 @@ fun RecapMainScreen(
                 backStack.add(MainTabRoute.Collection)
             }
         }
+    }
+
+    fun navigateToCollectionFavorites() {
+        navigateTo(MainTabRoute.Collection)
+        collectionFavoritesNavigationRequestId += 1
     }
 
     LaunchedEffect(homeNavigationRequestId) {
@@ -77,7 +89,11 @@ fun RecapMainScreen(
             onNavigateToDeveloper = onNavigateToDeveloper,
             onNavigateToMyPage = onNavigateToMyPage,
             onNavigateToSearch = onNavigateToSearch,
+            onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
             onNavigateToOrganize = onNavigateToOrganize,
+            onNavigateToCollectionFavorites = ::navigateToCollectionFavorites,
+            collectionFavoritesNavigationRequestId = collectionFavoritesNavigationRequestId,
+            collectionInitialTab = CollectionTab.Favorites,
             showDeveloperLogoShortcut = BuildConfig.DEBUG,
             analysisProgressFlow = analysisProgressFlow,
             modifier = Modifier.fillMaxSize(),

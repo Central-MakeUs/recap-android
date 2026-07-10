@@ -3,6 +3,7 @@ package com.chalkak.recap.feature.collection
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -20,10 +21,26 @@ fun CollectionRoute(
     onNavigateToOrganize: () -> Unit,
     onNavigateBack: () -> Unit = {},
     modifier: Modifier = Modifier,
+    initialTab: CollectionTab = CollectionTab.Favorites,
+    favoritesNavigationRequestId: Int = 0,
     viewModel: CollectionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val backStack = rememberNavBackStack(CollectionDestination.Overview)
+
+    LaunchedEffect(initialTab) {
+        viewModel.onAction(CollectionAction.SelectTab(initialTab))
+    }
+
+    LaunchedEffect(favoritesNavigationRequestId) {
+        if (favoritesNavigationRequestId > 0) {
+            viewModel.onAction(CollectionAction.CloseDetail)
+            viewModel.onAction(CollectionAction.SelectTab(CollectionTab.Favorites))
+            while (backStack.size > 1) {
+                backStack.removeLastOrNull()
+            }
+        }
+    }
 
     DisposableEffect(viewModel) {
         onDispose {

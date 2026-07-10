@@ -15,6 +15,8 @@ fun HomeRoute(
     onNavigateToDeveloper: () -> Unit,
     onNavigateToMyPage: () -> Unit,
     onNavigateToSearch: () -> Unit,
+    onNavigateToRecentOrganizedScreenshots: () -> Unit,
+    onNavigateToCollectionFavorites: () -> Unit,
     modifier: Modifier = Modifier,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
     viewModel: HomeViewModel = hiltViewModel(),
@@ -37,12 +39,12 @@ fun HomeRoute(
                 HomeAction.EnterDeveloperOptions -> onNavigateToDeveloper()
                 HomeAction.OpenSettings -> onNavigateToMyPage()
                 HomeAction.OpenSearch -> onNavigateToSearch()
-                // TODO: Connect home mock card actions when destinations are defined.
-                HomeAction.OpenRecentScreenshots -> Unit
+                HomeAction.OpenRecentScreenshots -> onNavigateToRecentOrganizedScreenshots()
+                HomeAction.OpenFavoriteCategories -> onNavigateToCollectionFavorites()
+                is HomeAction.ToggleFavoriteItem -> viewModel.onAction(action)
+                // TODO: Connect remaining home card actions when destinations are defined.
                 is HomeAction.SelectRecentScreenshot -> Unit
-                HomeAction.OpenFavoriteCategories -> Unit
-                is HomeAction.SelectFavoriteCategory -> Unit
-                is HomeAction.ToggleFavoriteCategory -> Unit
+                is HomeAction.SelectFavoriteItem -> Unit
                 HomeAction.OpenFrequentSaveTypes -> Unit
                 is HomeAction.SelectFrequentSaveType -> Unit
             }

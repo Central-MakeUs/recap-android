@@ -18,18 +18,20 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.feature.collection.CollectionRoute
+import com.chalkak.recap.feature.collection.CollectionTab
 import com.chalkak.recap.feature.organize.OrganizeRoute
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
+import com.chalkak.recap.feature.home.RecentOrganizedScreenshotsRoute
 import com.chalkak.recap.feature.home.SearchRoute
 import com.chalkak.recap.feature.mypage.MyPageAction
-import dev.chrisbanes.haze.HazeState
 import com.chalkak.recap.feature.mypage.MyPageDataManagementScreen
 import com.chalkak.recap.feature.mypage.MyPageNotificationSettingsRoute
 import com.chalkak.recap.feature.mypage.MyPagePrivacyGuideScreen
 import com.chalkak.recap.feature.mypage.MyPageScreen
 import com.chalkak.recap.feature.mypage.MyPageServiceInfoScreen
 import com.chalkak.recap.feature.mypage.MyPageUploadGuideScreen
+import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -63,6 +65,9 @@ fun RecapNavHost(
                         onNavigateToDeveloper = onNavigateToDeveloper,
                         onNavigateToMyPage = { backStack.add(AppRoute.MyPage) },
                         onNavigateToSearch = { backStack.add(AppRoute.Search) },
+                        onNavigateToRecentOrganizedScreenshots = {
+                            backStack.add(AppRoute.RecentOrganizedScreenshots)
+                        },
                         onNavigateToOrganize = { backStack.add(AppRoute.Organize) },
                         homeNavigationRequestId = homeNavigationRequestId,
                         analysisProgressFlow = analysisProgressFlow,
@@ -153,6 +158,13 @@ fun RecapNavHost(
                     )
                 }
 
+                AppRoute.RecentOrganizedScreenshots -> NavEntry(route) {
+                    RecentOrganizedScreenshotsRoute(
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                        onNavigateToSearch = { backStack.add(AppRoute.Search) },
+                    )
+                }
+
                 AppRoute.Organize -> NavEntry(route) {
                     OrganizeRoute(
                         onNavigateBack = { backStack.removeLastOrNull() },
@@ -178,7 +190,11 @@ fun RecapMainTabNavHost(
     onNavigateToDeveloper: () -> Unit,
     onNavigateToMyPage: () -> Unit,
     onNavigateToSearch: () -> Unit,
+    onNavigateToRecentOrganizedScreenshots: () -> Unit,
     onNavigateToOrganize: () -> Unit,
+    onNavigateToCollectionFavorites: () -> Unit = {},
+    collectionFavoritesNavigationRequestId: Int = 0,
+    collectionInitialTab: CollectionTab = CollectionTab.Favorites,
     showDeveloperLogoShortcut: Boolean = false,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
 ) {
@@ -194,6 +210,8 @@ fun RecapMainTabNavHost(
                         onNavigateToDeveloper = onNavigateToDeveloper,
                         onNavigateToMyPage = onNavigateToMyPage,
                         onNavigateToSearch = onNavigateToSearch,
+                        onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
+                        onNavigateToCollectionFavorites = onNavigateToCollectionFavorites,
                         showDeveloperLogoShortcut = showDeveloperLogoShortcut,
                         analysisProgressFlow = analysisProgressFlow,
                     )
@@ -204,6 +222,8 @@ fun RecapMainTabNavHost(
                         hazeState = hazeState,
                         onNavigateToOrganize = onNavigateToOrganize,
                         onNavigateBack = { backStack.removeLastOrNull() },
+                        initialTab = collectionInitialTab,
+                        favoritesNavigationRequestId = collectionFavoritesNavigationRequestId,
                     )
                 }
 

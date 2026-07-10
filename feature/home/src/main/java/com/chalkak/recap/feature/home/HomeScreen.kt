@@ -24,24 +24,28 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard
-import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
 import com.chalkak.recap.core.design.component.card.OrganizedRelativeTimeFormatter
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
+import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
 import com.chalkak.recap.core.design.component.topbar.HomeTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
+import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
@@ -105,15 +109,14 @@ fun HomeScreen(
                 onMoreClick = { onAction(HomeAction.OpenRecentScreenshots) },
                 onScreenshotClick = { onAction(HomeAction.SelectRecentScreenshot(it)) },
             )
-            FavoriteCategoriesSection(
-                categories = uiState.favoriteCategories,
+            FavoriteItemsSection(
+                items = uiState.favoriteItems,
                 onMoreClick = { onAction(HomeAction.OpenFavoriteCategories) },
-                onCategoryClick = { onAction(HomeAction.SelectFavoriteCategory(it)) },
-                onFavoriteClick = { onAction(HomeAction.ToggleFavoriteCategory(it)) },
+                onItemClick = { onAction(HomeAction.SelectFavoriteItem(it)) },
+                onFavoriteClick = { onAction(HomeAction.ToggleFavoriteItem(it)) },
             )
             FrequentSaveTypesSection(
                 saveTypes = uiState.frequentSaveTypes,
-                onMoreClick = { onAction(HomeAction.OpenFrequentSaveTypes) },
                 onSaveTypeClick = { onAction(HomeAction.SelectFrequentSaveType(it)) },
             )
         }
@@ -132,17 +135,23 @@ private fun RecentOrganizedScreenshotsSection(
         onMoreClick = onMoreClick,
         modifier = modifier,
     ) {
+        if (screenshots.isEmpty()) {
+            HomeSectionEmptyText(
+                text = stringResource(R.string.home_recent_organized_screenshots_empty),
+            )
+            return@HomeSection
+        }
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(HomeScreenTokens.RecentCardSpacing),
-            modifier = Modifier.clip(shape = RoundedCornerShape(HomeScreenTokens.HomeSectionRadius))
+            modifier = Modifier.clip(shape = RoundedCornerShape(HomeScreenTokens.HomeSectionRadius)),
         ) {
             items(
                 items = screenshots,
                 key = { it.id },
             ) { screenshot ->
                 RecentOrganizedScreenshotCard(
-                    thumbnailModel = screenshot.thumbnailResId,
-                    title = stringResource(screenshot.titleResId),
+                    thumbnailModel = screenshot.thumbnailModel,
+                    title = screenshot.title,
                     categoryType = screenshot.categoryType,
                     onClick = { onScreenshotClick(screenshot.id) },
                 )
@@ -152,10 +161,10 @@ private fun RecentOrganizedScreenshotsSection(
 }
 
 @Composable
-private fun FavoriteCategoriesSection(
-    categories: List<HomeFavoriteCategoryUiModel>,
+private fun FavoriteItemsSection(
+    items: List<HomeFavoriteItemUiModel>,
     onMoreClick: () -> Unit,
-    onCategoryClick: (String) -> Unit,
+    onItemClick: (String) -> Unit,
     onFavoriteClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -165,32 +174,39 @@ private fun FavoriteCategoriesSection(
         modifier = modifier,
     ) {
         val nowMillis = remember { System.currentTimeMillis() }
-        val visibleCategories = remember(categories, nowMillis) {
-            categories.filter { category ->
+        val visibleItems = remember(items, nowMillis) {
+            items.filter { item ->
                 OrganizedRelativeTimeFormatter.isVisible(
-                    organizedAtMillis = category.organizedAtMillis,
+                    organizedAtMillis = item.organizedAtMillis,
                     nowMillis = nowMillis,
                 )
             }
+        }
+        if (visibleItems.isEmpty()) {
+            HomeSectionEmptyText(
+                text = stringResource(R.string.home_favorites_empty),
+            )
+            return@HomeSection
         }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(HomeScreenTokens.HomeSectionRadius)),
         ) {
-            visibleCategories.forEachIndexed { index, category ->
+            visibleItems.forEachIndexed { index, item ->
                 FavoriteCategoryCard(
-                    thumbnailModel = category.thumbnailResId,
-                    categoryType = category.categoryType,
-                    title = stringResource(category.titleResId),
-                    description = stringResource(category.descriptionResId),
-                    organizedAtMillis = category.organizedAtMillis,
-                    isFavorite = category.isFavorite,
-                    onClick = { onCategoryClick(category.id) },
-                    onFavoriteClick = { onFavoriteClick(category.id) },
+                    thumbnailModel = item.thumbnailModel,
+                    categoryType = item.categoryType,
+                    title = item.title,
+                    description = item.description,
+                    organizedAtMillis = item.organizedAtMillis,
+                    isFavorite = item.isFavorite,
+                    onClick = { onItemClick(item.id) },
+                    onFavoriteClick = { onFavoriteClick(item.id) },
                     nowMillis = nowMillis,
+                    horizontalContentPadding = 0.dp,
                 )
-                if (index < visibleCategories.lastIndex) {
+                if (index < visibleItems.lastIndex) {
                     HorizontalDivider(
                         color = RecapGray100,
                         thickness = HomeScreenTokens.FavoriteDividerThickness,
@@ -204,28 +220,47 @@ private fun FavoriteCategoriesSection(
 @Composable
 private fun FrequentSaveTypesSection(
     saveTypes: List<HomeFrequentSaveTypeUiModel>,
-    onMoreClick: () -> Unit,
     onSaveTypeClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     HomeSection(
         title = stringResource(R.string.home_frequent_save_types_title),
-        onMoreClick = onMoreClick,
+        onMoreClick = null,
         modifier = modifier,
     ) {
-        LazyRow(
+        if (saveTypes.isEmpty()) {
+            HomeSectionEmptyText(
+                text = stringResource(R.string.home_frequent_save_types_empty),
+            )
+            return@HomeSection
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(HomeScreenTokens.FrequentTypeCardSpacing),
-            modifier = Modifier.clip(shape = RoundedCornerShape(HomeScreenTokens.HomeSectionRadius))
         ) {
-            items(
-                items = saveTypes,
-                key = { it.id },
-            ) { saveType ->
-                FrequentSaveTypeFolderCard(
-                    categoryLabel = stringResource(saveType.categoryLabelResId),
-                    recapCount = saveType.recapCount,
-                    onClick = { onSaveTypeClick(saveType.id) },
-                )
+            saveTypes.forEach { saveType ->
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(
+                        HomeScreenTokens.FrequentTypeLabelSpacing,
+                    ),
+                ) {
+                    RecapHazeFolderCard(
+                        category = saveType.categoryType,
+                        recapCount = saveType.recapCount,
+                        onClick = { onSaveTypeClick(saveType.id) },
+                        scale = HomeScreenTokens.FrequentTypeFolderScale,
+                    )
+                    Text(
+                        text = stringResource(saveType.categoryType.labelResId),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Medium,
+                        color = RecapGray900,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
             }
         }
     }
@@ -234,13 +269,12 @@ private fun FrequentSaveTypesSection(
 @Composable
 private fun HomeSection(
     title: String,
-    onMoreClick: () -> Unit,
+    onMoreClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.SectionContentSpacing),
     ) {
         HomeSectionHeader(
@@ -254,7 +288,7 @@ private fun HomeSection(
 @Composable
 private fun HomeSectionHeader(
     title: String,
-    onMoreClick: () -> Unit,
+    onMoreClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
@@ -262,6 +296,7 @@ private fun HomeSectionHeader(
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
             text = title,
@@ -269,20 +304,35 @@ private fun HomeSectionHeader(
             fontWeight = FontWeight.Bold,
             color = RecapGray900,
         )
-        Icon(
-            painter = painterResource(R.drawable.ic_chevron_right_24),
-            contentDescription = stringResource(R.string.home_section_more_content_description),
-            modifier = Modifier
-                .clickable(
-                    interactionSource = interactionSource,
-                    indication = null,
-                    role = Role.Button,
-                    onClick = onMoreClick,
-                )
-                .padding(2.dp),
-            tint = RecapGray300,
-        )
+        if (onMoreClick != null) {
+            Icon(
+                painter = painterResource(R.drawable.ic_chevron_right_24),
+                contentDescription = stringResource(R.string.home_section_more_content_description),
+                modifier = Modifier
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        role = Role.Button,
+                        onClick = onMoreClick,
+                    )
+                    .padding(2.dp),
+                tint = RecapGray300,
+            )
+        }
     }
+}
+
+@Composable
+private fun HomeSectionEmptyText(
+    text: String,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodyMedium,
+        color = RecapGray500,
+        modifier = modifier.fillMaxWidth(),
+    )
 }
 
 private object HomeScreenTokens {
@@ -293,6 +343,8 @@ private object HomeScreenTokens {
     val SectionContentSpacing = 12.dp
     val RecentCardSpacing = 12.dp
     val FrequentTypeCardSpacing = 16.dp
+    val FrequentTypeLabelSpacing = 19.dp
+    const val FrequentTypeFolderScale = 0.9f
     val FavoriteDividerThickness = 1.dp
     val AnalysisProgressSpacing = 8.dp
 }
@@ -301,7 +353,10 @@ private object HomeScreenTokens {
 @Composable
 private fun HomeScreenPreview() {
     RECAPTheme(dynamicColor = false) {
-        HomeScreen(hazeState = rememberHazeState())
+        HomeScreen(
+            hazeState = rememberHazeState(),
+            uiState = HomePreviewUiState,
+        )
     }
 }
 
@@ -311,10 +366,19 @@ private fun HomeScreenAnalysisProgressPreview() {
     RECAPTheme(dynamicColor = false) {
         HomeScreen(
             hazeState = rememberHazeState(),
+            uiState = HomePreviewUiState,
             analysisProgress = HomeAnalysisProgressUiModel(
                 isRunning = true,
                 progress = 0.4f,
             ),
         )
+    }
+}
+
+@Preview(name = "Home Screen - Empty", showBackground = true, widthDp = 360, heightDp = 720)
+@Composable
+private fun HomeScreenEmptyPreview() {
+    RECAPTheme(dynamicColor = false) {
+        HomeScreen(hazeState = rememberHazeState())
     }
 }

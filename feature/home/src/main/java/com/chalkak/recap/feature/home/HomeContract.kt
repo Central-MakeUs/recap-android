@@ -1,7 +1,5 @@
 package com.chalkak.recap.feature.home
 
-import androidx.annotation.StringRes
-import androidx.annotation.DrawableRes
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import java.util.concurrent.TimeUnit
@@ -12,31 +10,31 @@ data class HomeAnalysisProgressUiModel(
 )
 
 data class HomeUiState(
-    val recentScreenshots: List<HomeRecentScreenshotUiModel> = HomeMockRecentScreenshots,
-    val favoriteCategories: List<HomeFavoriteCategoryUiModel> = HomeMockFavoriteCategories,
-    val frequentSaveTypes: List<HomeFrequentSaveTypeUiModel> = HomeMockFrequentSaveTypes,
+    val recentScreenshots: List<HomeRecentScreenshotUiModel> = emptyList(),
+    val favoriteItems: List<HomeFavoriteItemUiModel> = emptyList(),
+    val frequentSaveTypes: List<HomeFrequentSaveTypeUiModel> = emptyList(),
 )
 
 data class HomeRecentScreenshotUiModel(
     val id: String,
-    @get:DrawableRes val thumbnailResId: Int,
-    @get:StringRes val titleResId: Int,
+    val thumbnailModel: Any?,
+    val title: String,
     val categoryType: RecapCategoryType,
 )
 
-data class HomeFavoriteCategoryUiModel(
+data class HomeFavoriteItemUiModel(
     val id: String,
-    @get:DrawableRes val thumbnailResId: Int,
+    val thumbnailModel: Any?,
     val categoryType: RecapCategoryType,
-    @get:StringRes val titleResId: Int,
-    @get:StringRes val descriptionResId: Int,
+    val title: String,
+    val description: String,
     val organizedAtMillis: Long,
     val isFavorite: Boolean,
 )
 
 data class HomeFrequentSaveTypeUiModel(
     val id: String,
-    @get:StringRes val categoryLabelResId: Int,
+    val categoryType: RecapCategoryType,
     val recapCount: Int,
 )
 
@@ -48,82 +46,77 @@ sealed interface HomeAction {
     data object OpenRecentScreenshots : HomeAction
     data class SelectRecentScreenshot(val id: String) : HomeAction
     data object OpenFavoriteCategories : HomeAction
-    data class SelectFavoriteCategory(val id: String) : HomeAction
-    data class ToggleFavoriteCategory(val id: String) : HomeAction
+    data class SelectFavoriteItem(val id: String) : HomeAction
+    data class ToggleFavoriteItem(val id: String) : HomeAction
     data object OpenFrequentSaveTypes : HomeAction
     data class SelectFrequentSaveType(val id: String) : HomeAction
 }
 
-private val HomeMockRecentScreenshots = listOf(
-    HomeRecentScreenshotUiModel(
-        id = "return",
-        thumbnailResId = R.drawable.mock_home_screenshot_return,
-        titleResId = R.string.home_recent_screenshot_return_title,
-        categoryType = RecapCategoryType.ShoppingProduct,
+internal val HomePreviewUiState = HomeUiState(
+    recentScreenshots = listOf(
+        HomeRecentScreenshotUiModel(
+            id = "return",
+            thumbnailModel = R.drawable.mock_home_screenshot_return,
+            title = "택배 반품 절차 정리",
+            categoryType = RecapCategoryType.ShoppingProduct,
+        ),
+        HomeRecentScreenshotUiModel(
+            id = "hotel",
+            thumbnailModel = R.drawable.mock_home_screenshot_hotel,
+            title = "제주 숙소 예약 정보",
+            categoryType = RecapCategoryType.ScheduleReservation,
+        ),
+        HomeRecentScreenshotUiModel(
+            id = "recipe",
+            thumbnailModel = R.drawable.mock_home_screenshot_recipe,
+            title = "파스타 레시피 저장",
+            categoryType = RecapCategoryType.InfoKnowledge,
+        ),
     ),
-    HomeRecentScreenshotUiModel(
-        id = "hotel",
-        thumbnailResId = R.drawable.mock_home_screenshot_hotel,
-        titleResId = R.string.home_recent_screenshot_hotel_title,
-        categoryType = RecapCategoryType.ScheduleReservation,
+    favoriteItems = listOf(
+        HomeFavoriteItemUiModel(
+            id = "tax",
+            thumbnailModel = R.drawable.mock_home_screenshot_tax,
+            categoryType = RecapCategoryType.RecordCapture,
+            title = "연말정산 서류 목록",
+            description = "연말정산 제출에 필요한 서류 정리",
+            organizedAtMillis = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
+            isFavorite = true,
+        ),
+        HomeFavoriteItemUiModel(
+            id = "moving",
+            thumbnailModel = R.drawable.mock_home_screenshot_hotel,
+            categoryType = RecapCategoryType.ScheduleReservation,
+            title = "이사 체크리스트",
+            description = "이사 준비시 꼭 해야할 체크리스트",
+            organizedAtMillis = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(2),
+            isFavorite = true,
+        ),
+        HomeFavoriteItemUiModel(
+            id = "keyboard",
+            thumbnailModel = R.drawable.mock_home_screenshot_return,
+            categoryType = RecapCategoryType.ShoppingProduct,
+            title = "무선 키보드 후보",
+            description = "가격과 배송 정보가 포함된 상품 캡처",
+            organizedAtMillis = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(30),
+            isFavorite = true,
+        ),
     ),
-    HomeRecentScreenshotUiModel(
-        id = "recipe",
-        thumbnailResId = R.drawable.mock_home_screenshot_recipe,
-        titleResId = R.string.home_recent_screenshot_recipe_title,
-        categoryType = RecapCategoryType.InfoKnowledge,
-    ),
-)
-
-private val HomeMockFavoriteCategories = listOf(
-    HomeFavoriteCategoryUiModel(
-        id = "tax",
-        thumbnailResId = R.drawable.mock_home_screenshot_tax,
-        categoryType = RecapCategoryType.InfoKnowledge,
-        titleResId = R.string.home_favorite_year_end_tax_title,
-        descriptionResId = R.string.home_favorite_year_end_tax_description,
-        organizedAtMillis = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
-        isFavorite = true,
-    ),
-    HomeFavoriteCategoryUiModel(
-        id = "moving",
-        thumbnailResId = R.drawable.mock_home_screenshot_hotel,
-        categoryType = RecapCategoryType.ScheduleReservation,
-        titleResId = R.string.home_favorite_moving_checklist_title,
-        descriptionResId = R.string.home_favorite_moving_checklist_description,
-        organizedAtMillis = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(2),
-        isFavorite = true,
-    ),
-    HomeFavoriteCategoryUiModel(
-        id = "keyboard",
-        thumbnailResId = R.drawable.mock_home_screenshot_return,
-        categoryType = RecapCategoryType.ShoppingProduct,
-        titleResId = R.string.home_favorite_keyboard_title,
-        descriptionResId = R.string.home_favorite_keyboard_description,
-        organizedAtMillis = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(30),
-        isFavorite = true,
-    ),
-)
-
-private val HomeMockFrequentSaveTypes = listOf(
-    HomeFrequentSaveTypeUiModel(
-        id = "shopping-product",
-        categoryLabelResId = R.string.home_category_shopping_product,
-        recapCount = 12,
-    ),
-    HomeFrequentSaveTypeUiModel(
-        id = "place-restaurant",
-        categoryLabelResId = R.string.home_category_place_restaurant,
-        recapCount = 8,
-    ),
-    HomeFrequentSaveTypeUiModel(
-        id = "schedule-reservation",
-        categoryLabelResId = R.string.home_category_schedule_reservation,
-        recapCount = 5,
-    ),
-    HomeFrequentSaveTypeUiModel(
-        id = "shopping-product-alt",
-        categoryLabelResId = R.string.home_category_shopping_product,
-        recapCount = 3,
+    frequentSaveTypes = listOf(
+        HomeFrequentSaveTypeUiModel(
+            id = RecapCategoryType.ShoppingProduct.name,
+            categoryType = RecapCategoryType.ShoppingProduct,
+            recapCount = 12,
+        ),
+        HomeFrequentSaveTypeUiModel(
+            id = RecapCategoryType.PlaceRestaurant.name,
+            categoryType = RecapCategoryType.PlaceRestaurant,
+            recapCount = 8,
+        ),
+        HomeFrequentSaveTypeUiModel(
+            id = RecapCategoryType.BookContent.name,
+            categoryType = RecapCategoryType.BookContent,
+            recapCount = 5,
+        ),
     ),
 )

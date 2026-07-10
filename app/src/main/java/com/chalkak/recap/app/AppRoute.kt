@@ -43,6 +43,9 @@ sealed interface AppRoute : NavKey {
     data object Search : AppRoute
 
     @Serializable
+    data object RecentOrganizedScreenshots : AppRoute
+
+    @Serializable
     data object Organize : AppRoute
 }
 
