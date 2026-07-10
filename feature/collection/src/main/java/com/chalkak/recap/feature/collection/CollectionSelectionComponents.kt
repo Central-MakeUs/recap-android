@@ -203,6 +203,35 @@ internal fun CollectionSelectionCheckbox(
 }
 
 @Composable
+internal fun CollectionAnimatedFavoriteVisibility(
+    visible: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    AnimatedVisibility(
+        visible = visible,
+        modifier = modifier,
+        // Exit uses enter tween so it starts with the checkbox, not FastOutLinearIn's slow start.
+        enter = expandHorizontally(
+            animationSpec = collectionSelectionExitTween(),
+            expandFrom = Alignment.End,
+        ) + slideInHorizontally(
+            animationSpec = collectionSelectionExitTween(),
+            initialOffsetX = { width -> width },
+        ) + fadeIn(animationSpec = collectionSelectionExitTween()),
+        exit = shrinkHorizontally(
+            animationSpec = collectionSelectionEnterTween(),
+            shrinkTowards = Alignment.End,
+        ) + slideOutHorizontally(
+            animationSpec = collectionSelectionEnterTween(),
+            targetOffsetX = { width -> width },
+        ) + fadeOut(animationSpec = collectionSelectionEnterTween()),
+    ) {
+        content()
+    }
+}
+
+@Composable
 private fun CollectionCheckboxIcon(
     checked: Boolean,
     modifier: Modifier = Modifier,
@@ -262,27 +291,23 @@ internal fun CollectionSelectableFavoriteItem(
             checked = isSelected,
         )
         val itemClick = if (selection.isActive) onSelectionToggle else onOpenClick
-        val favoriteClick = if (selection.isActive) onSelectionToggle else onFavoriteClick
-        if (selection.isActive) {
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .clearAndSetSemantics { },
-            ) {
-                CollectionFavoriteCard(
-                    item = item,
-                    nowMillis = nowMillis,
-                    onClick = itemClick,
-                    onFavoriteClick = favoriteClick,
-                )
-            }
-        } else {
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .then(
+                    if (selection.isActive) {
+                        Modifier.clearAndSetSemantics { }
+                    } else {
+                        Modifier
+                    },
+                ),
+        ) {
             CollectionFavoriteCard(
                 item = item,
                 nowMillis = nowMillis,
                 onClick = itemClick,
-                onFavoriteClick = favoriteClick,
-                modifier = Modifier.weight(1f),
+                onFavoriteClick = onFavoriteClick,
+                showFavoriteButton = !selection.isActive,
             )
         }
     }
@@ -295,6 +320,7 @@ private fun CollectionFavoriteCard(
     onClick: () -> Unit,
     onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier,
+    showFavoriteButton: Boolean = true,
 ) {
     CoreFavoriteCategoryCard(
         thumbnailModel = item.thumbnailModel,
@@ -308,6 +334,7 @@ private fun CollectionFavoriteCard(
         modifier = modifier,
         nowMillis = nowMillis,
         horizontalContentPadding = 0.dp,
+        showFavoriteButton = showFavoriteButton,
     )
 }
 

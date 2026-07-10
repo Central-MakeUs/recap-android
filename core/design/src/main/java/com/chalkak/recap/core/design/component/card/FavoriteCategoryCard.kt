@@ -1,5 +1,15 @@
 package com.chalkak.recap.core.design.component.card
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -54,6 +64,7 @@ fun FavoriteCategoryCard(
     nowMillis: Long = System.currentTimeMillis(),
     thumbnailContentDescription: String? = null,
     horizontalContentPadding: Dp = FavoriteCategoryCardTokens.ContainerHorizontalPadding,
+    showFavoriteButton: Boolean = true,
 ) {
     val relativeTimeLabel = remember(organizedAtMillis, nowMillis) {
         OrganizedRelativeTimeFormatter.label(
@@ -112,10 +123,28 @@ fun FavoriteCategoryCard(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        FavoriteCategoryStarButton(
-                            isFavorite = isFavorite,
-                            onClick = onFavoriteClick,
-                        )
+                        AnimatedVisibility(
+                            visible = showFavoriteButton,
+                            enter = expandHorizontally(
+                                animationSpec = favoriteButtonExitTween(),
+                                expandFrom = Alignment.End,
+                            ) + slideInHorizontally(
+                                animationSpec = favoriteButtonExitTween(),
+                                initialOffsetX = { width -> width },
+                            ) + fadeIn(animationSpec = favoriteButtonExitTween()),
+                            exit = shrinkHorizontally(
+                                animationSpec = favoriteButtonEnterTween(),
+                                shrinkTowards = Alignment.End,
+                            ) + slideOutHorizontally(
+                                animationSpec = favoriteButtonEnterTween(),
+                                targetOffsetX = { width -> width },
+                            ) + fadeOut(animationSpec = favoriteButtonEnterTween()),
+                        ) {
+                            FavoriteCategoryStarButton(
+                                isFavorite = isFavorite,
+                                onClick = onFavoriteClick,
+                            )
+                        }
                     }
                 }
                 Text(
@@ -208,7 +237,19 @@ private object FavoriteCategoryCardTokens {
     val FavoriteIconSize = 24.dp
     const val TitleMaxLines = 1
     const val DescriptionMaxLines = 2
+    const val FavoriteButtonEnterDurationMillis = 150
+    const val FavoriteButtonExitDurationMillis = 600
 }
+
+private fun <T> favoriteButtonEnterTween() = tween<T>(
+    durationMillis = FavoriteCategoryCardTokens.FavoriteButtonEnterDurationMillis,
+    easing = LinearOutSlowInEasing,
+)
+
+private fun <T> favoriteButtonExitTween() = tween<T>(
+    durationMillis = FavoriteCategoryCardTokens.FavoriteButtonExitDurationMillis,
+    easing = FastOutLinearInEasing,
+)
 
 @Preview(name = "Favorite Category Card", showBackground = true, widthDp = 360)
 @Composable

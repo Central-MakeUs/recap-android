@@ -113,37 +113,29 @@ internal fun CollectionCaptureListItem(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            Icon(
-                painter = painterResource(R.drawable.ic_star_24),
-                contentDescription = if (selection.isActive) {
-                    null
-                } else {
-                    stringResource(
+            CollectionAnimatedFavoriteVisibility(visible = !selection.isActive) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_star_24),
+                    contentDescription = stringResource(
                         if (card.isFavorite) {
                             R.string.favorite_category_card_remove_favorite_content_description
                         } else {
                             R.string.favorite_category_card_add_favorite_content_description
                         },
-                    )
-                },
-                modifier = Modifier
-                    .size(32.dp)
-                    .then(
-                        if (selection.isActive) {
-                            Modifier
-                        } else {
-                            Modifier.clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = null,
-                                role = Role.Button,
-                                onClick = onFavoriteClick,
-                            )
-                        },
-                    )
-                    .padding(4.dp)
-                    .size(24.dp),
-                tint = if (card.isFavorite) RecapBlue500 else RecapGray200,
-            )
+                    ),
+                    modifier = Modifier
+                        .size(32.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            role = Role.Button,
+                            onClick = onFavoriteClick,
+                        )
+                        .padding(4.dp)
+                        .size(24.dp),
+                    tint = if (card.isFavorite) RecapBlue500 else RecapGray200,
+                )
+            }
         }
     }
 }
