@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -49,8 +48,8 @@ import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard
 import com.chalkak.recap.core.design.component.card.OrganizedRelativeTimeFormatter
-import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
+import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.component.topbar.HomeTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray100
@@ -75,10 +74,10 @@ fun HomeScreen(
         .asPaddingValues()
         .calculateBottomPadding()
     val bottomContentPadding = RecapBottomBarDefaults.ContentScrollPadding +
-        navigationBarBottomPadding
+            navigationBarBottomPadding
     val isEmptyHome = uiState.recentScreenshots.isEmpty() &&
-        uiState.favoriteItems.isEmpty() &&
-        uiState.frequentSaveTypes.isEmpty()
+            uiState.favoriteItems.isEmpty() &&
+            uiState.frequentSaveTypes.isEmpty()
 
     Column(
         modifier = modifier
@@ -161,10 +160,11 @@ private fun HomeEmptyOrganizePrompt(
         Image(
             painter = painterResource(R.drawable.recap_character_1),
             contentDescription = stringResource(R.string.home_empty_character_content_description),
-            modifier = Modifier.size(
-                width = HomeScreenTokens.EmptyCharacterWidth,
-                height = HomeScreenTokens.EmptyCharacterHeight,
-            )
+            modifier = Modifier
+                .size(
+                    width = HomeScreenTokens.EmptyCharacterWidth,
+                    height = HomeScreenTokens.EmptyCharacterHeight,
+                )
                 .offset(x = 21.dp),
             contentScale = ContentScale.Fit,
         )
@@ -184,7 +184,8 @@ private fun HomeEmptyOrganizePrompt(
             textAlign = TextAlign.Center,
         )
         Spacer(modifier = Modifier.height(HomeScreenTokens.EmptyDescriptionSpacing))
-        RecapButton( // TODO: RecapButton 내부 padding 수정
+        RecapButton(
+            // TODO: RecapButton 내부 padding 수정
             text = stringResource(R.string.home_empty_import_button),
             onClick = onImportClick,
             size = RecapButtonSize.Medium,
@@ -254,9 +255,7 @@ private fun FavoriteItemsSection(
             }
         }
         if (visibleItems.isEmpty()) {
-            HomeSectionEmptyText(
-                text = stringResource(R.string.home_favorites_empty),
-            )
+            HomeFavoritesEmptyPrompt()
             return@HomeSection
         }
         Column(
@@ -285,6 +284,35 @@ private fun FavoriteItemsSection(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun HomeFavoritesEmptyPrompt(
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.recap_character_2),
+            contentDescription = stringResource(
+                R.string.home_favorites_empty_character_content_description,
+            ),
+            modifier = Modifier.size(
+                width = HomeScreenTokens.FavoritesEmptyCharacterWidth,
+                height = HomeScreenTokens.FavoritesEmptyCharacterHeight,
+            ),
+            contentScale = ContentScale.Fit,
+        )
+        Spacer(modifier = Modifier.height(HomeScreenTokens.FavoritesEmptyCharacterSpacing))
+        Text(
+            text = stringResource(R.string.home_favorites_empty),
+            style = MaterialTheme.typography.bodyMedium,
+            color = RecapGray500,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -424,6 +452,9 @@ private object HomeScreenTokens {
     val EmptyTitleSpacing = 15.dp
     val EmptyDescriptionSpacing = 33.dp
     val EmptyImportButtonMinWidth = 200.dp
+    val FavoritesEmptyCharacterWidth = 133.dp
+    val FavoritesEmptyCharacterHeight = 128.dp
+    val FavoritesEmptyCharacterSpacing = 27.dp
 }
 
 @Preview(name = "Home Screen", showBackground = true, widthDp = 360, heightDp = 720)
@@ -437,7 +468,12 @@ private fun HomeScreenPreview() {
     }
 }
 
-@Preview(name = "Home Screen - Analysis Progress", showBackground = true, widthDp = 360, heightDp = 720)
+@Preview(
+    name = "Home Screen - Analysis Progress",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 720
+)
 @Composable
 private fun HomeScreenAnalysisProgressPreview() {
     RECAPTheme(dynamicColor = false) {
@@ -457,5 +493,21 @@ private fun HomeScreenAnalysisProgressPreview() {
 private fun HomeScreenEmptyPreview() {
     RECAPTheme(dynamicColor = false) {
         HomeScreen(hazeState = rememberHazeState())
+    }
+}
+
+@Preview(
+    name = "Home Screen - Favorites Empty",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 720
+)
+@Composable
+private fun HomeScreenFavoritesEmptyPreview() {
+    RECAPTheme(dynamicColor = false) {
+        HomeScreen(
+            hazeState = rememberHazeState(),
+            uiState = HomePreviewUiState.copy(favoriteItems = emptyList()),
+        )
     }
 }
