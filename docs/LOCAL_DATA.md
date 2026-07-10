@@ -54,7 +54,7 @@
 역할:
 - 앱 로컬 Room database의 단일 정의다.
 - DB 파일명은 `recap.db`다.
-- 현재 version은 `2`다.
+- 현재 version은 `3`다.
 - `exportSchema = false` 상태다.
 
 등록된 entity:
@@ -72,21 +72,23 @@
 역할:
 - Hilt `SingletonComponent`에 `RecapDatabase` singleton을 제공한다.
 - `OcrDao`, `ScreenshotCardDao`를 DI로 제공한다.
-- `MIGRATION_1_2`를 Room builder에 등록한다.
+- `MIGRATION_1_2`와 `MIGRATION_2_3`를 Room builder에 등록한다.
 
 ### `RecapDatabaseMigrations`
 
 현재 migration:
 - `MIGRATION_1_2`
+- `MIGRATION_2_3`
 
 하는 일:
-- 기존 OCR 테이블을 유지한 채 `screenshot_cards` 테이블을 추가한다.
-- `screenshot_key_fields` 테이블을 추가한다.
-- `screenshot_key_fields.imageId` index를 추가한다.
+- `MIGRATION_1_2`: 기존 OCR 테이블을 유지한 채 `screenshot_cards` 테이블을 추가한다.
+- `MIGRATION_1_2`: `screenshot_key_fields` 테이블을 추가한다.
+- `MIGRATION_1_2`: `screenshot_key_fields.imageId` index를 추가한다.
+- `MIGRATION_2_3`: `screenshot_cards`에 editable `body` 컬럼을 추가한다. 기존 row는 `''`로 초기화된다.
 
 주의사항:
-- 앱 데이터 삭제 후 새 설치하면 migration은 실행되지 않고 version 2 schema가 바로 생성된다.
-- 기존 version 1 DB가 남아 있는 기기에서는 migration이 필요하다.
+- 앱 데이터 삭제 후 새 설치하면 migration은 실행되지 않고 version 3 schema가 바로 생성된다.
+- 기존 version 1/2 DB가 남아 있는 기기에서는 등록된 migration이 필요하다.
 
 ## OCR 로컬 저장
 
@@ -157,6 +159,7 @@ mapper:
 - `thumbnailPath`
 - `title`
 - `summary`
+- `body`
 - `primaryContentType`
 - `confidence`
 - `isFavorite`
@@ -187,9 +190,11 @@ relation holder:
 
 주요 API:
 - `observeAllCards()`: `createdAtMillis DESC` 정렬로 전체 observe
+- `observeCard(imageId)`: 단일 카드 observe
 - `getCardByImageId(imageId)`
 - `saveAnalysisResults(entries)`
 - `updateFavorite(imageId, isFavorite, updatedAtMillis)`
+- `updateCardContent(imageId, title, summary, body, primaryContentType, updatedAtMillis)`
 - `deleteByImageId(imageId)`
 
 저장 정책:
@@ -222,10 +227,14 @@ relation holder:
 
 주요 API:
 - `observeStoredCards()`
+- `observeCard(imageId)`
 - `getCard(imageId)`
 - `saveAnalysisResults(results, imageRefsByImageId)`
 - `updateFavorite(imageId, isFavorite)`
+- `updateCardContent(imageId, title, summary, body, primaryContentType, updatedAtMillis)`
 - `deleteCard(imageId)`
+- `deleteCards(imageIds)`
+- `deleteAllCards()`
 
 ### `screenshot/persistence/ScreenshotCardModule`
 
@@ -302,6 +311,8 @@ relation holder:
 - `UserPreferencesRepositoryTest`
 - `ScreenshotImageStorageTest`
 - `ScreenshotCardDaoTest`
+- `RecapDatabaseMigration2To3Test`
+- `ScreenshotImageStorageTest`
 
 검증 범위:
 - DataStore 기본값/저장

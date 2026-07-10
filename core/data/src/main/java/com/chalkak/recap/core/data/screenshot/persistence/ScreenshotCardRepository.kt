@@ -1,6 +1,7 @@
 package com.chalkak.recap.core.data.screenshot.persistence
 
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
+import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -8,6 +9,8 @@ import javax.inject.Singleton
 
 interface ScreenshotCardRepository {
     fun observeStoredCards(): Flow<List<StoredScreenshotCard>>
+
+    fun observeCard(imageId: String): Flow<StoredScreenshotCard?>
 
     suspend fun getCard(imageId: String): StoredScreenshotCard?
 
@@ -17,6 +20,15 @@ interface ScreenshotCardRepository {
     )
 
     suspend fun updateFavorite(imageId: String, isFavorite: Boolean)
+
+    suspend fun updateCardContent(
+        imageId: String,
+        title: String,
+        summary: String,
+        body: String,
+        primaryContentType: ScreenshotContentType,
+        updatedAtMillis: Long = System.currentTimeMillis(),
+    ): Boolean
 
     suspend fun deleteCard(imageId: String)
 
@@ -32,6 +44,12 @@ class DefaultScreenshotCardRepository @Inject constructor(
     override fun observeStoredCards(): Flow<List<StoredScreenshotCard>> {
         return screenshotCardDao.observeAllCards().map { cards ->
             cards.map(ScreenshotCardWithKeyFields::toStoredScreenshotCard)
+        }
+    }
+
+    override fun observeCard(imageId: String): Flow<StoredScreenshotCard?> {
+        return screenshotCardDao.observeCard(imageId).map { card ->
+            card?.toStoredScreenshotCard()
         }
     }
 
@@ -61,6 +79,25 @@ class DefaultScreenshotCardRepository @Inject constructor(
             isFavorite = isFavorite,
             updatedAtMillis = System.currentTimeMillis(),
         )
+    }
+
+    override suspend fun updateCardContent(
+        imageId: String,
+        title: String,
+        summary: String,
+        body: String,
+        primaryContentType: ScreenshotContentType,
+        updatedAtMillis: Long,
+    ): Boolean {
+        val updatedRows = screenshotCardDao.updateCardContent(
+            imageId = imageId,
+            title = title,
+            summary = summary,
+            body = body,
+            primaryContentType = primaryContentType.name,
+            updatedAtMillis = updatedAtMillis,
+        )
+        return updatedRows > 0
     }
 
     override suspend fun deleteCard(imageId: String) {

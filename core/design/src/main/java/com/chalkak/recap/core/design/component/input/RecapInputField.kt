@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -70,7 +69,7 @@ fun RecapInputField(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(RecapInputFieldTokens.LabelSpacing),
+        verticalArrangement = Arrangement.spacedBy(RecapFieldTokens.LabelSpacing),
     ) {
         if (label != null) {
             Text(
@@ -84,10 +83,10 @@ fun RecapInputField(
 
         Surface(
             modifier = Modifier.fillMaxWidth(),
-            shape = RecapInputFieldTokens.Shape,
+            shape = RecapFieldTokens.Shape,
             color = Color.White,
             border = BorderStroke(
-                width = RecapInputFieldTokens.BorderWidth,
+                width = RecapFieldTokens.BorderWidth,
                 color = borderColor,
             ),
         ) {
@@ -105,12 +104,12 @@ fun RecapInputField(
                     .fillMaxWidth()
                     .then(
                         if (singleLine) {
-                            Modifier.defaultMinSize(minHeight = RecapInputFieldTokens.SingleLineMinHeight)
+                            Modifier.defaultMinSize(minHeight = RecapFieldTokens.SingleLineMinHeight)
                         } else {
-                            Modifier.heightIn(min = RecapInputFieldTokens.MultiLineMinHeight)
+                            Modifier.heightIn(min = RecapFieldTokens.MultiLineMinHeight)
                         },
                     )
-                    .padding(RecapInputFieldTokens.ContentPadding),
+                    .padding(RecapFieldTokens.ContentPadding),
                 enabled = enabled,
                 singleLine = singleLine,
                 minLines = resolvedMinLines,
@@ -200,14 +199,8 @@ private fun RecapInputFieldErrorMessage(
 }
 
 private object RecapInputFieldTokens {
-    val LabelSpacing = 8.dp
-    val ContentPadding = 13.dp
-    val SingleLineMinHeight = 48.dp
-    val MultiLineMinHeight = 120.dp
-    val BorderWidth = 1.5.dp
     val ErrorIconSize = 16.dp
     val ErrorIconSpacing = 4.dp
-    val Shape = RoundedCornerShape(12.dp)
 }
 
 const val showRecapInputFieldBackground = true
@@ -301,11 +294,11 @@ private fun RecapInputFieldFocusedPreviewContent(
         modifier = Modifier
             .fillMaxWidth()
             .padding(16.dp),
-        shape = RecapInputFieldTokens.Shape,
+        shape = RecapFieldTokens.Shape,
         color = Color.Transparent,
     ) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(RecapInputFieldTokens.LabelSpacing),
+            verticalArrangement = Arrangement.spacedBy(RecapFieldTokens.LabelSpacing),
         ) {
             Text(
                 text = stringResource(R.string.recap_input_field_preview_label),
@@ -314,18 +307,18 @@ private fun RecapInputFieldFocusedPreviewContent(
             )
             Surface(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RecapInputFieldTokens.Shape,
+                shape = RecapFieldTokens.Shape,
                 color = Color.White,
                 border = BorderStroke(
-                    width = RecapInputFieldTokens.BorderWidth,
+                    width = RecapFieldTokens.BorderWidth,
                     color = RecapBlue300,
                 ),
             ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .defaultMinSize(minHeight = RecapInputFieldTokens.SingleLineMinHeight)
-                        .padding(RecapInputFieldTokens.ContentPadding),
+                        .defaultMinSize(minHeight = RecapFieldTokens.SingleLineMinHeight)
+                        .padding(RecapFieldTokens.ContentPadding),
                     contentAlignment = Alignment.CenterStart,
                 ) {
                     Text(

@@ -60,6 +60,7 @@ dependencies {
     implementation(project(":feature:mypage"))
     implementation(project(":feature:onboarding"))
     implementation(project(":feature:organize"))
+    implementation(project(":feature:screenshot"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)

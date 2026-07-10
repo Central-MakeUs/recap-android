@@ -24,6 +24,7 @@ fun CollectionRoute(
     modifier: Modifier = Modifier,
     hazeState: HazeState,
     onNavigateToOrganize: () -> Unit,
+    onNavigateToScreenshot: (String) -> Unit = {},
     onNavigateBack: () -> Unit = {},
     initialTab: CollectionTab = CollectionTab.Favorites,
     favoritesNavigationRequestId: Int = 0,
@@ -87,6 +88,14 @@ fun CollectionRoute(
                 backStack.add(CollectionDestination.TypeDetail(action.contentType.name))
             }
 
+            is CollectionAction.OpenFavoriteItem -> {
+                onNavigateToScreenshot(action.imageId)
+            }
+
+            is CollectionAction.OpenOtherItem -> {
+                onNavigateToScreenshot(action.imageId)
+            }
+
             else -> viewModel.onAction(action)
         }
     }
@@ -133,7 +142,8 @@ fun CollectionRoute(
                             detail = detail,
                             selection = uiState.selection,
                             onBackClick = ::handleBack,
-                            onAction = viewModel::onAction,
+                            onAction = ::handleAction,
+                            onItemClick = onNavigateToScreenshot,
                             searchQuery = uiState.detailSearchQuery,
                             isSearchVisible = uiState.isDetailSearchVisible,
                         )
@@ -146,7 +156,8 @@ fun CollectionRoute(
                             detail = detail,
                             selection = uiState.selection,
                             onBackClick = ::handleBack,
-                            onAction = viewModel::onAction,
+                            onAction = ::handleAction,
+                            onItemClick = onNavigateToScreenshot,
                             searchQuery = uiState.detailSearchQuery,
                             isSearchVisible = uiState.isDetailSearchVisible,
                         )

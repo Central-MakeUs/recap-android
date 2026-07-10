@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.collection
+package com.chalkak.recap.feature.screenshot
 
 import androidx.annotation.StringRes
 import com.chalkak.recap.core.design.R

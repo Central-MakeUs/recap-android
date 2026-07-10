@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun RecentOrganizedScreenshotsRoute(
     onNavigateBack: () -> Unit,
     onNavigateToSearch: () -> Unit,
+    onNavigateToScreenshot: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecentOrganizedScreenshotsViewModel = hiltViewModel(),
 ) {
@@ -23,7 +24,7 @@ fun RecentOrganizedScreenshotsRoute(
                 RecentOrganizedScreenshotsAction.NavigateBack -> onNavigateBack()
                 RecentOrganizedScreenshotsAction.OpenSearch -> onNavigateToSearch()
                 is RecentOrganizedScreenshotsAction.ToggleFavorite -> viewModel.onAction(action)
-                is RecentOrganizedScreenshotsAction.SelectItem -> Unit
+                is RecentOrganizedScreenshotsAction.SelectItem -> onNavigateToScreenshot(action.id)
             }
         },
     )

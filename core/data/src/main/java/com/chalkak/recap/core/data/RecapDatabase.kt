@@ -16,7 +16,7 @@ import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotKeyFieldEnti
         ScreenshotCardEntity::class,
         ScreenshotKeyFieldEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = false,
 )
 abstract class RecapDatabase : RoomDatabase() {

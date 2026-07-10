@@ -106,13 +106,9 @@ class CollectionViewModel @Inject constructor(
                 publishState()
             }
 
-            is CollectionAction.OpenFavoriteItem -> {
-                // TODO: Connect favorite item destination when detail route is defined.
-            }
-
-            is CollectionAction.OpenOtherItem -> {
-                // TODO: Connect other item destination when detail route is defined.
-            }
+            is CollectionAction.OpenFavoriteItem,
+            is CollectionAction.OpenOtherItem,
+            -> Unit
 
             is CollectionAction.OpenTypeDetail -> {
                 clearSelection()

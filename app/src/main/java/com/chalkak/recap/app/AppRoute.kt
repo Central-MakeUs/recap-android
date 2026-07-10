@@ -47,6 +47,9 @@ sealed interface AppRoute : NavKey {
 
     @Serializable
     data object Organize : AppRoute
+
+    @Serializable
+    data class Screenshot(val imageId: String) : AppRoute
 }
 
 sealed interface MainTabRoute : NavKey {

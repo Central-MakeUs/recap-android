@@ -8,4 +8,5 @@ data class ScreenshotAnalysisResult(
     val keyFields: List<ScreenshotKeyField>,
     val confidence: ScreenshotAnalysisConfidence,
     val isFavorite: Boolean,
+    val body: String = "",
 )

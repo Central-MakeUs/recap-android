@@ -45,3 +45,14 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
         )
     }
 }
+
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL(
+            """
+            ALTER TABLE `screenshot_cards`
+            ADD COLUMN `body` TEXT NOT NULL DEFAULT ''
+            """.trimIndent(),
+        )
+    }
+}

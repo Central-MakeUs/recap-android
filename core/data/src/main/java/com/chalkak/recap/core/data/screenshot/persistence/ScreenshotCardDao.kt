@@ -15,6 +15,10 @@ abstract class ScreenshotCardDao {
 
     @Transaction
     @Query("SELECT * FROM screenshot_cards WHERE imageId = :imageId")
+    abstract fun observeCard(imageId: String): Flow<ScreenshotCardWithKeyFields?>
+
+    @Transaction
+    @Query("SELECT * FROM screenshot_cards WHERE imageId = :imageId")
     abstract suspend fun getCardByImageId(imageId: String): ScreenshotCardWithKeyFields?
 
     @Query("SELECT * FROM screenshot_cards WHERE imageId = :imageId")
@@ -42,6 +46,26 @@ abstract class ScreenshotCardDao {
         updatedAtMillis: Long,
     )
 
+    @Query(
+        """
+        UPDATE screenshot_cards
+        SET title = :title,
+            summary = :summary,
+            body = :body,
+            primaryContentType = :primaryContentType,
+            updatedAtMillis = :updatedAtMillis
+        WHERE imageId = :imageId
+        """,
+    )
+    abstract suspend fun updateCardContent(
+        imageId: String,
+        title: String,
+        summary: String,
+        body: String,
+        primaryContentType: String,
+        updatedAtMillis: Long,
+    ): Int
+
     @Query("DELETE FROM screenshot_cards WHERE imageId = :imageId")
     abstract suspend fun deleteByImageId(imageId: String)
 
@@ -65,14 +89,19 @@ abstract class ScreenshotCardDao {
             val existingCard = getCardEntityByImageId(entry.analysisResult.imageId)
             val timestampMillis = baseTimeMillis + index
             val createdAtMillis = existingCard?.createdAtMillis ?: timestampMillis
-            val cardEntity = entry.analysisResult.toCardEntity(
-                imageRefs = entry.imageRefs,
+            val mergedResult = entry.analysisResult.copy(
+                body = entry.analysisResult.body.ifBlank {
+                    existingCard?.body.orEmpty()
+                },
+            )
+            val cardEntity = mergedResult.toCardEntity(
+                imageRefs = mergeImageRefs(entry.imageRefs, existingCard),
                 createdAtMillis = createdAtMillis,
                 updatedAtMillis = timestampMillis,
             )
             insertCards(listOf(cardEntity))
             deleteKeyFieldsByImageId(cardEntity.imageId)
-            insertKeyFields(entry.analysisResult.toKeyFieldEntities())
+            insertKeyFields(mergedResult.toKeyFieldEntities())
         }
     }
 

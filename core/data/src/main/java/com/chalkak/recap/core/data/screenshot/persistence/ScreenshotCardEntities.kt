@@ -15,6 +15,7 @@ data class ScreenshotCardEntity(
     val thumbnailPath: String?,
     val title: String,
     val summary: String,
+    val body: String,
     val primaryContentType: String,
     val confidence: String,
     val isFavorite: Boolean,

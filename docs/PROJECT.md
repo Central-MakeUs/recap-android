@@ -63,6 +63,7 @@ $env:GRADLE_USER_HOME="$env:USERPROFILE\.gradle"; .\gradlew.bat assembleDebug
 :feature:mypage
 :feature:onboarding
 :feature:organize
+:feature:screenshot
 ```
 
 현재 주요 package / feature map:
@@ -81,7 +82,8 @@ com.chalkak.recap
     ├── home               # 홈
     ├── mypage             # 마이페이지 및 하위 설정 화면
     ├── organize           # 정리/분류 관련 화면
-    └── onboarding         # 온보딩 플로우
+    ├── onboarding         # 온보딩 플로우
+    └── screenshot         # 스크린샷 상세/수정/전체화면
 ```
 
 ## 목표 아키텍처

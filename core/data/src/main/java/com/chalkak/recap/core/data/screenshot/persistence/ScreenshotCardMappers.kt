@@ -24,6 +24,20 @@ data class ScreenshotCardSaveEntry(
     val imageRefs: ScreenshotCardImageRefs = ScreenshotCardImageRefs(),
 )
 
+internal fun mergeImageRefs(
+    incoming: ScreenshotCardImageRefs,
+    existing: ScreenshotCardEntity?,
+): ScreenshotCardImageRefs {
+    if (existing == null) {
+        return incoming
+    }
+    return ScreenshotCardImageRefs(
+        sourceImageUri = incoming.sourceImageUri ?: existing.sourceImageUri,
+        storedImagePath = incoming.storedImagePath ?: existing.storedImagePath,
+        thumbnailPath = incoming.thumbnailPath ?: existing.thumbnailPath,
+    )
+}
+
 fun ScreenshotAnalysisResult.toCardEntity(
     imageRefs: ScreenshotCardImageRefs,
     createdAtMillis: Long,
@@ -36,6 +50,7 @@ fun ScreenshotAnalysisResult.toCardEntity(
         thumbnailPath = imageRefs.thumbnailPath,
         title = title,
         summary = summary,
+        body = body,
         primaryContentType = contentTypes.primaryContentType.name,
         confidence = confidence.name,
         isFavorite = isFavorite,
@@ -91,5 +106,6 @@ private fun ScreenshotCardEntity.toAnalysisResult(
             },
         confidence = ScreenshotAnalysisConfidence.valueOf(confidence),
         isFavorite = isFavorite,
+        body = body,
     )
 }

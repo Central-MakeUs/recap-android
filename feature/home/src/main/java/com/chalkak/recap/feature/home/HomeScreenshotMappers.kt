@@ -20,7 +20,6 @@ internal fun ScreenshotContentType.toRecapCategoryType(): RecapCategoryType? = w
     ScreenshotContentType.BOOK_CONTENT -> RecapCategoryType.BookContent
     ScreenshotContentType.BENEFIT_EVENT -> RecapCategoryType.BenefitEvent
     ScreenshotContentType.RECORD_CAPTURE -> RecapCategoryType.RecordCapture
-    ScreenshotContentType.JOB_CAREER,
     ScreenshotContentType.DESIGN_REFERENCE,
     ScreenshotContentType.OTHER,
     -> null

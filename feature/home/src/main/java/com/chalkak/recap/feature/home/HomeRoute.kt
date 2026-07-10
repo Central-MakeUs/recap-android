@@ -18,6 +18,7 @@ fun HomeRoute(
     onNavigateToRecentOrganizedScreenshots: () -> Unit,
     onNavigateToCollectionFavorites: () -> Unit,
     onNavigateToOrganize: () -> Unit,
+    onNavigateToScreenshot: (String) -> Unit,
     modifier: Modifier = Modifier,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
     viewModel: HomeViewModel = hiltViewModel(),
@@ -43,9 +44,8 @@ fun HomeRoute(
                 HomeAction.OpenRecentScreenshots -> onNavigateToRecentOrganizedScreenshots()
                 HomeAction.OpenFavoriteCategories -> onNavigateToCollectionFavorites()
                 is HomeAction.ToggleFavoriteItem -> viewModel.onAction(action)
-                // TODO: Connect remaining home card actions when destinations are defined.
-                is HomeAction.SelectRecentScreenshot -> Unit
-                is HomeAction.SelectFavoriteItem -> Unit
+                is HomeAction.SelectRecentScreenshot -> onNavigateToScreenshot(action.id)
+                is HomeAction.SelectFavoriteItem -> onNavigateToScreenshot(action.id)
                 HomeAction.OpenFrequentSaveTypes -> Unit
                 is HomeAction.SelectFrequentSaveType -> Unit
             }

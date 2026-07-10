@@ -31,6 +31,7 @@ class MockScreenshotAnalysisRepository @Inject constructor(
             keyFields = buildKeyFields(),
             confidence = resolveConfidence(randomizer.unitDouble()),
             isFavorite = false,
+            body = "본문${input.fileName}",
         )
     }
 

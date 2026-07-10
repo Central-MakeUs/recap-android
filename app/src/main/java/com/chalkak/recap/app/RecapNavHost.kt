@@ -40,6 +40,7 @@ import com.chalkak.recap.feature.mypage.MyPagePrivacyGuideScreen
 import com.chalkak.recap.feature.mypage.MyPageScreen
 import com.chalkak.recap.feature.mypage.MyPageServiceInfoScreen
 import com.chalkak.recap.feature.mypage.MyPageUploadGuideScreen
+import com.chalkak.recap.feature.screenshot.ScreenshotRoute
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -82,6 +83,11 @@ fun RecapNavHost(
                             backStack.add(AppRoute.RecentOrganizedScreenshots)
                         },
                         onNavigateToOrganize = { backStack.add(AppRoute.Organize) },
+                        onNavigateToScreenshot = { imageId ->
+                            if (imageId.isNotBlank()) {
+                                backStack.add(AppRoute.Screenshot(imageId))
+                            }
+                        },
                         homeNavigationRequestId = homeNavigationRequestId,
                         analysisProgressFlow = analysisProgressFlow,
                     )
@@ -175,6 +181,11 @@ fun RecapNavHost(
                     RecentOrganizedScreenshotsRoute(
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onNavigateToSearch = { backStack.add(AppRoute.Search) },
+                        onNavigateToScreenshot = { imageId ->
+                            if (imageId.isNotBlank()) {
+                                backStack.add(AppRoute.Screenshot(imageId))
+                            }
+                        },
                     )
                 }
 
@@ -186,6 +197,13 @@ fun RecapNavHost(
                             backStack.removeLastOrNull()
                             homeNavigationRequestId += 1
                         },
+                    )
+                }
+
+                is AppRoute.Screenshot -> NavEntry(route) {
+                    ScreenshotRoute(
+                        imageId = route.imageId,
+                        onNavigateBack = { backStack.removeLastOrNull() },
                     )
                 }
 
@@ -206,6 +224,7 @@ fun RecapMainTabNavHost(
     onNavigateToRecentOrganizedScreenshots: () -> Unit,
     onNavigateToOrganize: () -> Unit,
     onNavigateToCollectionFavorites: () -> Unit = {},
+    onNavigateToScreenshot: (String) -> Unit = {},
     collectionFavoritesNavigationRequestId: Int = 0,
     collectionInitialTab: CollectionTab = CollectionTab.Favorites,
     showDeveloperLogoShortcut: Boolean = false,
@@ -232,6 +251,7 @@ fun RecapMainTabNavHost(
                         onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
                         onNavigateToCollectionFavorites = onNavigateToCollectionFavorites,
                         onNavigateToOrganize = onNavigateToOrganize,
+                        onNavigateToScreenshot = onNavigateToScreenshot,
                         showDeveloperLogoShortcut = showDeveloperLogoShortcut,
                         analysisProgressFlow = analysisProgressFlow,
                     )
@@ -241,6 +261,7 @@ fun RecapMainTabNavHost(
                     CollectionRoute(
                         hazeState = hazeState,
                         onNavigateToOrganize = onNavigateToOrganize,
+                        onNavigateToScreenshot = onNavigateToScreenshot,
                         onNavigateBack = { backStack.removeLastOrNull() },
                         initialTab = collectionInitialTab,
                         favoritesNavigationRequestId = collectionFavoritesNavigationRequestId,

@@ -31,6 +31,7 @@ fun RecapMainScreen(
     onNavigateToSearch: () -> Unit = {},
     onNavigateToRecentOrganizedScreenshots: () -> Unit = {},
     onNavigateToOrganize: () -> Unit = {},
+    onNavigateToScreenshot: (String) -> Unit = {},
     homeNavigationRequestId: Int = 0,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
 ) {
@@ -101,6 +102,7 @@ fun RecapMainScreen(
             onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
             onNavigateToOrganize = onNavigateToOrganize,
             onNavigateToCollectionFavorites = ::navigateToCollectionFavorites,
+            onNavigateToScreenshot = onNavigateToScreenshot,
             collectionFavoritesNavigationRequestId = collectionFavoritesNavigationRequestId,
             collectionInitialTab = CollectionTab.Favorites,
             showDeveloperLogoShortcut = BuildConfig.DEBUG,

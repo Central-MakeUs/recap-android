@@ -45,6 +45,7 @@ val RecapToastBackground = RecapGray900
 val RecapToastContent = Color(0xFFFFFFFF)
 val RecapSuccess = Color(0xFF1FCD70)
 val RecapError = Color(0xFFFB3D3D)
+val RecapErrorContainer = Color(0xFFFFEFEF)
 
 val Black = Color(0xFF000000)
 val White = Color(0xFFFFFFFF)
