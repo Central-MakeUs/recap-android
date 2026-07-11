@@ -6,7 +6,7 @@ datastorePreferences = "1.2.1"
 firebaseBom = "34.15.0"
 googleServices = "4.5.0"
 junit = "4.13.2"
-junitBom = "5.14.4"
+junitBom = "6.1.1"
 json = "20260522"
 junitVersion = "1.3.0"
 espressoCore = "3.7.0"
@@ -14,7 +14,7 @@ lifecycleRuntimeKtx = "2.11.0"
 activityCompose = "1.13.0"
 kotlin = "2.4.0"
 composeBom = "2026.06.01"
-hilt = "2.60"
+hilt = "2.60.1"
 ksp = "2.3.9"
 coroutines = "1.11.0"
 nav3Core = "1.1.4"
@@ -24,9 +24,11 @@ coil = "3.5.0"
 mlkitTextRecognition = "16.0.1"
 mockk = "1.14.11"
 room = "2.8.4"
+robolectric = "4.16.1"
 turbine = "1.2.1"
 work = "2.11.2"
 androidxHilt = "1.4.0"
+haze = "2.0.0-alpha03"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -78,7 +80,11 @@ junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform
 junit-vintage-engine = { group = "org.junit.vintage", name = "junit-vintage-engine" }
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+chrisbanes-haze = { group = "dev.chrisbanes.haze", name = "haze", version.ref = "haze" }
+chrisbanes-haze-blur = { group = "dev.chrisbanes.haze", name = "haze-blur", version.ref = "haze" }
+chrisbanes-haze-blur-materials = { group = "dev.chrisbanes.haze", name = "haze-blur-materials", version.ref = "haze" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

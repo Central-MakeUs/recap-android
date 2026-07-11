@@ -45,7 +45,7 @@ hilt {
     enableAggregatingTask = true
 }
 
-tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+tasks.withType<Test>().configureEach {
     useJUnitPlatform()
 }
 
@@ -59,6 +59,8 @@ dependencies {
     implementation(project(":feature:developer"))
     implementation(project(":feature:mypage"))
     implementation(project(":feature:onboarding"))
+    implementation(project(":feature:organize"))
+    implementation(project(":feature:screenshot"))
 
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.activity.compose)
@@ -75,6 +77,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
+    implementation(libs.chrisbanes.haze)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.work.runtime.ktx)

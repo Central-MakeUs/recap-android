@@ -20,14 +20,14 @@ sealed interface MyPageAction {
 }
 
 data class MyPageNotificationSettingsUiState(
-    val cleanupCompleteEnabled: Boolean = true,
+    val organizeCompleteEnabled: Boolean = true,
     val reviewRequiredEnabled: Boolean = true,
     val marketingEnabled: Boolean = false,
 )
 
 sealed interface MyPageNotificationSettingsAction {
     data object NavigateBack : MyPageNotificationSettingsAction
-    data class CleanupCompleteEnabledChanged(
+    data class OrganizeCompleteEnabledChanged(
         val enabled: Boolean,
     ) : MyPageNotificationSettingsAction
     data class ReviewRequiredEnabledChanged(

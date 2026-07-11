@@ -2,7 +2,7 @@ package com.chalkak.recap.core.data.ocr
 
 import com.chalkak.recap.core.data.LocalScreenshotDataSource
 import com.chalkak.recap.core.model.ImageAccessLevel
-import com.chalkak.recap.core.model.OcrCleanupRange
+import com.chalkak.recap.core.model.OcrOrganizeRange
 import com.chalkak.recap.core.model.OcrJob
 import com.chalkak.recap.core.model.OcrJobStatus
 import java.util.UUID
@@ -29,7 +29,7 @@ class OcrRepository @Inject constructor(
     override fun currentImageAccessLevel(): ImageAccessLevel =
         screenshotDataSource.currentImageAccessLevel()
 
-    suspend fun countScreenshots(range: OcrCleanupRange): Int {
+    suspend fun countScreenshots(range: OcrOrganizeRange): Int {
         return screenshotDataSource.countScreenshots(range)
     }
 
@@ -46,7 +46,7 @@ class OcrRepository @Inject constructor(
         }
     }
 
-    suspend fun startOcr(range: OcrCleanupRange): String {
+    suspend fun startOcr(range: OcrOrganizeRange): String {
         val jobId = UUID.randomUUID().toString()
         val request = OneTimeWorkRequestBuilder<OcrWorker>()
             .setInputData(
@@ -85,6 +85,6 @@ class OcrRepository @Inject constructor(
     }
 
     private companion object {
-        const val OCR_WORK_NAME = "onboarding_ocr_cleanup"
+        const val OCR_WORK_NAME = "onboarding_ocr_organize"
     }
 }

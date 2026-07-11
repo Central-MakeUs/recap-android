@@ -38,6 +38,18 @@ sealed interface AppRoute : NavKey {
 
     @Serializable
     data object MyPageServiceInfo : AppRoute
+
+    @Serializable
+    data object Search : AppRoute
+
+    @Serializable
+    data object RecentOrganizedScreenshots : AppRoute
+
+    @Serializable
+    data object Organize : AppRoute
+
+    @Serializable
+    data class Screenshot(val imageId: String) : AppRoute
 }
 
 sealed interface MainTabRoute : NavKey {

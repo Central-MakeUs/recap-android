@@ -28,6 +28,7 @@ internal fun DeveloperOptionsScreen(
     onAction: (DeveloperOptionAction) -> Unit,
     modifier: Modifier = Modifier,
     ocrRawResults: List<OcrImageResult> = emptyList(),
+    feedbackMessageResId: Int? = null,
 ) {
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -47,6 +48,13 @@ internal fun DeveloperOptionsScreen(
                 style = MaterialTheme.typography.headlineSmall,
                 color = MaterialTheme.colorScheme.onBackground,
             )
+            if (feedbackMessageResId != null) {
+                Text(
+                    text = stringResource(feedbackMessageResId),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             DeveloperOption.entries.forEach { option ->
                 Button(
                     modifier = Modifier.fillMaxWidth(),
@@ -140,10 +148,15 @@ internal enum class DeveloperOption(
         labelResId = R.string.developer_options_reset_onboarding_button,
         action = DeveloperOptionAction.ResetOnboarding,
     ),
+    ResetScreenshotData(
+        labelResId = R.string.developer_options_reset_screenshot_data_button,
+        action = DeveloperOptionAction.ResetScreenshotData,
+    ),
 }
 
 internal sealed interface DeveloperOptionAction {
     data object OpenTechnicalDemo : DeveloperOptionAction
     data object OpenComponentGarden : DeveloperOptionAction
     data object ResetOnboarding : DeveloperOptionAction
+    data object ResetScreenshotData : DeveloperOptionAction
 }

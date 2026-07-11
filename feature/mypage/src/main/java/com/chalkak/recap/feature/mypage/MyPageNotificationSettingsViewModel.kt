@@ -19,8 +19,8 @@ class MyPageNotificationSettingsViewModel @Inject constructor(
     fun onAction(action: MyPageNotificationSettingsAction) {
         when (action) {
             MyPageNotificationSettingsAction.NavigateBack -> Unit
-            is MyPageNotificationSettingsAction.CleanupCompleteEnabledChanged -> {
-                updateCleanupCompleteEnabled(action.enabled)
+            is MyPageNotificationSettingsAction.OrganizeCompleteEnabledChanged -> {
+                updateOrganizeCompleteEnabled(action.enabled)
             }
 
             is MyPageNotificationSettingsAction.ReviewRequiredEnabledChanged -> {
@@ -33,10 +33,10 @@ class MyPageNotificationSettingsViewModel @Inject constructor(
         }
     }
 
-    private fun updateCleanupCompleteEnabled(enabled: Boolean) {
-        savedStateHandle[MY_PAGE_NOTIFICATION_CLEANUP_COMPLETE_ENABLED_KEY] = enabled
+    private fun updateOrganizeCompleteEnabled(enabled: Boolean) {
+        savedStateHandle[MY_PAGE_NOTIFICATION_ORGANIZE_COMPLETE_ENABLED_KEY] = enabled
         _uiState.update { current ->
-            current.copy(cleanupCompleteEnabled = enabled)
+            current.copy(organizeCompleteEnabled = enabled)
         }
     }
 
@@ -55,8 +55,8 @@ class MyPageNotificationSettingsViewModel @Inject constructor(
     }
 }
 
-internal const val MY_PAGE_NOTIFICATION_CLEANUP_COMPLETE_ENABLED_KEY =
-    "my_page_notification_cleanup_complete_enabled"
+internal const val MY_PAGE_NOTIFICATION_ORGANIZE_COMPLETE_ENABLED_KEY =
+    "my_page_notification_organize_complete_enabled"
 internal const val MY_PAGE_NOTIFICATION_REVIEW_REQUIRED_ENABLED_KEY =
     "my_page_notification_review_required_enabled"
 internal const val MY_PAGE_NOTIFICATION_MARKETING_ENABLED_KEY =
@@ -64,8 +64,8 @@ internal const val MY_PAGE_NOTIFICATION_MARKETING_ENABLED_KEY =
 
 private fun SavedStateHandle.restoreNotificationSettingsUiState(): MyPageNotificationSettingsUiState =
     MyPageNotificationSettingsUiState(
-        cleanupCompleteEnabled = get<Boolean>(
-            MY_PAGE_NOTIFICATION_CLEANUP_COMPLETE_ENABLED_KEY,
+        organizeCompleteEnabled = get<Boolean>(
+            MY_PAGE_NOTIFICATION_ORGANIZE_COMPLETE_ENABLED_KEY,
         ) ?: true,
         reviewRequiredEnabled = get<Boolean>(
             MY_PAGE_NOTIFICATION_REVIEW_REQUIRED_ENABLED_KEY,

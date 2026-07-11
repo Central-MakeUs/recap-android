@@ -3,6 +3,7 @@ package com.chalkak.recap.core.data
 import android.content.Context
 import androidx.room.Room
 import com.chalkak.recap.core.data.ocr.OcrDao
+import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -22,9 +23,15 @@ object DatabaseModule {
             context,
             RecapDatabase::class.java,
             "recap.db",
-        ).build()
+        )
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .build()
     }
 
     @Provides
     fun provideOcrDao(database: RecapDatabase): OcrDao = database.ocrDao()
+
+    @Provides
+    fun provideScreenshotCardDao(database: RecapDatabase): ScreenshotCardDao =
+        database.screenshotCardDao()
 }

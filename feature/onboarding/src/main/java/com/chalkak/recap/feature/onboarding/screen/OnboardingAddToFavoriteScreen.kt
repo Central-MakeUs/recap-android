@@ -68,8 +68,8 @@ fun OnboardingAddToFavoriteScreen(
                     .aspectRatio(RecapLogoAspectRatio),
             )
             StepHeader(
-                title = stringResource(R.string.onboarding_first_cleanup_title),
-                description = stringResource(R.string.onboarding_first_cleanup_body_title),
+                title = stringResource(R.string.onboarding_first_organize_title),
+                description = stringResource(R.string.onboarding_first_organize_body_title),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 16.dp),
@@ -85,7 +85,7 @@ fun OnboardingAddToFavoriteScreen(
                 AddToFavoritePlaceholder()
             }
             Text(
-                text = stringResource(R.string.onboarding_first_cleanup_description),
+                text = stringResource(R.string.onboarding_first_organize_description),
                 modifier = Modifier
                     .padding(bottom = 48.dp)
                     .clickable(role = Role.Button) {
@@ -97,8 +97,8 @@ fun OnboardingAddToFavoriteScreen(
                 textDecoration = TextDecoration.Underline,
             )
             OnboardingBottomActions(
-                primaryText = stringResource(R.string.onboarding_first_cleanup_select_button),
-                secondaryText = stringResource(R.string.onboarding_first_cleanup_later_button),
+                primaryText = stringResource(R.string.onboarding_first_organize_select_button),
+                secondaryText = stringResource(R.string.onboarding_first_organize_later_button),
                 onPrimaryClick = {
                     if (uiState.imageAccessLevel == ImageAccessLevel.Full) {
                         onAction(OnboardingAction.SelectFirstScreenshots)
@@ -106,7 +106,7 @@ fun OnboardingAddToFavoriteScreen(
                         showPhotoAccessPermissionBottomSheet = true
                     }
                 },
-                onSecondaryClick = { onAction(OnboardingAction.SkipFirstCleanup) },
+                onSecondaryClick = { onAction(OnboardingAction.SkipFirstOrganize) },
             )
         }
     }
@@ -152,7 +152,7 @@ fun OnboardingAddToFavoriteScreen(
             },
             onSecondaryClick = {
                 showPhotoAccessPermissionBottomSheet = false
-                onAction(OnboardingAction.SkipFirstCleanup)
+                onAction(OnboardingAction.SkipFirstOrganize)
             },
         )
     }

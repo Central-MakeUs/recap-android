@@ -3,17 +3,36 @@ package com.chalkak.recap.app
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.chalkak.recap.BuildConfig
-import com.chalkak.recap.feature.collection.CollectionScreen
+import com.chalkak.recap.feature.collection.CollectionRoute
+import com.chalkak.recap.feature.collection.CollectionTab
+import com.chalkak.recap.feature.organize.OrganizeRoute
+import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
+import com.chalkak.recap.feature.home.RecentOrganizedScreenshotsRoute
+import com.chalkak.recap.feature.home.SearchRoute
 import com.chalkak.recap.feature.mypage.MyPageAction
 import com.chalkak.recap.feature.mypage.MyPageDataManagementScreen
 import com.chalkak.recap.feature.mypage.MyPageNotificationSettingsRoute
@@ -21,6 +40,15 @@ import com.chalkak.recap.feature.mypage.MyPagePrivacyGuideScreen
 import com.chalkak.recap.feature.mypage.MyPageScreen
 import com.chalkak.recap.feature.mypage.MyPageServiceInfoScreen
 import com.chalkak.recap.feature.mypage.MyPageUploadGuideScreen
+import com.chalkak.recap.feature.screenshot.ScreenshotRoute
+import dev.chrisbanes.haze.HazeState
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+
+private const val MainTabSlideDurationMillis = 300
+private const val MainTabFadeDurationMillis = 250
+private const val MainTabSlideFraction = 6
 
 @Composable
 fun RecapNavHost(
@@ -29,6 +57,16 @@ fun RecapNavHost(
 ) {
     val context = LocalContext.current
     val backStack = rememberNavBackStack(AppRoute.MainTabs)
+    val analysisProgressViewModel: ScreenshotAnalysisProgressViewModel = hiltViewModel()
+    var homeNavigationRequestId by remember { mutableIntStateOf(0) }
+    val analysisProgressFlow = remember(analysisProgressViewModel) {
+        analysisProgressViewModel.uiState.map { state ->
+            HomeAnalysisProgressUiModel(
+                isRunning = state.isRunning,
+                progress = state.progress,
+            )
+        }
+    }
 
     NavDisplay(
         backStack = backStack,
@@ -40,6 +78,18 @@ fun RecapNavHost(
                     RecapMainScreen(
                         onNavigateToDeveloper = onNavigateToDeveloper,
                         onNavigateToMyPage = { backStack.add(AppRoute.MyPage) },
+                        onNavigateToSearch = { backStack.add(AppRoute.Search) },
+                        onNavigateToRecentOrganizedScreenshots = {
+                            backStack.add(AppRoute.RecentOrganizedScreenshots)
+                        },
+                        onNavigateToOrganize = { backStack.add(AppRoute.Organize) },
+                        onNavigateToScreenshot = { imageId ->
+                            if (imageId.isNotBlank()) {
+                                backStack.add(AppRoute.Screenshot(imageId))
+                            }
+                        },
+                        homeNavigationRequestId = homeNavigationRequestId,
+                        analysisProgressFlow = analysisProgressFlow,
                     )
                 }
 
@@ -121,6 +171,42 @@ fun RecapNavHost(
                     )
                 }
 
+                AppRoute.Search -> NavEntry(route) {
+                    SearchRoute(
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                    )
+                }
+
+                AppRoute.RecentOrganizedScreenshots -> NavEntry(route) {
+                    RecentOrganizedScreenshotsRoute(
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                        onNavigateToSearch = { backStack.add(AppRoute.Search) },
+                        onNavigateToScreenshot = { imageId ->
+                            if (imageId.isNotBlank()) {
+                                backStack.add(AppRoute.Screenshot(imageId))
+                            }
+                        },
+                    )
+                }
+
+                AppRoute.Organize -> NavEntry(route) {
+                    OrganizeRoute(
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                        onOrganizeComplete = { selectedScreenshots ->
+                            analysisProgressViewModel.startMockAnalysis(selectedScreenshots)
+                            backStack.removeLastOrNull()
+                            homeNavigationRequestId += 1
+                        },
+                    )
+                }
+
+                is AppRoute.Screenshot -> NavEntry(route) {
+                    ScreenshotRoute(
+                        imageId = route.imageId,
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                    )
+                }
+
                 else -> error("Unknown app route: $route")
             }
         },
@@ -129,22 +215,58 @@ fun RecapNavHost(
 
 @Composable
 fun RecapMainTabNavHost(
+    hazeState: HazeState,
+    modifier: Modifier = Modifier,
     backStack: NavBackStack<NavKey>,
     onNavigateToDeveloper: () -> Unit,
-    modifier: Modifier = Modifier,
+    onNavigateToMyPage: () -> Unit,
+    onNavigateToSearch: () -> Unit,
+    onNavigateToRecentOrganizedScreenshots: () -> Unit,
+    onNavigateToOrganize: () -> Unit,
+    onNavigateToCollectionFavorites: () -> Unit = {},
+    onNavigateToScreenshot: (String) -> Unit = {},
+    collectionFavoritesNavigationRequestId: Int = 0,
+    collectionInitialTab: CollectionTab = CollectionTab.Favorites,
+    showDeveloperLogoShortcut: Boolean = false,
+    analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
+    onCollectionPredictiveBackProgress: (Float) -> Unit = {},
 ) {
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
         modifier = modifier,
+        transitionSpec = { mainTabForwardTransition() },
+        popTransitionSpec = { mainTabPopTransition() },
+        predictivePopTransitionSpec = {
+            EnterTransition.None togetherWith ExitTransition.None
+        },
         entryProvider = { route ->
             when (route) {
                 MainTabRoute.Home -> NavEntry(route) {
-                    HomeRoute(onNavigateToDeveloper = onNavigateToDeveloper)
+                    HomeRoute(
+                        hazeState = hazeState,
+                        onNavigateToDeveloper = onNavigateToDeveloper,
+                        onNavigateToMyPage = onNavigateToMyPage,
+                        onNavigateToSearch = onNavigateToSearch,
+                        onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
+                        onNavigateToCollectionFavorites = onNavigateToCollectionFavorites,
+                        onNavigateToOrganize = onNavigateToOrganize,
+                        onNavigateToScreenshot = onNavigateToScreenshot,
+                        showDeveloperLogoShortcut = showDeveloperLogoShortcut,
+                        analysisProgressFlow = analysisProgressFlow,
+                    )
                 }
 
                 MainTabRoute.Collection -> NavEntry(route) {
-                    CollectionScreen()
+                    CollectionRoute(
+                        hazeState = hazeState,
+                        onNavigateToOrganize = onNavigateToOrganize,
+                        onNavigateToScreenshot = onNavigateToScreenshot,
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                        initialTab = collectionInitialTab,
+                        favoritesNavigationRequestId = collectionFavoritesNavigationRequestId,
+                        onPredictiveBackProgress = onCollectionPredictiveBackProgress,
+                    )
                 }
 
                 else -> error("Unknown main tab route: $route")
@@ -152,3 +274,29 @@ fun RecapMainTabNavHost(
         },
     )
 }
+
+private fun mainTabForwardTransition(): ContentTransform =
+    slideInHorizontally(
+        animationSpec = tween(MainTabSlideDurationMillis),
+        initialOffsetX = { fullWidth -> fullWidth / MainTabSlideFraction },
+    ) + fadeIn(
+        animationSpec = tween(MainTabFadeDurationMillis),
+    ) togetherWith slideOutHorizontally(
+        animationSpec = tween(MainTabSlideDurationMillis),
+        targetOffsetX = { fullWidth -> -fullWidth / MainTabSlideFraction },
+    ) + fadeOut(
+        animationSpec = tween(MainTabFadeDurationMillis),
+    )
+
+private fun mainTabPopTransition(): ContentTransform =
+    slideInHorizontally(
+        animationSpec = tween(MainTabSlideDurationMillis),
+        initialOffsetX = { fullWidth -> -fullWidth / MainTabSlideFraction },
+    ) + fadeIn(
+        animationSpec = tween(MainTabFadeDurationMillis),
+    ) togetherWith slideOutHorizontally(
+        animationSpec = tween(MainTabSlideDurationMillis),
+        targetOffsetX = { fullWidth -> fullWidth / MainTabSlideFraction },
+    ) + fadeOut(
+        animationSpec = tween(MainTabFadeDurationMillis),
+    )

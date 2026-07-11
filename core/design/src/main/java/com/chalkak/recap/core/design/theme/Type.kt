@@ -67,16 +67,16 @@ val Typography = Typography(
         size = 13
     ),
     labelLarge = recapTextStyle(
-        weight = FontWeight.Normal,
-        size = 14
-    ),
-    labelMedium = recapTextStyle(
         weight = FontWeight.Medium,
         size = 13
     ),
-    labelSmall = recapTextStyle(
+    labelMedium = recapTextStyle(
         weight = FontWeight.Medium,
         size = 12
+    ),
+    labelSmall = recapTextStyle(
+        weight = FontWeight.Medium,
+        size = 10
     ),
 ).applyFontFamily(PretendardFontFamily)
 

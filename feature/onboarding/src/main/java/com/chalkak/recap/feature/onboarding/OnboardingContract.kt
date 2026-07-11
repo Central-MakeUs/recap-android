@@ -16,7 +16,7 @@ sealed interface OnboardingAction {
     data object LoginWithEmail : OnboardingAction
     data object SelectFirstScreenshots : OnboardingAction
     data object OpenAddToFavoriteGuide : OnboardingAction
-    data object SkipFirstCleanup : OnboardingAction
+    data object SkipFirstOrganize : OnboardingAction
     data object GrantPermission : OnboardingAction
     data object OpenPhotoPermissionSettings : OnboardingAction
     data object RefreshImagePermission : OnboardingAction

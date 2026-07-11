@@ -89,7 +89,7 @@ internal fun ScreenshotIllustration(
 }
 
 @Composable
-internal fun LandingCleanupIllustration(
+internal fun LandingOrganizeIllustration(
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -119,7 +119,7 @@ internal fun LandingCleanupIllustration(
 }
 
 @Composable
-internal fun FirstCleanupIllustration(
+internal fun FirstOrganizeIllustration(
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -335,9 +335,9 @@ private fun ScreenshotIllustrationPreview() {
 
 @OnboardingComponentPreview
 @Composable
-private fun LandingCleanupIllustrationPreview() {
+private fun LandingOrganizeIllustrationPreview() {
     OnboardingComponentPreviewContainer {
-        LandingCleanupIllustration(
+        LandingOrganizeIllustration(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(170.dp),
@@ -347,9 +347,9 @@ private fun LandingCleanupIllustrationPreview() {
 
 @OnboardingComponentPreview
 @Composable
-private fun FirstCleanupIllustrationPreview() {
+private fun FirstOrganizeIllustrationPreview() {
     OnboardingComponentPreviewContainer {
-        FirstCleanupIllustration(
+        FirstOrganizeIllustration(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(170.dp),

@@ -15,7 +15,7 @@ class OnboardingViewModelTest {
             imagePermissionRepository = FakeImagePermissionRepository(),
         )
 
-        viewModel.onAction(OnboardingAction.SkipFirstCleanup)
+        viewModel.onAction(OnboardingAction.SkipFirstOrganize)
 
         assertEquals(OnboardingStep.StartFirstAnalyze, viewModel.uiState.value.step)
         assertEquals(
@@ -32,7 +32,7 @@ class OnboardingViewModelTest {
             imagePermissionRepository = FakeImagePermissionRepository(),
         )
 
-        viewModel.onAction(OnboardingAction.SkipFirstCleanup)
+        viewModel.onAction(OnboardingAction.SkipFirstOrganize)
         viewModel.onAction(OnboardingAction.Back)
 
         assertEquals(OnboardingStep.AddToFavorite, viewModel.uiState.value.step)

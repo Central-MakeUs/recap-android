@@ -21,7 +21,6 @@ internal enum class OnboardingIllustrationVariant {
     Default,
 }
 
-@Suppress("UNUSED_PARAMETER")
 @Composable
 internal fun OnboardingIllustration(
     signalFlow: Flow<OnboardingIllustrationSignal>,

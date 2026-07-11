@@ -2,13 +2,17 @@ package com.chalkak.recap.feature.developer
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -28,13 +32,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.component.bottomsheet.CleanupNotificationPermissionBottomSheet
+import com.chalkak.recap.core.design.category.RecapCategoryType
+import com.chalkak.recap.core.design.component.bottomsheet.OrganizeNotificationPermissionBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.LogoutConfirmationBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheetDefaults
@@ -43,9 +51,24 @@ import com.chalkak.recap.core.design.component.bottomsheet.WithdrawalConfirmatio
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
+import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard
+import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
 import com.chalkak.recap.core.design.component.card.OrganizedCaptureCard
+import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
+import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
+import com.chalkak.recap.core.design.component.card.ScreenshotCard
+import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
+import com.chalkak.recap.core.design.component.chip.RecapFilterTag
+import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
+import com.chalkak.recap.core.design.component.input.RecapInputField
+import com.chalkak.recap.core.design.component.search.RecapSearchBar
+import com.chalkak.recap.core.design.component.toast.RecapToast
+import com.chalkak.recap.core.design.component.toast.RecapToastHost
+import com.chalkak.recap.core.design.component.toast.RecapToastType
+import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,18 +77,31 @@ internal fun ComponentGardenScreen(
 ) {
     var showPhotoAccessPermissionBottomSheet by remember { mutableStateOf(false) }
     var showImageLoadFailureBottomSheet by remember { mutableStateOf(false) }
-    var showCleanupNotificationPermissionBottomSheet by remember { mutableStateOf(false) }
+    var showOrganizeNotificationPermissionBottomSheet by remember { mutableStateOf(false) }
     var showNotificationDisabledBottomSheet by remember { mutableStateOf(false) }
     var showDeletionConfirmationActionBottomSheet by remember { mutableStateOf(false) }
     var showUnsavedChangesBottomSheet by remember { mutableStateOf(false) }
     var showLogoutConfirmationBottomSheet by remember { mutableStateOf(false) }
     var showWithdrawalConfirmationBottomSheet by remember { mutableStateOf(false) }
     var withdrawalConfirmationChecked by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    var inputFieldValue by remember { mutableStateOf("") }
+    var multilineInputFieldValue by remember { mutableStateOf("") }
+    var isFavoriteCategoryCardFavorited by remember { mutableStateOf(false) }
+    var isScreenshotCardFavorited by remember { mutableStateOf(false) }
+    var selectedFilterTagOptionId by remember { mutableStateOf("latest") }
+    var isFilterTagExpanded by remember { mutableStateOf(false) }
+    val toastHostState = rememberRecapToastHostState()
+    val coroutineScope = rememberCoroutineScope()
+    val toastPreviewMessage = stringResource(R.string.recap_toast_preview_login_failed_message)
 
-    Surface(
+    Box(
         modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
     ) {
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background,
+        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -91,10 +127,112 @@ internal fun ComponentGardenScreen(
                     organizedCaptureCount = ComponentGardenOrganizedCaptureCount,
                     onClick = {},
                 )
+                RecentOrganizedScreenshotCard(
+                    thumbnailModel = R.drawable.bid_landscape_24px,
+                    title = stringResource(R.string.home_recent_screenshot_return_title),
+                    categoryType = RecapCategoryType.ShoppingProduct,
+                    onClick = {},
+                )
+                FrequentSaveTypeFolderCard(
+                    categoryLabel = stringResource(R.string.home_category_shopping_product),
+                    recapCount = ComponentGardenFrequentSaveTypeCount,
+                    onClick = {},
+                )
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_haze_folder_cards_section_title),
+            ) {
+                ComponentGardenHazeFolderCards()
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_category_chips_section_title),
+            ) {
+                ComponentGardenCategoryChips()
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_filter_tag_section_title),
+            ) {
+                RecapFilterTag(
+                    options = listOf(
+                        RecapFilterTagOption(
+                            id = "latest",
+                            label = stringResource(R.string.collection_sort_latest),
+                        ),
+                        RecapFilterTagOption(
+                            id = "favorite",
+                            label = stringResource(R.string.home_favorites_title),
+                        ),
+                    ),
+                    selectedOptionId = selectedFilterTagOptionId,
+                    onOptionSelected = { selectedFilterTagOptionId = it.id },
+                    expanded = isFilterTagExpanded,
+                    onExpandedChange = { isFilterTagExpanded = it },
+                )
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_input_field_section_title),
+            ) {
+                RecapInputField(
+                    value = inputFieldValue,
+                    onValueChange = { inputFieldValue = it },
+                    label = stringResource(R.string.recap_input_field_preview_label),
+                    placeholder = stringResource(R.string.recap_input_field_preview_placeholder),
+                )
+                RecapInputField(
+                    value = "",
+                    onValueChange = {},
+                    label = stringResource(R.string.recap_input_field_preview_label),
+                    placeholder = stringResource(R.string.recap_input_field_preview_placeholder),
+                    isError = true,
+                    errorMessage = stringResource(R.string.recap_input_field_preview_error_message),
+                )
+                RecapInputField(
+                    value = multilineInputFieldValue,
+                    onValueChange = { multilineInputFieldValue = it },
+                    label = stringResource(R.string.recap_input_field_preview_label),
+                    placeholder = stringResource(R.string.recap_input_field_preview_placeholder),
+                    singleLine = false,
+                    minLines = 4,
+                    maxLength = 300,
+                )
             }
             ComponentGardenSection(
                 title = stringResource(R.string.component_garden_ui_components_section_title)
             ) {
+                RecapSearchBar(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                )
+                FavoriteCategoryCard(
+                    thumbnailModel = R.drawable.bid_landscape_24px,
+                    categoryType = RecapCategoryType.ShoppingProduct,
+                    title = stringResource(R.string.component_garden_favorite_category_card_title),
+                    description = stringResource(
+                        R.string.component_garden_favorite_category_card_description
+                    ),
+                    organizedAtMillis = System.currentTimeMillis() -
+                        java.util.concurrent.TimeUnit.HOURS.toMillis(1),
+                    isFavorite = isFavoriteCategoryCardFavorited,
+                    onClick = {},
+                    onFavoriteClick = {
+                        isFavoriteCategoryCardFavorited = !isFavoriteCategoryCardFavorited
+                    },
+                )
+                ScreenshotCard(
+                    thumbnailModel = R.drawable.bid_landscape_24px,
+                    title = stringResource(R.string.component_garden_screenshot_card_title),
+                    description = stringResource(
+                        R.string.component_garden_screenshot_card_description
+                    ),
+                    organizedDate = stringResource(
+                        R.string.component_garden_screenshot_card_organized_date
+                    ),
+                    isFavorite = isScreenshotCardFavorited,
+                    onClick = {},
+                    onFavoriteClick = {
+                        isScreenshotCardFavorited = !isScreenshotCardFavorited
+                    },
+                )
                 RecapButton(
                     text = stringResource(R.string.photo_access_permission_request_permission),
                     onClick = {},
@@ -102,6 +240,44 @@ internal fun ComponentGardenScreen(
                     size = RecapButtonSize.Medium,
                     shadowElevation = 12.dp
                 )
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_toasts_section_title),
+            ) {
+                RecapToast(
+                    message = toastPreviewMessage,
+                    type = RecapToastType.Success,
+                )
+                RecapToast(
+                    message = toastPreviewMessage,
+                    type = RecapToastType.Error,
+                )
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        coroutineScope.launch {
+                            toastHostState.showToast(
+                                message = toastPreviewMessage,
+                                type = RecapToastType.Success,
+                            )
+                        }
+                    },
+                ) {
+                    Text(text = stringResource(R.string.component_garden_toast_success_button))
+                }
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        coroutineScope.launch {
+                            toastHostState.showToast(
+                                message = toastPreviewMessage,
+                                type = RecapToastType.Error,
+                            )
+                        }
+                    },
+                ) {
+                    Text(text = stringResource(R.string.component_garden_toast_error_button))
+                }
             }
             ComponentGardenSection(
                 title = stringResource(R.string.component_garden_bottom_sheets_section_title),
@@ -128,11 +304,11 @@ internal fun ComponentGardenScreen(
                 }
                 Button(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = { showCleanupNotificationPermissionBottomSheet = true },
+                    onClick = { showOrganizeNotificationPermissionBottomSheet = true },
                 ) {
                     Text(
                         text = stringResource(
-                            R.string.component_garden_cleanup_notification_permission_bottom_sheet_button
+                            R.string.component_garden_organize_notification_permission_bottom_sheet_button
                         ),
                     )
                 }
@@ -191,6 +367,14 @@ internal fun ComponentGardenScreen(
                 }
             }
         }
+        }
+
+        RecapToastHost(
+            hostState = toastHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+        )
     }
 
     if (showPhotoAccessPermissionBottomSheet) {
@@ -231,11 +415,11 @@ internal fun ComponentGardenScreen(
             },
         )
     }
-    if (showCleanupNotificationPermissionBottomSheet) {
-        CleanupNotificationPermissionBottomSheet(
-            onDismissRequest = { showCleanupNotificationPermissionBottomSheet = false },
-            onAllowNotificationClick = { showCleanupNotificationPermissionBottomSheet = false },
-            onLaterClick = { showCleanupNotificationPermissionBottomSheet = false },
+    if (showOrganizeNotificationPermissionBottomSheet) {
+        OrganizeNotificationPermissionBottomSheet(
+            onDismissRequest = { showOrganizeNotificationPermissionBottomSheet = false },
+            onAllowNotificationClick = { showOrganizeNotificationPermissionBottomSheet = false },
+            onLaterClick = { showOrganizeNotificationPermissionBottomSheet = false },
         )
     }
     if (showNotificationDisabledBottomSheet) {
@@ -321,6 +505,55 @@ internal fun ComponentGardenScreen(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ComponentGardenCategoryChips(
+    modifier: Modifier = Modifier,
+) {
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        RecapCategoryType.entries.forEach { type ->
+            RecapCategoryChip(type = type)
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun ComponentGardenHazeFolderCards(
+    modifier: Modifier = Modifier,
+) {
+    FlowRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+        maxItemsInEachRow = 3,
+    ) {
+        ComponentGardenHazeFolderCardItems.forEach { item ->
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.width(ComponentGardenHazeFolderCardWidth),
+            ) {
+                RecapHazeFolderCard(
+                    category = item.category,
+                    recapCount = item.recapCount,
+                    onClick = {},
+                )
+                Text(
+                    text = stringResource(item.category.labelResId),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun ComponentGardenSection(
     title: String,
@@ -350,3 +583,20 @@ private fun ComponentGardenScreenPreview() {
 
 private const val ComponentGardenReviewRequiredCount = 3
 private const val ComponentGardenOrganizedCaptureCount = 12
+private const val ComponentGardenFrequentSaveTypeCount = 12
+private val ComponentGardenHazeFolderCardWidth = 99.dp
+
+private data class ComponentGardenHazeFolderCardItem(
+    val category: RecapCategoryType,
+    val recapCount: Int,
+)
+
+private val ComponentGardenHazeFolderCardItems = listOf(
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.ShoppingProduct, 20),
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.PlaceRestaurant, 23),
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.ScheduleReservation, 10),
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.InfoKnowledge, 12),
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.BookContent, 1),
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.BenefitEvent, 5),
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.RecordCapture, 12),
+)

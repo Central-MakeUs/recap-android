@@ -32,5 +32,15 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.coil.compose)
+    implementation(libs.chrisbanes.haze)
+    implementation(libs.chrisbanes.haze.blur)
+    implementation(libs.chrisbanes.haze.blur.materials)
     debugImplementation(libs.androidx.compose.ui.tooling)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+}
+
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }

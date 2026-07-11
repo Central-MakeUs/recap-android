@@ -41,13 +41,13 @@ fun MyPageNotificationSettingsScreen(
             labelResId = R.string.my_page_notification_service_label,
             items = listOf(
                 MyPageNotificationItemData(
-                    titleResId = R.string.my_page_notification_cleanup_complete_title,
-                    descriptionResId = R.string.my_page_notification_cleanup_complete_description,
-                    checked = uiState.cleanupCompleteEnabled,
+                    titleResId = R.string.my_page_notification_organize_complete_title,
+                    descriptionResId = R.string.my_page_notification_organize_complete_description,
+                    checked = uiState.organizeCompleteEnabled,
                     onCheckedChange = {
                         onAction(
                             MyPageNotificationSettingsAction
-                                .CleanupCompleteEnabledChanged(it),
+                                .OrganizeCompleteEnabledChanged(it),
                         )
                     },
                 ),

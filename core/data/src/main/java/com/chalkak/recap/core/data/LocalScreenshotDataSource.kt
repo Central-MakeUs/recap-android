@@ -11,7 +11,7 @@ import android.provider.MediaStore
 import androidx.core.content.ContextCompat
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.LocalImage
-import com.chalkak.recap.core.model.OcrCleanupRange
+import com.chalkak.recap.core.model.OcrOrganizeRange
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -54,7 +54,7 @@ class LocalScreenshotDataSource @Inject constructor(
         }
     }
 
-    suspend fun countScreenshots(range: OcrCleanupRange): Int = withContext(Dispatchers.IO) {
+    suspend fun countScreenshots(range: OcrOrganizeRange): Int = withContext(Dispatchers.IO) {
         if (currentImageAccessLevel() == ImageAccessLevel.Denied) {
             0
         } else {
@@ -69,7 +69,14 @@ class LocalScreenshotDataSource @Inject constructor(
         )
     }
 
-    suspend fun queryScreenshots(range: OcrCleanupRange): List<LocalImage> = withContext(Dispatchers.IO) {
+    suspend fun queryAllScreenshots(): List<LocalImage> = withContext(Dispatchers.IO) {
+        queryScreenshotImages(
+            cutoffSeconds = null,
+            limit = null,
+        )
+    }
+
+    suspend fun queryScreenshots(range: OcrOrganizeRange): List<LocalImage> = withContext(Dispatchers.IO) {
         val cutoffSeconds = (System.currentTimeMillis() / MILLIS_PER_SECOND) - (range.days * SECONDS_PER_DAY)
         queryScreenshotImages(
             cutoffSeconds = cutoffSeconds,
