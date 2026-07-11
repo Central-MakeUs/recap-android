@@ -324,11 +324,11 @@ private fun ScreenshotConfirmationScreenPreview() {
         ScreenshotConfirmationScreen(
             uiState = OrganizeUiState(
                 isLoading = false,
-                availableScreenshots = OrganizePreviewScreenshots,
+                availableScreenshots = OrganizeConfirmationPreviewScreenshots,
                 selectedUris = listOf(
-                    OrganizePreviewScreenshots[0].uri,
-                    OrganizePreviewScreenshots[1].uri,
-                    OrganizePreviewScreenshots[2].uri,
+                    OrganizeConfirmationPreviewScreenshots[0].uri,
+                    OrganizeConfirmationPreviewScreenshots[1].uri,
+                    OrganizeConfirmationPreviewScreenshots[2].uri,
                 ),
             ),
             onAction = {},
@@ -338,3 +338,21 @@ private fun ScreenshotConfirmationScreenPreview() {
         )
     }
 }
+
+private val OrganizeConfirmationPreviewScreenshots = listOf(
+    LocalImage(
+        uri = "content://com.chalkak.recap.preview/screenshot/1",
+        displayName = "screenshot-1",
+        dateAddedMillis = 0L,
+    ),
+    LocalImage(
+        uri = "content://com.chalkak.recap.preview/screenshot/2",
+        displayName = "screenshot-2",
+        dateAddedMillis = 0L,
+    ),
+    LocalImage(
+        uri = "content://com.chalkak.recap.preview/screenshot/3",
+        displayName = "screenshot-3",
+        dateAddedMillis = 0L,
+    ),
+)

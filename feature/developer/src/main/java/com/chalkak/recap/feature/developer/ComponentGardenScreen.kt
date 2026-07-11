@@ -68,6 +68,10 @@ import com.chalkak.recap.core.design.component.toast.RecapToastHost
 import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.feature.organize.OrganizeAction
+import com.chalkak.recap.feature.organize.OrganizeUiState
+import com.chalkak.recap.feature.organize.ScreenshotPicker
+import com.chalkak.recap.feature.organize.ScreenshotPickerPreviewScreenshots
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,6 +87,19 @@ internal fun ComponentGardenScreen(
     var showUnsavedChangesBottomSheet by remember { mutableStateOf(false) }
     var showLogoutConfirmationBottomSheet by remember { mutableStateOf(false) }
     var showWithdrawalConfirmationBottomSheet by remember { mutableStateOf(false) }
+    var showScreenshotPicker by remember { mutableStateOf(false) }
+    var screenshotSelectionUiState by remember {
+        mutableStateOf(
+            OrganizeUiState(
+                isLoading = false,
+                availableScreenshots = ScreenshotPickerPreviewScreenshots,
+                selectedUris = listOf(
+                    ScreenshotPickerPreviewScreenshots[0].uri,
+                    ScreenshotPickerPreviewScreenshots[1].uri,
+                ),
+            ),
+        )
+    }
     var withdrawalConfirmationChecked by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var inputFieldValue by remember { mutableStateOf("") }
@@ -365,6 +382,16 @@ internal fun ComponentGardenScreen(
                         ),
                     )
                 }
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { showScreenshotPicker = true },
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.component_garden_screenshot_picker_button
+                        ),
+                    )
+                }
             }
         }
         }
@@ -503,6 +530,53 @@ internal fun ComponentGardenScreen(
             onWithdrawClick = { showWithdrawalConfirmationBottomSheet = false },
         )
     }
+    if (showScreenshotPicker) {
+        ScreenshotPicker(
+            uiState = screenshotSelectionUiState,
+            onAction = { action ->
+                screenshotSelectionUiState = screenshotSelectionUiState.reduceGardenAction(action)
+            },
+            onDismissRequest = { showScreenshotPicker = false },
+            onCloseClick = { showScreenshotPicker = false },
+            onConfirmClick = { showScreenshotPicker = false },
+        )
+    }
+}
+
+private fun OrganizeUiState.reduceGardenAction(action: OrganizeAction): OrganizeUiState {
+    return when (action) {
+        is OrganizeAction.ToggleSelection -> {
+            val currentSelection = selectedUris
+            when {
+                action.uri in currentSelection -> {
+                    copy(selectedUris = currentSelection.filterNot { it == action.uri })
+                }
+
+                currentSelection.size >= ComponentGardenScreenshotPickerMaxCount -> {
+                    copy(showMaxSelectionReached = true)
+                }
+
+                else -> {
+                    copy(selectedUris = currentSelection + action.uri)
+                }
+            }
+        }
+
+        is OrganizeAction.RemoveSelection -> {
+            copy(selectedUris = selectedUris.filterNot { it == action.uri })
+        }
+
+        OrganizeAction.ClearSelection -> {
+            copy(
+                selectedUris = emptyList(),
+                showMaxSelectionReached = false,
+            )
+        }
+
+        OrganizeAction.DismissMaxSelectionMessage -> {
+            copy(showMaxSelectionReached = false)
+        }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -584,6 +658,7 @@ private fun ComponentGardenScreenPreview() {
 private const val ComponentGardenReviewRequiredCount = 3
 private const val ComponentGardenOrganizedCaptureCount = 12
 private const val ComponentGardenFrequentSaveTypeCount = 12
+private const val ComponentGardenScreenshotPickerMaxCount = 20
 private val ComponentGardenHazeFolderCardWidth = 99.dp
 
 private data class ComponentGardenHazeFolderCardItem(

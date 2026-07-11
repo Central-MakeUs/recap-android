@@ -1,6 +1,7 @@
 package com.chalkak.recap.app
 
 import android.annotation.SuppressLint
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
@@ -9,15 +10,19 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBar
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDestination
+import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.feature.collection.CollectionTab
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
+import com.chalkak.recap.feature.organize.OrganizeRoute
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.flow.Flow
@@ -30,7 +35,7 @@ fun RecapMainScreen(
     onNavigateToMyPage: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
     onNavigateToRecentOrganizedScreenshots: () -> Unit = {},
-    onNavigateToOrganize: () -> Unit = {},
+    onOrganizeComplete: (List<LocalImage>) -> Unit = {},
     onNavigateToScreenshot: (String) -> Unit = {},
     homeNavigationRequestId: Int = 0,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
@@ -40,6 +45,7 @@ fun RecapMainScreen(
     val hazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
     var collectionFavoritesNavigationRequestId by remember { mutableIntStateOf(0) }
     var collectionPredictiveBackProgress by remember { mutableFloatStateOf(0f) }
+    var showOrganize by rememberSaveable { mutableStateOf(false) }
 
     fun navigateTo(route: MainTabRoute) {
         if (backStack.lastOrNull() == route) return
@@ -79,39 +85,51 @@ fun RecapMainScreen(
         }
     }
 
-    Scaffold(
-        contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        bottomBar = {
-            RecapBottomBar(
-                hazeState = hazeState,
-                currentDestination = currentRoute.toBottomBarDestination(),
-                predictiveBackProgress = collectionPredictiveBackProgress,
-                onDestinationClick = { destination ->
-                    navigateTo(destination.toMainTabRoute())
-                },
-                onOrganizeClick = onNavigateToOrganize,
-            )
-        },
-    ) { _ ->
-        RecapMainTabNavHost(
-            hazeState = hazeState,
-            backStack = backStack,
-            onNavigateToDeveloper = onNavigateToDeveloper,
-            onNavigateToMyPage = onNavigateToMyPage,
-            onNavigateToSearch = onNavigateToSearch,
-            onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
-            onNavigateToOrganize = onNavigateToOrganize,
-            onNavigateToCollectionFavorites = ::navigateToCollectionFavorites,
-            onNavigateToScreenshot = onNavigateToScreenshot,
-            collectionFavoritesNavigationRequestId = collectionFavoritesNavigationRequestId,
-            collectionInitialTab = CollectionTab.Favorites,
-            showDeveloperLogoShortcut = BuildConfig.DEBUG,
-            analysisProgressFlow = analysisProgressFlow,
-            onCollectionPredictiveBackProgress = { progress ->
-                collectionPredictiveBackProgress = progress
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            contentWindowInsets = WindowInsets(0, 0, 0, 0),
+            bottomBar = {
+                RecapBottomBar(
+                    hazeState = hazeState,
+                    currentDestination = currentRoute.toBottomBarDestination(),
+                    predictiveBackProgress = collectionPredictiveBackProgress,
+                    onDestinationClick = { destination ->
+                        navigateTo(destination.toMainTabRoute())
+                    },
+                    onOrganizeClick = { showOrganize = true },
+                )
             },
-            modifier = Modifier.fillMaxSize(),
-        )
+        ) { _ ->
+            RecapMainTabNavHost(
+                hazeState = hazeState,
+                backStack = backStack,
+                onNavigateToDeveloper = onNavigateToDeveloper,
+                onNavigateToMyPage = onNavigateToMyPage,
+                onNavigateToSearch = onNavigateToSearch,
+                onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
+                onNavigateToOrganize = { showOrganize = true },
+                onNavigateToCollectionFavorites = ::navigateToCollectionFavorites,
+                onNavigateToScreenshot = onNavigateToScreenshot,
+                collectionFavoritesNavigationRequestId = collectionFavoritesNavigationRequestId,
+                collectionInitialTab = CollectionTab.Favorites,
+                showDeveloperLogoShortcut = BuildConfig.DEBUG,
+                analysisProgressFlow = analysisProgressFlow,
+                onCollectionPredictiveBackProgress = { progress ->
+                    collectionPredictiveBackProgress = progress
+                },
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+
+        if (showOrganize) {
+            OrganizeRoute(
+                onNavigateBack = { showOrganize = false },
+                onOrganizeComplete = { selectedScreenshots ->
+                    showOrganize = false
+                    onOrganizeComplete(selectedScreenshots)
+                },
+            )
+        }
     }
 }
 

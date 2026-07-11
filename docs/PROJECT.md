@@ -113,6 +113,7 @@ com.chalkak.recap
   - Home
   - Collection
   - My Page 및 하위 화면
+- Organize(스크린샷 피커 → 확인)는 AppRoute가 아니라 MainTabs 위 오버레이다. 구조·의도·back 동작은 `docs/ORGANIZE_OVERLAY_NAVIGATION.md`를 본다.
 
 ## 데이터 / 외부 연동
 

@@ -240,6 +240,7 @@
     <string name="component_garden_unsaved_changes_bottom_sheet_button">저장 안 됨 확인 바텀시트 보기</string>
     <string name="component_garden_logout_confirmation_bottom_sheet_button">로그아웃 확인 바텀시트 보기</string>
     <string name="component_garden_withdrawal_confirmation_bottom_sheet_button">탈퇴 확인 바텀시트 보기</string>
+    <string name="component_garden_screenshot_picker_button">스크린샷 피커 보기</string>
     <string name="component_garden_toasts_section_title">토스트</string>
     <string name="component_garden_toast_success_button">성공 토스트 보기</string>
     <string name="component_garden_toast_error_button">오류 토스트 보기</string>
@@ -378,6 +379,8 @@
     <string name="organize_notification_permission_later_button">나중에 하기</string>
     <string name="organize_notification_permission_notice">알림 설정은 마이페이지에서 언제든 변경할 수 있어요.</string>
     <string name="organize_screenshot_selection_title">스크린샷 선택</string>
+    <string name="screenshot_picker_close_content_description">닫기</string>
+    <string name="screenshot_picker_confirm_content_description">선택 완료</string>
     <string name="organize_cancel">취소</string>
     <string name="organize_next_with_count">다음(%1$d)</string>
     <string name="organize_selection_complete_with_count">선택 완료 (%1$d장)</string>

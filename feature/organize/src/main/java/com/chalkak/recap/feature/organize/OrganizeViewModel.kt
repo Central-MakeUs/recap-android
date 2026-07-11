@@ -26,6 +26,7 @@ class OrganizeViewModel @Inject constructor(
         when (action) {
             is OrganizeAction.ToggleSelection -> toggleSelection(action.uri)
             is OrganizeAction.RemoveSelection -> removeSelection(action.uri)
+            OrganizeAction.ClearSelection -> clearSelection()
             OrganizeAction.DismissMaxSelectionMessage -> {
                 _uiState.update { it.copy(showMaxSelectionReached = false) }
             }
@@ -66,6 +67,15 @@ class OrganizeViewModel @Inject constructor(
     private fun removeSelection(uri: String) {
         _uiState.update { state ->
             state.copy(selectedUris = state.selectedUris.filterNot { it == uri })
+        }
+    }
+
+    private fun clearSelection() {
+        _uiState.update { state ->
+            state.copy(
+                selectedUris = emptyList(),
+                showMaxSelectionReached = false,
+            )
         }
     }
 }

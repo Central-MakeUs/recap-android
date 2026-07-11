@@ -144,4 +144,22 @@ class OrganizeViewModelTest {
 
         assertTrue(viewModel.uiState.value.canProceed)
     }
+
+    @Test
+    fun clearSelection_resetsSelectedUrisAndMaxSelectionFlag() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots
+        val viewModel = OrganizeViewModel(dataSource)
+        advanceUntilIdle()
+
+        screenshots.take(MAX_SELECTION_COUNT).forEach { screenshot ->
+            viewModel.onAction(OrganizeAction.ToggleSelection(screenshot.uri))
+        }
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[MAX_SELECTION_COUNT].uri))
+        viewModel.onAction(OrganizeAction.ClearSelection)
+
+        assertEquals(emptyList<String>(), viewModel.uiState.value.selectedUris)
+        assertFalse(viewModel.uiState.value.showMaxSelectionReached)
+        assertFalse(viewModel.uiState.value.canProceed)
+    }
 }

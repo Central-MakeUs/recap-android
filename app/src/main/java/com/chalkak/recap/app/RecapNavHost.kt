@@ -28,7 +28,6 @@ import androidx.navigation3.ui.NavDisplay
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.feature.collection.CollectionRoute
 import com.chalkak.recap.feature.collection.CollectionTab
-import com.chalkak.recap.feature.organize.OrganizeRoute
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
 import com.chalkak.recap.feature.home.RecentOrganizedScreenshotsRoute
@@ -82,7 +81,10 @@ fun RecapNavHost(
                         onNavigateToRecentOrganizedScreenshots = {
                             backStack.add(AppRoute.RecentOrganizedScreenshots)
                         },
-                        onNavigateToOrganize = { backStack.add(AppRoute.Organize) },
+                        onOrganizeComplete = { selectedScreenshots ->
+                            analysisProgressViewModel.startMockAnalysis(selectedScreenshots)
+                            homeNavigationRequestId += 1
+                        },
                         onNavigateToScreenshot = { imageId ->
                             if (imageId.isNotBlank()) {
                                 backStack.add(AppRoute.Screenshot(imageId))
@@ -185,17 +187,6 @@ fun RecapNavHost(
                             if (imageId.isNotBlank()) {
                                 backStack.add(AppRoute.Screenshot(imageId))
                             }
-                        },
-                    )
-                }
-
-                AppRoute.Organize -> NavEntry(route) {
-                    OrganizeRoute(
-                        onNavigateBack = { backStack.removeLastOrNull() },
-                        onOrganizeComplete = { selectedScreenshots ->
-                            analysisProgressViewModel.startMockAnalysis(selectedScreenshots)
-                            backStack.removeLastOrNull()
-                            homeNavigationRequestId += 1
                         },
                     )
                 }
