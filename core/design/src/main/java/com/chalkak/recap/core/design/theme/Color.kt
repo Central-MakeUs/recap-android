@@ -44,7 +44,7 @@ val RecapCategoryJobCareerBorder = Color(0xFFFFC290)
 val RecapCategoryJobCareerContent = Color(0xFFD16308)
 val RecapCategoryJobCareerTint = Color(0xFFFFD6B5)
 
-val RecapToastBackground = RecapGray900
+val RecapToastBackground = Color.Black.copy(alpha = 0.5f)
 val RecapToastContent = Color(0xFFFFFFFF)
 val RecapSuccess = Color(0xFF1FCD70)
 val RecapError = Color(0xFFFB3D3D)

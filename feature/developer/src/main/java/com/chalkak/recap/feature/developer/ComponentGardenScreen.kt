@@ -72,6 +72,9 @@ import com.chalkak.recap.feature.organize.OrganizeAction
 import com.chalkak.recap.feature.organize.OrganizeUiState
 import com.chalkak.recap.feature.organize.ScreenshotPicker
 import com.chalkak.recap.feature.organize.ScreenshotPickerPreviewScreenshots
+import dev.chrisbanes.haze.HazePositionStrategy
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -109,6 +112,7 @@ internal fun ComponentGardenScreen(
     var selectedFilterTagOptionId by remember { mutableStateOf("latest") }
     var isFilterTagExpanded by remember { mutableStateOf(false) }
     val toastHostState = rememberRecapToastHostState()
+    val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
     val coroutineScope = rememberCoroutineScope()
     val toastPreviewMessage = stringResource(R.string.recap_toast_preview_login_failed_message)
 
@@ -116,7 +120,9 @@ internal fun ComponentGardenScreen(
         modifier = modifier.fillMaxSize(),
     ) {
         Surface(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(state = toastHazeState),
             color = MaterialTheme.colorScheme.background,
         ) {
         Column(
@@ -264,10 +270,12 @@ internal fun ComponentGardenScreen(
                 RecapToast(
                     message = toastPreviewMessage,
                     type = RecapToastType.Success,
+                    hazeState = toastHazeState,
                 )
                 RecapToast(
                     message = toastPreviewMessage,
                     type = RecapToastType.Error,
+                    hazeState = toastHazeState,
                 )
                 Button(
                     modifier = Modifier.fillMaxWidth(),
@@ -398,6 +406,7 @@ internal fun ComponentGardenScreen(
 
         RecapToastHost(
             hostState = toastHostState,
+            hazeState = toastHazeState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 24.dp, vertical = 24.dp),
