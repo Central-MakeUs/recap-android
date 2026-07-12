@@ -49,6 +49,8 @@ import coil3.compose.AsyncImage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.category.toLabelResId
+import com.chalkak.recap.core.design.category.toRecapCategoryType
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize

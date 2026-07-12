@@ -41,6 +41,7 @@
     <string name="home_favorite_moving_checklist_description">이사 준비시 꼭 해야할 체크리스트</string>
     <string name="home_favorite_keyboard_title">무선 키보드 후보</string>
     <string name="home_favorite_keyboard_description">가격과 배송 정보가 포함된 상품 캡처</string>
+    <string name="home_category_job_career">채용 · 취업</string>
     <string name="home_category_shopping_product">쇼핑 · 상품</string>
     <string name="home_category_schedule_reservation">일정 · 예약</string>
     <string name="home_category_info_knowledge">정보 · 지식</string>
@@ -111,7 +112,7 @@
     <string name="collection_favorites_detail_title">즐겨찾기</string>
     <string name="collection_back_content_description">이전 화면으로 이동</string>
     <string name="collection_thumbnail_content_description">캡처 썸네일</string>
-    <string name="collection_content_type_job_career">직무·커리어</string>
+    <string name="collection_content_type_job_career">채용·취업</string>
     <string name="collection_content_type_shopping_product">쇼핑·상품</string>
     <string name="collection_content_type_place_restaurant">장소·맛집</string>
     <string name="collection_content_type_schedule_reservation">일정·예약</string>

@@ -3,6 +3,7 @@ package com.chalkak.recap.feature.home
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
 import com.chalkak.recap.core.design.category.RecapCategoryType
+import com.chalkak.recap.core.design.category.toRecapCategoryType
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisConfidence
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
@@ -134,6 +135,11 @@ class HomeScreenshotMappersTest {
         val state = cards.toHomeUiState()
 
         assertEquals(listOf("newer", "older"), state.recentScreenshots.map { it.id })
+    }
+
+    @Test
+    fun `toRecapCategoryType maps job career`() {
+        assertEquals(RecapCategoryType.JobCareer, ScreenshotContentType.JOB_CAREER.toRecapCategoryType())
     }
 
     private fun storedCard(

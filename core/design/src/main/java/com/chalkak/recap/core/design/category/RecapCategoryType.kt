@@ -13,6 +13,9 @@ import com.chalkak.recap.core.design.theme.RecapCategoryBookContentTint
 import com.chalkak.recap.core.design.theme.RecapCategoryInfoKnowledgeBorder
 import com.chalkak.recap.core.design.theme.RecapCategoryInfoKnowledgeContent
 import com.chalkak.recap.core.design.theme.RecapCategoryInfoKnowledgeTint
+import com.chalkak.recap.core.design.theme.RecapCategoryJobCareerBorder
+import com.chalkak.recap.core.design.theme.RecapCategoryJobCareerContent
+import com.chalkak.recap.core.design.theme.RecapCategoryJobCareerTint
 import com.chalkak.recap.core.design.theme.RecapCategoryPlaceRestaurantBorder
 import com.chalkak.recap.core.design.theme.RecapCategoryPlaceRestaurantContent
 import com.chalkak.recap.core.design.theme.RecapCategoryPlaceRestaurantTint
@@ -33,6 +36,13 @@ enum class RecapCategoryType(
     val contentColor: Color,
     val tintColor: Color,
 ) {
+    JobCareer(
+        iconResId = R.drawable.ic_edit_16,
+        labelResId = R.string.home_category_job_career,
+        borderColor = RecapCategoryJobCareerBorder,
+        contentColor = RecapCategoryJobCareerContent,
+        tintColor = RecapCategoryJobCareerTint,
+    ),
     ShoppingProduct(
         iconResId = R.drawable.ic_cart_16,
         labelResId = R.string.home_category_shopping_product,

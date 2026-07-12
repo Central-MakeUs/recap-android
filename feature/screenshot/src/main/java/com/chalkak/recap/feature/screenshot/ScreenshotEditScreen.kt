@@ -39,6 +39,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.category.toLabelResId
 import com.chalkak.recap.core.design.component.input.RecapInputField
 import com.chalkak.recap.core.design.component.input.RecapSelectField
 import com.chalkak.recap.core.design.theme.RECAPTheme

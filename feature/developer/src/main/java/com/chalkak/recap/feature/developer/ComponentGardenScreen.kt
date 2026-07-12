@@ -667,6 +667,7 @@ private data class ComponentGardenHazeFolderCardItem(
 )
 
 private val ComponentGardenHazeFolderCardItems = listOf(
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.JobCareer, 8),
     ComponentGardenHazeFolderCardItem(RecapCategoryType.ShoppingProduct, 20),
     ComponentGardenHazeFolderCardItem(RecapCategoryType.PlaceRestaurant, 23),
     ComponentGardenHazeFolderCardItem(RecapCategoryType.ScheduleReservation, 10),

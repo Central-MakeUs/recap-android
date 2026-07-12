@@ -2,6 +2,8 @@ package com.chalkak.recap.feature.collection
 
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
 import com.chalkak.recap.core.design.category.RecapCategoryType
+import com.chalkak.recap.core.design.category.toLabelResId
+import com.chalkak.recap.core.design.category.toRecapCategoryType
 import com.chalkak.recap.core.design.component.topbar.CollectionTypeViewMode
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 

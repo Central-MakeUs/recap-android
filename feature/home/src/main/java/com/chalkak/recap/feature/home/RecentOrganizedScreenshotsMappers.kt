@@ -1,6 +1,7 @@
 package com.chalkak.recap.feature.home
 
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
+import com.chalkak.recap.core.design.category.toRecapCategoryType
 
 internal fun List<StoredScreenshotCard>.toRecentOrganizedScreenshotsUiState(): RecentOrganizedScreenshotsUiState {
     val items = sortedByDescending { card -> card.createdAtMillis }

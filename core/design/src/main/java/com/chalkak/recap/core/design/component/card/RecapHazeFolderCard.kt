@@ -354,6 +354,7 @@ private data class RecapHazeFolderCardPreviewItem(
 )
 
 private val RecapHazeFolderCardPreviewItems = listOf(
+    RecapHazeFolderCardPreviewItem(RecapCategoryType.JobCareer, 8),
     RecapHazeFolderCardPreviewItem(RecapCategoryType.ShoppingProduct, 20),
     RecapHazeFolderCardPreviewItem(RecapCategoryType.PlaceRestaurant, 23),
     RecapHazeFolderCardPreviewItem(RecapCategoryType.ScheduleReservation, 10),

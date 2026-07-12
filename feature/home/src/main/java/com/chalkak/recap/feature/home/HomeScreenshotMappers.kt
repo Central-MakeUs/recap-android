@@ -1,7 +1,7 @@
 package com.chalkak.recap.feature.home
 
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
-import com.chalkak.recap.core.design.category.RecapCategoryType
+import com.chalkak.recap.core.design.category.toRecapCategoryType
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 
 private const val HomeRecentScreenshotLimit = 3
@@ -10,19 +10,6 @@ private const val HomeFrequentSaveTypeLimit = 3
 
 internal fun StoredScreenshotCard.toThumbnailModel(): Any? {
     return imageRefs.thumbnailPath ?: imageRefs.storedImagePath ?: imageRefs.sourceImageUri
-}
-
-internal fun ScreenshotContentType.toRecapCategoryType(): RecapCategoryType? = when (this) {
-    ScreenshotContentType.SHOPPING_PRODUCT -> RecapCategoryType.ShoppingProduct
-    ScreenshotContentType.PLACE_RESTAURANT -> RecapCategoryType.PlaceRestaurant
-    ScreenshotContentType.SCHEDULE_RESERVATION -> RecapCategoryType.ScheduleReservation
-    ScreenshotContentType.INFO_KNOWLEDGE -> RecapCategoryType.InfoKnowledge
-    ScreenshotContentType.BOOK_CONTENT -> RecapCategoryType.BookContent
-    ScreenshotContentType.BENEFIT_EVENT -> RecapCategoryType.BenefitEvent
-    ScreenshotContentType.RECORD_CAPTURE -> RecapCategoryType.RecordCapture
-    ScreenshotContentType.DESIGN_REFERENCE,
-    ScreenshotContentType.OTHER,
-    -> null
 }
 
 internal fun List<StoredScreenshotCard>.toHomeUiState(): HomeUiState {

@@ -40,6 +40,9 @@ val RecapCategoryBenefitEventTint = Color(0xFF8EE7E9)
 val RecapCategoryRecordCaptureBorder = Color(0xFFBEB2F3)
 val RecapCategoryRecordCaptureContent = Color(0xFF6354A7)
 val RecapCategoryRecordCaptureTint = Color(0xFFB3A0FC)
+val RecapCategoryJobCareerBorder = Color(0xFFFFC290)
+val RecapCategoryJobCareerContent = Color(0xFFD16308)
+val RecapCategoryJobCareerTint = Color(0xFFFFD6B5)
 
 val RecapToastBackground = RecapGray900
 val RecapToastContent = Color(0xFFFFFFFF)
