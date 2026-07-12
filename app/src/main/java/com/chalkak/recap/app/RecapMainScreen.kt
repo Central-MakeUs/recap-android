@@ -20,7 +20,6 @@ import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBar
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDestination
 import com.chalkak.recap.core.model.LocalImage
-import com.chalkak.recap.feature.collection.CollectionTab
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.organize.OrganizeRoute
 import dev.chrisbanes.haze.HazePositionStrategy
@@ -111,7 +110,6 @@ fun RecapMainScreen(
                 onNavigateToCollectionFavorites = ::navigateToCollectionFavorites,
                 onNavigateToScreenshot = onNavigateToScreenshot,
                 collectionFavoritesNavigationRequestId = collectionFavoritesNavigationRequestId,
-                collectionInitialTab = CollectionTab.Favorites,
                 showDeveloperLogoShortcut = BuildConfig.DEBUG,
                 analysisProgressFlow = analysisProgressFlow,
                 onCollectionPredictiveBackProgress = { progress ->

@@ -17,6 +17,7 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import kotlinx.serialization.Serializable
@@ -28,7 +29,6 @@ fun CollectionRoute(
     onNavigateToOrganize: () -> Unit,
     onNavigateToScreenshot: (String) -> Unit = {},
     onNavigateBack: () -> Unit = {},
-    initialTab: CollectionTab = CollectionTab.Favorites,
     favoritesNavigationRequestId: Int = 0,
     onPredictiveBackProgress: (Float) -> Unit = {},
     viewModel: CollectionViewModel = hiltViewModel(),
@@ -53,17 +53,13 @@ fun CollectionRoute(
         is NavigationEventTransitionState.Idle -> 0f
     }
 
-    LaunchedEffect(initialTab) {
-        viewModel.onAction(CollectionAction.SelectTab(initialTab))
-    }
-
     LaunchedEffect(favoritesNavigationRequestId) {
         if (favoritesNavigationRequestId > 0) {
-            viewModel.onAction(CollectionAction.CloseDetail)
-            viewModel.onAction(CollectionAction.SelectTab(CollectionTab.Favorites))
             while (backStack.size > 1) {
                 backStack.removeLastOrNull()
             }
+            viewModel.onAction(CollectionAction.CloseDetail)
+            viewModel.onAction(CollectionAction.SelectTab(CollectionTab.Favorites))
         }
     }
 
@@ -71,9 +67,26 @@ fun CollectionRoute(
         onPredictiveBackProgress(predictiveProgress)
     }
 
-    DisposableEffect(viewModel) {
+    LaunchedEffect(backStack.lastOrNull(), uiState.detail) {
+        if (uiState.detail != null) return@LaunchedEffect
+        when (val route = backStack.lastOrNull()) {
+            CollectionDestination.FavoriteDetail -> {
+                viewModel.onAction(CollectionAction.OpenFavoriteDetail)
+            }
+
+            is CollectionDestination.TypeDetail -> {
+                val contentType = runCatching {
+                    ScreenshotContentType.valueOf(route.contentTypeName)
+                }.getOrNull() ?: return@LaunchedEffect
+                viewModel.onAction(CollectionAction.OpenTypeDetail(contentType))
+            }
+
+            else -> Unit
+        }
+    }
+
+    DisposableEffect(Unit) {
         onDispose {
-            viewModel.onAction(CollectionAction.CloseDetail)
             onPredictiveBackProgress(0f)
         }
     }
