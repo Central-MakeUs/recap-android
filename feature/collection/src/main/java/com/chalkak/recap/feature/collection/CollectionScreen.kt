@@ -61,13 +61,9 @@ import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 
 @Composable
 fun CollectionScreen(
-    hazeState: HazeState,
     uiState: CollectionUiState,
     onAction: (CollectionAction) -> Unit,
     onNavigateToOrganize: () -> Unit,
@@ -77,9 +73,7 @@ fun CollectionScreen(
             uiState.selectedTab == CollectionTab.Types
 
     Surface(
-        modifier = modifier
-            .fillMaxSize()
-            .hazeSource(state = hazeState),
+        modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -735,7 +729,6 @@ private object CollectionScreenTokens {
 private fun CollectionEmptyPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionScreen(
-            hazeState = rememberHazeState(),
             uiState = CollectionUiState(
                 isLoading = false,
                 hasStoredScreenshots = false,
@@ -751,7 +744,6 @@ private fun CollectionEmptyPreview() {
 private fun CollectionFavoritesPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionScreen(
-            hazeState = rememberHazeState(),
             uiState = previewFavoritesUiState(),
             onAction = {},
             onNavigateToOrganize = {},
@@ -769,7 +761,6 @@ private fun CollectionFavoritesPreview() {
 private fun CollectionFavoritesSelectionPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionScreen(
-            hazeState = rememberHazeState(),
             uiState = previewFavoritesUiState(
                 selection = CollectionSelectionUiState(
                     isActive = true,
@@ -787,7 +778,6 @@ private fun CollectionFavoritesSelectionPreview() {
 private fun CollectionTypesGridPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionScreen(
-            hazeState = rememberHazeState(),
             uiState = previewTypesUiState(CollectionTypeViewMode.Grid),
             onAction = {},
             onNavigateToOrganize = {},
@@ -800,7 +790,6 @@ private fun CollectionTypesGridPreview() {
 private fun CollectionTypesListPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionScreen(
-            hazeState = rememberHazeState(),
             uiState = previewTypesUiState(CollectionTypeViewMode.List),
             onAction = {},
             onNavigateToOrganize = {},
@@ -813,7 +802,6 @@ private fun CollectionTypesListPreview() {
 private fun CollectionOthersPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionScreen(
-            hazeState = rememberHazeState(),
             uiState = previewOthersUiState(),
             onAction = {},
             onNavigateToOrganize = {},
@@ -831,7 +819,6 @@ private fun CollectionOthersPreview() {
 private fun CollectionOthersSelectionPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionScreen(
-            hazeState = rememberHazeState(),
             uiState = previewOthersUiState(
                 selection = CollectionSelectionUiState(
                     isActive = true,
