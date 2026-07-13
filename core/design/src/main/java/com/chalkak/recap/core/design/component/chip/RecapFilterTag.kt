@@ -63,7 +63,7 @@ data class RecapFilterTagOption(
 )
 
 object RecapFilterTagDefaults {
-    val Shape = RoundedCornerShape(size = 16.dp)
+    val Shape = RoundedCornerShape(size = 10.dp)
     val ItemHeight = 32.dp
     val HorizontalPadding = 10.dp
     val VerticalPadding = 5.dp
