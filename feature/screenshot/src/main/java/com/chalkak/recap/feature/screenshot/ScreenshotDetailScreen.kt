@@ -188,6 +188,7 @@ private fun ScreenshotDetailContent(
                     RecapCategoryChip(
                         label = stringResource(contentType.toLabelResId()),
                         colors = RecapCategoryChipColors(
+                            container = RecapGray100,
                             border = RecapGray300,
                             content = RecapGray900,
                         ),

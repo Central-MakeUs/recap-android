@@ -58,7 +58,9 @@ import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
-import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
+import com.chalkak.recap.core.design.component.chip.RecapCategoryRoundChip
+import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
+import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChipWithIcon
 import com.chalkak.recap.core.design.component.chip.RecapFilterTag
 import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
 import com.chalkak.recap.core.design.component.input.RecapInputField
@@ -593,13 +595,33 @@ private fun OrganizeUiState.reduceGardenAction(action: OrganizeAction): Organize
 private fun ComponentGardenCategoryChips(
     modifier: Modifier = Modifier,
 ) {
-    FlowRow(
+    Column(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        RecapCategoryType.entries.forEach { type ->
-            RecapCategoryChip(type = type)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            RecapCategoryType.entries.forEach { type ->
+                RecapCategoryRoundChip(type = type)
+            }
+        }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            RecapCategoryType.entries.forEach { type ->
+                RecapCategoryTextChip(type = type)
+            }
+        }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            RecapCategoryType.entries.forEach { type ->
+                RecapCategoryTextChipWithIcon(type = type)
+            }
         }
     }
 }

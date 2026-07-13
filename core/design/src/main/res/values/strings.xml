@@ -62,6 +62,7 @@
     <string name="organized_capture_card_description">최근 정리된 캡처에서 확인하세요</string>
     <string name="recap_search_bar_placeholder_collection">스크린샷 내용이나 제목으로 검색</string>
     <string name="recap_search_bar_clear_content_description">검색어 지우기</string>
+    <string name="recap_recent_search_chip_remove_content_description">최근 검색어 삭제</string>
     <string name="recap_input_field_character_counter">%1$d/%2$d</string>
     <string name="recap_input_field_preview_label">레이블</string>
     <string name="recap_input_field_preview_placeholder">텍스트</string>
