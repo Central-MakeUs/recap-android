@@ -23,7 +23,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -46,13 +45,12 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
-import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard
 import com.chalkak.recap.core.design.component.card.OrganizedRelativeTimeFormatter
 import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
+import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.topbar.HomeTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
@@ -264,24 +262,17 @@ private fun FavoriteItemsSection(
                 .clip(RoundedCornerShape(HomeScreenTokens.HomeSectionRadius)),
         ) {
             visibleItems.forEachIndexed { index, item ->
-                FavoriteCategoryCard(
+                ScreenshotCard(
                     thumbnailModel = item.thumbnailModel,
                     categoryType = item.categoryType,
                     title = item.title,
                     description = item.description,
-                    organizedAtMillis = item.organizedAtMillis,
                     isFavorite = item.isFavorite,
                     onClick = { onItemClick(item.id) },
                     onFavoriteClick = { onFavoriteClick(item.id) },
-                    nowMillis = nowMillis,
                     horizontalContentPadding = 0.dp,
+                    showBottomDivider = index < visibleItems.lastIndex,
                 )
-                if (index < visibleItems.lastIndex) {
-                    HorizontalDivider(
-                        color = RecapGray100,
-                        thickness = HomeScreenTokens.FavoriteDividerThickness,
-                    )
-                }
             }
         }
     }
@@ -444,7 +435,6 @@ private object HomeScreenTokens {
     val FrequentTypeCardSpacing = 16.dp
     val FrequentTypeLabelSpacing = 19.dp
     const val FrequentTypeFolderScale = 0.9f
-    val FavoriteDividerThickness = 1.dp
     val AnalysisProgressSpacing = 8.dp
     val EmptyCharacterWidth = 175.dp
     val EmptyCharacterHeight = 127.dp

@@ -384,24 +384,19 @@ private fun CollectionOthersContent(
                 items = otherItems,
                 key = { _, item -> item.imageId },
             ) { index, item ->
-                CollectionCaptureListItem(
-                    card = item,
-                    onClick = { onAction(CollectionAction.OpenOtherItem(item.imageId)) },
-                    onFavoriteClick = { onAction(CollectionAction.ToggleFavorite(item.imageId)) },
+                CollectionSelectableCaptureItem(
+                    item = item,
                     selection = selection,
+                    onOpenClick = { onAction(CollectionAction.OpenOtherItem(item.imageId)) },
+                    onFavoriteClick = { onAction(CollectionAction.ToggleFavorite(item.imageId)) },
                     onSelectionToggle = {
                         onAction(CollectionAction.ToggleItemSelection(item.imageId))
                     },
+                    showBottomDivider = index < otherItems.lastIndex,
                     modifier = Modifier.padding(
                         horizontal = CollectionScreenTokens.ListHorizontalPadding,
                     ),
                 )
-                if (index < otherItems.lastIndex) {
-                    HorizontalDivider(
-                        color = RecapGray100,
-                        thickness = 1.dp,
-                    )
-                }
             }
         }
     }
@@ -480,7 +475,6 @@ private fun CollectionFavoritesContent(
                 CollectionSelectableFavoriteItem(
                     item = item,
                     selection = selection,
-                    nowMillis = nowMillis,
                     onOpenClick = {
                         onAction(CollectionAction.OpenFavoriteItem(item.imageId))
                     },
@@ -490,16 +484,11 @@ private fun CollectionFavoritesContent(
                     onSelectionToggle = {
                         onAction(CollectionAction.ToggleItemSelection(item.imageId))
                     },
+                    showBottomDivider = index < visibleItems.lastIndex,
                     modifier = Modifier.padding(
                         horizontal = CollectionScreenTokens.ListHorizontalPadding,
                     ),
                 )
-                if (index < visibleItems.lastIndex) {
-                    HorizontalDivider(
-                        color = RecapGray100,
-                        thickness = 1.dp,
-                    )
-                }
             }
         }
     }
@@ -923,6 +912,7 @@ private fun previewOthersUiState(
                     title = "연말정산 서류 목록",
                     summary = "연말정산 제출에 필요한 서류 정리",
                     contentTypeLabelResId = R.string.collection_content_type_other,
+                    categoryType = null,
                     createdAtMillis = 1_719_446_400_000L,
                     isFavorite = false,
                     thumbnailModel = null,
@@ -932,6 +922,7 @@ private fun previewOthersUiState(
                     title = "미분류 메모",
                     summary = "카테고리를 특정하기 어려운 캡처",
                     contentTypeLabelResId = R.string.collection_content_type_other,
+                    categoryType = null,
                     createdAtMillis = 1_718_208_000_000L,
                     isFavorite = false,
                     thumbnailModel = null,

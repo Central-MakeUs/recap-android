@@ -43,7 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard as CoreFavoriteCategoryCard
+import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
@@ -253,11 +253,11 @@ private fun CollectionCheckboxIcon(
 internal fun CollectionSelectableFavoriteItem(
     item: CollectionFavoriteItemUiModel,
     selection: CollectionSelectionUiState,
-    nowMillis: Long,
     onOpenClick: () -> Unit,
     onFavoriteClick: () -> Unit,
     onSelectionToggle: () -> Unit,
     modifier: Modifier = Modifier,
+    showBottomDivider: Boolean = true,
 ) {
     val isSelected = item.imageId in selection.selectedImageIds
     val selectionContentDescription = stringResource(
@@ -304,10 +304,80 @@ internal fun CollectionSelectableFavoriteItem(
         ) {
             CollectionFavoriteCard(
                 item = item,
-                nowMillis = nowMillis,
                 onClick = itemClick,
                 onFavoriteClick = onFavoriteClick,
                 showFavoriteButton = !selection.isActive,
+                showBottomDivider = showBottomDivider,
+            )
+        }
+    }
+}
+
+@Composable
+internal fun CollectionSelectableCaptureItem(
+    item: CollectionCardItemUiModel,
+    selection: CollectionSelectionUiState,
+    onOpenClick: () -> Unit,
+    onFavoriteClick: () -> Unit,
+    onSelectionToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+    showBottomDivider: Boolean = true,
+) {
+    val isSelected = item.imageId in selection.selectedImageIds
+    val selectionContentDescription = stringResource(
+        R.string.collection_selection_item_content_description,
+        item.title,
+        item.summary,
+    )
+    val selectionModifier = if (selection.isActive) {
+        Modifier
+            .toggleable(
+                value = isSelected,
+                enabled = !selection.isDeleting,
+                role = Role.Checkbox,
+                onValueChange = { onSelectionToggle() },
+            )
+            .semantics {
+                contentDescription = selectionContentDescription
+            }
+    } else {
+        Modifier
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(selectionModifier),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        CollectionSelectionCheckbox(
+            visible = selection.isActive,
+            checked = isSelected,
+        )
+        val itemClick = if (selection.isActive) onSelectionToggle else onOpenClick
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .then(
+                    if (selection.isActive) {
+                        Modifier.clearAndSetSemantics { }
+                    } else {
+                        Modifier
+                    },
+                ),
+        ) {
+            ScreenshotCard(
+                thumbnailModel = item.thumbnailModel,
+                categoryType = item.categoryType,
+                organizedAtMillis = item.createdAtMillis,
+                title = item.title,
+                description = item.summary,
+                isFavorite = item.isFavorite,
+                onClick = itemClick,
+                onFavoriteClick = onFavoriteClick,
+                horizontalContentPadding = 0.dp,
+                showFavoriteButton = !selection.isActive,
+                showBottomDivider = showBottomDivider,
             )
         }
     }
@@ -316,25 +386,24 @@ internal fun CollectionSelectableFavoriteItem(
 @Composable
 private fun CollectionFavoriteCard(
     item: CollectionFavoriteItemUiModel,
-    nowMillis: Long,
     onClick: () -> Unit,
     onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier,
     showFavoriteButton: Boolean = true,
+    showBottomDivider: Boolean = true,
 ) {
-    CoreFavoriteCategoryCard(
+    ScreenshotCard(
         thumbnailModel = item.thumbnailModel,
         categoryType = item.categoryType,
         title = item.title,
         description = item.summary,
-        organizedAtMillis = item.createdAtMillis,
         isFavorite = item.isFavorite,
         onClick = onClick,
         onFavoriteClick = onFavoriteClick,
         modifier = modifier,
-        nowMillis = nowMillis,
         horizontalContentPadding = 0.dp,
         showFavoriteButton = showFavoriteButton,
+        showBottomDivider = showBottomDivider,
     )
 }
 
@@ -461,7 +530,6 @@ private fun CollectionSelectableFavoriteItemPreview() {
             CollectionSelectableFavoriteItem(
                 item = previewCollectionFavoriteItem(),
                 selection = CollectionSelectionUiState(),
-                nowMillis = 1_719_446_400_000L,
                 onOpenClick = {},
                 onFavoriteClick = {},
                 onSelectionToggle = {},
@@ -472,7 +540,44 @@ private fun CollectionSelectableFavoriteItemPreview() {
                     isActive = true,
                     selectedImageIds = setOf("preview-favorite"),
                 ),
-                nowMillis = 1_719_446_400_000L,
+                onOpenClick = {},
+                onFavoriteClick = {},
+                onSelectionToggle = {},
+            )
+        }
+    }
+}
+
+@Preview(name = "Collection Selectable Capture Item", showBackground = true, widthDp = 360)
+@Composable
+private fun CollectionSelectableCaptureItemPreview() {
+    RECAPTheme(dynamicColor = false) {
+        Column(modifier = Modifier.padding(horizontal = 20.dp)) {
+            CollectionSelectableCaptureItem(
+                item = previewCollectionCaptureItem(
+                    categoryType = RecapCategoryType.ShoppingProduct,
+                ),
+                selection = CollectionSelectionUiState(),
+                onOpenClick = {},
+                onFavoriteClick = {},
+                onSelectionToggle = {},
+            )
+            CollectionSelectableCaptureItem(
+                item = previewCollectionCaptureItem(categoryType = null),
+                selection = CollectionSelectionUiState(),
+                onOpenClick = {},
+                onFavoriteClick = {},
+                onSelectionToggle = {},
+            )
+            CollectionSelectableCaptureItem(
+                item = previewCollectionCaptureItem(
+                    imageId = "preview-capture-selected",
+                    categoryType = null,
+                ),
+                selection = CollectionSelectionUiState(
+                    isActive = true,
+                    selectedImageIds = setOf("preview-capture-selected"),
+                ),
                 onOpenClick = {},
                 onFavoriteClick = {},
                 onSelectionToggle = {},
@@ -489,6 +594,22 @@ private fun previewCollectionFavoriteItem(): CollectionFavoriteItemUiModel {
         categoryType = RecapCategoryType.RecordCapture,
         createdAtMillis = 1_719_446_400_000L,
         isFavorite = true,
+        thumbnailModel = null,
+    )
+}
+
+private fun previewCollectionCaptureItem(
+    imageId: String = "preview-capture",
+    categoryType: RecapCategoryType?,
+): CollectionCardItemUiModel {
+    return CollectionCardItemUiModel(
+        imageId = imageId,
+        title = "미분류 메모",
+        summary = "카테고리 없이 저장된 캡처",
+        contentTypeLabelResId = R.string.collection_content_type_other,
+        categoryType = categoryType,
+        createdAtMillis = 1_719_446_400_000L,
+        isFavorite = false,
         thumbnailModel = null,
     )
 }

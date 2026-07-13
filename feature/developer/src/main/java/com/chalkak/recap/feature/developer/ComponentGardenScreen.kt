@@ -51,7 +51,6 @@ import com.chalkak.recap.core.design.component.bottomsheet.WithdrawalConfirmatio
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
-import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard
 import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
 import com.chalkak.recap.core.design.component.card.OrganizedCaptureCard
 import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
@@ -109,7 +108,6 @@ internal fun ComponentGardenScreen(
     var searchQuery by remember { mutableStateOf("") }
     var inputFieldValue by remember { mutableStateOf("") }
     var multilineInputFieldValue by remember { mutableStateOf("") }
-    var isFavoriteCategoryCardFavorited by remember { mutableStateOf(false) }
     var isScreenshotCardFavorited by remember { mutableStateOf(false) }
     var selectedFilterTagOptionId by remember { mutableStateOf("latest") }
     var isFilterTagExpanded by remember { mutableStateOf(false) }
@@ -228,29 +226,12 @@ internal fun ComponentGardenScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                 )
-                FavoriteCategoryCard(
-                    thumbnailModel = R.drawable.bid_landscape_24px,
-                    categoryType = RecapCategoryType.ShoppingProduct,
-                    title = stringResource(R.string.component_garden_favorite_category_card_title),
-                    description = stringResource(
-                        R.string.component_garden_favorite_category_card_description
-                    ),
-                    organizedAtMillis = System.currentTimeMillis() -
-                        java.util.concurrent.TimeUnit.HOURS.toMillis(1),
-                    isFavorite = isFavoriteCategoryCardFavorited,
-                    onClick = {},
-                    onFavoriteClick = {
-                        isFavoriteCategoryCardFavorited = !isFavoriteCategoryCardFavorited
-                    },
-                )
                 ScreenshotCard(
                     thumbnailModel = R.drawable.bid_landscape_24px,
+                    categoryType = RecapCategoryType.ShoppingProduct,
                     title = stringResource(R.string.component_garden_screenshot_card_title),
                     description = stringResource(
                         R.string.component_garden_screenshot_card_description
-                    ),
-                    organizedDate = stringResource(
-                        R.string.component_garden_screenshot_card_organized_date
                     ),
                     isFavorite = isScreenshotCardFavorited,
                     onClick = {},
