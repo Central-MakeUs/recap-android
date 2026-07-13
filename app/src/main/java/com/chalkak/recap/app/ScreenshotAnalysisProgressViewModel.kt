@@ -24,6 +24,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import timber.log.Timber
 import javax.inject.Inject
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -112,22 +113,68 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
         result: ScreenshotAnalysisResult,
     ): Boolean {
         return withContext(ioDispatcher) {
-            val copiedPath = try {
-                screenshotImageStorage.copyImageFromUri(
-                    imageId = result.imageId,
-                    sourceUri = image.uri.toUri(),
-                )
+            val sourceUri = try {
+                image.uri.toUri()
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (_: Exception) {
                 null
             }
 
+            val copiedPath = if (sourceUri == null) {
+                null
+            } else {
+                try {
+                    screenshotImageStorage.copyImageFromUri(
+                        imageId = result.imageId,
+                        sourceUri = sourceUri,
+                    )
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (_: Exception) {
+                    null
+                }
+            }
+
+            val thumbnailPath = if (sourceUri == null) {
+                null
+            } else {
+                try {
+                    if (copiedPath != null) {
+                        screenshotImageStorage.createThumbnailFromStoredImage(result.imageId)
+                    } else {
+                        screenshotImageStorage.createThumbnailFromUri(
+                            imageId = result.imageId,
+                            sourceUri = sourceUri,
+                        )
+                    }
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (throwable: Exception) {
+                    Timber.w(throwable, "Failed to create screenshot thumbnail")
+                    null
+                }
+            }
+
             val imageRefs = ScreenshotCardImageRefs(
                 sourceImageUri = image.uri,
                 storedImagePath = copiedPath,
-                thumbnailPath = null,
+                thumbnailPath = thumbnailPath,
             )
+
+            if (thumbnailPath != null) {
+                Timber.d(
+                    "Persisting screenshot with thumbnail imageId=%s path=%s",
+                    result.imageId,
+                    thumbnailPath,
+                )
+            } else {
+                Timber.d(
+                    "Persisting screenshot without thumbnail imageId=%s storedImagePath=%s",
+                    result.imageId,
+                    copiedPath,
+                )
+            }
 
             try {
                 screenshotCardRepository.saveAnalysisResults(

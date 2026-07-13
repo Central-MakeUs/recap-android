@@ -143,6 +143,7 @@ private fun ScreenshotDetailContent(
         storedImagePath = card.imageRefs.storedImagePath,
         sourceImageUri = card.imageRefs.sourceImageUri,
         thumbnailPath = card.imageRefs.thumbnailPath,
+        priority = ScreenshotImageResolvePriority.Preview,
     )
     val contentType = analysis.contentTypes.primaryContentType
     val categoryType = contentType.toRecapCategoryType()

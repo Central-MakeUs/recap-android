@@ -164,6 +164,12 @@ class ScreenshotAnalysisProgressViewModelTest {
         every {
             screenshotImageStorage.copyImageFromUri("result-2", secondUri)
         } returns null
+        every {
+            screenshotImageStorage.createThumbnailFromStoredImage("result-1")
+        } returns "/thumbs/result-1.jpg"
+        every {
+            screenshotImageStorage.createThumbnailFromUri("result-2", secondUri)
+        } returns null
         coEvery {
             screenshotCardRepository.saveAnalysisResults(any(), any())
         } returns Unit
@@ -182,7 +188,7 @@ class ScreenshotAnalysisProgressViewModelTest {
                     "result-1" to ScreenshotCardImageRefs(
                         sourceImageUri = "content://1",
                         storedImagePath = "/files/result-1",
-                        thumbnailPath = null,
+                        thumbnailPath = "/thumbs/result-1.jpg",
                     ),
                 ),
             )
@@ -201,6 +207,87 @@ class ScreenshotAnalysisProgressViewModelTest {
         }
         assertEquals(2, viewModel.uiState.value.completedCount)
         assertFalse(viewModel.uiState.value.isRunning)
+
+        unmockkStatic(Uri::class)
+    }
+
+    @Test
+    fun `thumbnail creation failure still saves analysis with available image refs`() = runTest(testDispatcher) {
+        mockkStatic(Uri::class)
+        val firstUri = mockk<Uri>()
+        every { Uri.parse("content://1") } returns firstUri
+
+        val firstResult = analysisResult(imageId = "result-1")
+        every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png")) } returns firstResult
+        every {
+            screenshotImageStorage.copyImageFromUri("result-1", firstUri)
+        } returns "/files/result-1"
+        every {
+            screenshotImageStorage.createThumbnailFromStoredImage("result-1")
+        } returns null
+        coEvery {
+            screenshotCardRepository.saveAnalysisResults(any(), any())
+        } returns Unit
+
+        viewModel.startMockAnalysis(sampleImages(count = 1))
+        runCurrent()
+        advanceTimeBy(500.milliseconds)
+        runCurrent()
+
+        coVerify(exactly = 1) {
+            screenshotCardRepository.saveAnalysisResults(
+                results = listOf(firstResult),
+                imageRefsByImageId = mapOf(
+                    "result-1" to ScreenshotCardImageRefs(
+                        sourceImageUri = "content://1",
+                        storedImagePath = "/files/result-1",
+                        thumbnailPath = null,
+                    ),
+                ),
+            )
+        }
+        assertEquals(1, viewModel.uiState.value.completedCount)
+        assertFalse(viewModel.uiState.value.isRunning)
+
+        unmockkStatic(Uri::class)
+    }
+
+    @Test
+    fun `thumbnail success path passes absolute path to repository`() = runTest(testDispatcher) {
+        mockkStatic(Uri::class)
+        val firstUri = mockk<Uri>()
+        every { Uri.parse("content://1") } returns firstUri
+
+        val firstResult = analysisResult(imageId = "result-1")
+        every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png")) } returns firstResult
+        every {
+            screenshotImageStorage.copyImageFromUri("result-1", firstUri)
+        } returns null
+        every {
+            screenshotImageStorage.createThumbnailFromUri("result-1", firstUri)
+        } returns "/files/recap/thumbnails/result-1.jpg"
+        coEvery {
+            screenshotCardRepository.saveAnalysisResults(any(), any())
+        } returns Unit
+
+        viewModel.startMockAnalysis(sampleImages(count = 1))
+        runCurrent()
+        advanceTimeBy(500.milliseconds)
+        runCurrent()
+
+        coVerify(exactly = 1) {
+            screenshotCardRepository.saveAnalysisResults(
+                results = listOf(firstResult),
+                imageRefsByImageId = mapOf(
+                    "result-1" to ScreenshotCardImageRefs(
+                        sourceImageUri = "content://1",
+                        storedImagePath = null,
+                        thumbnailPath = "/files/recap/thumbnails/result-1.jpg",
+                    ),
+                ),
+            )
+        }
+        assertEquals(1, viewModel.uiState.value.completedCount)
 
         unmockkStatic(Uri::class)
     }

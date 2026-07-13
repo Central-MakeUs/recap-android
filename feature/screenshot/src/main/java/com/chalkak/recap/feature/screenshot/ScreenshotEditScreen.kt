@@ -66,6 +66,7 @@ fun ScreenshotEditScreen(
         storedImagePath = content.card.imageRefs.storedImagePath,
         sourceImageUri = content.card.imageRefs.sourceImageUri,
         thumbnailPath = content.card.imageRefs.thumbnailPath,
+        priority = ScreenshotImageResolvePriority.Preview,
     )
 
     Surface(

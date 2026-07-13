@@ -7,6 +7,7 @@ import com.chalkak.recap.core.design.category.toRecapCategoryType
 import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
 import com.chalkak.recap.core.design.component.topbar.CollectionTypeViewMode
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
+import timber.log.Timber
 
 enum class CollectionListSort {
     Latest,
@@ -31,7 +32,6 @@ data class CollectionTypeSummaryUiModel(
     val count: Int,
     val exampleTitles: List<String>,
     val additionalExampleCount: Int,
-    val previewThumbnailModels: List<Any?>,
 )
 
 data class CollectionFavoriteSummaryUiModel(
@@ -106,7 +106,8 @@ internal val CollectionOverviewCategoryOrder: List<ScreenshotContentType> = list
 )
 
 internal fun StoredScreenshotCard.toThumbnailModel(): Any? {
-    return imageRefs.thumbnailPath ?: imageRefs.storedImagePath ?: imageRefs.sourceImageUri
+    val thumbnail = imageRefs.thumbnailPath?.takeIf { it.isNotBlank() }
+    return thumbnail ?: imageRefs.storedImagePath ?: imageRefs.sourceImageUri
 }
 
 internal fun StoredScreenshotCard.toCardItemUiModel(): CollectionCardItemUiModel {
@@ -154,7 +155,6 @@ internal fun List<StoredScreenshotCard>.toOverviewUiModel(
             count = typeCards.size,
             exampleTitles = typeCards.map { card -> card.analysisResult.title }.take(2),
             additionalExampleCount = if (typeCards.size >= 3) typeCards.size - 2 else 0,
-            previewThumbnailModels = typeCards.take(3).map(StoredScreenshotCard::toThumbnailModel),
         )
     }
 
@@ -204,6 +204,7 @@ internal fun List<StoredScreenshotCard>.toDetailUiModel(
         CollectionDetailFilter.Favorites -> ScreenshotCardMetadataMode.CategoryChip
         is CollectionDetailFilter.ByType -> ScreenshotCardMetadataMode.OrganizedDate
     }
+    sortedCards.logThumbnailSummary()
     return CollectionDetailUiModel(
         titleResId = titleResId,
         count = sortedCards.size,
@@ -213,6 +214,12 @@ internal fun List<StoredScreenshotCard>.toDetailUiModel(
         categoryType = categoryType,
         cardMetadataMode = cardMetadataMode,
     )
+}
+
+private fun List<StoredScreenshotCard>.logThumbnailSummary() {
+    val found = count { card -> !card.imageRefs.thumbnailPath.isNullOrBlank() }
+    val fallback = size - found
+    Timber.d("%d개의 이미지의 썸네일을 찾음, %d개의 이미지가 fallback됨", found, fallback)
 }
 
 internal sealed interface CollectionDetailFilter {

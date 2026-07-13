@@ -60,7 +60,6 @@ import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
-import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 
@@ -486,7 +485,6 @@ private fun previewOverviewUiState(
                     count = 20,
                     exampleTitles = listOf("택배 반품 절차", "노트북 가격 비교"),
                     additionalExampleCount = 0,
-                    previewThumbnailModels = emptyList(),
                 ),
                 CollectionTypeSummaryUiModel(
                     contentType = ScreenshotContentType.PLACE_RESTAURANT,
@@ -495,7 +493,6 @@ private fun previewOverviewUiState(
                     count = 23,
                     exampleTitles = listOf("성수 카페", "강남 맛집"),
                     additionalExampleCount = 0,
-                    previewThumbnailModels = emptyList(),
                 ),
                 CollectionTypeSummaryUiModel(
                     contentType = ScreenshotContentType.OTHER,
@@ -504,7 +501,6 @@ private fun previewOverviewUiState(
                     count = 2,
                     exampleTitles = listOf("미분류 메모"),
                     additionalExampleCount = 0,
-                    previewThumbnailModels = emptyList(),
                 ),
             ),
         ),
