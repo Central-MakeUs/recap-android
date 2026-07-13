@@ -40,6 +40,11 @@ fun OrganizeRoute(
     viewModel: OrganizeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.refreshScreenshots()
+    }
+
     val snackbarHostState = remember { SnackbarHostState() }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val coroutineScope = rememberCoroutineScope()

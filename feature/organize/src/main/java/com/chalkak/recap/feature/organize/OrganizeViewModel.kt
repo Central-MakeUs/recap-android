@@ -18,10 +18,6 @@ class OrganizeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(OrganizeUiState())
     val uiState: StateFlow<OrganizeUiState> = _uiState.asStateFlow()
 
-    init {
-        loadScreenshots()
-    }
-
     fun onAction(action: OrganizeAction) {
         when (action) {
             is OrganizeAction.ToggleSelection -> toggleSelection(action.uri)
@@ -33,8 +29,9 @@ class OrganizeViewModel @Inject constructor(
         }
     }
 
-    private fun loadScreenshots() {
+    fun refreshScreenshots() {
         viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
             val screenshots = localScreenshotDataSource.queryAllScreenshots()
             _uiState.update {
                 it.copy(
