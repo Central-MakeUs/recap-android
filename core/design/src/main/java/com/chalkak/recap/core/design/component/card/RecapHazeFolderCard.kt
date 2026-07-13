@@ -27,7 +27,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.LinearGradientShader
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Outline
@@ -51,8 +50,10 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapHazeFolderColor
 import com.chalkak.recap.core.design.theme.White
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.blurEffect
@@ -66,8 +67,10 @@ import kotlin.math.roundToInt
  * 뒤쪽에 radius가 적용된 둥근 직사각형 border 레이어를 두고,
  * 그 위에 haze glass 효과를 입힌 폴더 모양 레이어를 겹쳐 표현하는 카드.
  *
- * [category]의 border/content/tint 색과 아이콘을 사용한다.
- * tint는 Figma/SVG와 같이 좌하단이 강하고 우상단 바깥으로 빠지는 대각 linear gradient다.
+ * 폴더 border/tint는 [RecapHazeFolderColor] 기반의 공통 회색 토큰을 사용한다.
+ * tint는 Figma/SVG와 같이 좌하단이 강하고 우상단 바깥으로 빠지는 대각 linear gradient
+ * (`White` → [RecapHazeFolderColor])다.
+ * 아이콘은 [category]의 500 색(borderColor)을 쓰고, background 컨테이너 안에 둔다.
  *
  * [scale]은 렌더링뿐 아니라 레이아웃에서 차지하는 크기도 함께 줄인다.
  */
@@ -84,9 +87,8 @@ fun RecapHazeFolderCard(
     val interactionSource = remember { MutableInteractionSource() }
     val backShape = RoundedCornerShape(RecapHazeFolderCardTokens.BackCornerRadius)
     val folderShape = remember { FolderShape }
-    val tintBrush = remember(category.tintColor) {
-        folderTintBrush(category.tintColor)
-    }
+    val tintBrush = remember { folderTintBrush() }
+    val iconContainerShape = RoundedCornerShape(RecapHazeFolderCardTokens.IconContainerCornerRadius)
     val recapLabel = pluralStringResource(
         R.plurals.recap_haze_folder_card_recap_label,
         recapCount,
@@ -119,7 +121,7 @@ fun RecapHazeFolderCard(
                     .hazeSource(hazeState)
                     .border(
                         width = RecapHazeFolderCardTokens.BackBorderWidth,
-                        color = category.borderColor,
+                        color = RecapHazeFolderColor,
                         shape = backShape,
                     ),
             )
@@ -153,33 +155,20 @@ fun RecapHazeFolderCard(
                         shape = folderShape,
                     ),
             ) {
-                Icon(
-                    painter = painterResource(category.iconResId),
-                    contentDescription = null,
-                    tint = White,
+                Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .padding(RecapHazeFolderCardTokens.ContentPadding)
-                        .size(RecapHazeFolderCardTokens.IconSize),
-                )
-
-                Row(
-                    verticalAlignment = Alignment.Bottom,
-                    modifier = Modifier
-                        .align(Alignment.BottomStart)
-                        .padding(RecapHazeFolderCardTokens.ContentPadding),
+                        .size(RecapHazeFolderCardTokens.IconContainerSize)
+                        .clip(iconContainerShape)
+                        .background(RecapBackground),
                 ) {
-                    Text(
-                        text = recapCount.toString(),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        color = category.contentColor,
-                    )
-                    Text(
-                        text = " $recapLabel",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = category.contentColor,
+                    Icon(
+                        painter = painterResource(category.iconResId),
+                        contentDescription = null,
+                        tint = category.borderColor,
+                        modifier = Modifier.size(RecapHazeFolderCardTokens.IconSize),
                     )
                 }
             }
@@ -236,12 +225,12 @@ private object FolderShape : Shape {
 
 /**
  * SVG fill gradient(paint0)와 같은 축:
- * 좌하단(강함) → 우상단 바깥(약함).
+ * 좌하단(강함, [RecapHazeFolderColor]) → 우상단 바깥(약함, [White]).
  */
-private fun folderTintBrush(tintColor: Color): Brush {
+private fun folderTintBrush(): Brush {
     val colors = listOf(
-        tintColor.copy(alpha = RecapHazeFolderCardTokens.GlassTintStartAlpha),
-        tintColor.copy(alpha = RecapHazeFolderCardTokens.GlassTintEndAlpha),
+        RecapHazeFolderColor.copy(alpha = RecapHazeFolderCardTokens.GlassTintStartAlpha),
+        White.copy(alpha = RecapHazeFolderCardTokens.GlassTintEndAlpha),
     )
     return object : ShaderBrush() {
         override fun createShader(size: Size): Shader {
@@ -276,6 +265,8 @@ private object RecapHazeFolderCardTokens {
     val FrontBorderWidth = 0.34.dp
     val BlurRadius = 10.dp
     val ContentPadding = 9.dp
+    val IconContainerSize = 30.dp
+    val IconContainerCornerRadius = 10.dp
     val IconSize = 16.dp
     const val NoiseFactor = 0.2f
 
@@ -308,7 +299,7 @@ private fun RecapHazeFolderCardScaledPreview() {
 }
 
 @OptIn(ExperimentalLayoutApi::class)
-@Preview(name = "Recap Haze Folder Cards All", showBackground = true, widthDp = 300, heightDp = 600)
+@Preview(name = "Recap Haze Folder Cards All", showBackground = true, widthDp = 380, heightDp = 600)
 @Composable
 private fun RecapHazeFolderCardsAllPreview() {
     RECAPTheme(dynamicColor = false) {
@@ -354,7 +345,6 @@ private data class RecapHazeFolderCardPreviewItem(
 )
 
 private val RecapHazeFolderCardPreviewItems = listOf(
-    RecapHazeFolderCardPreviewItem(RecapCategoryType.JobCareer, 8),
     RecapHazeFolderCardPreviewItem(RecapCategoryType.ShoppingProduct, 20),
     RecapHazeFolderCardPreviewItem(RecapCategoryType.PlaceRestaurant, 23),
     RecapHazeFolderCardPreviewItem(RecapCategoryType.ScheduleReservation, 10),
@@ -362,4 +352,5 @@ private val RecapHazeFolderCardPreviewItems = listOf(
     RecapHazeFolderCardPreviewItem(RecapCategoryType.BookContent, 1),
     RecapHazeFolderCardPreviewItem(RecapCategoryType.BenefitEvent, 5),
     RecapHazeFolderCardPreviewItem(RecapCategoryType.RecordCapture, 12),
+    RecapHazeFolderCardPreviewItem(RecapCategoryType.JobCareer, 8),
 )

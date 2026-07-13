@@ -36,13 +36,6 @@ enum class RecapCategoryType(
     val contentColor: Color,
     val tintColor: Color,
 ) {
-    JobCareer(
-        iconResId = R.drawable.ic_edit_16,
-        labelResId = R.string.home_category_job_career,
-        borderColor = RecapCategoryJobCareer500,
-        contentColor = RecapCategoryJobCareer700,
-        tintColor = RecapCategoryJobCareer300,
-    ),
     ShoppingProduct(
         iconResId = R.drawable.ic_cart_16,
         labelResId = R.string.home_category_shopping_product,
@@ -91,5 +84,12 @@ enum class RecapCategoryType(
         borderColor = RecapCategoryRecordCapture500,
         contentColor = RecapCategoryRecordCapture700,
         tintColor = RecapCategoryRecordCapture300,
+    ),
+    JobCareer(
+        iconResId = R.drawable.ic_person_16,
+        labelResId = R.string.home_category_job_career,
+        borderColor = RecapCategoryJobCareer500,
+        contentColor = RecapCategoryJobCareer700,
+        tintColor = RecapCategoryJobCareer300,
     ),
 }

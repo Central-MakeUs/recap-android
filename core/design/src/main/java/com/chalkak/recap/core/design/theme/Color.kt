@@ -16,6 +16,7 @@ val RecapGray100 = Color(0xFFE2E6ED)
 val RecapGray50 = Color(0xFFF4F5F8)
 
 val RecapBackground = Color(0xFFFDFDFD)
+val RecapHazeFolderColor = Color(0xFFDADADA)
 
 val RecapSheetHandle = Color(0xFFE2E6EE)
 
