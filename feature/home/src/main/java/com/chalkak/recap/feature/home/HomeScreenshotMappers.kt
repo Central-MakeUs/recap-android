@@ -15,26 +15,22 @@ internal fun StoredScreenshotCard.toThumbnailModel(): Any? {
 internal fun List<StoredScreenshotCard>.toHomeUiState(): HomeUiState {
     val sortedCards = sortedByDescending { card -> card.createdAtMillis }
 
-    val recentScreenshots = sortedCards.mapNotNull { card ->
-        val categoryType = card.analysisResult.contentTypes.primaryContentType.toRecapCategoryType()
-            ?: return@mapNotNull null
+    val recentScreenshots = sortedCards.map { card ->
         HomeRecentScreenshotUiModel(
             id = card.analysisResult.imageId,
             thumbnailModel = card.toThumbnailModel(),
             title = card.analysisResult.title,
-            categoryType = categoryType,
+            categoryType = card.analysisResult.contentTypes.primaryContentType.toRecapCategoryType(),
         )
     }.take(HomeRecentScreenshotLimit)
 
     val favoriteItems = sortedCards
         .filter { card -> card.analysisResult.isFavorite }
-        .mapNotNull { card ->
-            val categoryType = card.analysisResult.contentTypes.primaryContentType.toRecapCategoryType()
-                ?: return@mapNotNull null
+        .map { card ->
             HomeFavoriteItemUiModel(
                 id = card.analysisResult.imageId,
                 thumbnailModel = card.toThumbnailModel(),
-                categoryType = categoryType,
+                categoryType = card.analysisResult.contentTypes.primaryContentType.toRecapCategoryType(),
                 title = card.analysisResult.title,
                 description = card.analysisResult.summary,
                 organizedAtMillis = card.createdAtMillis,
@@ -45,13 +41,13 @@ internal fun List<StoredScreenshotCard>.toHomeUiState(): HomeUiState {
 
     val frequentSaveTypes = ScreenshotContentType.entries
         .mapNotNull { contentType ->
-            val categoryType = contentType.toRecapCategoryType() ?: return@mapNotNull null
             val count = sortedCards.count { card ->
                 card.analysisResult.contentTypes.primaryContentType == contentType
             }
             if (count <= 0) {
                 return@mapNotNull null
             }
+            val categoryType = contentType.toRecapCategoryType()
             HomeFrequentSaveTypeUiModel(
                 id = categoryType.name,
                 categoryType = categoryType,

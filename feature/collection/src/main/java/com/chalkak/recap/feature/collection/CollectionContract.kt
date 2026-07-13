@@ -4,6 +4,7 @@ import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.category.toLabelResId
 import com.chalkak.recap.core.design.category.toRecapCategoryType
+import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
 import com.chalkak.recap.core.design.component.topbar.CollectionTypeViewMode
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 
@@ -12,27 +13,11 @@ enum class CollectionListSort {
     Oldest,
 }
 
-enum class CollectionTab {
-    Favorites,
-    Types,
-    Others,
-}
-
 data class CollectionCardItemUiModel(
     val imageId: String,
     val title: String,
     val summary: String,
     val contentTypeLabelResId: Int,
-    val categoryType: RecapCategoryType?,
-    val createdAtMillis: Long,
-    val isFavorite: Boolean,
-    val thumbnailModel: Any?,
-)
-
-data class CollectionFavoriteItemUiModel(
-    val imageId: String,
-    val title: String,
-    val summary: String,
     val categoryType: RecapCategoryType,
     val createdAtMillis: Long,
     val isFavorite: Boolean,
@@ -42,7 +27,7 @@ data class CollectionFavoriteItemUiModel(
 data class CollectionTypeSummaryUiModel(
     val contentType: ScreenshotContentType,
     val labelResId: Int,
-    val categoryType: RecapCategoryType?,
+    val categoryType: RecapCategoryType,
     val count: Int,
     val exampleTitles: List<String>,
     val additionalExampleCount: Int,
@@ -51,14 +36,11 @@ data class CollectionTypeSummaryUiModel(
 
 data class CollectionFavoriteSummaryUiModel(
     val count: Int,
-    val previewThumbnailModels: List<Any?>,
 )
 
 data class CollectionOverviewUiModel(
-    val favoriteSummary: CollectionFavoriteSummaryUiModel? = null,
-    val favoriteItems: List<CollectionFavoriteItemUiModel> = emptyList(),
+    val favoriteSummary: CollectionFavoriteSummaryUiModel = CollectionFavoriteSummaryUiModel(count = 0),
     val typeSummaries: List<CollectionTypeSummaryUiModel> = emptyList(),
-    val otherItems: List<CollectionCardItemUiModel> = emptyList(),
 )
 
 data class CollectionDetailUiModel(
@@ -68,6 +50,7 @@ data class CollectionDetailUiModel(
     val cards: List<CollectionCardItemUiModel>,
     val emptyMessageResId: Int,
     val categoryType: RecapCategoryType? = null,
+    val cardMetadataMode: ScreenshotCardMetadataMode = ScreenshotCardMetadataMode.OrganizedDate,
 )
 
 data class CollectionSelectionUiState(
@@ -85,9 +68,7 @@ data class CollectionUiState(
     val searchQuery: String = "",
     val detailSearchQuery: String = "",
     val isDetailSearchVisible: Boolean = false,
-    val selectedTab: CollectionTab = CollectionTab.Favorites,
     val typeViewMode: CollectionTypeViewMode = CollectionTypeViewMode.Grid,
-    val othersSort: CollectionListSort = CollectionListSort.Latest,
     val overview: CollectionOverviewUiModel = CollectionOverviewUiModel(),
     val detail: CollectionDetailUiModel? = null,
     val selection: CollectionSelectionUiState = CollectionSelectionUiState(),
@@ -98,12 +79,9 @@ sealed interface CollectionAction {
     data object ShowDetailSearch : CollectionAction
     data object HideDetailSearch : CollectionAction
     data class UpdateDetailSearchQuery(val query: String) : CollectionAction
-    data class SelectTab(val tab: CollectionTab) : CollectionAction
     data class SetTypeViewMode(val viewMode: CollectionTypeViewMode) : CollectionAction
-    data class SetOthersSort(val sort: CollectionListSort) : CollectionAction
     data object OpenFavoriteDetail : CollectionAction
     data class OpenFavoriteItem(val imageId: String) : CollectionAction
-    data class OpenOtherItem(val imageId: String) : CollectionAction
     data class OpenTypeDetail(val contentType: ScreenshotContentType) : CollectionAction
     data object CloseDetail : CollectionAction
     data class SetDetailSort(val sort: CollectionListSort) : CollectionAction
@@ -115,31 +93,30 @@ sealed interface CollectionAction {
     data object DeleteSelected : CollectionAction
 }
 
+internal val CollectionOverviewCategoryOrder: List<ScreenshotContentType> = listOf(
+    ScreenshotContentType.SHOPPING_PRODUCT,
+    ScreenshotContentType.PLACE_RESTAURANT,
+    ScreenshotContentType.SCHEDULE_RESERVATION,
+    ScreenshotContentType.INFO_KNOWLEDGE,
+    ScreenshotContentType.BOOK_CONTENT,
+    ScreenshotContentType.BENEFIT_EVENT,
+    ScreenshotContentType.RECORD_CAPTURE,
+    ScreenshotContentType.JOB_CAREER,
+    ScreenshotContentType.OTHER,
+)
+
 internal fun StoredScreenshotCard.toThumbnailModel(): Any? {
     return imageRefs.thumbnailPath ?: imageRefs.storedImagePath ?: imageRefs.sourceImageUri
 }
 
 internal fun StoredScreenshotCard.toCardItemUiModel(): CollectionCardItemUiModel {
+    val contentType = analysisResult.contentTypes.primaryContentType
     return CollectionCardItemUiModel(
         imageId = analysisResult.imageId,
         title = analysisResult.title,
         summary = analysisResult.summary,
-        contentTypeLabelResId = analysisResult.contentTypes.primaryContentType.toLabelResId(),
-        categoryType = analysisResult.contentTypes.primaryContentType.toRecapCategoryType(),
-        createdAtMillis = createdAtMillis,
-        isFavorite = analysisResult.isFavorite,
-        thumbnailModel = toThumbnailModel(),
-    )
-}
-
-internal fun StoredScreenshotCard.toFavoriteItemUiModel(): CollectionFavoriteItemUiModel? {
-    val categoryType = analysisResult.contentTypes.primaryContentType.toRecapCategoryType()
-        ?: return null
-    return CollectionFavoriteItemUiModel(
-        imageId = analysisResult.imageId,
-        title = analysisResult.title,
-        summary = analysisResult.summary,
-        categoryType = categoryType,
+        contentTypeLabelResId = contentType.toLabelResId(),
+        categoryType = contentType.toRecapCategoryType(),
         createdAtMillis = createdAtMillis,
         isFavorite = analysisResult.isFavorite,
         thumbnailModel = toThumbnailModel(),
@@ -148,7 +125,6 @@ internal fun StoredScreenshotCard.toFavoriteItemUiModel(): CollectionFavoriteIte
 
 internal fun List<StoredScreenshotCard>.toOverviewUiModel(
     searchQuery: String = "",
-    othersSort: CollectionListSort = CollectionListSort.Latest,
 ): CollectionOverviewUiModel {
     val normalizedQuery = searchQuery.trim()
     val sortedCards = sortedByDescending { card -> card.createdAtMillis }
@@ -161,49 +137,30 @@ internal fun List<StoredScreenshotCard>.toOverviewUiModel(
             }
         }
     val favoriteCards = sortedCards.filter { card -> card.analysisResult.isFavorite }
-    val favoriteItems = favoriteCards.mapNotNull(StoredScreenshotCard::toFavoriteItemUiModel)
-    val favoriteSummary = if (favoriteCards.isNotEmpty()) {
-        CollectionFavoriteSummaryUiModel(
-            count = favoriteCards.size,
-            previewThumbnailModels = favoriteCards.take(3).map(StoredScreenshotCard::toThumbnailModel),
-        )
-    } else {
-        null
-    }
+    val favoriteSummary = CollectionFavoriteSummaryUiModel(count = favoriteCards.size)
 
-    val typeSummaries = ScreenshotContentType.entries
-        .filter { contentType -> contentType != ScreenshotContentType.OTHER }
-        .mapNotNull { contentType ->
-            val typeCards = sortedCards.filter { card ->
-                card.analysisResult.contentTypes.primaryContentType == contentType
-            }
-            if (typeCards.isEmpty()) {
-                return@mapNotNull null
-            }
-            CollectionTypeSummaryUiModel(
-                contentType = contentType,
-                labelResId = contentType.toLabelResId(),
-                categoryType = contentType.toRecapCategoryType(),
-                count = typeCards.size,
-                exampleTitles = typeCards.map { card -> card.analysisResult.title }.take(2),
-                additionalExampleCount = if (typeCards.size >= 3) typeCards.size - 2 else 0,
-                previewThumbnailModels = typeCards.take(3).map(StoredScreenshotCard::toThumbnailModel),
-            )
+    val typeSummaries = CollectionOverviewCategoryOrder.mapNotNull { contentType ->
+        val typeCards = sortedCards.filter { card ->
+            card.analysisResult.contentTypes.primaryContentType == contentType
         }
-
-    val otherCards = sortedCards.filter { card ->
-        card.analysisResult.contentTypes.primaryContentType == ScreenshotContentType.OTHER
+        if (typeCards.isEmpty()) {
+            return@mapNotNull null
+        }
+        val categoryType = contentType.toRecapCategoryType()
+        CollectionTypeSummaryUiModel(
+            contentType = contentType,
+            labelResId = categoryType.labelResId,
+            categoryType = categoryType,
+            count = typeCards.size,
+            exampleTitles = typeCards.map { card -> card.analysisResult.title }.take(2),
+            additionalExampleCount = if (typeCards.size >= 3) typeCards.size - 2 else 0,
+            previewThumbnailModels = typeCards.take(3).map(StoredScreenshotCard::toThumbnailModel),
+        )
     }
-    val otherItems = when (othersSort) {
-        CollectionListSort.Latest -> otherCards
-        CollectionListSort.Oldest -> otherCards.sortedBy { card -> card.createdAtMillis }
-    }.map(StoredScreenshotCard::toCardItemUiModel)
 
     return CollectionOverviewUiModel(
         favoriteSummary = favoriteSummary,
-        favoriteItems = favoriteItems,
         typeSummaries = typeSummaries,
-        otherItems = otherItems,
     )
 }
 
@@ -243,6 +200,10 @@ internal fun List<StoredScreenshotCard>.toDetailUiModel(
         is CollectionDetailFilter.ByType -> filter.contentType.toRecapCategoryType()
         CollectionDetailFilter.Favorites -> null
     }
+    val cardMetadataMode = when (filter) {
+        CollectionDetailFilter.Favorites -> ScreenshotCardMetadataMode.CategoryChip
+        is CollectionDetailFilter.ByType -> ScreenshotCardMetadataMode.OrganizedDate
+    }
     return CollectionDetailUiModel(
         titleResId = titleResId,
         count = sortedCards.size,
@@ -250,6 +211,7 @@ internal fun List<StoredScreenshotCard>.toDetailUiModel(
         cards = sortedCards.map(StoredScreenshotCard::toCardItemUiModel),
         emptyMessageResId = emptyMessageResId,
         categoryType = categoryType,
+        cardMetadataMode = cardMetadataMode,
     )
 }
 

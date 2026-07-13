@@ -78,7 +78,7 @@ mock repository는 이미지 바이트, 픽셀, URI 내용을 읽지 않는다.
 3. `summary`
    - `"요약" + fileName`
 4. `content_types.primary_content_type`
-   - 10개 enum 중 하나를 무작위 선택
+   - 9개 enum 중 하나를 무작위 선택
 5. `key_fields`
    - 항상 3개 생성
    - 1번: `label = "라벨1"`, `value = "값1"`, `display_priority = 1`
@@ -105,7 +105,6 @@ mock repository는 이미지 바이트, 픽셀, URI 내용을 읽지 않는다.
 - `PLACE_RESTAURANT`
 - `SCHEDULE_RESERVATION`
 - `INFO_KNOWLEDGE`
-- `DESIGN_REFERENCE`
 - `BOOK_CONTENT`
 - `BENEFIT_EVENT`
 - `RECORD_CAPTURE`

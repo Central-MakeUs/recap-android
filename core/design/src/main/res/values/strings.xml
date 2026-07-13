@@ -50,6 +50,7 @@
     <string name="home_category_book_content">책 · 컨텐츠</string>
     <string name="home_category_benefit_event">혜택 · 이벤트</string>
     <string name="home_category_record_capture">기록 · 캡처</string>
+    <string name="home_category_other">기타</string>
     <string name="frequent_save_type_folder_card_recap_count">%1$d recaps</string>
     <plurals name="recap_haze_folder_card_recap_label">
         <item quantity="one">recap</item>
@@ -87,6 +88,7 @@
     <string name="collection_empty_description">스크린샷을 정리하면 유형별로\n모아볼 수 있어요</string>
     <string name="collection_empty_organize_button">스크린샷 정리하기</string>
     <string name="collection_favorites_section_title">즐겨찾기</string>
+    <string name="collection_favorites_entry_content_description">즐겨찾기, %1$d recaps</string>
     <string name="collection_types_section_title">유형별 보기</string>
     <string name="collection_others_section_title">기타</string>
     <string name="collection_others_empty">미분류 캡처가 없어요.</string>
@@ -118,7 +120,6 @@
     <string name="collection_content_type_place_restaurant">장소·맛집</string>
     <string name="collection_content_type_schedule_reservation">일정·예약</string>
     <string name="collection_content_type_info_knowledge">정보·지식</string>
-    <string name="collection_content_type_design_reference">디자인·레퍼런스</string>
     <string name="collection_content_type_book_content">도서·콘텐츠</string>
     <string name="collection_content_type_benefit_event">혜택·이벤트</string>
     <string name="collection_content_type_record_capture">기록·캡처</string>
@@ -430,7 +431,7 @@
     <string name="screenshot_detail_favorite_selected_content_description">즐겨찾기 해제</string>
     <string name="screenshot_detail_more_content_description">더보기</string>
     <string name="screenshot_detail_fullscreen_content_description">전체화면으로 보기</string>
-    <string name="screenshot_organized_date_format">정리됨 %1$s</string>
+    <string name="screenshot_organized_date_format">%1$s 정리</string>
     <string name="screenshot_body_empty">본문이 없습니다.</string>
     <string name="screenshot_image_load_error">이미지를 불러오지 못했어요.</string>
     <string name="screenshot_image_placeholder_content_description">스크린샷 이미지 자리 표시</string>

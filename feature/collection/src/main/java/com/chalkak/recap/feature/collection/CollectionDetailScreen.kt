@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
+import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
 import com.chalkak.recap.core.design.component.chip.RecapFilterTag
 import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
@@ -137,6 +138,7 @@ fun CollectionDetailScreen(
                         CollectionSelectableCaptureItem(
                             item = card,
                             selection = selection,
+                            metadataMode = detail.cardMetadataMode,
                             onOpenClick = { onItemClick(card.imageId) },
                             onFavoriteClick = {
                                 onAction(CollectionAction.ToggleFavorite(card.imageId))
@@ -316,6 +318,7 @@ private fun CollectionDetailEmptyPreview() {
                 sort = CollectionListSort.Latest,
                 cards = emptyList(),
                 emptyMessageResId = R.string.collection_favorites_empty,
+                cardMetadataMode = ScreenshotCardMetadataMode.CategoryChip,
             ),
             selection = CollectionSelectionUiState(),
             onBackClick = {},
@@ -330,6 +333,7 @@ private fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
         count = 3,
         sort = CollectionListSort.Latest,
         categoryType = RecapCategoryType.ShoppingProduct,
+        cardMetadataMode = ScreenshotCardMetadataMode.OrganizedDate,
         cards = listOf(
             CollectionCardItemUiModel(
                 imageId = "1",

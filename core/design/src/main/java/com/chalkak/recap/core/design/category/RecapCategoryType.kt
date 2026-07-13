@@ -16,6 +16,9 @@ import com.chalkak.recap.core.design.theme.RecapCategoryInfoKnowledge700
 import com.chalkak.recap.core.design.theme.RecapCategoryJobCareer300
 import com.chalkak.recap.core.design.theme.RecapCategoryJobCareer500
 import com.chalkak.recap.core.design.theme.RecapCategoryJobCareer700
+import com.chalkak.recap.core.design.theme.RecapCategoryOther300
+import com.chalkak.recap.core.design.theme.RecapCategoryOther500
+import com.chalkak.recap.core.design.theme.RecapCategoryOther700
 import com.chalkak.recap.core.design.theme.RecapCategoryPlaceRestaurant300
 import com.chalkak.recap.core.design.theme.RecapCategoryPlaceRestaurant500
 import com.chalkak.recap.core.design.theme.RecapCategoryPlaceRestaurant700
@@ -91,5 +94,12 @@ enum class RecapCategoryType(
         borderColor = RecapCategoryJobCareer500,
         contentColor = RecapCategoryJobCareer700,
         tintColor = RecapCategoryJobCareer300,
+    ),
+    Other(
+        iconResId = R.drawable.ic_other_16,
+        labelResId = R.string.home_category_other,
+        borderColor = RecapCategoryOther500,
+        contentColor = RecapCategoryOther700,
+        tintColor = RecapCategoryOther300,
     ),
 }

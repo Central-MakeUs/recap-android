@@ -353,4 +353,5 @@ private val RecapHazeFolderCardPreviewItems = listOf(
     RecapHazeFolderCardPreviewItem(RecapCategoryType.BenefitEvent, 5),
     RecapHazeFolderCardPreviewItem(RecapCategoryType.RecordCapture, 12),
     RecapHazeFolderCardPreviewItem(RecapCategoryType.JobCareer, 8),
+    RecapHazeFolderCardPreviewItem(RecapCategoryType.Other, 3),
 )

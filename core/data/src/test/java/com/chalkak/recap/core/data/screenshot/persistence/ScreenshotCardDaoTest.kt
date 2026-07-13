@@ -301,6 +301,33 @@ class ScreenshotCardDaoTest {
     }
 
     @Test
+    fun saveAndObserve_roundTripsOtherContentType() = runBlocking {
+        val repository = DefaultScreenshotCardRepository(dao)
+        val result = sampleResult(
+            imageId = "other-card",
+            title = "기타 카드",
+            summary = "기타 요약",
+        ).copy(
+            contentTypes = ScreenshotContentTypes(
+                primaryContentType = ScreenshotContentType.OTHER,
+            ),
+        )
+
+        repository.saveAnalysisResults(
+            results = listOf(result),
+            imageRefsByImageId = mapOf(
+                "other-card" to ScreenshotCardImageRefs(sourceImageUri = "content://other-card"),
+            ),
+        )
+
+        val observed = repository.observeStoredCards().first().single()
+        val loaded = repository.getCard("other-card")
+
+        assertEquals(ScreenshotContentType.OTHER, observed.analysisResult.contentTypes.primaryContentType)
+        assertEquals(ScreenshotContentType.OTHER, loaded?.analysisResult?.contentTypes?.primaryContentType)
+    }
+
+    @Test
     fun saveAnalysisResults_preservesExistingBodyAndImageRefsOnBlankResave() = runBlocking {
         val repository = DefaultScreenshotCardRepository(dao)
         val imageRefs = ScreenshotCardImageRefs(

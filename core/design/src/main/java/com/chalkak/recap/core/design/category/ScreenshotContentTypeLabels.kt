@@ -11,14 +11,13 @@ fun ScreenshotContentType.toLabelResId(): Int = when (this) {
     ScreenshotContentType.PLACE_RESTAURANT -> R.string.collection_content_type_place_restaurant
     ScreenshotContentType.SCHEDULE_RESERVATION -> R.string.collection_content_type_schedule_reservation
     ScreenshotContentType.INFO_KNOWLEDGE -> R.string.collection_content_type_info_knowledge
-    ScreenshotContentType.DESIGN_REFERENCE -> R.string.collection_content_type_design_reference
     ScreenshotContentType.BOOK_CONTENT -> R.string.collection_content_type_book_content
     ScreenshotContentType.BENEFIT_EVENT -> R.string.collection_content_type_benefit_event
     ScreenshotContentType.RECORD_CAPTURE -> R.string.collection_content_type_record_capture
     ScreenshotContentType.OTHER -> R.string.collection_content_type_other
 }
 
-fun ScreenshotContentType.toRecapCategoryType(): RecapCategoryType? = when (this) {
+fun ScreenshotContentType.toRecapCategoryType(): RecapCategoryType = when (this) {
     ScreenshotContentType.JOB_CAREER -> RecapCategoryType.JobCareer
     ScreenshotContentType.SHOPPING_PRODUCT -> RecapCategoryType.ShoppingProduct
     ScreenshotContentType.PLACE_RESTAURANT -> RecapCategoryType.PlaceRestaurant
@@ -27,7 +26,5 @@ fun ScreenshotContentType.toRecapCategoryType(): RecapCategoryType? = when (this
     ScreenshotContentType.BOOK_CONTENT -> RecapCategoryType.BookContent
     ScreenshotContentType.BENEFIT_EVENT -> RecapCategoryType.BenefitEvent
     ScreenshotContentType.RECORD_CAPTURE -> RecapCategoryType.RecordCapture
-    ScreenshotContentType.DESIGN_REFERENCE,
-    ScreenshotContentType.OTHER,
-    -> null
+    ScreenshotContentType.OTHER -> RecapCategoryType.Other
 }

@@ -58,8 +58,12 @@ fun CollectionRoute(
             while (backStack.size > 1) {
                 backStack.removeLastOrNull()
             }
-            viewModel.onAction(CollectionAction.CloseDetail)
-            viewModel.onAction(CollectionAction.SelectTab(CollectionTab.Favorites))
+            viewModel.onAction(CollectionAction.OpenFavoriteDetail)
+            val alreadyOnFavoriteDetail =
+                backStack.lastOrNull() == CollectionDestination.FavoriteDetail
+            if (!alreadyOnFavoriteDetail) {
+                backStack.add(CollectionDestination.FavoriteDetail)
+            }
         }
     }
 
@@ -104,10 +108,6 @@ fun CollectionRoute(
             }
 
             is CollectionAction.OpenFavoriteItem -> {
-                onNavigateToScreenshot(action.imageId)
-            }
-
-            is CollectionAction.OpenOtherItem -> {
                 onNavigateToScreenshot(action.imageId)
             }
 

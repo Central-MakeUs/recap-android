@@ -49,19 +49,16 @@ import coil3.compose.AsyncImage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.category.toLabelResId
 import com.chalkak.recap.core.design.category.toRecapCategoryType
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
-import com.chalkak.recap.core.design.component.chip.RecapCategoryChipColors
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray200
-import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapGray900
@@ -182,18 +179,7 @@ private fun ScreenshotDetailContent(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (categoryType != null) {
-                    RecapCategoryChip(type = categoryType)
-                } else {
-                    RecapCategoryChip(
-                        label = stringResource(contentType.toLabelResId()),
-                        colors = RecapCategoryChipColors(
-                            container = RecapGray100,
-                            border = RecapGray300,
-                            content = RecapGray900,
-                        ),
-                    )
-                }
+                RecapCategoryChip(type = categoryType)
                 Text(
                     text = stringResource(
                         R.string.screenshot_organized_date_format,

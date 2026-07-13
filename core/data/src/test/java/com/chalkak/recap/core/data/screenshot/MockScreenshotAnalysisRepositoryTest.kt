@@ -122,6 +122,21 @@ class MockScreenshotAnalysisRepositoryTest {
     }
 
     @Test
+    fun `analyze maps content type index to other`() {
+        val repository = repository(
+            contentTypeIndex = ScreenshotContentType.OTHER.ordinal,
+            unitDoubles = listOf(0.0, 0.0, 0.0, 0.0),
+        )
+
+        val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
+
+        assertEquals(
+            ScreenshotContentType.OTHER,
+            result.contentTypes.primaryContentType,
+        )
+    }
+
+    @Test
     fun `analyze uses injected image id`() {
         val repository = repository(
             imageId = "mock-image-id",

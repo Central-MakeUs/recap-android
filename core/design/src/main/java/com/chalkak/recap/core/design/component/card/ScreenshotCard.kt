@@ -64,10 +64,10 @@ import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
-import java.util.Locale
+enum class ScreenshotCardMetadataMode {
+    CategoryChip,
+    OrganizedDate,
+}
 
 @Composable
 fun ScreenshotCard(
@@ -80,6 +80,7 @@ fun ScreenshotCard(
     modifier: Modifier = Modifier,
     categoryType: RecapCategoryType? = null,
     organizedAtMillis: Long? = null,
+    metadataMode: ScreenshotCardMetadataMode = ScreenshotCardMetadataMode.CategoryChip,
     thumbnailContentDescription: String? = null,
     horizontalContentPadding: Dp = ScreenshotCardTokens.ContainerHorizontalPadding,
     showFavoriteButton: Boolean = true,
@@ -105,7 +106,10 @@ fun ScreenshotCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    if (categoryType != null) {
+                    if (
+                        metadataMode == ScreenshotCardMetadataMode.CategoryChip &&
+                        categoryType != null
+                    ) {
                         RecapCategoryTextChip(
                             type = categoryType,
                             colors = RecapCategoryChipDefaults.colors(categoryType),
@@ -128,9 +132,9 @@ fun ScreenshotCard(
                         maxLines = ScreenshotCardTokens.DescriptionMaxLines,
                         overflow = TextOverflow.Ellipsis,
                     )
-                    if (categoryType == null) {
+                    if (metadataMode == ScreenshotCardMetadataMode.OrganizedDate) {
                         val organizedDateLabel = remember(organizedAtMillis) {
-                            organizedAtMillis?.let(::formatScreenshotOrganizedDate)
+                            organizedAtMillis?.let(::formatOrganizedAbsoluteDate)
                         }
                         if (organizedDateLabel != null) {
                             Spacer(modifier = Modifier.height(8.dp))
@@ -365,16 +369,6 @@ private class ScreenshotThumbnailShape(
     override fun hashCode(): Int = progress.hashCode()
 }
 
-fun formatScreenshotOrganizedDate(
-    organizedAtMillis: Long,
-    zoneId: ZoneId = ZoneId.systemDefault(),
-): String {
-    val formatter = DateTimeFormatter.ofPattern("M월 d일", Locale.getDefault())
-    return Instant.ofEpochMilli(organizedAtMillis)
-        .atZone(zoneId)
-        .format(formatter)
-}
-
 private object ScreenshotCardTokens {
     val ContainerHorizontalPadding = 16.dp
     val ContainerVerticalPadding = 10.dp
@@ -433,6 +427,7 @@ private fun ScreenshotCardUncategorizedPreview() {
             thumbnailModel = R.drawable.bid_landscape_24px,
             categoryType = null,
             organizedAtMillis = 1_719_446_400_000L,
+            metadataMode = ScreenshotCardMetadataMode.OrganizedDate,
             title = ScreenshotCardPreviewTitle,
             description = ScreenshotCardPreviewDescription,
             isFavorite = false,
