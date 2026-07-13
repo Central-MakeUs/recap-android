@@ -58,6 +58,10 @@ import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 
 @Composable
@@ -180,7 +184,7 @@ private fun CollectionOverviewContent(
         .asPaddingValues()
         .calculateBottomPadding()
     val bottomContentPadding = RecapBottomBarDefaults.ContentScrollPadding +
-        navigationBarBottomPadding
+            navigationBarBottomPadding
 
     Column(
         modifier = modifier.fillMaxSize(),
@@ -350,7 +354,7 @@ private fun CollectionTypeListItem(
                 vertical = 12.dp,
                 horizontal = CollectionScreenTokens.HorizontalPadding,
             ),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(27.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         RecapCategoryIcon(
@@ -361,31 +365,37 @@ private fun CollectionTypeListItem(
             modifier = Modifier.weight(1f),
             verticalArrangement = Arrangement.spacedBy(5.dp),
         ) {
-            Text(
-                text = stringResource(summary.labelResId),
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-                color = Black,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(summary.labelResId),
+                    style = RecapHeading3,
+                    color = Black,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    text = stringResource(R.string.collection_recap_count, summary.count),
+                    style = RecapCaption2,
+                    color = RecapGray300,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             if (exampleText.isNotBlank()) {
                 Text(
                     text = exampleText,
-                    style = MaterialTheme.typography.labelLarge,
+                    style = RecapCaption1,
                     color = RecapGray500,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
             }
         }
-        Text(
-            text = stringResource(R.string.collection_recap_count, summary.count),
-            style = MaterialTheme.typography.labelLarge,
-            color = RecapGray500,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
     }
 }
 
