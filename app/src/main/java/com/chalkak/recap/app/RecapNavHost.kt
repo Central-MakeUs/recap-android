@@ -13,6 +13,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -25,10 +26,10 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
+import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.feature.collection.CollectionRoute
-import com.chalkak.recap.feature.collection.CollectionTab
-import com.chalkak.recap.feature.organize.OrganizeRoute
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
 import com.chalkak.recap.feature.home.RecentOrganizedScreenshotsRoute
@@ -75,22 +76,33 @@ fun RecapNavHost(
         entryProvider = { route ->
             when (route) {
                 AppRoute.MainTabs -> NavEntry(route) {
-                    RecapMainScreen(
-                        onNavigateToDeveloper = onNavigateToDeveloper,
-                        onNavigateToMyPage = { backStack.add(AppRoute.MyPage) },
-                        onNavigateToSearch = { backStack.add(AppRoute.Search) },
-                        onNavigateToRecentOrganizedScreenshots = {
-                            backStack.add(AppRoute.RecentOrganizedScreenshots)
-                        },
-                        onNavigateToOrganize = { backStack.add(AppRoute.Organize) },
-                        onNavigateToScreenshot = { imageId ->
-                            if (imageId.isNotBlank()) {
-                                backStack.add(AppRoute.Screenshot(imageId))
-                            }
-                        },
-                        homeNavigationRequestId = homeNavigationRequestId,
-                        analysisProgressFlow = analysisProgressFlow,
+                    val isMainTabsOnTop = backStack.lastOrNull() == AppRoute.MainTabs
+                    val mainTabsDispatcherOwner = rememberNavigationEventDispatcherOwner(
+                        enabled = isMainTabsOnTop,
                     )
+                    CompositionLocalProvider(
+                        LocalNavigationEventDispatcherOwner provides mainTabsDispatcherOwner,
+                    ) {
+                        RecapMainScreen(
+                            onNavigateToDeveloper = onNavigateToDeveloper,
+                            onNavigateToMyPage = { backStack.add(AppRoute.MyPage) },
+                            onNavigateToSearch = { backStack.add(AppRoute.Search) },
+                            onNavigateToRecentOrganizedScreenshots = {
+                                backStack.add(AppRoute.RecentOrganizedScreenshots)
+                            },
+                            onOrganizeComplete = { selectedScreenshots ->
+                                analysisProgressViewModel.startMockAnalysis(selectedScreenshots)
+                                homeNavigationRequestId += 1
+                            },
+                            onNavigateToScreenshot = { imageId ->
+                                if (imageId.isNotBlank()) {
+                                    backStack.add(AppRoute.Screenshot(imageId))
+                                }
+                            },
+                            homeNavigationRequestId = homeNavigationRequestId,
+                            analysisProgressFlow = analysisProgressFlow,
+                        )
+                    }
                 }
 
                 AppRoute.MyPage -> NavEntry(route) {
@@ -189,17 +201,6 @@ fun RecapNavHost(
                     )
                 }
 
-                AppRoute.Organize -> NavEntry(route) {
-                    OrganizeRoute(
-                        onNavigateBack = { backStack.removeLastOrNull() },
-                        onOrganizeComplete = { selectedScreenshots ->
-                            analysisProgressViewModel.startMockAnalysis(selectedScreenshots)
-                            backStack.removeLastOrNull()
-                            homeNavigationRequestId += 1
-                        },
-                    )
-                }
-
                 is AppRoute.Screenshot -> NavEntry(route) {
                     ScreenshotRoute(
                         imageId = route.imageId,
@@ -226,7 +227,6 @@ fun RecapMainTabNavHost(
     onNavigateToCollectionFavorites: () -> Unit = {},
     onNavigateToScreenshot: (String) -> Unit = {},
     collectionFavoritesNavigationRequestId: Int = 0,
-    collectionInitialTab: CollectionTab = CollectionTab.Favorites,
     showDeveloperLogoShortcut: Boolean = false,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
     onCollectionPredictiveBackProgress: (Float) -> Unit = {},
@@ -263,7 +263,6 @@ fun RecapMainTabNavHost(
                         onNavigateToOrganize = onNavigateToOrganize,
                         onNavigateToScreenshot = onNavigateToScreenshot,
                         onNavigateBack = { backStack.removeLastOrNull() },
-                        initialTab = collectionInitialTab,
                         favoritesNavigationRequestId = collectionFavoritesNavigationRequestId,
                         onPredictiveBackProgress = onCollectionPredictiveBackProgress,
                     )

@@ -51,14 +51,15 @@ import com.chalkak.recap.core.design.component.bottomsheet.WithdrawalConfirmatio
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
-import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard
 import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
 import com.chalkak.recap.core.design.component.card.OrganizedCaptureCard
 import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
-import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
+import com.chalkak.recap.core.design.component.chip.RecapCategoryRoundChip
+import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
+import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChipWithIcon
 import com.chalkak.recap.core.design.component.chip.RecapFilterTag
 import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
 import com.chalkak.recap.core.design.component.input.RecapInputField
@@ -68,6 +69,13 @@ import com.chalkak.recap.core.design.component.toast.RecapToastHost
 import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.feature.organize.OrganizeAction
+import com.chalkak.recap.feature.organize.OrganizeUiState
+import com.chalkak.recap.feature.organize.ScreenshotPicker
+import com.chalkak.recap.feature.organize.ScreenshotPickerPreviewScreenshots
+import dev.chrisbanes.haze.HazePositionStrategy
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -83,15 +91,28 @@ internal fun ComponentGardenScreen(
     var showUnsavedChangesBottomSheet by remember { mutableStateOf(false) }
     var showLogoutConfirmationBottomSheet by remember { mutableStateOf(false) }
     var showWithdrawalConfirmationBottomSheet by remember { mutableStateOf(false) }
+    var showScreenshotPicker by remember { mutableStateOf(false) }
+    var screenshotSelectionUiState by remember {
+        mutableStateOf(
+            OrganizeUiState(
+                isLoading = false,
+                availableScreenshots = ScreenshotPickerPreviewScreenshots,
+                selectedUris = listOf(
+                    ScreenshotPickerPreviewScreenshots[0].uri,
+                    ScreenshotPickerPreviewScreenshots[1].uri,
+                ),
+            ),
+        )
+    }
     var withdrawalConfirmationChecked by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var inputFieldValue by remember { mutableStateOf("") }
     var multilineInputFieldValue by remember { mutableStateOf("") }
-    var isFavoriteCategoryCardFavorited by remember { mutableStateOf(false) }
     var isScreenshotCardFavorited by remember { mutableStateOf(false) }
     var selectedFilterTagOptionId by remember { mutableStateOf("latest") }
     var isFilterTagExpanded by remember { mutableStateOf(false) }
     val toastHostState = rememberRecapToastHostState()
+    val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
     val coroutineScope = rememberCoroutineScope()
     val toastPreviewMessage = stringResource(R.string.recap_toast_preview_login_failed_message)
 
@@ -99,7 +120,9 @@ internal fun ComponentGardenScreen(
         modifier = modifier.fillMaxSize(),
     ) {
         Surface(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(state = toastHazeState),
             color = MaterialTheme.colorScheme.background,
         ) {
         Column(
@@ -203,29 +226,12 @@ internal fun ComponentGardenScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                 )
-                FavoriteCategoryCard(
-                    thumbnailModel = R.drawable.bid_landscape_24px,
-                    categoryType = RecapCategoryType.ShoppingProduct,
-                    title = stringResource(R.string.component_garden_favorite_category_card_title),
-                    description = stringResource(
-                        R.string.component_garden_favorite_category_card_description
-                    ),
-                    organizedAtMillis = System.currentTimeMillis() -
-                        java.util.concurrent.TimeUnit.HOURS.toMillis(1),
-                    isFavorite = isFavoriteCategoryCardFavorited,
-                    onClick = {},
-                    onFavoriteClick = {
-                        isFavoriteCategoryCardFavorited = !isFavoriteCategoryCardFavorited
-                    },
-                )
                 ScreenshotCard(
                     thumbnailModel = R.drawable.bid_landscape_24px,
+                    categoryType = RecapCategoryType.ShoppingProduct,
                     title = stringResource(R.string.component_garden_screenshot_card_title),
                     description = stringResource(
                         R.string.component_garden_screenshot_card_description
-                    ),
-                    organizedDate = stringResource(
-                        R.string.component_garden_screenshot_card_organized_date
                     ),
                     isFavorite = isScreenshotCardFavorited,
                     onClick = {},
@@ -247,10 +253,12 @@ internal fun ComponentGardenScreen(
                 RecapToast(
                     message = toastPreviewMessage,
                     type = RecapToastType.Success,
+                    hazeState = toastHazeState,
                 )
                 RecapToast(
                     message = toastPreviewMessage,
                     type = RecapToastType.Error,
+                    hazeState = toastHazeState,
                 )
                 Button(
                     modifier = Modifier.fillMaxWidth(),
@@ -365,12 +373,23 @@ internal fun ComponentGardenScreen(
                         ),
                     )
                 }
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { showScreenshotPicker = true },
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.component_garden_screenshot_picker_button
+                        ),
+                    )
+                }
             }
         }
         }
 
         RecapToastHost(
             hostState = toastHostState,
+            hazeState = toastHazeState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .padding(horizontal = 24.dp, vertical = 24.dp),
@@ -503,6 +522,53 @@ internal fun ComponentGardenScreen(
             onWithdrawClick = { showWithdrawalConfirmationBottomSheet = false },
         )
     }
+    if (showScreenshotPicker) {
+        ScreenshotPicker(
+            uiState = screenshotSelectionUiState,
+            onAction = { action ->
+                screenshotSelectionUiState = screenshotSelectionUiState.reduceGardenAction(action)
+            },
+            onDismissRequest = { showScreenshotPicker = false },
+            onCloseClick = { showScreenshotPicker = false },
+            onConfirmClick = { showScreenshotPicker = false },
+        )
+    }
+}
+
+private fun OrganizeUiState.reduceGardenAction(action: OrganizeAction): OrganizeUiState {
+    return when (action) {
+        is OrganizeAction.ToggleSelection -> {
+            val currentSelection = selectedUris
+            when {
+                action.uri in currentSelection -> {
+                    copy(selectedUris = currentSelection.filterNot { it == action.uri })
+                }
+
+                currentSelection.size >= ComponentGardenScreenshotPickerMaxCount -> {
+                    copy(showMaxSelectionReached = true)
+                }
+
+                else -> {
+                    copy(selectedUris = currentSelection + action.uri)
+                }
+            }
+        }
+
+        is OrganizeAction.RemoveSelection -> {
+            copy(selectedUris = selectedUris.filterNot { it == action.uri })
+        }
+
+        OrganizeAction.ClearSelection -> {
+            copy(
+                selectedUris = emptyList(),
+                showMaxSelectionReached = false,
+            )
+        }
+
+        OrganizeAction.DismissMaxSelectionMessage -> {
+            copy(showMaxSelectionReached = false)
+        }
+    }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -510,13 +576,33 @@ internal fun ComponentGardenScreen(
 private fun ComponentGardenCategoryChips(
     modifier: Modifier = Modifier,
 ) {
-    FlowRow(
+    Column(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        RecapCategoryType.entries.forEach { type ->
-            RecapCategoryChip(type = type)
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            RecapCategoryType.entries.forEach { type ->
+                RecapCategoryRoundChip(type = type)
+            }
+        }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            RecapCategoryType.entries.forEach { type ->
+                RecapCategoryTextChip(type = type)
+            }
+        }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            RecapCategoryType.entries.forEach { type ->
+                RecapCategoryTextChipWithIcon(type = type)
+            }
         }
     }
 }
@@ -584,6 +670,7 @@ private fun ComponentGardenScreenPreview() {
 private const val ComponentGardenReviewRequiredCount = 3
 private const val ComponentGardenOrganizedCaptureCount = 12
 private const val ComponentGardenFrequentSaveTypeCount = 12
+private const val ComponentGardenScreenshotPickerMaxCount = 20
 private val ComponentGardenHazeFolderCardWidth = 99.dp
 
 private data class ComponentGardenHazeFolderCardItem(
@@ -592,6 +679,7 @@ private data class ComponentGardenHazeFolderCardItem(
 )
 
 private val ComponentGardenHazeFolderCardItems = listOf(
+    ComponentGardenHazeFolderCardItem(RecapCategoryType.JobCareer, 8),
     ComponentGardenHazeFolderCardItem(RecapCategoryType.ShoppingProduct, 20),
     ComponentGardenHazeFolderCardItem(RecapCategoryType.PlaceRestaurant, 23),
     ComponentGardenHazeFolderCardItem(RecapCategoryType.ScheduleReservation, 10),

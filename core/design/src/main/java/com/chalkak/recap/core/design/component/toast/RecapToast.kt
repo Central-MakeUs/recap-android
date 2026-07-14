@@ -8,9 +8,14 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,18 +32,30 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapBlue50
+import com.chalkak.recap.core.design.theme.RecapError
+import com.chalkak.recap.core.design.theme.RecapGray100
+import com.chalkak.recap.core.design.theme.RecapSuccess
 import com.chalkak.recap.core.design.theme.RecapToastBackground
 import com.chalkak.recap.core.design.theme.RecapToastContent
-import com.chalkak.recap.core.design.theme.RecapError
-import com.chalkak.recap.core.design.theme.RecapSuccess
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.blur.HazeColorEffect
+import dev.chrisbanes.haze.blur.blurEffect
+import dev.chrisbanes.haze.blur.materials.CupertinoMaterials
+import dev.chrisbanes.haze.hazeEffect
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -79,11 +96,13 @@ internal data class RecapToastData(
 )
 
 object RecapToastDefaults {
-    val HorizontalPadding = 16.dp
-    val VerticalPadding = 12.dp
+    val HorizontalPadding = 21.dp
+    val VerticalPadding = 18.dp
     val IconSize = 24.dp
     val IconSpacing = 10.dp
     val Shape = RoundedCornerShape(percent = 50)
+    val BlurRadius: Dp = 24.dp
+    const val NoiseFactor: Float = 0.12f
 
     fun colors(): RecapToastColors = RecapToastColors(
         container = RecapToastBackground,
@@ -123,6 +142,7 @@ fun rememberRecapToastHostState(): RecapToastHostState = remember { RecapToastHo
 @Composable
 fun RecapToastHost(
     hostState: RecapToastHostState,
+    hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
     val toastData = hostState.currentToastData
@@ -130,20 +150,21 @@ fun RecapToastHost(
         visible = toastData != null,
         modifier = modifier,
         enter = fadeIn(animationSpec = tween(RecapToastAnimationDurationMillis)) +
-            slideInVertically(
-                animationSpec = tween(RecapToastAnimationDurationMillis),
-                initialOffsetY = { fullHeight -> fullHeight / 2 },
-            ),
+                slideInVertically(
+                    animationSpec = tween(RecapToastAnimationDurationMillis),
+                    initialOffsetY = { fullHeight -> fullHeight / 2 },
+                ),
         exit = fadeOut(animationSpec = tween(RecapToastAnimationDurationMillis)) +
-            slideOutVertically(
-                animationSpec = tween(RecapToastAnimationDurationMillis),
-                targetOffsetY = { fullHeight -> fullHeight / 2 },
-            ),
+                slideOutVertically(
+                    animationSpec = tween(RecapToastAnimationDurationMillis),
+                    targetOffsetY = { fullHeight -> fullHeight / 2 },
+                ),
     ) {
         toastData?.let { data ->
             RecapToast(
                 message = data.message,
                 type = data.type,
+                hazeState = hazeState,
             )
         }
     }
@@ -153,13 +174,27 @@ fun RecapToastHost(
 fun RecapToast(
     message: String,
     type: RecapToastType,
+    hazeState: HazeState,
     modifier: Modifier = Modifier,
     colors: RecapToastColors = RecapToastDefaults.colors(),
 ) {
+    val blurStyle = CupertinoMaterials.ultraThin()
     Surface(
-        modifier = modifier,
+        modifier = modifier
+            .clip(RecapToastDefaults.Shape)
+            .hazeEffect(state = hazeState) {
+                blurEffect {
+                    blurEnabled = true
+                    blurRadius = RecapToastDefaults.BlurRadius
+                    style = blurStyle
+                    colorEffects = listOf(
+                        HazeColorEffect.tint(colors.container),
+                    )
+                    noiseFactor = RecapToastDefaults.NoiseFactor
+                }
+            },
         shape = RecapToastDefaults.Shape,
-        color = colors.container,
+        color = Color.Transparent,
         contentColor = colors.content,
     ) {
         Row(
@@ -173,9 +208,7 @@ fun RecapToast(
             RecapToastIcon(type = type)
             Text(
                 text = message,
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    fontWeight = FontWeight.Medium,
-                ),
+                style = MaterialTheme.typography.labelLarge,
                 color = colors.content,
             )
         }
@@ -199,11 +232,17 @@ private fun RecapToastIcon(
 @Composable
 private fun RecapToastSuccessPreview() {
     RECAPTheme(dynamicColor = false) {
-        RecapToast(
-            message = stringResource(R.string.recap_toast_preview_login_failed_message),
-            type = RecapToastType.Success,
-            modifier = Modifier.padding(24.dp),
-        )
+        val hazeState = rememberHazeState()
+        RecapToastGlassPreviewBackground(hazeState = hazeState) {
+            RecapToast(
+                message = stringResource(R.string.recap_toast_preview_login_failed_message),
+                type = RecapToastType.Success,
+                hazeState = hazeState,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(24.dp),
+            )
+        }
     }
 }
 
@@ -211,11 +250,17 @@ private fun RecapToastSuccessPreview() {
 @Composable
 private fun RecapToastErrorPreview() {
     RECAPTheme(dynamicColor = false) {
-        RecapToast(
-            message = stringResource(R.string.recap_toast_preview_login_failed_message),
-            type = RecapToastType.Error,
-            modifier = Modifier.padding(24.dp),
-        )
+        val hazeState = rememberHazeState()
+        RecapToastGlassPreviewBackground(hazeState = hazeState) {
+            RecapToast(
+                message = stringResource(R.string.recap_toast_preview_login_failed_message),
+                type = RecapToastType.Error,
+                hazeState = hazeState,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(24.dp),
+            )
+        }
     }
 }
 
@@ -223,20 +268,46 @@ private fun RecapToastErrorPreview() {
 @Composable
 private fun RecapToastVariantsPreview() {
     RECAPTheme(dynamicColor = false) {
-        Column(
-            modifier = Modifier.padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            RecapToast(
-                message = stringResource(R.string.recap_toast_preview_login_failed_message),
-                type = RecapToastType.Success,
-            )
-            RecapToast(
-                message = stringResource(R.string.recap_toast_preview_login_failed_message),
-                type = RecapToastType.Error,
-            )
+        val hazeState = rememberHazeState()
+        RecapToastGlassPreviewBackground(hazeState = hazeState) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                RecapToast(
+                    message = stringResource(R.string.recap_toast_preview_login_failed_message),
+                    type = RecapToastType.Success,
+                    hazeState = hazeState,
+                )
+                RecapToast(
+                    message = stringResource(R.string.recap_toast_preview_login_failed_message),
+                    type = RecapToastType.Error,
+                    hazeState = hazeState,
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun RecapToastGlassPreviewBackground(
+    hazeState: HazeState,
+    content: @Composable BoxScope.() -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(160.dp)
+            .hazeSource(state = hazeState)
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(RecapBlue50, RecapGray100),
+                ),
+            ),
+        content = content,
+    )
 }
 
 private const val RecapToastAnimationDurationMillis = 200

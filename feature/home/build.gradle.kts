@@ -39,6 +39,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.chrisbanes.haze)
     implementation(libs.hilt.android)
+    implementation(libs.timber)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

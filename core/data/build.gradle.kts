@@ -32,6 +32,7 @@ tasks.withType<Test>().configureEach {
 dependencies {
     implementation(project(":core:model"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)

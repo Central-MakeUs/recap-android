@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -27,11 +26,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.component.card.FavoriteCategoryCard
 import com.chalkak.recap.core.design.component.card.OrganizedRelativeTimeFormatter
+import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.topbar.RecentOrganizedScreenshotsTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
 
@@ -93,29 +91,22 @@ fun RecentOrganizedScreenshotsScreen(
                         items = visibleItems,
                         key = { _, item -> item.id },
                     ) { index, item ->
-                        FavoriteCategoryCard(
+                        ScreenshotCard(
                             thumbnailModel = item.thumbnailModel,
                             categoryType = item.categoryType,
                             title = item.title,
                             description = item.description,
-                            organizedAtMillis = item.organizedAtMillis,
                             isFavorite = item.isFavorite,
                             onClick = { onAction(RecentOrganizedScreenshotsAction.SelectItem(item.id)) },
                             onFavoriteClick = {
                                 onAction(RecentOrganizedScreenshotsAction.ToggleFavorite(item.id))
                             },
-                            nowMillis = nowMillis,
                             horizontalContentPadding = 0.dp,
+                            showBottomDivider = index < visibleItems.lastIndex,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(horizontal = RecentOrganizedScreenshotsTokens.HorizontalPadding),
                         )
-                        if (index < visibleItems.lastIndex) {
-                            HorizontalDivider(
-                                color = RecapGray100,
-                                thickness = 1.dp,
-                            )
-                        }
                     }
                 }
             }

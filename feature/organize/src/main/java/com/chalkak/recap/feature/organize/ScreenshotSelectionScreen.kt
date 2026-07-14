@@ -48,6 +48,7 @@ import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.model.LocalImage
 
+// UNUSED
 @Composable
 fun ScreenshotSelectionScreen(
     uiState: OrganizeUiState,

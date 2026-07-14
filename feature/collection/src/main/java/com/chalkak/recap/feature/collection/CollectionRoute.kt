@@ -1,5 +1,6 @@
 package com.chalkak.recap.feature.collection
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -16,7 +17,9 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import kotlinx.serialization.Serializable
 
 @Composable
@@ -26,7 +29,6 @@ fun CollectionRoute(
     onNavigateToOrganize: () -> Unit,
     onNavigateToScreenshot: (String) -> Unit = {},
     onNavigateBack: () -> Unit = {},
-    initialTab: CollectionTab = CollectionTab.Favorites,
     favoritesNavigationRequestId: Int = 0,
     onPredictiveBackProgress: (Float) -> Unit = {},
     viewModel: CollectionViewModel = hiltViewModel(),
@@ -51,16 +53,16 @@ fun CollectionRoute(
         is NavigationEventTransitionState.Idle -> 0f
     }
 
-    LaunchedEffect(initialTab) {
-        viewModel.onAction(CollectionAction.SelectTab(initialTab))
-    }
-
     LaunchedEffect(favoritesNavigationRequestId) {
         if (favoritesNavigationRequestId > 0) {
-            viewModel.onAction(CollectionAction.CloseDetail)
-            viewModel.onAction(CollectionAction.SelectTab(CollectionTab.Favorites))
             while (backStack.size > 1) {
                 backStack.removeLastOrNull()
+            }
+            viewModel.onAction(CollectionAction.OpenFavoriteDetail)
+            val alreadyOnFavoriteDetail =
+                backStack.lastOrNull() == CollectionDestination.FavoriteDetail
+            if (!alreadyOnFavoriteDetail) {
+                backStack.add(CollectionDestination.FavoriteDetail)
             }
         }
     }
@@ -69,9 +71,26 @@ fun CollectionRoute(
         onPredictiveBackProgress(predictiveProgress)
     }
 
-    DisposableEffect(viewModel) {
+    LaunchedEffect(backStack.lastOrNull(), uiState.detail) {
+        if (uiState.detail != null) return@LaunchedEffect
+        when (val route = backStack.lastOrNull()) {
+            CollectionDestination.FavoriteDetail -> {
+                viewModel.onAction(CollectionAction.OpenFavoriteDetail)
+            }
+
+            is CollectionDestination.TypeDetail -> {
+                val contentType = runCatching {
+                    ScreenshotContentType.valueOf(route.contentTypeName)
+                }.getOrNull() ?: return@LaunchedEffect
+                viewModel.onAction(CollectionAction.OpenTypeDetail(contentType))
+            }
+
+            else -> Unit
+        }
+    }
+
+    DisposableEffect(Unit) {
         onDispose {
-            viewModel.onAction(CollectionAction.CloseDetail)
             onPredictiveBackProgress(0f)
         }
     }
@@ -89,10 +108,6 @@ fun CollectionRoute(
             }
 
             is CollectionAction.OpenFavoriteItem -> {
-                onNavigateToScreenshot(action.imageId)
-            }
-
-            is CollectionAction.OpenOtherItem -> {
                 onNavigateToScreenshot(action.imageId)
             }
 
@@ -121,53 +136,58 @@ fun CollectionRoute(
         onBackCompleted = ::handleBack,
     )
 
-    NavDisplay(
-        backStack = backStack,
-        onBack = ::handleBack,
-        modifier = modifier.fillMaxSize(),
-        entryProvider = { route ->
-            when (route) {
-                CollectionDestination.Overview -> NavEntry(route) {
-                    CollectionScreen(
-                        hazeState = hazeState,
-                        uiState = uiState,
-                        onAction = ::handleAction,
-                        onNavigateToOrganize = onNavigateToOrganize,
-                    )
-                }
-
-                CollectionDestination.FavoriteDetail -> NavEntry(route) {
-                    uiState.detail?.let { detail ->
-                        CollectionDetailScreen(
-                            detail = detail,
-                            selection = uiState.selection,
-                            onBackClick = ::handleBack,
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .hazeSource(state = hazeState),
+    ) {
+        NavDisplay(
+            backStack = backStack,
+            onBack = ::handleBack,
+            modifier = Modifier.fillMaxSize(),
+            entryProvider = { route ->
+                when (route) {
+                    CollectionDestination.Overview -> NavEntry(route) {
+                        CollectionScreen(
+                            uiState = uiState,
                             onAction = ::handleAction,
-                            onItemClick = onNavigateToScreenshot,
-                            searchQuery = uiState.detailSearchQuery,
-                            isSearchVisible = uiState.isDetailSearchVisible,
+                            onNavigateToOrganize = onNavigateToOrganize,
                         )
                     }
-                }
 
-                is CollectionDestination.TypeDetail -> NavEntry(route) {
-                    uiState.detail?.let { detail ->
-                        CollectionDetailScreen(
-                            detail = detail,
-                            selection = uiState.selection,
-                            onBackClick = ::handleBack,
-                            onAction = ::handleAction,
-                            onItemClick = onNavigateToScreenshot,
-                            searchQuery = uiState.detailSearchQuery,
-                            isSearchVisible = uiState.isDetailSearchVisible,
-                        )
+                    CollectionDestination.FavoriteDetail -> NavEntry(route) {
+                        uiState.detail?.let { detail ->
+                            CollectionDetailScreen(
+                                detail = detail,
+                                selection = uiState.selection,
+                                onBackClick = ::handleBack,
+                                onAction = ::handleAction,
+                                onItemClick = onNavigateToScreenshot,
+                                searchQuery = uiState.detailSearchQuery,
+                                isSearchVisible = uiState.isDetailSearchVisible,
+                            )
+                        }
                     }
-                }
 
-                else -> error("Unknown collection route: $route")
-            }
-        },
-    )
+                    is CollectionDestination.TypeDetail -> NavEntry(route) {
+                        uiState.detail?.let { detail ->
+                            CollectionDetailScreen(
+                                detail = detail,
+                                selection = uiState.selection,
+                                onBackClick = ::handleBack,
+                                onAction = ::handleAction,
+                                onItemClick = onNavigateToScreenshot,
+                                searchQuery = uiState.detailSearchQuery,
+                                isSearchVisible = uiState.isDetailSearchVisible,
+                            )
+                        }
+                    }
+
+                    else -> error("Unknown collection route: $route")
+                }
+            },
+        )
+    }
 }
 
 @Serializable

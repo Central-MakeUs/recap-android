@@ -23,6 +23,7 @@ data class OrganizeUiState(
 sealed interface OrganizeAction {
     data class ToggleSelection(val uri: String) : OrganizeAction
     data class RemoveSelection(val uri: String) : OrganizeAction
+    data object ClearSelection : OrganizeAction
     data object DismissMaxSelectionMessage : OrganizeAction
 }
 

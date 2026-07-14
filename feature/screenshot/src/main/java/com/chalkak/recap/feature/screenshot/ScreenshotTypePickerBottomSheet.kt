@@ -34,11 +34,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.category.toLabelResId
+import com.chalkak.recap.core.design.category.toRecapCategoryType
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
-import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.White
@@ -138,16 +139,8 @@ internal fun ScreenshotTypeChip(
     modifier: Modifier = Modifier,
 ) {
     val categoryType = type.toRecapCategoryType()
-    val borderColor = when {
-        selected && categoryType != null -> categoryType.borderColor
-        selected -> RecapBlue500
-        else -> RecapGray200
-    }
-    val contentColor = when {
-        selected && categoryType != null -> categoryType.contentColor
-        selected -> RecapBlue500
-        else -> RecapGray900
-    }
+    val borderColor = if (selected) categoryType.borderColor else RecapGray200
+    val contentColor = if (selected) categoryType.contentColor else RecapGray900
 
     val shape = RoundedCornerShape(percent = ScreenshotTokens.TypeChipCornerRadius)
 

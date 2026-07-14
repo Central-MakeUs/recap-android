@@ -33,9 +33,7 @@ class CollectionViewModel @Inject constructor(
     private var searchQuery: String = ""
     private var detailSearchQuery: String = ""
     private var isDetailSearchVisible: Boolean = false
-    private var selectedTab: CollectionTab = CollectionTab.Favorites
     private var typeViewMode: CollectionTypeViewMode = CollectionTypeViewMode.Grid
-    private var othersSort: CollectionListSort = CollectionListSort.Latest
     private var selection = CollectionSelectionUiState()
     private var selectionGeneration = 0L
     private var hasReceivedFirstEmission = false
@@ -80,21 +78,8 @@ class CollectionViewModel @Inject constructor(
                 publishState()
             }
 
-            is CollectionAction.SelectTab -> {
-                if (selectedTab != action.tab) {
-                    clearSelection()
-                }
-                selectedTab = action.tab
-                publishState()
-            }
-
             is CollectionAction.SetTypeViewMode -> {
                 typeViewMode = action.viewMode
-                publishState()
-            }
-
-            is CollectionAction.SetOthersSort -> {
-                othersSort = action.sort
                 publishState()
             }
 
@@ -106,9 +91,7 @@ class CollectionViewModel @Inject constructor(
                 publishState()
             }
 
-            is CollectionAction.OpenFavoriteItem,
-            is CollectionAction.OpenOtherItem,
-            -> Unit
+            is CollectionAction.OpenFavoriteItem -> Unit
 
             is CollectionAction.OpenTypeDetail -> {
                 clearSelection()
@@ -264,10 +247,7 @@ class CollectionViewModel @Inject constructor(
             )
         }
         val hasStoredScreenshots = storedCards.isNotEmpty()
-        val overview = storedCards.toOverviewUiModel(
-            searchQuery = searchQuery,
-            othersSort = othersSort,
-        )
+        val overview = storedCards.toOverviewUiModel(searchQuery = searchQuery)
         val detail = detailFilter?.let { filter ->
             storedCards.toDetailUiModel(
                 filter = filter,
@@ -283,9 +263,7 @@ class CollectionViewModel @Inject constructor(
                 searchQuery = searchQuery,
                 detailSearchQuery = detailSearchQuery,
                 isDetailSearchVisible = isDetailSearchVisible,
-                selectedTab = selectedTab,
                 typeViewMode = typeViewMode,
-                othersSort = othersSort,
                 overview = overview,
                 detail = detail,
                 selection = selection,

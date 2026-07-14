@@ -54,7 +54,7 @@ internal fun buildRecapAnalysisPrompt(
 
         Allowed content_types:
         place, product, receipt, payment, order, reservation, schedule, notice, article, job_posting, chat, map,
-        travel, accommodation, design_reference, sns_post, error_screen, document, unknown
+        travel, accommodation, sns_post, error_screen, document, unknown
 
         Allowed utility_tags:
         actionable, has_deadline, has_schedule, has_location, has_price, has_contact, evidence, reference,

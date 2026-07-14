@@ -42,6 +42,7 @@ dependencies {
     implementation(libs.chrisbanes.haze)
     implementation(libs.coil.compose)
     implementation(libs.hilt.android)
+    implementation(libs.timber)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)

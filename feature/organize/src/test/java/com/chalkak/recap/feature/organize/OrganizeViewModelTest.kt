@@ -7,6 +7,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -43,9 +44,7 @@ class OrganizeViewModelTest {
     fun loadScreenshots_populatesAvailableScreenshots() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(3)
-        val viewModel = OrganizeViewModel(dataSource)
-
-        advanceUntilIdle()
+        val viewModel = createViewModel(dataSource)
 
         assertEquals(
             OrganizeUiState(
@@ -57,11 +56,30 @@ class OrganizeViewModelTest {
     }
 
     @Test
+    fun refreshScreenshots_updatesAvailableScreenshots() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returnsMany listOf(
+            screenshots.take(2),
+            screenshots.take(4),
+        )
+        val viewModel = OrganizeViewModel(dataSource)
+
+        viewModel.refreshScreenshots()
+        advanceUntilIdle()
+
+        assertEquals(screenshots.take(2), viewModel.uiState.value.availableScreenshots)
+
+        viewModel.refreshScreenshots()
+        advanceUntilIdle()
+
+        assertEquals(screenshots.take(4), viewModel.uiState.value.availableScreenshots)
+    }
+
+    @Test
     fun toggleSelection_addsAndRemovesInSelectionOrder() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(3)
-        val viewModel = OrganizeViewModel(dataSource)
-        advanceUntilIdle()
+        val viewModel = createViewModel(dataSource)
 
         viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
         viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[1].uri))
@@ -96,8 +114,7 @@ class OrganizeViewModelTest {
     fun toggleSelection_enforcesMaxSelectionCount() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         coEvery { dataSource.queryAllScreenshots() } returns screenshots
-        val viewModel = OrganizeViewModel(dataSource)
-        advanceUntilIdle()
+        val viewModel = createViewModel(dataSource)
 
         screenshots.take(MAX_SELECTION_COUNT).forEach { screenshot ->
             viewModel.onAction(OrganizeAction.ToggleSelection(screenshot.uri))
@@ -112,8 +129,7 @@ class OrganizeViewModelTest {
     fun removeSelection_reordersRemainingSelections() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(3)
-        val viewModel = OrganizeViewModel(dataSource)
-        advanceUntilIdle()
+        val viewModel = createViewModel(dataSource)
 
         viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
         viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[1].uri))
@@ -135,13 +151,36 @@ class OrganizeViewModelTest {
     fun canProceed_requiresAtLeastOneSelection() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(1)
-        val viewModel = OrganizeViewModel(dataSource)
-        advanceUntilIdle()
+        val viewModel = createViewModel(dataSource)
 
         assertFalse(viewModel.uiState.value.canProceed)
 
         viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
 
         assertTrue(viewModel.uiState.value.canProceed)
+    }
+
+    @Test
+    fun clearSelection_resetsSelectedUrisAndMaxSelectionFlag() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots
+        val viewModel = createViewModel(dataSource)
+
+        screenshots.take(MAX_SELECTION_COUNT).forEach { screenshot ->
+            viewModel.onAction(OrganizeAction.ToggleSelection(screenshot.uri))
+        }
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[MAX_SELECTION_COUNT].uri))
+        viewModel.onAction(OrganizeAction.ClearSelection)
+
+        assertEquals(emptyList<String>(), viewModel.uiState.value.selectedUris)
+        assertFalse(viewModel.uiState.value.showMaxSelectionReached)
+        assertFalse(viewModel.uiState.value.canProceed)
+    }
+
+    private fun TestScope.createViewModel(dataSource: LocalScreenshotDataSource): OrganizeViewModel {
+        val viewModel = OrganizeViewModel(dataSource)
+        viewModel.refreshScreenshots()
+        advanceUntilIdle()
+        return viewModel
     }
 }

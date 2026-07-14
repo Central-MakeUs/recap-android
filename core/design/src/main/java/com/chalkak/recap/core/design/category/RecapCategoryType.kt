@@ -4,27 +4,33 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.Color
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.theme.RecapCategoryBenefitEventBorder
-import com.chalkak.recap.core.design.theme.RecapCategoryBenefitEventContent
-import com.chalkak.recap.core.design.theme.RecapCategoryBenefitEventTint
-import com.chalkak.recap.core.design.theme.RecapCategoryBookContentBorder
-import com.chalkak.recap.core.design.theme.RecapCategoryBookContentContent
-import com.chalkak.recap.core.design.theme.RecapCategoryBookContentTint
-import com.chalkak.recap.core.design.theme.RecapCategoryInfoKnowledgeBorder
-import com.chalkak.recap.core.design.theme.RecapCategoryInfoKnowledgeContent
-import com.chalkak.recap.core.design.theme.RecapCategoryInfoKnowledgeTint
-import com.chalkak.recap.core.design.theme.RecapCategoryPlaceRestaurantBorder
-import com.chalkak.recap.core.design.theme.RecapCategoryPlaceRestaurantContent
-import com.chalkak.recap.core.design.theme.RecapCategoryPlaceRestaurantTint
-import com.chalkak.recap.core.design.theme.RecapCategoryRecordCaptureBorder
-import com.chalkak.recap.core.design.theme.RecapCategoryRecordCaptureContent
-import com.chalkak.recap.core.design.theme.RecapCategoryRecordCaptureTint
-import com.chalkak.recap.core.design.theme.RecapCategoryScheduleReservationBorder
-import com.chalkak.recap.core.design.theme.RecapCategoryScheduleReservationContent
-import com.chalkak.recap.core.design.theme.RecapCategoryScheduleReservationTint
-import com.chalkak.recap.core.design.theme.RecapCategoryShoppingProductBorder
-import com.chalkak.recap.core.design.theme.RecapCategoryShoppingProductContent
-import com.chalkak.recap.core.design.theme.RecapCategoryShoppingProductTint
+import com.chalkak.recap.core.design.theme.RecapCategoryBenefitEvent300
+import com.chalkak.recap.core.design.theme.RecapCategoryBenefitEvent500
+import com.chalkak.recap.core.design.theme.RecapCategoryBenefitEvent700
+import com.chalkak.recap.core.design.theme.RecapCategoryBookContent300
+import com.chalkak.recap.core.design.theme.RecapCategoryBookContent500
+import com.chalkak.recap.core.design.theme.RecapCategoryBookContent700
+import com.chalkak.recap.core.design.theme.RecapCategoryInfoKnowledge300
+import com.chalkak.recap.core.design.theme.RecapCategoryInfoKnowledge500
+import com.chalkak.recap.core.design.theme.RecapCategoryInfoKnowledge700
+import com.chalkak.recap.core.design.theme.RecapCategoryJobCareer300
+import com.chalkak.recap.core.design.theme.RecapCategoryJobCareer500
+import com.chalkak.recap.core.design.theme.RecapCategoryJobCareer700
+import com.chalkak.recap.core.design.theme.RecapCategoryOther300
+import com.chalkak.recap.core.design.theme.RecapCategoryOther500
+import com.chalkak.recap.core.design.theme.RecapCategoryOther700
+import com.chalkak.recap.core.design.theme.RecapCategoryPlaceRestaurant300
+import com.chalkak.recap.core.design.theme.RecapCategoryPlaceRestaurant500
+import com.chalkak.recap.core.design.theme.RecapCategoryPlaceRestaurant700
+import com.chalkak.recap.core.design.theme.RecapCategoryRecordCapture300
+import com.chalkak.recap.core.design.theme.RecapCategoryRecordCapture500
+import com.chalkak.recap.core.design.theme.RecapCategoryRecordCapture700
+import com.chalkak.recap.core.design.theme.RecapCategoryScheduleReservation300
+import com.chalkak.recap.core.design.theme.RecapCategoryScheduleReservation500
+import com.chalkak.recap.core.design.theme.RecapCategoryScheduleReservation700
+import com.chalkak.recap.core.design.theme.RecapCategoryShoppingProduct300
+import com.chalkak.recap.core.design.theme.RecapCategoryShoppingProduct500
+import com.chalkak.recap.core.design.theme.RecapCategoryShoppingProduct700
 
 enum class RecapCategoryType(
     @get:DrawableRes val iconResId: Int,
@@ -36,50 +42,64 @@ enum class RecapCategoryType(
     ShoppingProduct(
         iconResId = R.drawable.ic_cart_16,
         labelResId = R.string.home_category_shopping_product,
-        borderColor = RecapCategoryShoppingProductBorder,
-        contentColor = RecapCategoryShoppingProductContent,
-        tintColor = RecapCategoryShoppingProductTint,
+        borderColor = RecapCategoryShoppingProduct500,
+        contentColor = RecapCategoryShoppingProduct700,
+        tintColor = RecapCategoryShoppingProduct300,
     ),
     PlaceRestaurant(
         iconResId = R.drawable.ic_location_16,
         labelResId = R.string.home_category_place_restaurant,
-        borderColor = RecapCategoryPlaceRestaurantBorder,
-        contentColor = RecapCategoryPlaceRestaurantContent,
-        tintColor = RecapCategoryPlaceRestaurantTint,
+        borderColor = RecapCategoryPlaceRestaurant500,
+        contentColor = RecapCategoryPlaceRestaurant700,
+        tintColor = RecapCategoryPlaceRestaurant300,
     ),
     ScheduleReservation(
         iconResId = R.drawable.ic_clock_16,
         labelResId = R.string.home_category_schedule_reservation,
-        borderColor = RecapCategoryScheduleReservationBorder,
-        contentColor = RecapCategoryScheduleReservationContent,
-        tintColor = RecapCategoryScheduleReservationTint,
+        borderColor = RecapCategoryScheduleReservation500,
+        contentColor = RecapCategoryScheduleReservation700,
+        tintColor = RecapCategoryScheduleReservation300,
     ),
     InfoKnowledge(
         iconResId = R.drawable.ic_lightbulb_16,
         labelResId = R.string.home_category_info_knowledge,
-        borderColor = RecapCategoryInfoKnowledgeBorder,
-        contentColor = RecapCategoryInfoKnowledgeContent,
-        tintColor = RecapCategoryInfoKnowledgeTint,
+        borderColor = RecapCategoryInfoKnowledge500,
+        contentColor = RecapCategoryInfoKnowledge700,
+        tintColor = RecapCategoryInfoKnowledge300,
     ),
     BookContent(
         iconResId = R.drawable.ic_document_16,
         labelResId = R.string.home_category_book_content,
-        borderColor = RecapCategoryBookContentBorder,
-        contentColor = RecapCategoryBookContentContent,
-        tintColor = RecapCategoryBookContentTint,
+        borderColor = RecapCategoryBookContent500,
+        contentColor = RecapCategoryBookContent700,
+        tintColor = RecapCategoryBookContent300,
     ),
     BenefitEvent(
         iconResId = R.drawable.ic_star_16,
         labelResId = R.string.home_category_benefit_event,
-        borderColor = RecapCategoryBenefitEventBorder,
-        contentColor = RecapCategoryBenefitEventContent,
-        tintColor = RecapCategoryBenefitEventTint,
+        borderColor = RecapCategoryBenefitEvent500,
+        contentColor = RecapCategoryBenefitEvent700,
+        tintColor = RecapCategoryBenefitEvent300,
     ),
     RecordCapture(
         iconResId = R.drawable.ic_edit_16,
         labelResId = R.string.home_category_record_capture,
-        borderColor = RecapCategoryRecordCaptureBorder,
-        contentColor = RecapCategoryRecordCaptureContent,
-        tintColor = RecapCategoryRecordCaptureTint,
+        borderColor = RecapCategoryRecordCapture500,
+        contentColor = RecapCategoryRecordCapture700,
+        tintColor = RecapCategoryRecordCapture300,
+    ),
+    JobCareer(
+        iconResId = R.drawable.ic_person_16,
+        labelResId = R.string.home_category_job_career,
+        borderColor = RecapCategoryJobCareer500,
+        contentColor = RecapCategoryJobCareer700,
+        tintColor = RecapCategoryJobCareer300,
+    ),
+    Other(
+        iconResId = R.drawable.ic_other_16,
+        labelResId = R.string.home_category_other,
+        borderColor = RecapCategoryOther500,
+        contentColor = RecapCategoryOther700,
+        tintColor = RecapCategoryOther300,
     ),
 }

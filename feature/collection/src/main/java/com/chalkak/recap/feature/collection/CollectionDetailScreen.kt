@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -37,13 +36,13 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
+import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
 import com.chalkak.recap.core.design.component.chip.RecapFilterTag
 import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
 import com.chalkak.recap.core.design.component.topbar.CollectionDetailTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
-import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
 
@@ -136,24 +135,20 @@ fun CollectionDetailScreen(
                         items = detail.cards,
                         key = { _, card -> card.imageId },
                     ) { index, card ->
-                        CollectionCaptureListItem(
-                            card = card,
-                            onClick = { onItemClick(card.imageId) },
+                        CollectionSelectableCaptureItem(
+                            item = card,
+                            selection = selection,
+                            metadataMode = detail.cardMetadataMode,
+                            onOpenClick = { onItemClick(card.imageId) },
                             onFavoriteClick = {
                                 onAction(CollectionAction.ToggleFavorite(card.imageId))
                             },
-                            selection = selection,
                             onSelectionToggle = {
                                 onAction(CollectionAction.ToggleItemSelection(card.imageId))
                             },
-                            modifier = Modifier.padding(horizontal = CollectionDetailTokens.HorizontalPadding)
+                            showBottomDivider = index < detail.cards.lastIndex,
+                            modifier = Modifier.padding(horizontal = CollectionDetailTokens.HorizontalPadding),
                         )
-                        if (index < detail.cards.lastIndex) {
-                            HorizontalDivider(
-                                color = RecapGray100,
-                                thickness = 1.dp,
-                            )
-                        }
                     }
                 }
             }
@@ -323,6 +318,7 @@ private fun CollectionDetailEmptyPreview() {
                 sort = CollectionListSort.Latest,
                 cards = emptyList(),
                 emptyMessageResId = R.string.collection_favorites_empty,
+                cardMetadataMode = ScreenshotCardMetadataMode.CategoryChip,
             ),
             selection = CollectionSelectionUiState(),
             onBackClick = {},
@@ -337,12 +333,14 @@ private fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
         count = 3,
         sort = CollectionListSort.Latest,
         categoryType = RecapCategoryType.ShoppingProduct,
+        cardMetadataMode = ScreenshotCardMetadataMode.OrganizedDate,
         cards = listOf(
             CollectionCardItemUiModel(
                 imageId = "1",
                 title = "여름 원피스 주문 내역",
                 summary = "가격과 배송 정보가 포함된 상품 캡처",
                 contentTypeLabelResId = R.string.collection_content_type_shopping_product,
+                categoryType = RecapCategoryType.ShoppingProduct,
                 createdAtMillis = 1_719_446_400_000L,
                 isFavorite = true,
                 thumbnailModel = null,
@@ -352,6 +350,7 @@ private fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
                 title = "택배 반품 절차",
                 summary = "반품 신청 전 확인해야 할 체크리스트",
                 contentTypeLabelResId = R.string.collection_content_type_shopping_product,
+                categoryType = RecapCategoryType.ShoppingProduct,
                 createdAtMillis = 1_718_208_000_000L,
                 isFavorite = false,
                 thumbnailModel = null,
@@ -361,6 +360,7 @@ private fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
                 title = "노트북 가격 비교",
                 summary = "쿠팡 · 컴퓨존 견적 캡처 비교",
                 contentTypeLabelResId = R.string.collection_content_type_shopping_product,
+                categoryType = RecapCategoryType.ShoppingProduct,
                 createdAtMillis = 1_717_862_400_000L,
                 isFavorite = false,
                 thumbnailModel = null,

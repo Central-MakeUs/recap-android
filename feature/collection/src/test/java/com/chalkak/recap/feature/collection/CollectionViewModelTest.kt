@@ -66,12 +66,12 @@ class CollectionViewModelTest {
         val state = viewModel.uiState.value
         assertFalse(state.isLoading)
         assertFalse(state.hasStoredScreenshots)
-        assertNull(state.overview.favoriteSummary)
+        assertEquals(0, state.overview.favoriteSummary.count)
         assertTrue(state.overview.typeSummaries.isEmpty())
     }
 
     @Test
-    fun `stored cards without favorites show empty favorite summary`() = runTest(testDispatcher) {
+    fun `stored cards without favorites still expose zero favorite summary`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
                 storedCard(
@@ -86,7 +86,7 @@ class CollectionViewModelTest {
 
         val state = viewModel.uiState.value
         assertTrue(state.hasStoredScreenshots)
-        assertNull(state.overview.favoriteSummary)
+        assertEquals(0, state.overview.favoriteSummary.count)
         assertEquals(1, state.overview.typeSummaries.single().count)
     }
 
@@ -110,7 +110,7 @@ class CollectionViewModelTest {
         )
         advanceUntilIdle()
 
-        assertEquals(2, viewModel.uiState.value.overview.favoriteSummary?.count)
+        assertEquals(2, viewModel.uiState.value.overview.favoriteSummary.count)
     }
 
     @Test
@@ -149,7 +149,7 @@ class CollectionViewModelTest {
     }
 
     @Test
-    fun `other content type cards appear only in others tab`() = runTest(testDispatcher) {
+    fun `other content type appears in overview type summaries`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
                 storedCard(
@@ -175,11 +175,75 @@ class CollectionViewModelTest {
         advanceUntilIdle()
 
         val overview = viewModel.uiState.value.overview
-        assertEquals(1, overview.typeSummaries.size)
-        assertEquals(ScreenshotContentType.SHOPPING_PRODUCT, overview.typeSummaries.single().contentType)
         assertEquals(
-            listOf("other-1", "other-2"),
-            overview.otherItems.map { it.imageId },
+            listOf(
+                ScreenshotContentType.SHOPPING_PRODUCT,
+                ScreenshotContentType.OTHER,
+            ),
+            overview.typeSummaries.map { it.contentType },
+        )
+        assertEquals(2, overview.typeSummaries.last().count)
+    }
+
+    @Test
+    fun `zero count categories are excluded from overview`() = runTest(testDispatcher) {
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    imageId = "shopping-1",
+                    title = "택배 반품 절차",
+                    contentType = ScreenshotContentType.SHOPPING_PRODUCT,
+                    createdAtMillis = 200L,
+                ),
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(ScreenshotContentType.SHOPPING_PRODUCT),
+            viewModel.uiState.value.overview.typeSummaries.map { it.contentType },
+        )
+    }
+
+    @Test
+    fun `search filters favorite and category counts together`() = runTest(testDispatcher) {
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    imageId = "match-favorite",
+                    title = "노트북 할인",
+                    contentType = ScreenshotContentType.SHOPPING_PRODUCT,
+                    isFavorite = true,
+                    createdAtMillis = 300L,
+                ),
+                storedCard(
+                    imageId = "miss-favorite",
+                    title = "카페 예약",
+                    contentType = ScreenshotContentType.PLACE_RESTAURANT,
+                    isFavorite = true,
+                    createdAtMillis = 200L,
+                ),
+                storedCard(
+                    imageId = "match-other",
+                    title = "노트북 메모",
+                    contentType = ScreenshotContentType.OTHER,
+                    createdAtMillis = 100L,
+                ),
+            ),
+        )
+        advanceUntilIdle()
+
+        viewModel.onAction(CollectionAction.UpdateSearchQuery("노트북"))
+        advanceUntilIdle()
+
+        val overview = viewModel.uiState.value.overview
+        assertEquals(1, overview.favoriteSummary.count)
+        assertEquals(
+            listOf(
+                ScreenshotContentType.SHOPPING_PRODUCT,
+                ScreenshotContentType.OTHER,
+            ),
+            overview.typeSummaries.map { it.contentType },
         )
     }
 
@@ -214,6 +278,39 @@ class CollectionViewModelTest {
         val detail = viewModel.uiState.value.detail
         assertEquals(2, detail?.count)
         assertEquals("favorite-new", detail?.cards?.first()?.imageId)
+        assertEquals(
+            com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode.CategoryChip,
+            detail?.cardMetadataMode,
+        )
+    }
+
+    @Test
+    fun `open type detail uses organized date metadata mode`() = runTest(testDispatcher) {
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    imageId = "other-1",
+                    title = "기타",
+                    contentType = ScreenshotContentType.OTHER,
+                    createdAtMillis = 100L,
+                ),
+            ),
+        )
+        advanceUntilIdle()
+
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.OTHER))
+        advanceUntilIdle()
+
+        val detail = viewModel.uiState.value.detail
+        assertEquals(1, detail?.count)
+        assertEquals(
+            com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode.OrganizedDate,
+            detail?.cardMetadataMode,
+        )
+        assertEquals(
+            com.chalkak.recap.core.design.category.RecapCategoryType.Other,
+            detail?.categoryType,
+        )
     }
 
     @Test
@@ -389,7 +486,7 @@ class CollectionViewModelTest {
     }
 
     @Test
-    fun `changing tabs clears selection`() = runTest(testDispatcher) {
+    fun `updating search query clears selection`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
                 storedCard(imageId = "card-1", title = "First", createdAtMillis = 100L),
@@ -399,7 +496,7 @@ class CollectionViewModelTest {
         viewModel.onAction(CollectionAction.StartSelection)
         viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
 
-        viewModel.onAction(CollectionAction.SelectTab(CollectionTab.Types))
+        viewModel.onAction(CollectionAction.UpdateSearchQuery("First"))
 
         assertEquals(CollectionSelectionUiState(), viewModel.uiState.value.selection)
     }
