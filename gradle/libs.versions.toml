@@ -19,8 +19,11 @@ hilt = "2.60.1"
 ksp = "2.3.9"
 kakao = "2.24.0"
 coroutines = "1.11.0"
+kotlinxSerializationJson = "1.11.0"
 nav3Core = "1.1.4"
+okhttp = "5.4.0"
 ossLicenses = "17.5.1"
+retrofit = "3.0.0"
 timber = "5.0.1"
 coil = "3.5.0"
 mlkitTextRecognition = "16.0.1"
@@ -42,6 +45,11 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 json = { group = "org.json", name = "json", version.ref = "json" }
 kakao-user = { group = "com.kakao.sdk", name = "v2-user", version.ref = "kakao" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+okhttp-logging = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
+retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
+retrofit-kotlinx-serialization = { group = "com.squareup.retrofit2", name = "converter-kotlinx-serialization", version.ref = "retrofit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
