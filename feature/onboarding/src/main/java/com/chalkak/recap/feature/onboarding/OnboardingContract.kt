@@ -24,6 +24,12 @@ sealed interface OnboardingAction {
     data object SkipStartFirstAnalyze : OnboardingAction
 }
 
+sealed interface OnboardingEvent {
+    data class ShowLoginError(
+        val isCancelled: Boolean,
+    ) : OnboardingEvent
+}
+
 enum class OnboardingStep {
     Landing,
     PermissionGuide,

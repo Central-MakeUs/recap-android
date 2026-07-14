@@ -283,10 +283,12 @@
     <string name="onboarding_add_to_favorite_guide_previous_content_description">이전 등록 방법 보기</string>
     <string name="onboarding_add_to_favorite_guide_next_content_description">다음 등록 방법 보기</string>
     <string name="onboarding_email_login_button">이메일로 로그인</string>
+    <string name="onboarding_login_failed_message">로그인에 실패했어요. 잠시 후 다시 시도해주세요.</string>
+    <string name="onboarding_login_cancelled_message">로그인이 취소되었어요.</string>
     <string name="onboarding_kakao_login_full">카카오톡 계정으로 로그인</string>
     <string name="onboarding_kakao_login_short">로그인</string>
-    <string name="onboarding_splash_tagline_highlight">쌓아둔 </string>
-    <string name="onboarding_splash_tagline_rest"> 스크린샷,\n다시 쓸 쑤 있게 정리해요</string>
+    <string name="onboarding_splash_tagline_highlight">내 앨범에 쌓인</string>
+    <string name="onboarding_splash_tagline_rest">스크린샷\n핵심정보만 정리해요</string>
     <string name="onboarding_splash_logo" translatable="false">Recap</string>
     <string name="onboarding_splash_description">스크린샷 속 핵심을 정리해\n필요할 때 갤러리를 헤매지 않고 찾을 수 있어요!</string>
     <string name="onboarding_simple_login_label">간편로그인</string>

@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.feature.developer.DeveloperRoute
 import com.chalkak.recap.feature.onboarding.OnboardingRoute
@@ -54,6 +55,7 @@ fun RecapApp(
                     RecapRootRoute.Onboarding -> NavEntry(route) {
                         OnboardingRoute(
                             onOnboardingComplete = startupViewModel::completeOnboarding,
+                            isDebugBuild = BuildConfig.DEBUG,
                             viewModelKey = "onboarding-$onboardingSessionKey",
                         )
                     }

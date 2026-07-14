@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -34,11 +36,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.RecapLogo
@@ -65,6 +69,8 @@ fun OnboardingLandingScreen(
     onAction: (OnboardingAction) -> Unit,
     modifier: Modifier = Modifier,
     showLoginImmediately: Boolean = false,
+    isLoading: Boolean = false,
+    showDebugEmailLogin: Boolean = false,
     illustrationSignalFlow: Flow<OnboardingIllustrationSignal> = emptyFlow(),
 ) {
     var showLogin by rememberSaveable { mutableStateOf(showLoginImmediately) }
@@ -130,6 +136,9 @@ fun OnboardingLandingScreen(
         ) {
             SocialLoginSection(
                 onKakaoClick = { onAction(OnboardingAction.LoginWithKakao) },
+                onEmailClick = { onAction(OnboardingAction.LoginWithEmail) },
+                isLoading = isLoading,
+                showDebugEmailLogin = showDebugEmailLogin,
                 modifier = Modifier.width(contentWidth),
             )
         }
@@ -169,38 +178,66 @@ private fun BrandHeadline(
 @Composable
 private fun SocialLoginSection(
     onKakaoClick: () -> Unit,
+    onEmailClick: () -> Unit,
+    isLoading: Boolean,
+    showDebugEmailLogin: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    Box(
+    Column(
         modifier = modifier,
-        contentAlignment = Alignment.TopCenter,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Row(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .padding(top = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        Box(
+            contentAlignment = Alignment.TopCenter,
         ) {
-            DividerLine()
+            Row(
+                modifier = Modifier.padding(top = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                DividerLine()
+                Text(
+                    text = stringResource(R.string.onboarding_simple_login_label),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = OnboardingGray300,
+                )
+                DividerLine()
+            }
+            SocialLoginButton(
+                onClick = onKakaoClick,
+                enabled = !isLoading,
+                containerColor = KakaoYellow,
+                contentDescription = stringResource(R.string.onboarding_kakao_login_content_description),
+                modifier = Modifier.padding(top = 58.dp),
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = Color.Black,
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(R.drawable.kakao_96px),
+                        contentDescription = null,
+                        modifier = Modifier.size(29.dp),
+                        tint = Color.Black,
+                    )
+                }
+            }
+        }
+        if (showDebugEmailLogin) {
+            Spacer(modifier = Modifier.height(20.dp))
             Text(
-                text = stringResource(R.string.onboarding_simple_login_label),
+                text = stringResource(R.string.onboarding_email_login_button),
                 style = MaterialTheme.typography.bodyLarge,
                 color = OnboardingGray300,
-            )
-            DividerLine()
-        }
-        SocialLoginButton(
-            onClick = onKakaoClick,
-            containerColor = KakaoYellow,
-            contentDescription = stringResource(R.string.onboarding_kakao_login_content_description),
-            modifier = Modifier.padding(top = 58.dp),
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.kakao_96px),
-                contentDescription = null,
-                modifier = Modifier.size(29.dp),
-                tint = Color.Black,
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier.clickable(
+                    enabled = !isLoading,
+                    role = Role.Button,
+                    onClick = onEmailClick,
+                ),
             )
         }
     }
@@ -221,10 +258,12 @@ private fun SocialLoginButton(
     containerColor: Color,
     contentDescription: String,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     Surface(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier
             .size(67.dp)
             .semantics { this.contentDescription = contentDescription },
