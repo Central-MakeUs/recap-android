@@ -39,6 +39,7 @@ dependencies {
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.androidx.hilt.work)
     implementation(libs.hilt.android)
+    implementation(libs.kakao.user)
     implementation(libs.mlkit.text.recognition)
     implementation(libs.mlkit.text.recognition.korean)
     implementation(libs.timber)

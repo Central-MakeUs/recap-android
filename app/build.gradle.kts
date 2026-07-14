@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.hilt.android)
@@ -14,6 +16,15 @@ android {
         version = release(37)
     }
 
+    val kakaoNativeAppKey = providers.provider {
+        val localProperties = Properties()
+        val localFile = rootProject.file("local.properties")
+        if (localFile.exists()) {
+            localFile.inputStream().use(localProperties::load)
+        }
+        localProperties.getProperty("KAKAO_NATIVE_APP_KEY").orEmpty()
+    }
+
     defaultConfig {
         applicationId = "com.chalkak.recap"
         minSdk = 30
@@ -22,6 +33,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"${kakaoNativeAppKey.get()}\"")
+        manifestPlaceholders["kakaoNativeAppKey"] = kakaoNativeAppKey.get()
     }
 
     buildTypes {
@@ -82,6 +95,7 @@ dependencies {
     implementation(libs.androidx.hilt.work)
     implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.hilt.android)
+    implementation(libs.kakao.user)
     implementation(libs.play.services.oss.licenses)
     implementation(libs.timber)
     ksp(libs.androidx.hilt.compiler)
