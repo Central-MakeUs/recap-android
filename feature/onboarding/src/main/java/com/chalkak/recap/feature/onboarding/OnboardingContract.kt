@@ -12,7 +12,6 @@ data class OnboardingUiState(
 sealed interface OnboardingAction {
     data object Back : OnboardingAction
     data object LoginWithKakao : OnboardingAction
-    data object LoginWithApple : OnboardingAction
     data object LoginWithEmail : OnboardingAction
     data object SelectFirstScreenshots : OnboardingAction
     data object OpenAddToFavoriteGuide : OnboardingAction

@@ -2,7 +2,6 @@ package com.chalkak.recap.core.model.auth
 
 enum class AuthProvider {
     Kakao,
-    Apple,
     Email,
 }
 

@@ -61,7 +61,6 @@ class OnboardingViewModel @Inject constructor(
         when (action) {
             OnboardingAction.Back -> moveBack()
             OnboardingAction.LoginWithKakao,
-            OnboardingAction.LoginWithApple,
             OnboardingAction.LoginWithEmail -> {
                 refreshImagePermissionLevel()
                 moveTo(OnboardingStep.PermissionGuide)

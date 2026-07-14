@@ -71,7 +71,6 @@ class AuthRepository @Inject constructor(
     private fun AuthProvider.toApiPath(): String =
         when (this) {
             AuthProvider.Kakao -> "kakao"
-            AuthProvider.Apple -> "apple"
             AuthProvider.Email -> "email"
         }
 }

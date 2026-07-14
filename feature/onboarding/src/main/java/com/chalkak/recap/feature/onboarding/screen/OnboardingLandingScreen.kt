@@ -59,7 +59,6 @@ private val OnboardingGray700 = Color(0xFF222B3C)
 private val OnboardingGray500 = Color(0xFF4D586C)
 private val OnboardingGray300 = Color(0xFF99A0B0)
 private val KakaoYellow = Color(0xFFFEE500)
-private val AppleBlack = Color(0xFF0B111D)
 
 @Composable
 fun OnboardingLandingScreen(
@@ -131,7 +130,6 @@ fun OnboardingLandingScreen(
         ) {
             SocialLoginSection(
                 onKakaoClick = { onAction(OnboardingAction.LoginWithKakao) },
-                onAppleClick = { onAction(OnboardingAction.LoginWithApple) },
                 modifier = Modifier.width(contentWidth),
             )
         }
@@ -171,7 +169,6 @@ private fun BrandHeadline(
 @Composable
 private fun SocialLoginSection(
     onKakaoClick: () -> Unit,
-    onAppleClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(
@@ -193,34 +190,18 @@ private fun SocialLoginSection(
             )
             DividerLine()
         }
-        Row(
+        SocialLoginButton(
+            onClick = onKakaoClick,
+            containerColor = KakaoYellow,
+            contentDescription = stringResource(R.string.onboarding_kakao_login_content_description),
             modifier = Modifier.padding(top = 58.dp),
-            horizontalArrangement = Arrangement.spacedBy(27.dp),
         ) {
-            SocialLoginButton(
-                onClick = onKakaoClick,
-                containerColor = KakaoYellow,
-                contentDescription = stringResource(R.string.onboarding_kakao_login_content_description),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.kakao_96px),
-                    contentDescription = null,
-                    modifier = Modifier.size(29.dp),
-                    tint = Color.Black,
-                )
-            }
-            SocialLoginButton(
-                onClick = onAppleClick,
-                containerColor = AppleBlack,
-                contentDescription = stringResource(R.string.onboarding_apple_login_content_description),
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_apple_24),
-                    contentDescription = null,
-                    modifier = Modifier.size(32.dp),
-                    tint = Color.White,
-                )
-            }
+            Icon(
+                painter = painterResource(R.drawable.kakao_96px),
+                contentDescription = null,
+                modifier = Modifier.size(29.dp),
+                tint = Color.Black,
+            )
         }
     }
 }

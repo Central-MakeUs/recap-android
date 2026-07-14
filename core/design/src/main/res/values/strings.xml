@@ -285,14 +285,12 @@
     <string name="onboarding_email_login_button">이메일로 로그인</string>
     <string name="onboarding_kakao_login_full">카카오톡 계정으로 로그인</string>
     <string name="onboarding_kakao_login_short">로그인</string>
-    <string name="onboarding_apple_login_button">Apple로 시작하기</string>
     <string name="onboarding_splash_tagline_highlight">쌓아둔 </string>
     <string name="onboarding_splash_tagline_rest"> 스크린샷,\n다시 쓸 쑤 있게 정리해요</string>
     <string name="onboarding_splash_logo" translatable="false">Recap</string>
     <string name="onboarding_splash_description">스크린샷 속 핵심을 정리해\n필요할 때 갤러리를 헤매지 않고 찾을 수 있어요!</string>
     <string name="onboarding_simple_login_label">간편로그인</string>
     <string name="onboarding_kakao_login_content_description">카카오 로그인</string>
-    <string name="onboarding_apple_login_content_description">Apple 로그인</string>
     <string name="onboarding_brand_mark_initial">R</string>
     <string name="onboarding_brand_mark_name">RE-CAP</string>
     <string name="onboarding_screenshot_label">스크린샷</string>

@@ -329,12 +329,6 @@ object RecapButtonDefaults {
     )
 
     @Composable
-    fun appleColors(): RecapButtonColors = colors(
-        containerColor = Color(0xFF111827),
-        contentColor = White,
-    )
-
-    @Composable
     fun kakaoColors(): RecapButtonColors = RecapButtonColors(
         containerColor = Color(0xFFFEE500),
         contentColor = Color(0xD9000000),
