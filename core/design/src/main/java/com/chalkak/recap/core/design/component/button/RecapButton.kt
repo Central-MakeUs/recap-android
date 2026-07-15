@@ -1,5 +1,6 @@
 package com.chalkak.recap.core.design.component.button
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -7,6 +8,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,16 +26,14 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -41,6 +41,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -50,17 +51,23 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapBlue500
+import com.chalkak.recap.core.design.theme.RecapBlue50
+import com.chalkak.recap.core.design.theme.RecapError
+import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.design.theme.White
 
 /*
@@ -70,7 +77,8 @@ import com.chalkak.recap.core.design.theme.White
  * - onClick/enabled: Click callback and disabled state.
  * - modifier: Caller-owned layout. Use Modifier.fillMaxWidth() for full-width buttons.
  * - size: Height, corner radius, padding, icon size, and default text style preset.
- * - colors: Enabled/disabled container and content colors.
+ * - colors: Enabled and disabled container/content colors, plus optional pressed colors.
+ *   When pressed colors are omitted, the enabled colors remain unchanged while pressed.
  *   Pass RecapButtonColors, or a Color for container (content defaults to White).
  * - border: Optional outline drawn with the same shape.
  * - leadingIcon: Optional icon slot. The slot is constrained to the size preset's icon size.
@@ -104,7 +112,7 @@ fun RecapButton(
     dynamicShadowColor: Boolean = true,
     shape: Shape = RoundedCornerShape(size.cornerRadius),
     textStyle: TextStyle = RecapButtonDefaults.textStyle(size),
-    fontWeight: FontWeight? = FontWeight.Bold,
+    fontWeight: FontWeight? = null,
     contentPadding: PaddingValues = RecapButtonDefaults.contentPadding(size),
     interactionSource: MutableInteractionSource? = null,
 ) {
@@ -115,6 +123,10 @@ fun RecapButton(
         easing = FastOutSlowInEasing,
     )
     val elevationAnimationSpec = tween<Dp>(
+        durationMillis = RecapButtonDefaults.PressAnimationDurationMillis,
+        easing = FastOutSlowInEasing,
+    )
+    val colorAnimationSpec = tween<Color>(
         durationMillis = RecapButtonDefaults.PressAnimationDurationMillis,
         easing = FastOutSlowInEasing,
     )
@@ -132,8 +144,16 @@ fun RecapButton(
         animationSpec = elevationAnimationSpec,
         label = "recap_button_shadow_elevation",
     )
-    val contentColor = colors.contentColorFor(enabled)
-    val containerColor = colors.containerColorFor(enabled)
+    val contentColor by animateColorAsState(
+        targetValue = colors.contentColorFor(enabled, isPressed),
+        animationSpec = colorAnimationSpec,
+        label = "recap_button_content_color",
+    )
+    val containerColor by animateColorAsState(
+        targetValue = colors.containerColorFor(enabled, isPressed),
+        animationSpec = colorAnimationSpec,
+        label = "recap_button_container_color",
+    )
     val shadowColor = if (dynamicShadowColor) containerColor else Color.Black
     val resolvedTextStyle = textStyle.merge(TextStyle(fontWeight = fontWeight))
 
@@ -204,7 +224,7 @@ fun RecapButton(
     dynamicShadowColor: Boolean = true,
     shape: Shape = RoundedCornerShape(size.cornerRadius),
     textStyle: TextStyle = RecapButtonDefaults.textStyle(size),
-    fontWeight: FontWeight? = FontWeight.Bold,
+    fontWeight: FontWeight? = null,
     contentPadding: PaddingValues = RecapButtonDefaults.contentPadding(size),
     interactionSource: MutableInteractionSource? = null,
 ) {
@@ -241,12 +261,20 @@ data class RecapButtonColors(
     val contentColor: Color,
     val disabledContainerColor: Color,
     val disabledContentColor: Color,
+    val pressedContainerColor: Color? = null,
+    val pressedContentColor: Color? = null,
 ) {
-    fun containerColorFor(enabled: Boolean): Color =
-        if (enabled) containerColor else disabledContainerColor
+    fun containerColorFor(enabled: Boolean, pressed: Boolean = false): Color = when {
+        !enabled -> disabledContainerColor
+        pressed -> pressedContainerColor ?: containerColor
+        else -> containerColor
+    }
 
-    fun contentColorFor(enabled: Boolean): Color =
-        if (enabled) contentColor else disabledContentColor
+    fun contentColorFor(enabled: Boolean, pressed: Boolean = false): Color = when {
+        !enabled -> disabledContentColor
+        pressed -> pressedContentColor ?: contentColor
+        else -> contentColor
+    }
 }
 
 enum class RecapButtonSize(
@@ -263,23 +291,15 @@ enum class RecapButtonSize(
         cornerRadius = 16.dp,
         horizontalPadding = 20.dp,
         iconSize = 24.dp,
-        iconSpacing = 8.dp,
+        iconSpacing = 5.dp,
     ),
     Medium(
         height = 52.dp,
         minWidth = 64.dp,
         cornerRadius = 14.dp,
         horizontalPadding = 18.dp,
-        iconSize = 22.dp,
-        iconSpacing = 8.dp,
-    ),
-    Compact(
-        height = 42.dp,
-        minWidth = 48.dp,
-        cornerRadius = 14.dp,
-        horizontalPadding = 12.dp,
-        iconSize = 20.dp,
-        iconSpacing = 6.dp,
+        iconSize = 24.dp,
+        iconSpacing = 5.dp,
     ),
 }
 
@@ -297,19 +317,38 @@ object RecapButtonDefaults {
     fun colors(
         containerColor: Color,
         contentColor: Color = White,
-        disabledContainerColor: Color = containerColor.copy(alpha = 0.12f),
-        disabledContentColor: Color = RecapGray900.copy(alpha = 0.38f),
+        disabledContainerColor: Color = RecapGray100,
+        disabledContentColor: Color = RecapGray300,
+        pressedContainerColor: Color? = null,
+        pressedContentColor: Color? = null,
     ): RecapButtonColors = RecapButtonColors(
         containerColor = containerColor,
         contentColor = contentColor,
         disabledContainerColor = disabledContainerColor,
         disabledContentColor = disabledContentColor,
+        pressedContainerColor = pressedContainerColor,
+        pressedContentColor = pressedContentColor,
     )
 
     @Composable
     fun primaryColors(): RecapButtonColors = colors(
-        containerColor = RecapBlue500,
+        containerColor = RecapBlue300,
         contentColor = RecapGray100,
+    )
+
+    fun secondaryColors(): RecapButtonColors = colors(
+        containerColor = RecapBlue50,
+        contentColor = RecapBlue300,
+    )
+
+    fun neutralColors(): RecapButtonColors = colors(
+        containerColor = RecapGray50,
+        contentColor = RecapGray900,
+    )
+
+    fun destructiveColors(): RecapButtonColors = colors(
+        containerColor = RecapError,
+        contentColor = White,
     )
 
     @Composable
@@ -336,12 +375,7 @@ object RecapButtonDefaults {
         disabledContentColor = RecapGray900.copy(alpha = 0.38f),
     )
 
-    @Composable
-    fun textStyle(size: RecapButtonSize): TextStyle = when (size) {
-        RecapButtonSize.Large,
-        RecapButtonSize.Medium -> MaterialTheme.typography.titleMedium
-        RecapButtonSize.Compact -> MaterialTheme.typography.titleSmall
-    }
+    fun textStyle(@Suppress("UNUSED_PARAMETER") size: RecapButtonSize): TextStyle = RecapHeading3
 
     fun contentPadding(size: RecapButtonSize): PaddingValues =
         PaddingValues(horizontal = size.horizontalPadding)
@@ -450,9 +484,7 @@ private fun maxOfDp(first: Dp, second: Dp, third: Dp): Dp {
     return max
 }
 
-@Preview(name = "RecapButton States compact", showBackground = true, widthDp = 240)
-@Preview(name = "RecapButton States medium", showBackground = true, widthDp = 360)
-@Preview(name = "RecapButton States large", showBackground = true, widthDp = 480)
+@Preview(name = "RecapButton variants", showBackground = true, widthDp = 360, heightDp = 640)
 @Composable
 private fun RecapButtonPreview() {
     RECAPTheme(dynamicColor = false) {
@@ -461,32 +493,41 @@ private fun RecapButtonPreview() {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             RecapButton(
-                text = stringResource(R.string.onboarding_permission_grant_button),
+                text = stringResource(R.string.home_empty_import_button),
                 onClick = {},
-                modifier = Modifier.fillMaxWidth(),
-            )
-            RecapButton(
-                text = stringResource(R.string.onboarding_start_first_analyze_later_button),
-                onClick = {},
-                modifier = Modifier.fillMaxWidth(),
-                enabled = false,
-            )
-            RecapButton(
-                text = stringResource(R.string.image_load_failure_retry_button),
-                onClick = {},
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.width(188.dp),
                 size = RecapButtonSize.Medium,
+                colors = RecapButtonDefaults.secondaryColors(),
+                textStyle = RecapHeading3,
+            )
+            RecapButton(
+                text = stringResource(R.string.recap_button_preview_reload),
+                onClick = {},
+                modifier = Modifier.width(188.dp),
+                size = RecapButtonSize.Medium,
+                colors = RecapButtonDefaults.secondaryColors(),
                 leadingIcon = {
                     Icon(
-                        imageVector = Icons.Filled.Refresh,
+                        painter = painterResource(R.drawable.recap_arrow_retry_24),
                         contentDescription = null,
                         modifier = Modifier.fillMaxSize(),
                     )
                 },
             )
             RecapButton(
-                text = stringResource(R.string.onboarding_kakao_login_full),
-                compactText = stringResource(R.string.onboarding_kakao_login_short),
+                text = stringResource(R.string.recap_button_preview_label),
+                onClick = {},
+                modifier = Modifier.fillMaxWidth(),
+            )
+            RecapButtonPressedPreview()
+            RecapButton(
+                text = stringResource(R.string.recap_button_preview_label),
+                onClick = {},
+                modifier = Modifier.fillMaxWidth(),
+                enabled = false,
+            )
+            RecapButton(
+                text = stringResource(R.string.recap_button_preview_kakao_login),
                 onClick = {},
                 modifier = Modifier.fillMaxWidth(),
                 colors = RecapButtonDefaults.kakaoColors(),
@@ -497,36 +538,41 @@ private fun RecapButtonPreview() {
                         modifier = Modifier.fillMaxSize(),
                     )
                 },
-                iconPlacement = RecapButtonIconPlacement.FixedStart,
+                iconPlacement = RecapButtonIconPlacement.Inline,
             )
-            RecapButton(
-                text = stringResource(R.string.photo_access_permission_later_button),
-                onClick = {},
-                modifier = Modifier.fillMaxWidth(),
-                size = RecapButtonSize.Compact,
-                colors = RecapButtonDefaults.textColors(),
-            )
-            RecapButton(
-                text = stringResource(R.string.demo_refresh_status_button),
-                onClick = {},
-                modifier = Modifier.fillMaxWidth(),
-                colors = RecapButtonDefaults.outlinedColors(),
-                border = BorderStroke(1.dp, RecapGray300),
-                leadingIcon = {
-                    Icon(
-                        imageVector = Icons.Filled.Refresh,
-                        contentDescription = null,
-                        modifier = Modifier.fillMaxSize(),
-                    )
-                },
-            )
-            RecapButton(
-                text = stringResource(R.string.photo_access_permission_request_permission),
-                onClick = {},
-                modifier = Modifier.fillMaxWidth(),
-                size = RecapButtonSize.Medium,
-                shadowElevation = 12.dp,
-            )
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                RecapButton(
+                    text = stringResource(R.string.deletion_confirmation_cancel_button),
+                    onClick = {},
+                    modifier = Modifier.weight(1f),
+                    colors = RecapButtonDefaults.neutralColors(),
+                )
+                RecapButton(
+                    text = stringResource(R.string.deletion_confirmation_delete_button),
+                    onClick = {},
+                    modifier = Modifier.weight(1f),
+                    colors = RecapButtonDefaults.destructiveColors(),
+                )
+            }
         }
     }
+}
+
+@Composable
+private fun RecapButtonPressedPreview() {
+    val interactionSource = remember { MutableInteractionSource() }
+    LaunchedEffect(interactionSource) {
+        interactionSource.emit(PressInteraction.Press(Offset.Zero))
+    }
+    RecapButton(
+        text = stringResource(R.string.recap_button_preview_label),
+        onClick = {},
+        modifier = Modifier.fillMaxWidth(),
+        colors = RecapButtonDefaults.colors(
+            containerColor = RecapBlue300,
+            contentColor = RecapGray100,
+            pressedContainerColor = RecapBlue500,
+        ),
+        interactionSource = interactionSource,
+    )
 }

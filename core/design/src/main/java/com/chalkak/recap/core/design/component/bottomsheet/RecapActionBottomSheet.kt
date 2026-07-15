@@ -88,7 +88,7 @@ fun RecapActionBottomSheet(
     primaryButtonColors: RecapButtonColors = RecapButtonDefaults.primaryColors(),
     primaryButtonElevation: Dp = RecapActionBottomSheetDefaults.PrimaryButtonElevation,
     secondaryButtonColors: RecapButtonColors = RecapButtonDefaults.textColors(),
-    secondaryButtonSize: RecapButtonSize = RecapButtonSize.Compact,
+    secondaryButtonSize: RecapButtonSize = RecapButtonSize.Medium,
     secondaryButtonBorder: BorderStroke? = null,
     primaryButtonLeadingIcon: (@Composable () -> Unit)? = null,
 ) {
@@ -161,7 +161,7 @@ fun RecapActionBottomSheetContent(
     primaryButtonColors: RecapButtonColors = RecapButtonDefaults.primaryColors(),
     primaryButtonElevation: Dp = RecapActionBottomSheetDefaults.PrimaryButtonElevation,
     secondaryButtonColors: RecapButtonColors = RecapButtonDefaults.textColors(),
-    secondaryButtonSize: RecapButtonSize = RecapButtonSize.Compact,
+    secondaryButtonSize: RecapButtonSize = RecapButtonSize.Medium,
     secondaryButtonBorder: BorderStroke? = null,
     primaryButtonLeadingIcon: (@Composable () -> Unit)? = null,
 ) {

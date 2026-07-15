@@ -142,7 +142,7 @@ fun OrganizeNotificationPermissionBottomSheetContent(
             text = stringResource(R.string.organize_notification_permission_later_button),
             onClick = onLaterClick,
             modifier = Modifier.fillMaxWidth(),
-            size = RecapButtonSize.Compact,
+            size = RecapButtonSize.Medium,
             colors = RecapButtonDefaults.textColors(),
         )
 
