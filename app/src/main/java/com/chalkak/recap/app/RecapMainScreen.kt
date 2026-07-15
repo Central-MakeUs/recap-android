@@ -31,7 +31,7 @@ import kotlinx.coroutines.flow.flowOf
 @Composable
 fun RecapMainScreen(
     onNavigateToDeveloper: () -> Unit = {},
-    onNavigateToMyPage: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
     onNavigateToRecentOrganizedScreenshots: () -> Unit = {},
     onOrganizeComplete: (List<LocalImage>) -> Unit = {},
@@ -112,7 +112,7 @@ fun RecapMainScreen(
                 hazeState = hazeState,
                 backStack = backStack,
                 onNavigateToDeveloper = onNavigateToDeveloper,
-                onNavigateToMyPage = onNavigateToMyPage,
+                onNavigateToSettings = onNavigateToSettings,
                 onNavigateToSearch = onNavigateToSearch,
                 onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
                 onNavigateToOrganize = { showOrganize = true },

@@ -28,20 +28,20 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
-import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.feature.collection.CollectionRoute
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
 import com.chalkak.recap.feature.home.RecentOrganizedScreenshotsRoute
 import com.chalkak.recap.feature.home.SearchRoute
-import com.chalkak.recap.feature.mypage.MyPageAction
 import com.chalkak.recap.feature.mypage.MyPageDataManagementScreen
 import com.chalkak.recap.feature.mypage.MyPageNotificationSettingsRoute
 import com.chalkak.recap.feature.mypage.MyPagePrivacyGuideScreen
-import com.chalkak.recap.feature.mypage.MyPageScreen
 import com.chalkak.recap.feature.mypage.MyPageServiceInfoScreen
 import com.chalkak.recap.feature.mypage.MyPageUploadGuideScreen
+import com.chalkak.recap.feature.mypage.SettingsAction
+import com.chalkak.recap.feature.mypage.SettingsRoute
 import com.chalkak.recap.feature.screenshot.ScreenshotRoute
+import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -87,7 +87,7 @@ fun RecapNavHost(
                     ) {
                         RecapMainScreen(
                             onNavigateToDeveloper = onNavigateToDeveloper,
-                            onNavigateToMyPage = { backStack.add(AppRoute.MyPage) },
+                            onNavigateToSettings = { backStack.add(AppRoute.Settings) },
                             onNavigateToSearch = { backStack.add(AppRoute.Search) },
                             onNavigateToRecentOrganizedScreenshots = {
                                 backStack.add(AppRoute.RecentOrganizedScreenshots)
@@ -109,33 +109,45 @@ fun RecapNavHost(
                     }
                 }
 
-                AppRoute.MyPage -> NavEntry(route) {
-                    MyPageScreen(
-                        isDebugBuild = BuildConfig.DEBUG,
+                AppRoute.Settings -> NavEntry(route) {
+                    SettingsRoute(
                         onAction = { action ->
                             when (action) {
-                                MyPageAction.NavigateBack -> backStack.removeLastOrNull()
-                                MyPageAction.OpenNotificationSettings -> {
+                                SettingsAction.NavigateBack -> backStack.removeLastOrNull()
+                                SettingsAction.OpenNotificationSettings -> {
                                     backStack.add(AppRoute.MyPageNotificationSettings)
                                 }
 
-                                MyPageAction.OpenUploadGuide -> {
+                                SettingsAction.OpenPhotoAccessPermission -> {
+                                    context.startActivity(
+                                        Intent(
+                                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                            Uri.fromParts("package", context.packageName, null),
+                                        ),
+                                    )
+                                }
+
+                                SettingsAction.OpenUsageGuide -> {
                                     backStack.add(AppRoute.MyPageUploadGuide)
                                 }
 
-                                MyPageAction.OpenDataManagement -> {
+                                SettingsAction.OpenDataManagement -> {
                                     backStack.add(AppRoute.MyPageDataManagement)
                                 }
 
-                                MyPageAction.OpenPrivacyGuide -> {
+                                SettingsAction.OpenPrivacyGuide -> {
                                     backStack.add(AppRoute.MyPagePrivacyGuide)
                                 }
 
-                                MyPageAction.OpenServiceInfo -> {
-                                    backStack.add(AppRoute.MyPageServiceInfo)
+                                SettingsAction.OpenOpenSourceLicenses -> {
+                                    context.startActivity(
+                                        Intent(context, OssLicensesMenuActivity::class.java),
+                                    )
                                 }
 
-                                else -> Unit
+                                SettingsAction.OpenAccountManagement,
+                                SettingsAction.OpenContact,
+                                -> Unit
                             }
                         },
                     )
@@ -224,7 +236,7 @@ fun RecapMainTabNavHost(
     modifier: Modifier = Modifier,
     backStack: NavBackStack<NavKey>,
     onNavigateToDeveloper: () -> Unit,
-    onNavigateToMyPage: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToRecentOrganizedScreenshots: () -> Unit,
     onNavigateToOrganize: () -> Unit,
@@ -250,7 +262,7 @@ fun RecapMainTabNavHost(
                     HomeRoute(
                         hazeState = hazeState,
                         onNavigateToDeveloper = onNavigateToDeveloper,
-                        onNavigateToMyPage = onNavigateToMyPage,
+                        onNavigateToSettings = onNavigateToSettings,
                         onNavigateToSearch = onNavigateToSearch,
                         onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
                         onNavigateToCollectionFavorites = onNavigateToCollectionFavorites,

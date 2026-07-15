@@ -3,20 +3,25 @@ package com.chalkak.recap.feature.mypage
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.model.ImageAccessLevel
 
-@Preview(name = "My Page - Signed In", showBackground = true, widthDp = 360)
+@Preview(name = "Settings - Allowed", showBackground = true, widthDp = 360)
 @Composable
-private fun MyPageSignedInPreview() {
+private fun SettingsAllowedPreview() {
     RECAPTheme(dynamicColor = false) {
-        MyPageScreen(uiState = MyPageUiState(isLoggedIn = true))
+        SettingsScreen(
+            uiState = SettingsUiState(photoAccessLevel = ImageAccessLevel.Full),
+        )
     }
 }
 
-@Preview(name = "My Page - Signed Out", showBackground = true, widthDp = 360)
+@Preview(name = "Settings - Denied", showBackground = true, widthDp = 360)
 @Composable
-private fun MyPageSignedOutPreview() {
+private fun SettingsDeniedPreview() {
     RECAPTheme(dynamicColor = false) {
-        MyPageScreen(uiState = MyPageUiState(isLoggedIn = false))
+        SettingsScreen(
+            uiState = SettingsUiState(photoAccessLevel = ImageAccessLevel.Denied),
+        )
     }
 }
 

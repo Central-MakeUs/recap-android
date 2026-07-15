@@ -98,7 +98,7 @@ private val RecapTopBarHeight = 56.dp
 private fun RecapTopBarPreview() {
     RECAPTheme(dynamicColor = false) {
         RecapTopBar(
-            title = "마이페이지",
+            title = "설정",
             onBackClick = {},
             backButtonContentDescription = "이전 화면으로 이동",
         )

@@ -80,7 +80,7 @@ com.chalkak.recap
     ├── demo               # OCR/AI 분석 데모 및 개발 검증 화면
     ├── developer          # 개발자 옵션 / component garden
     ├── home               # 홈
-    ├── mypage             # 마이페이지 및 하위 설정 화면
+    ├── mypage             # 설정 및 하위 안내/관리 화면
     ├── organize           # 정리/분류 관련 화면
     ├── onboarding         # 온보딩 플로우
     └── screenshot         # 스크린샷 상세/수정/전체화면
@@ -112,7 +112,7 @@ com.chalkak.recap
 - main route:
   - Home
   - Collection
-  - My Page 및 하위 화면
+  - Settings(설정) 및 하위 화면
 - Organize(스크린샷 피커 → 확인)는 AppRoute가 아니라 MainTabs 위 오버레이다. 구조·의도·back 동작은 `docs/ORGANIZE_OVERLAY_NAVIGATION.md`를 본다.
 - 온보딩 `StartFirstAnalyze`의 "스크린샷 선택하기"는 온보딩 완료 후 MainTabs로 이동하며 Organize 피커를 바로 연다. "나중에 하기"는 홈만 연다.
 
