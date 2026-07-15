@@ -1,10 +1,8 @@
 package com.chalkak.recap.feature.home
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,9 +18,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
@@ -31,7 +32,7 @@ import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.topbar.RecentOrganizedScreenshotsTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray500
-import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapGray700
 
 @Composable
 fun RecentOrganizedScreenshotsScreen(
@@ -58,16 +59,37 @@ fun RecentOrganizedScreenshotsScreen(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             RecentOrganizedScreenshotsTopBar(
+                title = stringResource(R.string.home_recent_organized_screenshots_title),
                 onBackClick = { onAction(RecentOrganizedScreenshotsAction.NavigateBack) },
                 onSearchClick = { onAction(RecentOrganizedScreenshotsAction.OpenSearch) },
             )
-            RecentOrganizedScreenshotsTitle(
-                count = visibleItems.size,
-                modifier = Modifier.padding(
-                    horizontal = RecentOrganizedScreenshotsTokens.HorizontalPadding,
-                    vertical = RecentOrganizedScreenshotsTokens.TitleVerticalPadding,
-                ),
-            )
+            if (visibleItems.isNotEmpty()) {
+                Text(
+                    text = buildAnnotatedString {
+                        withStyle(SpanStyle(color = RecapGray700)) {
+                            append(visibleItems.size.toString())
+                        }
+                        append(" ")
+                        withStyle(SpanStyle(color = RecapGray500)) {
+                            append(
+                                pluralStringResource(
+                                    R.plurals.recap_haze_folder_card_recap_label,
+                                    visibleItems.size,
+                                ),
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(
+                            horizontal = RecentOrganizedScreenshotsTokens.HorizontalPadding,
+                            vertical = RecentOrganizedScreenshotsTokens.CountVerticalPadding,
+                        )
+                        .align(alignment = Alignment.End),
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             if (visibleItems.isEmpty()) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -84,7 +106,7 @@ fun RecentOrganizedScreenshotsScreen(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
                         bottom = RecentOrganizedScreenshotsTokens.ListVerticalPadding +
-                            navigationBarBottomPadding,
+                                navigationBarBottomPadding,
                     ),
                 ) {
                     itemsIndexed(
@@ -114,41 +136,18 @@ fun RecentOrganizedScreenshotsScreen(
     }
 }
 
-@Composable
-private fun RecentOrganizedScreenshotsTitle(
-    count: Int,
-    modifier: Modifier = Modifier,
-) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.home_recent_organized_screenshots_title),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = RecapGray900,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            text = stringResource(R.string.collection_recap_count, count),
-            style = MaterialTheme.typography.labelLarge,
-            color = RecapGray500,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-    }
-}
-
 private object RecentOrganizedScreenshotsTokens {
     val HorizontalPadding = 16.dp
-    val TitleVerticalPadding = 8.dp
+    val CountVerticalPadding = 8.dp
     val ListVerticalPadding = 4.dp
 }
 
-@Preview(name = "Recent Organized Screenshots", showBackground = true, widthDp = 360, heightDp = 800)
+@Preview(
+    name = "Recent Organized Screenshots",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 800
+)
 @Composable
 private fun RecentOrganizedScreenshotsScreenPreview() {
     RECAPTheme(dynamicColor = false) {
@@ -159,7 +158,12 @@ private fun RecentOrganizedScreenshotsScreenPreview() {
     }
 }
 
-@Preview(name = "Recent Organized Screenshots Empty", showBackground = true, widthDp = 360, heightDp = 800)
+@Preview(
+    name = "Recent Organized Screenshots Empty",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 800
+)
 @Composable
 private fun RecentOrganizedScreenshotsScreenEmptyPreview() {
     RECAPTheme(dynamicColor = false) {
