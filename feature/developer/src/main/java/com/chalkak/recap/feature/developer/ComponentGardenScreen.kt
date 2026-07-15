@@ -62,6 +62,7 @@ import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChipWithIcon
 import com.chalkak.recap.core.design.component.chip.RecapFilterTag
 import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
+import com.chalkak.recap.core.design.component.icon.RecapHazeFolderIcon
 import com.chalkak.recap.core.design.component.input.RecapInputField
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
 import com.chalkak.recap.core.design.component.toast.RecapToast
@@ -166,6 +167,11 @@ internal fun ComponentGardenScreen(
                 title = stringResource(R.string.component_garden_haze_folder_cards_section_title),
             ) {
                 ComponentGardenHazeFolderCards()
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_haze_folder_icon_section_title),
+            ) {
+                RecapHazeFolderIcon(size = 120.dp)
             }
             ComponentGardenSection(
                 title = stringResource(R.string.component_garden_category_chips_section_title),
