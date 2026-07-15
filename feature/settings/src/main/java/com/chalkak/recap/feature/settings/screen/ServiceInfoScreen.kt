@@ -1,11 +1,17 @@
-package com.chalkak.recap.feature.settings
+package com.chalkak.recap.feature.settings.screen
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray300
+import com.chalkak.recap.feature.settings.SettingsDetailScreenScaffold
+import com.chalkak.recap.feature.settings.SettingsServiceMenuGroup
+import com.chalkak.recap.feature.settings.SettingsServiceMenuItemData
+import com.chalkak.recap.feature.settings.SettingsServiceSummaryCard
 
 @Composable
 fun ServiceInfoScreen(
@@ -58,6 +64,21 @@ fun ServiceInfoScreen(
                     onClick = onOpenSourceLicenseClick,
                 ),
             ),
+        )
+    }
+}
+
+@Preview(name = "Service Info", showBackground = true, widthDp = 360)
+@Composable
+private fun ServiceInfoScreenPreview() {
+    RECAPTheme(dynamicColor = false) {
+        ServiceInfoScreen(
+            onBackClick = {},
+            onContactClick = {},
+            onNoticeClick = {},
+            onTermsClick = {},
+            onPrivacyPolicyClick = {},
+            onOpenSourceLicenseClick = {},
         )
     }
 }

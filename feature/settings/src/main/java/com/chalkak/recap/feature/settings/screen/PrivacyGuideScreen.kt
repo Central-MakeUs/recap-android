@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.settings
+package com.chalkak.recap.feature.settings.screen
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Cancel
@@ -9,8 +9,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue50
+import com.chalkak.recap.feature.settings.SettingsDetailScreenScaffold
+import com.chalkak.recap.feature.settings.SettingsDetailTokens
+import com.chalkak.recap.feature.settings.SettingsDocumentButton
+import com.chalkak.recap.feature.settings.SettingsGuideCard
 
 @Composable
 fun PrivacyGuideScreen(
@@ -59,6 +65,18 @@ fun PrivacyGuideScreen(
             icon = Icons.Outlined.CreditCard,
             titleResId = R.string.settings_privacy_guide_result_data_title,
             descriptionResId = R.string.settings_privacy_guide_result_data_description,
+        )
+    }
+}
+
+@Preview(name = "Privacy Guide", showBackground = true, widthDp = 360)
+@Composable
+private fun PrivacyGuideScreenPreview() {
+    RECAPTheme(dynamicColor = false) {
+        PrivacyGuideScreen(
+            onBackClick = {},
+            onPrivacyPolicyClick = {},
+            onTermsClick = {},
         )
     }
 }

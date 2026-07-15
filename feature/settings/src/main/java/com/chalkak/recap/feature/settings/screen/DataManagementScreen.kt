@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.settings
+package com.chalkak.recap.feature.settings.screen
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,8 +16,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.feature.settings.SettingsDataCard
+import com.chalkak.recap.feature.settings.SettingsDetailScreenScaffold
 
 @Composable
 fun DataManagementScreen(
@@ -85,6 +89,17 @@ fun DataManagementScreen(
                     )
                 }
             },
+        )
+    }
+}
+
+@Preview(name = "Data Management", showBackground = true, widthDp = 360)
+@Composable
+private fun DataManagementScreenPreview() {
+    RECAPTheme(dynamicColor = false) {
+        DataManagementScreen(
+            onBackClick = {},
+            onAccountManagementClick = {},
         )
     }
 }

@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.settings
+package com.chalkak.recap.feature.settings.screen
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
@@ -20,10 +20,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
+import com.chalkak.recap.feature.settings.NotificationSettingsAction
+import com.chalkak.recap.feature.settings.NotificationSettingsUiState
+import com.chalkak.recap.feature.settings.SettingsDetailScreenScaffold
+import com.chalkak.recap.feature.settings.SettingsDetailTokens
 
 @Composable
 fun NotificationSettingsScreen(
@@ -238,3 +244,14 @@ private data class NotificationItemData(
     @get:StringRes val badgeResId: Int? = null,
     @get:StringRes val footerResId: Int? = null,
 )
+
+@Preview(name = "Notification Settings", showBackground = true, widthDp = 360)
+@Composable
+private fun NotificationSettingsScreenPreview() {
+    RECAPTheme(dynamicColor = false) {
+        NotificationSettingsScreen(
+            uiState = NotificationSettingsUiState(),
+            onAction = {},
+        )
+    }
+}

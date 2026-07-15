@@ -26,9 +26,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.topbar.RecapTopBar
+import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray100
@@ -256,4 +258,24 @@ private object SettingsTokens {
     val SectionDividerHeight = 8.dp
     val ChevronSize = 20.dp
     val BottomSpacing = 24.dp
+}
+
+@Preview(name = "Settings - Allowed", showBackground = true, widthDp = 360)
+@Composable
+private fun SettingsAllowedPreview() {
+    RECAPTheme(dynamicColor = false) {
+        SettingsScreen(
+            uiState = SettingsUiState(photoAccessLevel = ImageAccessLevel.Full),
+        )
+    }
+}
+
+@Preview(name = "Settings - Denied", showBackground = true, widthDp = 360)
+@Composable
+private fun SettingsDeniedPreview() {
+    RECAPTheme(dynamicColor = false) {
+        SettingsScreen(
+            uiState = SettingsUiState(photoAccessLevel = ImageAccessLevel.Denied),
+        )
+    }
 }

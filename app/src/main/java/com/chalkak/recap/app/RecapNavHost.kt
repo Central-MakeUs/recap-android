@@ -34,13 +34,13 @@ import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
 import com.chalkak.recap.feature.home.RecentOrganizedScreenshotsRoute
 import com.chalkak.recap.feature.home.SearchRoute
-import com.chalkak.recap.feature.settings.DataManagementScreen
 import com.chalkak.recap.feature.settings.NotificationSettingsRoute
-import com.chalkak.recap.feature.settings.PrivacyGuideScreen
-import com.chalkak.recap.feature.settings.ServiceInfoScreen
 import com.chalkak.recap.feature.settings.SettingsAction
 import com.chalkak.recap.feature.settings.SettingsRoute
-import com.chalkak.recap.feature.settings.UploadGuideScreen
+import com.chalkak.recap.feature.settings.screen.DataManagementScreen
+import com.chalkak.recap.feature.settings.screen.PrivacyGuideScreen
+import com.chalkak.recap.feature.settings.screen.ServiceInfoScreen
+import com.chalkak.recap.feature.settings.screen.UploadGuideScreen
 import com.chalkak.recap.feature.screenshot.ScreenshotRoute
 import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 import dev.chrisbanes.haze.HazeState
