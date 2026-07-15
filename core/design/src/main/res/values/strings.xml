@@ -126,7 +126,10 @@
     <string name="collection_delete_selected_action">선택 삭제 (%1$d)</string>
     <string name="collection_select_all_action">전체 선택</string>
     <string name="collection_selection_item_content_description">%1$s, %2$s</string>
-    <string name="collection_recap_count">%1$d recaps</string>
+    <plurals name="collection_recap_count">
+        <item quantity="one">%1$d recap</item>
+        <item quantity="other">%1$d recaps</item>
+    </plurals>
     <string name="collection_type_folder_count">%1$d개의 유형 폴더</string>
     <string name="collection_type_examples_separator"> · </string>
     <string name="collection_favorites_empty">즐겨찾기 설정된 스크린샷이 없어요.</string>

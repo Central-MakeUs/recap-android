@@ -29,6 +29,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
@@ -83,7 +84,11 @@ fun CollectionDetailScreen(
             } else {
                 CollectionDetailTopBar(
                     title = stringResource(detail.titleResId),
-                    countText = stringResource(R.string.collection_recap_count, detail.count),
+                    countText = pluralStringResource(
+                        R.plurals.collection_recap_count,
+                        detail.count,
+                        detail.count,
+                    ),
                     leadingIconResId = categoryType?.iconResId,
                     leadingIconTint = categoryType?.contentColor ?: RecapBlue500,
                     onBackClick = onBackClick,
