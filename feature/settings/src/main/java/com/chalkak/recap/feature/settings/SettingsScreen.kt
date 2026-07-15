@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.mypage
+package com.chalkak.recap.feature.settings
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background

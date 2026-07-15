@@ -70,7 +70,7 @@ dependencies {
     implementation(project(":feature:collection"))
     implementation(project(":feature:demo"))
     implementation(project(":feature:developer"))
-    implementation(project(":feature:mypage"))
+    implementation(project(":feature:settings"))
     implementation(project(":feature:onboarding"))
     implementation(project(":feature:organize"))
     implementation(project(":feature:screenshot"))

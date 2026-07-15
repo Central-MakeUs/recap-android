@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.mypage
+package com.chalkak.recap.feature.settings
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
@@ -26,76 +26,76 @@ import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
 
 @Composable
-fun MyPageNotificationSettingsScreen(
-    uiState: MyPageNotificationSettingsUiState,
-    onAction: (MyPageNotificationSettingsAction) -> Unit,
+fun NotificationSettingsScreen(
+    uiState: NotificationSettingsUiState,
+    onAction: (NotificationSettingsAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    MyPageDetailScreenScaffold(
-        titleResId = R.string.my_page_notification_settings_title,
-        onBackClick = { onAction(MyPageNotificationSettingsAction.NavigateBack) },
+    SettingsDetailScreenScaffold(
+        titleResId = R.string.settings_notification_settings_title,
+        onBackClick = { onAction(NotificationSettingsAction.NavigateBack) },
         bottomContent = {},
         modifier = modifier,
     ) {
-        MyPageNotificationSection(
-            labelResId = R.string.my_page_notification_service_label,
+        NotificationSection(
+            labelResId = R.string.settings_notification_service_label,
             items = listOf(
-                MyPageNotificationItemData(
-                    titleResId = R.string.my_page_notification_organize_complete_title,
-                    descriptionResId = R.string.my_page_notification_organize_complete_description,
+                NotificationItemData(
+                    titleResId = R.string.settings_notification_organize_complete_title,
+                    descriptionResId = R.string.settings_notification_organize_complete_description,
                     checked = uiState.organizeCompleteEnabled,
                     onCheckedChange = {
                         onAction(
-                            MyPageNotificationSettingsAction
+                            NotificationSettingsAction
                                 .OrganizeCompleteEnabledChanged(it),
                         )
                     },
                 ),
-                MyPageNotificationItemData(
-                    titleResId = R.string.my_page_notification_review_required_title,
-                    descriptionResId = R.string.my_page_notification_review_required_description,
+                NotificationItemData(
+                    titleResId = R.string.settings_notification_review_required_title,
+                    descriptionResId = R.string.settings_notification_review_required_description,
                     checked = uiState.reviewRequiredEnabled,
                     onCheckedChange = {
                         onAction(
-                            MyPageNotificationSettingsAction
+                            NotificationSettingsAction
                                 .ReviewRequiredEnabledChanged(it),
                         )
                     },
                 ),
             ),
         )
-        MyPageNotificationSection(
-            labelResId = R.string.my_page_notification_reminder_label,
+        NotificationSection(
+            labelResId = R.string.settings_notification_reminder_label,
             items = listOf(
-                MyPageNotificationItemData(
-                    titleResId = R.string.my_page_notification_review_reminder_title,
-                    descriptionResId = R.string.my_page_notification_review_reminder_description,
-                    badgeResId = R.string.my_page_notification_badge_preparing,
+                NotificationItemData(
+                    titleResId = R.string.settings_notification_review_reminder_title,
+                    descriptionResId = R.string.settings_notification_review_reminder_description,
+                    badgeResId = R.string.settings_notification_badge_preparing,
                     checked = false,
                     enabled = false,
-                    footerResId = R.string.my_page_notification_review_reminder_footer,
+                    footerResId = R.string.settings_notification_review_reminder_footer,
                     onCheckedChange = {},
                 ),
             ),
         )
-        MyPageNotificationSection(
-            labelResId = R.string.my_page_notification_marketing_label,
+        NotificationSection(
+            labelResId = R.string.settings_notification_marketing_label,
             items = listOf(
-                MyPageNotificationItemData(
-                    titleResId = R.string.my_page_notification_marketing_title,
-                    descriptionResId = R.string.my_page_notification_marketing_description,
-                    badgeResId = R.string.my_page_notification_badge_optional,
+                NotificationItemData(
+                    titleResId = R.string.settings_notification_marketing_title,
+                    descriptionResId = R.string.settings_notification_marketing_description,
+                    badgeResId = R.string.settings_notification_badge_optional,
                     checked = uiState.marketingEnabled,
                     onCheckedChange = {
                         onAction(
-                            MyPageNotificationSettingsAction.MarketingEnabledChanged(it),
+                            NotificationSettingsAction.MarketingEnabledChanged(it),
                         )
                     },
                 ),
             ),
         )
         Text(
-            text = stringResource(R.string.my_page_notification_settings_note),
+            text = stringResource(R.string.settings_notification_settings_note),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -103,9 +103,9 @@ fun MyPageNotificationSettingsScreen(
 }
 
 @Composable
-private fun MyPageNotificationSection(
+private fun NotificationSection(
     @StringRes labelResId: Int,
-    items: List<MyPageNotificationItemData>,
+    items: List<NotificationItemData>,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -118,18 +118,18 @@ private fun MyPageNotificationSection(
             color = RecapGray300,
             fontWeight = FontWeight.Bold,
         )
-        MyPageNotificationGroupCard(items = items)
+        NotificationGroupCard(items = items)
     }
 }
 
 @Composable
-private fun MyPageNotificationGroupCard(
-    items: List<MyPageNotificationItemData>,
+private fun NotificationGroupCard(
+    items: List<NotificationItemData>,
     modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(MyPageDetailTokens.CardRadius),
+        shape = RoundedCornerShape(SettingsDetailTokens.CardRadius),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
         ),
@@ -138,7 +138,7 @@ private fun MyPageNotificationGroupCard(
     ) {
         Column {
             items.forEachIndexed { index, item ->
-                MyPageNotificationItem(item = item)
+                NotificationItem(item = item)
                 if (index != items.lastIndex) {
                     HorizontalDivider(color = RecapGray100)
                 }
@@ -148,8 +148,8 @@ private fun MyPageNotificationGroupCard(
 }
 
 @Composable
-private fun MyPageNotificationItem(
-    item: MyPageNotificationItemData,
+private fun NotificationItem(
+    item: NotificationItemData,
     modifier: Modifier = Modifier,
 ) {
     val titleColor = if (item.enabled) {
@@ -185,7 +185,7 @@ private fun MyPageNotificationItem(
                     fontWeight = FontWeight.Bold,
                 )
                 if (item.badgeResId != null) {
-                    MyPageNotificationBadge(labelResId = item.badgeResId)
+                    NotificationBadge(labelResId = item.badgeResId)
                 }
             }
             Text(
@@ -210,7 +210,7 @@ private fun MyPageNotificationItem(
 }
 
 @Composable
-private fun MyPageNotificationBadge(
+private fun NotificationBadge(
     @StringRes labelResId: Int,
     modifier: Modifier = Modifier,
 ) {
@@ -229,7 +229,7 @@ private fun MyPageNotificationBadge(
     }
 }
 
-private data class MyPageNotificationItemData(
+private data class NotificationItemData(
     @get:StringRes val titleResId: Int,
     @get:StringRes val descriptionResId: Int,
     val checked: Boolean,

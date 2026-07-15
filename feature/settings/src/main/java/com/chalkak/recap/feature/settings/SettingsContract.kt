@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.mypage
+package com.chalkak.recap.feature.settings
 
 import com.chalkak.recap.core.model.ImageAccessLevel
 
@@ -18,21 +18,21 @@ sealed interface SettingsAction {
     data object OpenOpenSourceLicenses : SettingsAction
 }
 
-data class MyPageNotificationSettingsUiState(
+data class NotificationSettingsUiState(
     val organizeCompleteEnabled: Boolean = true,
     val reviewRequiredEnabled: Boolean = true,
     val marketingEnabled: Boolean = false,
 )
 
-sealed interface MyPageNotificationSettingsAction {
-    data object NavigateBack : MyPageNotificationSettingsAction
+sealed interface NotificationSettingsAction {
+    data object NavigateBack : NotificationSettingsAction
     data class OrganizeCompleteEnabledChanged(
         val enabled: Boolean,
-    ) : MyPageNotificationSettingsAction
+    ) : NotificationSettingsAction
     data class ReviewRequiredEnabledChanged(
         val enabled: Boolean,
-    ) : MyPageNotificationSettingsAction
+    ) : NotificationSettingsAction
     data class MarketingEnabledChanged(
         val enabled: Boolean,
-    ) : MyPageNotificationSettingsAction
+    ) : NotificationSettingsAction
 }

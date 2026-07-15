@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.mypage
+package com.chalkak.recap.feature.settings
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,10 +27,10 @@ private fun SettingsDeniedPreview() {
 
 @Preview(name = "My Page Notification Settings", showBackground = true, widthDp = 360)
 @Composable
-private fun MyPageNotificationSettingsScreenPreview() {
+private fun NotificationSettingsScreenPreview() {
     RECAPTheme(dynamicColor = false) {
-        MyPageNotificationSettingsScreen(
-            uiState = MyPageNotificationSettingsUiState(),
+        NotificationSettingsScreen(
+            uiState = NotificationSettingsUiState(),
             onAction = {},
         )
     }
@@ -38,9 +38,9 @@ private fun MyPageNotificationSettingsScreenPreview() {
 
 @Preview(name = "My Page Upload Guide", showBackground = true, widthDp = 360)
 @Composable
-private fun MyPageUploadGuideScreenPreview() {
+private fun UploadGuideScreenPreview() {
     RECAPTheme(dynamicColor = false) {
-        MyPageUploadGuideScreen(
+        UploadGuideScreen(
             onBackClick = {},
             onOpenSettingsClick = {},
         )
@@ -49,9 +49,9 @@ private fun MyPageUploadGuideScreenPreview() {
 
 @Preview(name = "My Page Data Management", showBackground = true, widthDp = 360)
 @Composable
-private fun MyPageDataManagementScreenPreview() {
+private fun DataManagementScreenPreview() {
     RECAPTheme(dynamicColor = false) {
-        MyPageDataManagementScreen(
+        DataManagementScreen(
             onBackClick = {},
             onAccountManagementClick = {},
         )
@@ -60,9 +60,9 @@ private fun MyPageDataManagementScreenPreview() {
 
 @Preview(name = "My Page Privacy Guide", showBackground = true, widthDp = 360)
 @Composable
-private fun MyPagePrivacyGuideScreenPreview() {
+private fun PrivacyGuideScreenPreview() {
     RECAPTheme(dynamicColor = false) {
-        MyPagePrivacyGuideScreen(
+        PrivacyGuideScreen(
             onBackClick = {},
             onPrivacyPolicyClick = {},
             onTermsClick = {},
@@ -72,9 +72,9 @@ private fun MyPagePrivacyGuideScreenPreview() {
 
 @Preview(name = "My Page Service Info", showBackground = true, widthDp = 360)
 @Composable
-private fun MyPageServiceInfoScreenPreview() {
+private fun ServiceInfoScreenPreview() {
     RECAPTheme(dynamicColor = false) {
-        MyPageServiceInfoScreen(
+        ServiceInfoScreen(
             onBackClick = {},
             onContactClick = {},
             onNoticeClick = {},

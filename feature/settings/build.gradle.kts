@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.chalkak.recap.feature.mypage"
+    namespace = "com.chalkak.recap.feature.settings"
     compileSdk {
         version = release(37)
     }

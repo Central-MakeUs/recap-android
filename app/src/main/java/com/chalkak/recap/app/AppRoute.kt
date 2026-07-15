@@ -25,19 +25,19 @@ sealed interface AppRoute : NavKey {
     data object Settings : AppRoute
 
     @Serializable
-    data object MyPageNotificationSettings : AppRoute
+    data object NotificationSettings : AppRoute
 
     @Serializable
-    data object MyPageUploadGuide : AppRoute
+    data object UploadGuide : AppRoute
 
     @Serializable
-    data object MyPageDataManagement : AppRoute
+    data object DataManagement : AppRoute
 
     @Serializable
-    data object MyPagePrivacyGuide : AppRoute
+    data object PrivacyGuide : AppRoute
 
     @Serializable
-    data object MyPageServiceInfo : AppRoute
+    data object ServiceInfo : AppRoute
 
     @Serializable
     data object Search : AppRoute

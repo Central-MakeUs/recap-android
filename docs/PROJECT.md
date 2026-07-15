@@ -60,7 +60,7 @@ $env:GRADLE_USER_HOME="$env:USERPROFILE\.gradle"; .\gradlew.bat assembleDebug
 :feature:demo
 :feature:developer
 :feature:home
-:feature:mypage
+:feature:settings
 :feature:onboarding
 :feature:organize
 :feature:screenshot
@@ -80,7 +80,7 @@ com.chalkak.recap
     ├── demo               # OCR/AI 분석 데모 및 개발 검증 화면
     ├── developer          # 개발자 옵션 / component garden
     ├── home               # 홈
-    ├── mypage             # 설정 및 하위 안내/관리 화면
+    ├── settings           # 설정 및 하위 안내/관리 화면
     ├── organize           # 정리/분류 관련 화면
     ├── onboarding         # 온보딩 플로우
     └── screenshot         # 스크린샷 상세/수정/전체화면

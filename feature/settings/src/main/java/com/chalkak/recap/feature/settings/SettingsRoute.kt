@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.mypage
+package com.chalkak.recap.feature.settings
 
 import android.Manifest
 import android.content.Context

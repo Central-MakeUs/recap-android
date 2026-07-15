@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.mypage
+package com.chalkak.recap.feature.settings
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
@@ -17,22 +17,22 @@ import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.theme.RecapBlue50
 
 @Composable
-fun MyPageUploadGuideScreen(
+fun UploadGuideScreen(
     onBackClick: () -> Unit,
     onOpenSettingsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    MyPageDetailScreenScaffold(
-        titleResId = R.string.my_page_upload_guide_title,
+    SettingsDetailScreenScaffold(
+        titleResId = R.string.settings_upload_guide_title,
         onBackClick = onBackClick,
         bottomContent = {
             Text(
-                text = stringResource(R.string.my_page_upload_guide_settings_note),
+                text = stringResource(R.string.settings_upload_guide_settings_note),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             RecapButton(
-                text = stringResource(R.string.my_page_upload_guide_settings_button),
+                text = stringResource(R.string.settings_upload_guide_settings_button),
                 onClick = onOpenSettingsClick,
                 modifier = Modifier.fillMaxWidth(),
                 shadowElevation = 12.dp,
@@ -40,29 +40,29 @@ fun MyPageUploadGuideScreen(
         },
         modifier = modifier,
     ) {
-        MyPageGuideCard(
+        SettingsGuideCard(
             icon = Icons.Outlined.CheckBox,
-            titleResId = R.string.my_page_upload_guide_select_title,
-            descriptionResId = R.string.my_page_upload_guide_select_description,
+            titleResId = R.string.settings_upload_guide_select_title,
+            descriptionResId = R.string.settings_upload_guide_select_description,
             iconTint = MaterialTheme.colorScheme.primary,
             iconContainerColor = RecapBlue50,
         )
-        MyPageGuideCard(
+        SettingsGuideCard(
             icon = Icons.Outlined.Share,
-            titleResId = R.string.my_page_upload_guide_share_title,
-            descriptionResId = R.string.my_page_upload_guide_share_description,
+            titleResId = R.string.settings_upload_guide_share_title,
+            descriptionResId = R.string.settings_upload_guide_share_description,
             iconTint = MaterialTheme.colorScheme.primary,
             iconContainerColor = RecapBlue50,
         )
-        MyPageGuideCard(
+        SettingsGuideCard(
             icon = Icons.Outlined.CloudOff,
-            titleResId = R.string.my_page_upload_guide_no_auto_title,
-            descriptionResId = R.string.my_page_upload_guide_no_auto_description,
+            titleResId = R.string.settings_upload_guide_no_auto_title,
+            descriptionResId = R.string.settings_upload_guide_no_auto_description,
         )
-        MyPageGuideCard(
+        SettingsGuideCard(
             icon = Icons.Outlined.VisibilityOff,
-            titleResId = R.string.my_page_upload_guide_exclude_sensitive_title,
-            descriptionResId = R.string.my_page_upload_guide_exclude_sensitive_description,
+            titleResId = R.string.settings_upload_guide_exclude_sensitive_title,
+            descriptionResId = R.string.settings_upload_guide_exclude_sensitive_description,
         )
     }
 }

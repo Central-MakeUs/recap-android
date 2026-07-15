@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.mypage
+package com.chalkak.recap.feature.settings
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,42 +20,42 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 
 @Composable
-fun MyPageDataManagementScreen(
+fun DataManagementScreen(
     onBackClick: () -> Unit,
     onAccountManagementClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    MyPageDetailScreenScaffold(
-        titleResId = R.string.my_page_data_management_title,
+    SettingsDetailScreenScaffold(
+        titleResId = R.string.settings_data_management_title,
         onBackClick = onBackClick,
         bottomContent = {
             Text(
-                text = stringResource(R.string.my_page_data_management_policy_note),
+                text = stringResource(R.string.settings_data_management_policy_note),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         },
         modifier = modifier,
     ) {
-        MyPageDataCard(
-            labelResId = R.string.my_page_data_management_organized_label,
-            titleResId = R.string.my_page_data_management_organized_title,
-            descriptionResId = R.string.my_page_data_management_organized_description,
+        SettingsDataCard(
+            labelResId = R.string.settings_data_management_organized_label,
+            titleResId = R.string.settings_data_management_organized_title,
+            descriptionResId = R.string.settings_data_management_organized_description,
         )
-        MyPageDataCard(
-            labelResId = R.string.my_page_data_management_delete_label,
-            titleResId = R.string.my_page_data_management_delete_title,
-            descriptionResId = R.string.my_page_data_management_delete_description,
+        SettingsDataCard(
+            labelResId = R.string.settings_data_management_delete_label,
+            titleResId = R.string.settings_data_management_delete_title,
+            descriptionResId = R.string.settings_data_management_delete_description,
         )
-        MyPageDataCard(
-            labelResId = R.string.my_page_data_management_range_label,
-            titleResId = R.string.my_page_data_management_range_title,
-            descriptionResId = R.string.my_page_data_management_range_description,
+        SettingsDataCard(
+            labelResId = R.string.settings_data_management_range_label,
+            titleResId = R.string.settings_data_management_range_title,
+            descriptionResId = R.string.settings_data_management_range_description,
         )
-        MyPageDataCard(
-            labelResId = R.string.my_page_data_management_all_data_label,
-            titleResId = R.string.my_page_data_management_all_data_title,
-            descriptionResId = R.string.my_page_data_management_all_data_description,
+        SettingsDataCard(
+            labelResId = R.string.settings_data_management_all_data_label,
+            titleResId = R.string.settings_data_management_all_data_title,
+            descriptionResId = R.string.settings_data_management_all_data_description,
             action = {
                 val buttonColor = MaterialTheme.colorScheme.primary
                 OutlinedButton(
@@ -72,7 +72,7 @@ fun MyPageDataManagementScreen(
                     ),
                 ) {
                     Text(
-                        text = stringResource(R.string.my_page_data_management_account_button),
+                        text = stringResource(R.string.settings_data_management_account_button),
                         style = MaterialTheme.typography.bodySmall,
                         color = buttonColor,
                         fontWeight = FontWeight.Bold,

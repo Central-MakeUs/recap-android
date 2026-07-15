@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.mypage
+package com.chalkak.recap.feature.settings
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -7,18 +7,18 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
-fun MyPageNotificationSettingsRoute(
+fun NotificationSettingsRoute(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: MyPageNotificationSettingsViewModel = hiltViewModel(),
+    viewModel: NotificationSettingsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    MyPageNotificationSettingsScreen(
+    NotificationSettingsScreen(
         uiState = uiState,
         onAction = { action ->
             when (action) {
-                MyPageNotificationSettingsAction.NavigateBack -> onNavigateBack()
+                NotificationSettingsAction.NavigateBack -> onNavigateBack()
                 else -> viewModel.onAction(action)
             }
         },

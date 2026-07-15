@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.mypage
+package com.chalkak.recap.feature.settings
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.BorderStroke
@@ -43,7 +43,7 @@ import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
 
 @Composable
-internal fun MyPageDetailScreenScaffold(
+internal fun SettingsDetailScreenScaffold(
     @StringRes titleResId: Int,
     onBackClick: () -> Unit,
     bottomContent: @Composable ColumnScope.() -> Unit,
@@ -59,7 +59,7 @@ internal fun MyPageDetailScreenScaffold(
                 title = stringResource(titleResId),
                 onBackClick = onBackClick,
                 backButtonContentDescription = stringResource(
-                    R.string.my_page_back_content_description,
+                    R.string.settings_back_content_description,
                 ),
                 containerColor = MaterialTheme.colorScheme.background,
             )
@@ -67,18 +67,18 @@ internal fun MyPageDetailScreenScaffold(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
-                    .padding(horizontal = MyPageDetailTokens.HorizontalPadding)
-                    .padding(top = MyPageDetailTokens.ContentTopPadding),
-                verticalArrangement = Arrangement.spacedBy(MyPageDetailTokens.CardSpacing),
+                    .padding(horizontal = SettingsDetailTokens.HorizontalPadding)
+                    .padding(top = SettingsDetailTokens.ContentTopPadding),
+                verticalArrangement = Arrangement.spacedBy(SettingsDetailTokens.CardSpacing),
                 content = content,
             )
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = MyPageDetailTokens.HorizontalPadding)
-                    .padding(bottom = MyPageDetailTokens.BottomPadding),
+                    .padding(horizontal = SettingsDetailTokens.HorizontalPadding)
+                    .padding(bottom = SettingsDetailTokens.BottomPadding),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(MyPageDetailTokens.BottomSpacing),
+                verticalArrangement = Arrangement.spacedBy(SettingsDetailTokens.BottomSpacing),
                 content = bottomContent,
             )
         }
@@ -86,7 +86,7 @@ internal fun MyPageDetailScreenScaffold(
 }
 
 @Composable
-internal fun MyPageDocumentButton(
+internal fun SettingsDocumentButton(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -118,7 +118,7 @@ internal fun MyPageDocumentButton(
 }
 
 @Composable
-internal fun MyPageGuideCard(
+internal fun SettingsGuideCard(
     icon: ImageVector,
     @StringRes titleResId: Int,
     @StringRes descriptionResId: Int,
@@ -126,40 +126,40 @@ internal fun MyPageGuideCard(
     iconTint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     iconContainerColor: Color = RecapGray100,
 ) {
-    MyPageInfoCard(modifier = modifier) {
+    SettingsInfoCard(modifier = modifier) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(MyPageDetailTokens.CardContentSpacing),
+            horizontalArrangement = Arrangement.spacedBy(SettingsDetailTokens.CardContentSpacing),
             verticalAlignment = Alignment.Top,
         ) {
             Surface(
-                modifier = Modifier.size(MyPageDetailTokens.IconContainerSize),
-                shape = RoundedCornerShape(MyPageDetailTokens.IconContainerRadius),
+                modifier = Modifier.size(SettingsDetailTokens.IconContainerSize),
+                shape = RoundedCornerShape(SettingsDetailTokens.IconContainerRadius),
                 color = iconContainerColor,
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = icon,
                         contentDescription = null,
-                        modifier = Modifier.size(MyPageDetailTokens.IconSize),
+                        modifier = Modifier.size(SettingsDetailTokens.IconSize),
                         tint = iconTint,
                     )
                 }
             }
             Column(
-                verticalArrangement = Arrangement.spacedBy(MyPageDetailTokens.TextSpacing),
+                verticalArrangement = Arrangement.spacedBy(SettingsDetailTokens.TextSpacing),
             ) {
-                MyPageInfoTitle(text = stringResource(titleResId))
-                MyPageInfoDescription(text = stringResource(descriptionResId))
+                SettingsInfoTitle(text = stringResource(titleResId))
+                SettingsInfoDescription(text = stringResource(descriptionResId))
             }
         }
     }
 }
 
 @Composable
-internal fun MyPageServiceSummaryCard(
+internal fun SettingsServiceSummaryCard(
     modifier: Modifier = Modifier,
 ) {
-    MyPageInfoCard(modifier = modifier) {
+    SettingsInfoCard(modifier = modifier) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -174,7 +174,7 @@ internal fun MyPageServiceSummaryCard(
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Text(
-                        text = stringResource(R.string.my_page_service_info_app_mark),
+                        text = stringResource(R.string.settings_service_info_app_mark),
                         style = MaterialTheme.typography.headlineMedium,
                         color = MaterialTheme.colorScheme.onPrimary,
                         fontWeight = FontWeight.ExtraBold,
@@ -192,13 +192,13 @@ internal fun MyPageServiceSummaryCard(
                     fontWeight = FontWeight.ExtraBold,
                 )
                 Text(
-                    text = stringResource(R.string.my_page_service_info_tagline),
+                    text = stringResource(R.string.settings_service_info_tagline),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center,
                 )
                 Text(
-                    text = stringResource(R.string.my_page_service_info_version),
+                    text = stringResource(R.string.settings_service_info_version),
                     style = MaterialTheme.typography.bodySmall,
                     color = RecapGray300,
                     fontWeight = FontWeight.Bold,
@@ -209,13 +209,13 @@ internal fun MyPageServiceSummaryCard(
 }
 
 @Composable
-internal fun MyPageServiceMenuGroup(
-    items: List<MyPageServiceMenuItemData>,
+internal fun SettingsServiceMenuGroup(
+    items: List<SettingsServiceMenuItemData>,
     modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(MyPageDetailTokens.CardRadius),
+        shape = RoundedCornerShape(SettingsDetailTokens.CardRadius),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
         ),
@@ -224,7 +224,7 @@ internal fun MyPageServiceMenuGroup(
     ) {
         Column {
             items.forEachIndexed { index, item ->
-                MyPageServiceMenuItem(item = item)
+                SettingsServiceMenuItem(item = item)
                 if (index != items.lastIndex) {
                     HorizontalDivider(
                         color = RecapGray100,
@@ -236,16 +236,16 @@ internal fun MyPageServiceMenuGroup(
 }
 
 @Composable
-internal fun MyPageDataCard(
+internal fun SettingsDataCard(
     @StringRes labelResId: Int,
     @StringRes titleResId: Int,
     @StringRes descriptionResId: Int,
     modifier: Modifier = Modifier,
     action: (@Composable () -> Unit)? = null,
 ) {
-    MyPageInfoCard(modifier = modifier) {
+    SettingsInfoCard(modifier = modifier) {
         Column(
-            verticalArrangement = Arrangement.spacedBy(MyPageDetailTokens.TextSpacing),
+            verticalArrangement = Arrangement.spacedBy(SettingsDetailTokens.TextSpacing),
         ) {
             Text(
                 text = stringResource(labelResId),
@@ -253,10 +253,10 @@ internal fun MyPageDataCard(
                 color = RecapGray300,
                 fontWeight = FontWeight.Bold,
             )
-            MyPageInfoTitle(text = stringResource(titleResId))
-            MyPageInfoDescription(text = stringResource(descriptionResId))
+            SettingsInfoTitle(text = stringResource(titleResId))
+            SettingsInfoDescription(text = stringResource(descriptionResId))
             if (action != null) {
-                Spacer(modifier = Modifier.height(MyPageDetailTokens.ActionTopSpacing))
+                Spacer(modifier = Modifier.height(SettingsDetailTokens.ActionTopSpacing))
                 action()
             }
         }
@@ -264,13 +264,13 @@ internal fun MyPageDataCard(
 }
 
 @Composable
-internal fun MyPageInfoCard(
+internal fun SettingsInfoCard(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(MyPageDetailTokens.CardRadius),
+        shape = RoundedCornerShape(SettingsDetailTokens.CardRadius),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surface,
         ),
@@ -278,7 +278,7 @@ internal fun MyPageInfoCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Box(
-            modifier = Modifier.padding(MyPageDetailTokens.CardPadding),
+            modifier = Modifier.padding(SettingsDetailTokens.CardPadding),
         ) {
             content()
         }
@@ -286,7 +286,7 @@ internal fun MyPageInfoCard(
 }
 
 @Composable
-internal fun MyPageInfoTitle(
+internal fun SettingsInfoTitle(
     text: String,
     modifier: Modifier = Modifier,
 ) {
@@ -300,7 +300,7 @@ internal fun MyPageInfoTitle(
 }
 
 @Composable
-internal fun MyPageInfoDescription(
+internal fun SettingsInfoDescription(
     text: String,
     modifier: Modifier = Modifier,
 ) {
@@ -313,8 +313,8 @@ internal fun MyPageInfoDescription(
 }
 
 @Composable
-private fun MyPageServiceMenuItem(
-    item: MyPageServiceMenuItemData,
+private fun SettingsServiceMenuItem(
+    item: SettingsServiceMenuItemData,
     modifier: Modifier = Modifier,
 ) {
     Surface(
@@ -324,8 +324,8 @@ private fun MyPageServiceMenuItem(
     ) {
         Row(
             modifier = Modifier.padding(
-                horizontal = MyPageDetailTokens.ServiceMenuItemHorizontalPadding,
-                vertical = MyPageDetailTokens.ServiceMenuItemVerticalPadding,
+                horizontal = SettingsDetailTokens.ServiceMenuItemHorizontalPadding,
+                vertical = SettingsDetailTokens.ServiceMenuItemVerticalPadding,
             ),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -333,8 +333,8 @@ private fun MyPageServiceMenuItem(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                MyPageInfoTitle(text = stringResource(item.titleResId))
-                MyPageInfoDescription(text = stringResource(item.descriptionResId))
+                SettingsInfoTitle(text = stringResource(item.titleResId))
+                SettingsInfoDescription(text = stringResource(item.descriptionResId))
             }
             Icon(
                 imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
@@ -346,7 +346,7 @@ private fun MyPageServiceMenuItem(
     }
 }
 
-internal object MyPageDetailTokens {
+internal object SettingsDetailTokens {
     val HorizontalPadding = 16.dp
     val ContentTopPadding = 16.dp
     val BottomPadding = 36.dp
@@ -366,7 +366,7 @@ internal object MyPageDetailTokens {
     val WarningIconColor = Color(0xFFE8A21A)
 }
 
-internal data class MyPageServiceMenuItemData(
+internal data class SettingsServiceMenuItemData(
     @get:StringRes val titleResId: Int,
     @get:StringRes val descriptionResId: Int,
     val onClick: () -> Unit,

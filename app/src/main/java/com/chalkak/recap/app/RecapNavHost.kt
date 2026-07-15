@@ -34,13 +34,13 @@ import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
 import com.chalkak.recap.feature.home.RecentOrganizedScreenshotsRoute
 import com.chalkak.recap.feature.home.SearchRoute
-import com.chalkak.recap.feature.mypage.MyPageDataManagementScreen
-import com.chalkak.recap.feature.mypage.MyPageNotificationSettingsRoute
-import com.chalkak.recap.feature.mypage.MyPagePrivacyGuideScreen
-import com.chalkak.recap.feature.mypage.MyPageServiceInfoScreen
-import com.chalkak.recap.feature.mypage.MyPageUploadGuideScreen
-import com.chalkak.recap.feature.mypage.SettingsAction
-import com.chalkak.recap.feature.mypage.SettingsRoute
+import com.chalkak.recap.feature.settings.DataManagementScreen
+import com.chalkak.recap.feature.settings.NotificationSettingsRoute
+import com.chalkak.recap.feature.settings.PrivacyGuideScreen
+import com.chalkak.recap.feature.settings.ServiceInfoScreen
+import com.chalkak.recap.feature.settings.SettingsAction
+import com.chalkak.recap.feature.settings.SettingsRoute
+import com.chalkak.recap.feature.settings.UploadGuideScreen
 import com.chalkak.recap.feature.screenshot.ScreenshotRoute
 import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 import dev.chrisbanes.haze.HazeState
@@ -123,7 +123,7 @@ fun RecapNavHost(
                             when (action) {
                                 SettingsAction.NavigateBack -> backStack.removeLastOrNull()
                                 SettingsAction.OpenNotificationSettings -> {
-                                    backStack.add(AppRoute.MyPageNotificationSettings)
+                                    backStack.add(AppRoute.NotificationSettings)
                                 }
 
                                 SettingsAction.OpenPhotoAccessPermission -> {
@@ -136,15 +136,15 @@ fun RecapNavHost(
                                 }
 
                                 SettingsAction.OpenUsageGuide -> {
-                                    backStack.add(AppRoute.MyPageUploadGuide)
+                                    backStack.add(AppRoute.UploadGuide)
                                 }
 
                                 SettingsAction.OpenDataManagement -> {
-                                    backStack.add(AppRoute.MyPageDataManagement)
+                                    backStack.add(AppRoute.DataManagement)
                                 }
 
                                 SettingsAction.OpenPrivacyGuide -> {
-                                    backStack.add(AppRoute.MyPagePrivacyGuide)
+                                    backStack.add(AppRoute.PrivacyGuide)
                                 }
 
                                 SettingsAction.OpenOpenSourceLicenses -> {
@@ -161,14 +161,14 @@ fun RecapNavHost(
                     )
                 }
 
-                AppRoute.MyPageNotificationSettings -> NavEntry(route) {
-                    MyPageNotificationSettingsRoute(
+                AppRoute.NotificationSettings -> NavEntry(route) {
+                    NotificationSettingsRoute(
                         onNavigateBack = { backStack.removeLastOrNull() },
                     )
                 }
 
-                AppRoute.MyPageUploadGuide -> NavEntry(route) {
-                    MyPageUploadGuideScreen(
+                AppRoute.UploadGuide -> NavEntry(route) {
+                    UploadGuideScreen(
                         onBackClick = { backStack.removeLastOrNull() },
                         onOpenSettingsClick = {
                             context.startActivity(
@@ -181,23 +181,23 @@ fun RecapNavHost(
                     )
                 }
 
-                AppRoute.MyPageDataManagement -> NavEntry(route) {
-                    MyPageDataManagementScreen(
+                AppRoute.DataManagement -> NavEntry(route) {
+                    DataManagementScreen(
                         onBackClick = { backStack.removeLastOrNull() },
                         onAccountManagementClick = {},
                     )
                 }
 
-                AppRoute.MyPagePrivacyGuide -> NavEntry(route) {
-                    MyPagePrivacyGuideScreen(
+                AppRoute.PrivacyGuide -> NavEntry(route) {
+                    PrivacyGuideScreen(
                         onBackClick = { backStack.removeLastOrNull() },
                         onPrivacyPolicyClick = {},
                         onTermsClick = {},
                     )
                 }
 
-                AppRoute.MyPageServiceInfo -> NavEntry(route) {
-                    MyPageServiceInfoScreen(
+                AppRoute.ServiceInfo -> NavEntry(route) {
+                    ServiceInfoScreen(
                         onBackClick = { backStack.removeLastOrNull() },
                         onContactClick = {},
                         onNoticeClick = {},
