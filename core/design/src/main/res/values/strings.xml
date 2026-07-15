@@ -40,7 +40,7 @@
     <string name="home_recent_organized_screenshots_title">최근 정리된 스크린샷</string>
     <string name="home_recent_organized_screenshots_empty">최근 정리한 스크린샷이 없어요.</string>
     <string name="home_empty_title">아직 정리된 스크린샷이 없어요</string>
-    <string name="home_empty_description">정리할 스크린샷을 불러오거나 갤러리에서 공유해주세요</string>
+    <string name="home_empty_description">정리할 스크린샷을 불러오거나\n갤러리에서 공유해주세요</string>
     <string name="home_empty_import_button">스크린샷 불러오기</string>
     <string name="recap_button_preview_reload">다시 불러오기</string>
     <string name="recap_button_preview_label">버튼</string>

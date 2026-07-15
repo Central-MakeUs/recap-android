@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -62,6 +63,7 @@ fun RecapNavHost(
     val backStack = rememberNavBackStack(AppRoute.MainTabs)
     val analysisProgressViewModel: ScreenshotAnalysisProgressViewModel = hiltViewModel()
     var homeNavigationRequestId by remember { mutableIntStateOf(0) }
+    var requestOpenOrganize by remember { mutableStateOf(false) }
     val analysisProgressFlow = remember(analysisProgressViewModel) {
         analysisProgressViewModel.uiState.map { state ->
             HomeAnalysisProgressUiModel(
@@ -102,8 +104,14 @@ fun RecapNavHost(
                                 }
                             },
                             homeNavigationRequestId = homeNavigationRequestId,
-                            pendingOpenOrganize = pendingOpenOrganize,
-                            onPendingOpenOrganizeConsumed = onPendingOpenOrganizeConsumed,
+                            pendingOpenOrganize = pendingOpenOrganize || requestOpenOrganize,
+                            onPendingOpenOrganizeConsumed = {
+                                if (requestOpenOrganize) {
+                                    requestOpenOrganize = false
+                                } else {
+                                    onPendingOpenOrganizeConsumed()
+                                }
+                            },
                             analysisProgressFlow = analysisProgressFlow,
                         )
                     }
@@ -213,6 +221,10 @@ fun RecapNavHost(
                             if (imageId.isNotBlank()) {
                                 backStack.add(AppRoute.Screenshot(imageId))
                             }
+                        },
+                        onNavigateToOrganize = {
+                            requestOpenOrganize = true
+                            backStack.removeLastOrNull()
                         },
                     )
                 }

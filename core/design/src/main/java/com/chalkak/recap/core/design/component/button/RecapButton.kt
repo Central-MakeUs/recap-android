@@ -294,8 +294,8 @@ enum class RecapButtonSize(
         iconSpacing = 5.dp,
     ),
     Medium(
-        height = 52.dp,
-        minWidth = 64.dp,
+        height = 45.dp,
+        minWidth = 155.dp,
         cornerRadius = 14.dp,
         horizontalPadding = 18.dp,
         iconSize = 24.dp,

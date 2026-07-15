@@ -11,6 +11,7 @@ fun RecentOrganizedScreenshotsRoute(
     onNavigateBack: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToScreenshot: (String) -> Unit,
+    onNavigateToOrganize: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecentOrganizedScreenshotsViewModel = hiltViewModel(),
 ) {
@@ -23,6 +24,7 @@ fun RecentOrganizedScreenshotsRoute(
             when (action) {
                 RecentOrganizedScreenshotsAction.NavigateBack -> onNavigateBack()
                 RecentOrganizedScreenshotsAction.OpenSearch -> onNavigateToSearch()
+                RecentOrganizedScreenshotsAction.StartImport -> onNavigateToOrganize()
                 is RecentOrganizedScreenshotsAction.ToggleFavorite -> viewModel.onAction(action)
                 is RecentOrganizedScreenshotsAction.SelectItem -> onNavigateToScreenshot(action.id)
             }
