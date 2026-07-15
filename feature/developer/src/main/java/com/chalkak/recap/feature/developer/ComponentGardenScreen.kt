@@ -52,6 +52,7 @@ import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
+import com.chalkak.recap.core.design.component.card.HomeFavoriteCard
 import com.chalkak.recap.core.design.component.card.OrganizedCaptureCard
 import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
@@ -160,6 +161,11 @@ internal fun ComponentGardenScreen(
                 FrequentSaveTypeFolderCard(
                     categoryLabel = stringResource(R.string.home_category_shopping_product),
                     recapCount = ComponentGardenFrequentSaveTypeCount,
+                    onClick = {},
+                )
+                HomeFavoriteCard(
+                    categoryType = RecapCategoryType.RecordCapture,
+                    title = stringResource(R.string.home_favorite_card_preview_title),
                     onClick = {},
                 )
             }

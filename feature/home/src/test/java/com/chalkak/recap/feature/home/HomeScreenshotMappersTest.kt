@@ -14,33 +14,40 @@ import org.junit.Test
 
 class HomeScreenshotMappersTest {
     @Test
-    fun `toHomeUiState keeps three most recent favorites`() {
+    fun `toHomeUiState keeps four most recent favorites`() {
         val cards = listOf(
             storedCard(
                 imageId = "fav-1",
                 title = "즐겨찾기 1",
                 contentType = ScreenshotContentType.SHOPPING_PRODUCT,
                 isFavorite = true,
-                createdAtMillis = 3_000L,
+                createdAtMillis = 4_000L,
             ),
             storedCard(
                 imageId = "fav-2",
                 title = "즐겨찾기 2",
                 contentType = ScreenshotContentType.PLACE_RESTAURANT,
                 isFavorite = true,
-                createdAtMillis = 2_000L,
+                createdAtMillis = 3_000L,
             ),
             storedCard(
                 imageId = "fav-3",
                 title = "즐겨찾기 3",
                 contentType = ScreenshotContentType.INFO_KNOWLEDGE,
                 isFavorite = true,
-                createdAtMillis = 1_000L,
+                createdAtMillis = 2_000L,
             ),
             storedCard(
                 imageId = "fav-4",
                 title = "즐겨찾기 4",
                 contentType = ScreenshotContentType.BOOK_CONTENT,
+                isFavorite = true,
+                createdAtMillis = 1_000L,
+            ),
+            storedCard(
+                imageId = "fav-5",
+                title = "즐겨찾기 5",
+                contentType = ScreenshotContentType.RECORD_CAPTURE,
                 isFavorite = true,
                 createdAtMillis = 500L,
             ),
@@ -49,18 +56,18 @@ class HomeScreenshotMappersTest {
                 title = "일반",
                 contentType = ScreenshotContentType.SHOPPING_PRODUCT,
                 isFavorite = false,
-                createdAtMillis = 4_000L,
+                createdAtMillis = 5_000L,
             ),
         )
 
         val state = cards.toHomeUiState()
 
-        assertEquals(listOf("fav-1", "fav-2", "fav-3"), state.favoriteItems.map { it.id })
+        assertEquals(listOf("fav-1", "fav-2", "fav-3", "fav-4"), state.favoriteItems.map { it.id })
         assertTrue(state.favoriteItems.all { it.isFavorite })
     }
 
     @Test
-    fun `toHomeUiState keeps top three frequent save types by count`() {
+    fun `toHomeUiState keeps top four frequent save types by count`() {
         val cards = buildList {
             repeat(5) { index ->
                 add(
@@ -72,7 +79,7 @@ class HomeScreenshotMappersTest {
                     ),
                 )
             }
-            repeat(3) { index ->
+            repeat(4) { index ->
                 add(
                     storedCard(
                         imageId = "place-$index",
@@ -82,22 +89,32 @@ class HomeScreenshotMappersTest {
                     ),
                 )
             }
+            repeat(3) { index ->
+                add(
+                    storedCard(
+                        imageId = "info-$index",
+                        title = "정보 $index",
+                        contentType = ScreenshotContentType.INFO_KNOWLEDGE,
+                        createdAtMillis = 3_000L + index,
+                    ),
+                )
+            }
             repeat(2) { index ->
                 add(
                     storedCard(
                         imageId = "book-$index",
                         title = "책 $index",
                         contentType = ScreenshotContentType.BOOK_CONTENT,
-                        createdAtMillis = 3_000L + index,
+                        createdAtMillis = 4_000L + index,
                     ),
                 )
             }
             add(
                 storedCard(
-                    imageId = "info-0",
-                    title = "정보",
-                    contentType = ScreenshotContentType.INFO_KNOWLEDGE,
-                    createdAtMillis = 4_000L,
+                    imageId = "record-0",
+                    title = "기록",
+                    contentType = ScreenshotContentType.RECORD_CAPTURE,
+                    createdAtMillis = 5_000L,
                 ),
             )
         }
@@ -108,11 +125,12 @@ class HomeScreenshotMappersTest {
             listOf(
                 RecapCategoryType.ShoppingProduct,
                 RecapCategoryType.PlaceRestaurant,
+                RecapCategoryType.InfoKnowledge,
                 RecapCategoryType.BookContent,
             ),
             state.frequentSaveTypes.map { it.categoryType },
         )
-        assertEquals(listOf(5, 3, 2), state.frequentSaveTypes.map { it.recapCount })
+        assertEquals(listOf(5, 4, 3, 2), state.frequentSaveTypes.map { it.recapCount })
     }
 
     @Test

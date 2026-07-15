@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -45,16 +46,18 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
-import com.chalkak.recap.core.design.component.card.OrganizedRelativeTimeFormatter
-import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
+import com.chalkak.recap.core.design.component.card.HomeFavoriteCard
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
-import com.chalkak.recap.core.design.component.card.ScreenshotCard
+import com.chalkak.recap.core.design.component.icon.RecapCategoryIcon
+import com.chalkak.recap.core.design.component.icon.RecapCategoryIconSize
 import com.chalkak.recap.core.design.component.topbar.HomeTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -73,9 +76,6 @@ fun HomeScreen(
         .calculateBottomPadding()
     val bottomContentPadding = RecapBottomBarDefaults.ContentScrollPadding +
             navigationBarBottomPadding
-    val isEmptyHome = uiState.recentScreenshots.isEmpty() &&
-            uiState.favoriteItems.isEmpty() &&
-            uiState.frequentSaveTypes.isEmpty()
 
     Column(
         modifier = modifier
@@ -88,57 +88,50 @@ fun HomeScreen(
             onSearchClick = { onAction(HomeAction.OpenSearch) },
             onLogoClick = onLogoClick,
         )
-        if (isEmptyHome) {
-            HomeEmptyOrganizePrompt(
-                onImportClick = { onAction(HomeAction.StartImport) },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = bottomContentPadding),
-            )
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = HomeScreenTokens.HorizontalPadding)
-                    .padding(
-                        top = HomeScreenTokens.VerticalPadding,
-                        bottom = HomeScreenTokens.VerticalPadding + bottomContentPadding,
-                    ),
-                verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.SectionSpacing),
-            ) {
-                if (analysisProgress.isRunning) {
-                    Column(
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(
+                    top = HomeScreenTokens.VerticalPadding,
+                    bottom = HomeScreenTokens.VerticalPadding + bottomContentPadding,
+                ),
+            verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.SectionSpacing),
+        ) {
+            if (analysisProgress.isRunning) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = HomeScreenTokens.HorizontalPadding),
+                    verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.AnalysisProgressSpacing),
+                ) {
+                    Text(
+                        text = stringResource(R.string.home_analysis_progress_label),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = RecapGray900,
+                    )
+                    LinearProgressIndicator(
+                        progress = { analysisProgress.progress },
                         modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.AnalysisProgressSpacing),
-                    ) {
-                        Text(
-                            text = stringResource(R.string.home_analysis_progress_label),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = RecapGray900,
-                        )
-                        LinearProgressIndicator(
-                            progress = { analysisProgress.progress },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
+                    )
                 }
-                RecentOrganizedScreenshotsSection(
-                    screenshots = uiState.recentScreenshots,
-                    onMoreClick = { onAction(HomeAction.OpenRecentScreenshots) },
-                    onScreenshotClick = { onAction(HomeAction.SelectRecentScreenshot(it)) },
-                )
-                FavoriteItemsSection(
-                    items = uiState.favoriteItems,
-                    onMoreClick = { onAction(HomeAction.OpenFavoriteCategories) },
-                    onItemClick = { onAction(HomeAction.SelectFavoriteItem(it)) },
-                    onFavoriteClick = { onAction(HomeAction.ToggleFavoriteItem(it)) },
-                )
-                FrequentSaveTypesSection(
-                    saveTypes = uiState.frequentSaveTypes,
-                    onSaveTypeClick = { onAction(HomeAction.SelectFrequentSaveType(it)) },
-                )
             }
+            FavoriteItemsSection(
+                items = uiState.favoriteItems,
+                onMoreClick = { onAction(HomeAction.OpenFavoriteCategories) },
+                onItemClick = { onAction(HomeAction.SelectFavoriteItem(it)) },
+                modifier = Modifier.padding(horizontal = HomeScreenTokens.HorizontalPadding),
+            )
+            RecentOrganizedScreenshotsSection(
+                screenshots = uiState.recentScreenshots,
+                onMoreClick = { onAction(HomeAction.OpenRecentScreenshots) },
+                onScreenshotClick = { onAction(HomeAction.SelectRecentScreenshot(it)) },
+            )
+            FrequentSaveTypesSection(
+                saveTypes = uiState.frequentSaveTypes,
+                onSaveTypeClick = { onAction(HomeAction.SelectFrequentSaveType(it)) },
+                modifier = Modifier.padding(horizontal = HomeScreenTokens.HorizontalPadding),
+            )
         }
     }
 }
@@ -200,31 +193,36 @@ private fun RecentOrganizedScreenshotsSection(
     onScreenshotClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    HomeSection(
-        title = stringResource(R.string.home_recent_organized_screenshots_title),
-        onMoreClick = onMoreClick,
-        modifier = modifier,
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.SectionContentSpacing),
     ) {
+        HomeSectionHeader(
+            title = stringResource(R.string.home_recent_organized_screenshots_title),
+            onMoreClick = onMoreClick,
+            modifier = Modifier.padding(horizontal = HomeScreenTokens.HorizontalPadding),
+        )
         if (screenshots.isEmpty()) {
             HomeSectionEmptyText(
                 text = stringResource(R.string.home_recent_organized_screenshots_empty),
+                modifier = Modifier.padding(horizontal = HomeScreenTokens.HorizontalPadding),
             )
-            return@HomeSection
-        }
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(HomeScreenTokens.RecentCardSpacing),
-            modifier = Modifier.clip(shape = RoundedCornerShape(HomeScreenTokens.HomeSectionRadius)),
-        ) {
-            items(
-                items = screenshots,
-                key = { it.id },
-            ) { screenshot ->
-                RecentOrganizedScreenshotCard(
-                    thumbnailModel = screenshot.thumbnailModel,
-                    title = screenshot.title,
-                    categoryType = screenshot.categoryType,
-                    onClick = { onScreenshotClick(screenshot.id) },
-                )
+        } else {
+            LazyRow(
+                contentPadding = PaddingValues(horizontal = HomeScreenTokens.HorizontalPadding),
+                horizontalArrangement = Arrangement.spacedBy(HomeScreenTokens.RecentCardSpacing),
+            ) {
+                items(
+                    items = screenshots,
+                    key = { it.id },
+                ) { screenshot ->
+                    RecentOrganizedScreenshotCard(
+                        thumbnailModel = screenshot.thumbnailModel,
+                        title = screenshot.title,
+                        categoryType = screenshot.categoryType,
+                        onClick = { onScreenshotClick(screenshot.id) },
+                    )
+                }
             }
         }
     }
@@ -235,7 +233,6 @@ private fun FavoriteItemsSection(
     items: List<HomeFavoriteItemUiModel>,
     onMoreClick: () -> Unit,
     onItemClick: (String) -> Unit,
-    onFavoriteClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     HomeSection(
@@ -243,38 +240,59 @@ private fun FavoriteItemsSection(
         onMoreClick = onMoreClick,
         modifier = modifier,
     ) {
-        val nowMillis = remember { System.currentTimeMillis() }
-        val visibleItems = remember(items, nowMillis) {
-            items.filter { item ->
-                OrganizedRelativeTimeFormatter.isVisible(
-                    organizedAtMillis = item.organizedAtMillis,
-                    nowMillis = nowMillis,
-                )
-            }
-        }
-        if (visibleItems.isEmpty()) {
-            HomeFavoritesEmptyPrompt()
+        if (items.isEmpty()) {
+            HomeFavoritesEmptyText()
             return@HomeSection
         }
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(HomeScreenTokens.HomeSectionRadius)),
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.FavoriteCardSpacing),
         ) {
-            visibleItems.forEachIndexed { index, item ->
-                ScreenshotCard(
-                    thumbnailModel = item.thumbnailModel,
-                    categoryType = item.categoryType,
-                    title = item.title,
-                    description = item.description,
-                    isFavorite = item.isFavorite,
-                    onClick = { onItemClick(item.id) },
-                    onFavoriteClick = { onFavoriteClick(item.id) },
-                    horizontalContentPadding = 0.dp,
-                    showBottomDivider = index < visibleItems.lastIndex,
-                )
+            items.chunked(HomeScreenTokens.FavoriteGridColumns).forEach { rowItems ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(
+                        HomeScreenTokens.FavoriteCardSpacing,
+                    ),
+                ) {
+                    rowItems.forEach { item ->
+                        HomeFavoriteCard(
+                            categoryType = item.categoryType,
+                            title = item.title,
+                            onClick = { onItemClick(item.id) },
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                    repeat(HomeScreenTokens.FavoriteGridColumns - rowItems.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun HomeFavoritesEmptyText(
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.FavoritesEmptyTextSpacing),
+    ) {
+        Text(
+            text = stringResource(R.string.home_favorites_empty),
+            style = MaterialTheme.typography.bodyMedium,
+            color = RecapGray500,
+            textAlign = TextAlign.Center,
+        )
+        Text(
+            text = stringResource(R.string.home_favorites_empty_hint),
+            style = MaterialTheme.typography.bodyMedium,
+            color = RecapGray500,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 
@@ -329,23 +347,27 @@ private fun FrequentSaveTypesSection(
             horizontalArrangement = Arrangement.spacedBy(HomeScreenTokens.FrequentTypeCardSpacing),
         ) {
             saveTypes.forEach { saveType ->
+                val interactionSource = remember(saveType.id) { MutableInteractionSource() }
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(
                         HomeScreenTokens.FrequentTypeLabelSpacing,
                     ),
-                ) {
-                    RecapHazeFolderCard(
-                        category = saveType.categoryType,
-                        recapCount = saveType.recapCount,
+                    modifier = Modifier.clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        role = Role.Button,
                         onClick = { onSaveTypeClick(saveType.id) },
-                        scale = HomeScreenTokens.FrequentTypeFolderScale,
+                    ),
+                ) {
+                    RecapCategoryIcon(
+                        category = saveType.categoryType,
+                        size = RecapCategoryIconSize.Large,
                     )
                     Text(
                         text = stringResource(saveType.categoryType.labelResId),
-                        style = MaterialTheme.typography.bodyMedium,
-                        fontWeight = FontWeight.Medium,
-                        color = RecapGray900,
+                        style = RecapCaption1,
+                        color = RecapGray700,
                         textAlign = TextAlign.Center,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -390,8 +412,7 @@ private fun HomeSectionHeader(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
+            style = RecapHeading2,
             color = RecapGray900,
         )
         if (onMoreClick != null) {
@@ -405,7 +426,7 @@ private fun HomeSectionHeader(
                         role = Role.Button,
                         onClick = onMoreClick,
                     )
-                    .padding(2.dp),
+                    .size(20.dp),
                 tint = RecapGray300,
             )
         }
@@ -421,20 +442,22 @@ private fun HomeSectionEmptyText(
         text = text,
         style = MaterialTheme.typography.bodyMedium,
         color = RecapGray500,
+        textAlign = TextAlign.Center,
         modifier = modifier.fillMaxWidth(),
     )
 }
 
 private object HomeScreenTokens {
-    val HomeSectionRadius = 12.dp
-    val HorizontalPadding = 20.dp
+    val HorizontalPadding = 16.dp
     val VerticalPadding = 20.dp
     val SectionSpacing = 32.dp
     val SectionContentSpacing = 12.dp
-    val RecentCardSpacing = 12.dp
+    val RecentCardSpacing = 10.dp
+    val FavoriteCardSpacing = 11.dp
+    const val FavoriteGridColumns = 2
+    val FavoritesEmptyTextSpacing = 4.dp
     val FrequentTypeCardSpacing = 16.dp
-    val FrequentTypeLabelSpacing = 19.dp
-    const val FrequentTypeFolderScale = 0.9f
+    val FrequentTypeLabelSpacing = 8.dp
     val AnalysisProgressSpacing = 8.dp
     val EmptyCharacterWidth = 175.dp
     val EmptyCharacterHeight = 127.dp
@@ -499,5 +522,31 @@ private fun HomeScreenFavoritesEmptyPreview() {
             hazeState = rememberHazeState(),
             uiState = HomePreviewUiState.copy(favoriteItems = emptyList()),
         )
+    }
+}
+
+@Preview(
+    name = "Home Empty Organize Prompt",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 720,
+)
+@Composable
+private fun HomeEmptyOrganizePromptPreview() {
+    RECAPTheme(dynamicColor = false) {
+        HomeEmptyOrganizePrompt(onImportClick = {})
+    }
+}
+
+@Preview(
+    name = "Home Favorites Empty Prompt",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 320,
+)
+@Composable
+private fun HomeFavoritesEmptyPromptPreview() {
+    RECAPTheme(dynamicColor = false) {
+        HomeFavoritesEmptyPrompt(modifier = Modifier.padding(20.dp))
     }
 }
