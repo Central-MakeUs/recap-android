@@ -36,6 +36,7 @@ import com.chalkak.recap.feature.onboarding.screen.OnboardingAddToFavoriteScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingLandingScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingPermissionGuideScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingStartFirstAnalyzeScreen
+import com.chalkak.recap.feature.onboarding.screen.OnboardingUploadMethodGuideScreen
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -85,6 +86,7 @@ fun OnboardingScreen(
                     )
 
                     OnboardingStep.PermissionGuide,
+                    OnboardingStep.UploadMethodGuide,
                     OnboardingStep.AddToFavorite,
                     OnboardingStep.StartFirstAnalyze -> OnboardingStepTransition(
                         uiState = uiState,
@@ -128,6 +130,7 @@ private fun OnboardingStepTransition(
     ) {
         OnboardingTopBar(
             progress = topBarProgress,
+            stepCount = OnboardingProgressSteps.size,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 24.dp),
@@ -166,6 +169,11 @@ private fun OnboardingStepTransition(
                     modifier = pageModifier,
                 )
 
+                OnboardingStep.UploadMethodGuide -> OnboardingUploadMethodGuideScreen(
+                    onAction = onAction,
+                    modifier = pageModifier,
+                )
+
                 OnboardingStep.AddToFavorite -> OnboardingAddToFavoriteScreen(
                     uiState = uiState,
                     onAction = onAction,
@@ -188,6 +196,7 @@ private const val OnboardingStepTransitionDurationMillis = 300
 
 private val OnboardingProgressSteps = listOf(
     OnboardingStep.PermissionGuide,
+    OnboardingStep.UploadMethodGuide,
     OnboardingStep.AddToFavorite,
     OnboardingStep.StartFirstAnalyze,
 )
@@ -213,6 +222,17 @@ private fun OnboardingScreenPermissionGuidePreview() {
     RECAPTheme(dynamicColor = false) {
         OnboardingScreen(
             uiState = OnboardingUiState(step = OnboardingStep.PermissionGuide),
+            onAction = {},
+        )
+    }
+}
+
+@OnboardingScreenPreview
+@Composable
+private fun OnboardingScreenUploadMethodGuidePreview() {
+    RECAPTheme(dynamicColor = false) {
+        OnboardingScreen(
+            uiState = OnboardingUiState(step = OnboardingStep.UploadMethodGuide),
             onAction = {},
         )
     }

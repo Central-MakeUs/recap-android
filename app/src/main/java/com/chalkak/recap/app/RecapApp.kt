@@ -28,6 +28,7 @@ fun RecapApp(
         }
 
         val readyState = uiState as RecapStartupUiState.Ready
+        val pendingOpenOrganize by startupViewModel.pendingOpenOrganize.collectAsStateWithLifecycle()
         val initialRoute = if (readyState.onboardingCompleted) {
             RecapRootRoute.Main
         } else {
@@ -65,6 +66,9 @@ fun RecapApp(
                             onNavigateToDeveloper = {
                                 rootBackStack.add(RecapRootRoute.Developer)
                             },
+                            pendingOpenOrganize = pendingOpenOrganize,
+                            onPendingOpenOrganizeConsumed =
+                                startupViewModel::consumePendingOpenOrganize,
                         )
                     }
 

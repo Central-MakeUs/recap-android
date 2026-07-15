@@ -62,7 +62,7 @@ class OnboardingViewModel @Inject constructor(
 
     fun refreshImagePermissionAndMoveToFirstOrganize(): ImageAccessLevel {
         val accessLevel = refreshImagePermissionLevel()
-        moveTo(OnboardingStep.AddToFavorite)
+        moveTo(OnboardingStep.UploadMethodGuide)
         return accessLevel
     }
 
@@ -119,6 +119,8 @@ class OnboardingViewModel @Inject constructor(
 
             OnboardingAction.OpenScreenshotPicker,
             OnboardingAction.SkipStartFirstAnalyze -> Unit
+
+            OnboardingAction.ConfirmUploadMethodGuide -> moveTo(OnboardingStep.AddToFavorite)
         }
     }
 
@@ -154,7 +156,8 @@ private fun OnboardingStep.previousStep(): OnboardingStep =
     when (this) {
         OnboardingStep.Landing -> OnboardingStep.Landing
         OnboardingStep.PermissionGuide -> OnboardingStep.PermissionGuide
-        OnboardingStep.AddToFavorite -> OnboardingStep.PermissionGuide
+        OnboardingStep.UploadMethodGuide -> OnboardingStep.PermissionGuide
+        OnboardingStep.AddToFavorite -> OnboardingStep.UploadMethodGuide
         OnboardingStep.StartFirstAnalyze -> OnboardingStep.AddToFavorite
     }
 

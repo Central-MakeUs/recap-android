@@ -37,6 +37,8 @@ fun RecapMainScreen(
     onOrganizeComplete: (List<LocalImage>) -> Unit = {},
     onNavigateToScreenshot: (String) -> Unit = {},
     homeNavigationRequestId: Int = 0,
+    pendingOpenOrganize: Boolean = false,
+    onPendingOpenOrganizeConsumed: () -> Unit = {},
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
 ) {
     val backStack = rememberNavBackStack(MainTabRoute.Home)
@@ -45,6 +47,13 @@ fun RecapMainScreen(
     var collectionFavoritesNavigationRequestId by remember { mutableIntStateOf(0) }
     var collectionPredictiveBackProgress by remember { mutableFloatStateOf(0f) }
     var showOrganize by rememberSaveable { mutableStateOf(false) }
+
+    LaunchedEffect(pendingOpenOrganize) {
+        if (pendingOpenOrganize) {
+            showOrganize = true
+            onPendingOpenOrganizeConsumed()
+        }
+    }
 
     fun navigateTo(route: MainTabRoute) {
         if (backStack.lastOrNull() == route) return

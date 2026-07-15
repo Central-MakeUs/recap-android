@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -15,6 +17,9 @@ import kotlinx.coroutines.launch
 class RecapStartupViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
+    private val _pendingOpenOrganize = MutableStateFlow(false)
+    val pendingOpenOrganize: StateFlow<Boolean> = _pendingOpenOrganize.asStateFlow()
+
     val uiState: StateFlow<RecapStartupUiState> =
         userPreferencesRepository.onboardingCompleted
             .map { onboardingCompleted ->
@@ -26,14 +31,20 @@ class RecapStartupViewModel @Inject constructor(
                 initialValue = RecapStartupUiState.Loading,
             )
 
-    fun completeOnboarding() {
+    fun completeOnboarding(openOrganize: Boolean = false) {
         viewModelScope.launch {
+            _pendingOpenOrganize.value = openOrganize
             userPreferencesRepository.setOnboardingCompleted(true)
         }
     }
 
+    fun consumePendingOpenOrganize() {
+        _pendingOpenOrganize.value = false
+    }
+
     fun resetOnboarding() {
         viewModelScope.launch {
+            _pendingOpenOrganize.value = false
             userPreferencesRepository.setOnboardingCompleted(false)
         }
     }

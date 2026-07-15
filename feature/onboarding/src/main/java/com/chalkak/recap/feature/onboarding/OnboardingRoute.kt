@@ -4,7 +4,6 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
@@ -30,7 +29,7 @@ import kotlinx.serialization.Serializable
 
 @Composable
 fun OnboardingRoute(
-    onOnboardingComplete: () -> Unit,
+    onOnboardingComplete: (openOrganize: Boolean) -> Unit,
     isDebugBuild: Boolean = false,
     viewModelKey: String? = null,
     viewModel: OnboardingViewModel = hiltViewModel(key = viewModelKey),
@@ -80,13 +79,6 @@ fun OnboardingRoute(
     ) {
         viewModel.refreshImagePermissionAndMoveToFirstOrganize()
     }
-    val screenshotPickerLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickMultipleVisualMedia(),
-    ) { uris ->
-        if (uris.isNotEmpty()) {
-            onOnboardingComplete()
-        }
-    }
     val onboardingBackStack = rememberNavBackStack(OnboardingDestination.Flow)
 
     NavDisplay(
@@ -130,11 +122,7 @@ fun OnboardingRoute(
 
                                 OnboardingAction.OpenScreenshotPicker -> {
                                     viewModel.onAction(action)
-                                    screenshotPickerLauncher.launch(
-                                        PickVisualMediaRequest(
-                                            ActivityResultContracts.PickVisualMedia.ImageOnly
-                                        )
-                                    )
+                                    onOnboardingComplete(true)
                                 }
 
                                 OnboardingAction.OpenAddToFavoriteGuide -> {
@@ -148,7 +136,7 @@ fun OnboardingRoute(
                                 }
 
                                 OnboardingAction.SkipStartFirstAnalyze -> {
-                                    onOnboardingComplete()
+                                    onOnboardingComplete(false)
                                 }
 
                                 else -> viewModel.onAction(action)

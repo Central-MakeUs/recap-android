@@ -1,36 +1,58 @@
 package com.chalkak.recap.feature.onboarding.screen
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.RecapLogo
 import com.chalkak.recap.core.design.component.RecapLogoAspectRatio
+import com.chalkak.recap.core.design.theme.RecapGray50
+import com.chalkak.recap.core.design.theme.RecapGray500
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
 import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
 import com.chalkak.recap.feature.onboarding.OnboardingUiState
 import com.chalkak.recap.feature.onboarding.component.OnboardingBottomActions
 import com.chalkak.recap.feature.onboarding.component.StepHeader
+
+private val CharacterAspectRatio = 552f / 426f
+private val CharacterWidth = 148.dp
+private val ScreenHorizontalPadding = 24.dp
+private val GuideIconCardSize = 88.dp
+private val GuideIconSize = 48.dp
+private val GuideIconEdgeOverflow = 24.dp
+
+private val GuideIconResources = listOf(
+    R.drawable.onboarding_background_4,
+    R.drawable.onboarding_background_1,
+    R.drawable.onboarding_background_3,
+    R.drawable.onboarding_background_2,
+)
+
+private val GuideIconRotations = listOf(-4f, 3f, -2f, 5f)
 
 @Composable
 fun OnboardingStartFirstAnalyzeScreen(
@@ -56,27 +78,30 @@ fun OnboardingStartFirstAnalyzeScreen(
                 .fillMaxWidth()
                 .padding(top = 16.dp),
             contentSpacing = 24.dp,
-            descriptionFontWeight = FontWeight.Bold,
         )
         StartFirstAnalyzeDescription(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 32.dp),
         )
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
         ) {
-            StartFirstAnalyzeCharacterPlaceholder(
+            // 화면 오른쪽 끝 padding을 상쇄해 캐릭터가 우측에 딱 붙도록 배치한다.
+            StartFirstAnalyzeCharacter(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = 18.dp, y = 18.dp),
+                    .offset(x = ScreenHorizontalPadding, y = 8.dp),
             )
-            StartFirstAnalyzeGuidePlaceholder(
+            val guideIconsBreakout = ScreenHorizontalPadding + GuideIconEdgeOverflow
+            StartFirstAnalyzeGuideIcons(
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .offset(y = 32.dp),
+                    // 좌우 padding + overflow만큼 넓혀 양끝 아이콘이 화면 가장자리를 살짝 넘기게 한다.
+                    .width(maxWidth + guideIconsBreakout * 2)
+                    .offset(y = 36.dp),
             )
         }
         OnboardingBottomActions(
@@ -92,71 +117,69 @@ fun OnboardingStartFirstAnalyzeScreen(
 private fun StartFirstAnalyzeDescription(
     modifier: Modifier = Modifier,
 ) {
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val galleryPrefix = stringResource(
-        R.string.onboarding_start_first_analyze_description_gallery_prefix
-    )
-    val selectHighlight = stringResource(
-        R.string.onboarding_start_first_analyze_description_select_highlight
-    )
-    val gallerySuffix = stringResource(
-        R.string.onboarding_start_first_analyze_description_gallery_suffix
-    )
-    val captureHighlight = stringResource(
-        R.string.onboarding_start_first_analyze_description_capture_highlight
-    )
-    val captureSuffix = stringResource(
-        R.string.onboarding_start_first_analyze_description_capture_suffix
-    )
-
     Text(
-        text = buildAnnotatedString {
-            append(galleryPrefix)
-            append(" ")
-            pushStyle(SpanStyle(color = primaryColor))
-            append(selectHighlight)
-            pop()
-            append(gallerySuffix)
-            append("\n")
-            pushStyle(SpanStyle(color = primaryColor))
-            append(captureHighlight)
-            pop()
-            append(captureSuffix)
-        },
+        text = stringResource(R.string.onboarding_start_first_analyze_description),
         modifier = modifier,
-        style = MaterialTheme.typography.bodyLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        fontWeight = FontWeight.Bold,
+        style = RecapBody1,
+        color = RecapGray500,
     )
 }
 
 @Composable
-private fun StartFirstAnalyzeCharacterPlaceholder(
+private fun StartFirstAnalyzeCharacter(
     modifier: Modifier = Modifier,
 ) {
-    Box(
+    Image(
+        painter = painterResource(R.drawable.onboarding_start_first_analyze_character),
+        contentDescription = stringResource(
+            R.string.onboarding_start_first_analyze_character_content_description,
+        ),
         modifier = modifier
-            .size(width = 104.dp, height = 76.dp)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(16.dp),
-            ),
+            .width(CharacterWidth)
+            .aspectRatio(CharacterAspectRatio),
+        contentScale = ContentScale.Fit,
     )
 }
 
 @Composable
-private fun StartFirstAnalyzeGuidePlaceholder(
+private fun StartFirstAnalyzeGuideIcons(
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        GuideIconResources.forEachIndexed { index, iconRes ->
+            StartFirstAnalyzeGuideIconCard(
+                iconRes = iconRes,
+                rotationZ = GuideIconRotations[index],
+            )
+        }
+    }
+}
+
+@Composable
+private fun StartFirstAnalyzeGuideIconCard(
+    iconRes: Int,
+    rotationZ: Float,
     modifier: Modifier = Modifier,
 ) {
     Box(
         modifier = modifier
-            .fillMaxWidth()
-            .height(132.dp)
-            .background(
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                shape = RoundedCornerShape(16.dp),
-            ),
-    )
+            .size(GuideIconCardSize)
+            .graphicsLayer { this.rotationZ = rotationZ }
+            .clip(RoundedCornerShape(20.dp))
+            .background(RecapGray50),
+        contentAlignment = Alignment.Center,
+    ) {
+        Image(
+            painter = painterResource(iconRes),
+            contentDescription = null,
+            modifier = Modifier.size(GuideIconSize),
+            contentScale = ContentScale.Fit,
+        )
+    }
 }
 
 @OnboardingScreenPreview

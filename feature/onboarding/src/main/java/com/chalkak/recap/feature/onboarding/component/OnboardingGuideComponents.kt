@@ -26,6 +26,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.button.RecapButton
+import com.chalkak.recap.core.design.theme.RecapBlue300
+import com.chalkak.recap.core.design.theme.RecapGray500
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 
 @Composable
 internal fun GuideBullet(
@@ -66,7 +69,7 @@ internal fun StepHeader(
     description: String? = null,
     titleStyle: TextStyle = MaterialTheme.typography.displaySmall,
     descriptionStyle: TextStyle = MaterialTheme.typography.bodyLarge,
-    contentSpacing: Dp = 12.dp,
+    contentSpacing: Dp = 17.dp,
     descriptionFontWeight: FontWeight? = null,
 ) {
     Column(
@@ -107,7 +110,7 @@ internal fun OnboardingBottomActions(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 8.dp),
-            shadowElevation = 12.dp,
+            colors = RecapBlue300
         )
         TextButton(
             onClick = onSecondaryClick,
@@ -117,8 +120,8 @@ internal fun OnboardingBottomActions(
         ) {
             Text(
                 text = secondaryText,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style =  RecapHeading3,
+                color = RecapGray500,
                 fontWeight = FontWeight.Bold,
             )
         }
@@ -129,7 +132,7 @@ internal fun OnboardingBottomActions(
 @Composable
 private fun GuideBulletPreview() {
     OnboardingComponentPreviewContainer {
-        GuideBullet(text = stringResource(R.string.onboarding_permission_bullet_selected_only))
+        GuideBullet(text = stringResource(R.string.onboarding_permission_purpose_selected_only))
     }
 }
 

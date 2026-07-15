@@ -22,6 +22,7 @@ sealed interface OnboardingAction {
     data object SkipPermission : OnboardingAction
     data object OpenScreenshotPicker : OnboardingAction
     data object SkipStartFirstAnalyze : OnboardingAction
+    data object ConfirmUploadMethodGuide : OnboardingAction
 }
 
 sealed interface OnboardingEvent {
@@ -33,6 +34,7 @@ sealed interface OnboardingEvent {
 enum class OnboardingStep {
     Landing,
     PermissionGuide,
+    UploadMethodGuide,
     AddToFavorite,
     StartFirstAnalyze,
 }
