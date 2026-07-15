@@ -52,7 +52,7 @@ val RecapCategoryOther700 = Color(0xFF717171)
 val RecapToastBackground = Color.Black.copy(alpha = 0.5f)
 val RecapToastContent = Color(0xFFFFFFFF)
 val RecapSuccess = Color(0xFF1FCD70)
-val RecapError = Color(0xFFFFF6464)
+val RecapError = Color(0xFFFF6464)
 val RecapErrorContainer = Color(0xFFFFEFEF)
 
 val Black = Color(0xFF000000)

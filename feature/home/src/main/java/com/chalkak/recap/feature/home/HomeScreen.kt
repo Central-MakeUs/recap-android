@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
@@ -32,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -277,7 +275,9 @@ private fun HomeFavoritesEmptyText(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = HomeScreenTokens.EmptySectionTextVerticalPadding),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.FavoritesEmptyTextSpacing),
     ) {
@@ -443,7 +443,9 @@ private fun HomeSectionEmptyText(
         style = MaterialTheme.typography.bodyMedium,
         color = RecapGray500,
         textAlign = TextAlign.Center,
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = HomeScreenTokens.EmptySectionTextVerticalPadding),
     )
 }
 
@@ -455,6 +457,7 @@ private object HomeScreenTokens {
     val RecentCardSpacing = 10.dp
     val FavoriteCardSpacing = 11.dp
     const val FavoriteGridColumns = 2
+    val EmptySectionTextVerticalPadding = 70.dp
     val FavoritesEmptyTextSpacing = 4.dp
     val FrequentTypeCardSpacing = 16.dp
     val FrequentTypeLabelSpacing = 8.dp

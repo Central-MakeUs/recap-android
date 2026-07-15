@@ -54,10 +54,10 @@ private const val MainTabSlideFraction = 6
 
 @Composable
 fun RecapNavHost(
+    modifier: Modifier = Modifier,
     onNavigateToDeveloper: () -> Unit,
     pendingOpenOrganize: Boolean = false,
     onPendingOpenOrganizeConsumed: () -> Unit = {},
-    modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val backStack = rememberNavBackStack(AppRoute.MainTabs)
