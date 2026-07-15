@@ -42,7 +42,7 @@ import com.chalkak.recap.feature.mypage.MyPageUploadGuideScreen
 import com.chalkak.recap.feature.mypage.SettingsAction
 import com.chalkak.recap.feature.mypage.SettingsRoute
 import com.chalkak.recap.feature.screenshot.ScreenshotRoute
-import com.google.android.gms.oss.licenses.OssLicensesMenuActivity
+import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
