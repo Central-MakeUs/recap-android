@@ -65,12 +65,15 @@ import com.chalkak.recap.core.design.component.chip.RecapFilterTag
 import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
 import com.chalkak.recap.core.design.component.icon.RecapHazeFolderIcon
 import com.chalkak.recap.core.design.component.input.RecapInputField
+import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
 import com.chalkak.recap.core.design.component.toast.RecapToast
 import com.chalkak.recap.core.design.component.toast.RecapToastHost
 import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapBlue300
+import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.feature.organize.OrganizeAction
 import com.chalkak.recap.feature.organize.OrganizeUiState
 import com.chalkak.recap.feature.organize.ScreenshotPicker
@@ -94,6 +97,8 @@ internal fun ComponentGardenScreen(
     var showLogoutConfirmationBottomSheet by remember { mutableStateOf(false) }
     var showWithdrawalConfirmationBottomSheet by remember { mutableStateOf(false) }
     var showScreenshotPicker by remember { mutableStateOf(false) }
+    var showConfirmPopupError by remember { mutableStateOf(false) }
+    var showConfirmPopupPrimary by remember { mutableStateOf(false) }
     var screenshotSelectionUiState by remember {
         mutableStateOf(
             OrganizeUiState(
@@ -258,6 +263,30 @@ internal fun ComponentGardenScreen(
                     size = RecapButtonSize.Medium,
                     shadowElevation = 12.dp
                 )
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_popups_section_title),
+            ) {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { showConfirmPopupError = true },
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.component_garden_confirm_popup_error_button
+                        ),
+                    )
+                }
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { showConfirmPopupPrimary = true },
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.component_garden_confirm_popup_primary_button
+                        ),
+                    )
+                }
             }
             ComponentGardenSection(
                 title = stringResource(R.string.component_garden_toasts_section_title),
@@ -543,6 +572,30 @@ internal fun ComponentGardenScreen(
             onDismissRequest = { showScreenshotPicker = false },
             onCloseClick = { showScreenshotPicker = false },
             onConfirmClick = { showScreenshotPicker = false },
+        )
+    }
+    if (showConfirmPopupError) {
+        RecapPopup(
+            title = stringResource(R.string.recap_popup_preview_title),
+            description = stringResource(R.string.recap_popup_preview_description),
+            confirmButtonText = stringResource(R.string.deletion_confirmation_delete_button),
+            cancelButtonText = stringResource(R.string.deletion_confirmation_cancel_button),
+            onConfirmClick = { showConfirmPopupError = false },
+            onCancelClick = { showConfirmPopupError = false },
+            onDismissRequest = { showConfirmPopupError = false },
+            confirmButtonColor = RecapError,
+        )
+    }
+    if (showConfirmPopupPrimary) {
+        RecapPopup(
+            title = stringResource(R.string.recap_popup_preview_title),
+            description = stringResource(R.string.recap_popup_preview_description),
+            confirmButtonText = stringResource(R.string.deletion_confirmation_delete_button),
+            cancelButtonText = stringResource(R.string.deletion_confirmation_cancel_button),
+            onConfirmClick = { showConfirmPopupPrimary = false },
+            onCancelClick = { showConfirmPopupPrimary = false },
+            onDismissRequest = { showConfirmPopupPrimary = false },
+            confirmButtonColor = RecapBlue300,
         )
     }
 }
