@@ -20,7 +20,9 @@ import io.mockk.verify
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -365,30 +367,39 @@ class CollectionViewModelTest {
     }
 
     @Test
-    fun `toggle all selection affects only visible stored ids`() = runTest(testDispatcher) {
+    fun `delete selected shows confirm dialog without deleting`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
-                storedCard(imageId = "card-1", title = "First", createdAtMillis = 200L),
-                storedCard(imageId = "card-2", title = "Second", createdAtMillis = 100L),
+                storedCard(imageId = "card-1", title = "First", createdAtMillis = 100L),
             ),
         )
         advanceUntilIdle()
-
         viewModel.onAction(CollectionAction.StartSelection)
-        viewModel.onAction(
-            CollectionAction.ToggleAllSelection(setOf("card-1", "card-2", "missing")),
-        )
+        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
 
-        assertEquals(
-            setOf("card-1", "card-2"),
-            viewModel.uiState.value.selection.selectedImageIds,
-        )
+        viewModel.onAction(CollectionAction.DeleteSelected)
 
-        viewModel.onAction(
-            CollectionAction.ToggleAllSelection(setOf("card-1", "card-2", "missing")),
-        )
+        assertTrue(viewModel.uiState.value.selection.showDeleteConfirmDialog)
+        coVerify(exactly = 0) { repository.deleteCards(any()) }
+    }
 
-        assertTrue(viewModel.uiState.value.selection.selectedImageIds.isEmpty())
+    @Test
+    fun `dismiss delete confirm dialog keeps selection`() = runTest(testDispatcher) {
+        cardsFlow.emit(
+            listOf(
+                storedCard(imageId = "card-1", title = "First", createdAtMillis = 100L),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.StartSelection)
+        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+        viewModel.onAction(CollectionAction.DeleteSelected)
+
+        viewModel.onAction(CollectionAction.DismissDeleteConfirmDialog)
+
+        assertFalse(viewModel.uiState.value.selection.showDeleteConfirmDialog)
+        assertTrue(viewModel.uiState.value.selection.isActive)
+        assertEquals(setOf("card-1"), viewModel.uiState.value.selection.selectedImageIds)
     }
 
     @Test
@@ -407,6 +418,8 @@ class CollectionViewModelTest {
             viewModel.onAction(CollectionAction.ToggleItemSelection("card-2"))
 
             viewModel.onAction(CollectionAction.DeleteSelected)
+            val eventDeferred = async { viewModel.events.first() }
+            viewModel.onAction(CollectionAction.ConfirmDeleteSelected)
             advanceUntilIdle()
 
             coVerify(exactly = 1) {
@@ -419,6 +432,10 @@ class CollectionViewModelTest {
                 repository.deleteCards(setOf("card-1", "card-2"))
                 imageStorage.deleteStoredImages(setOf("card-1", "card-2"))
             }
+            assertEquals(
+                CollectionEvent.ShowDeleteSuccessToast(deletedCount = 2),
+                eventDeferred.await(),
+            )
             assertEquals(CollectionSelectionUiState(), viewModel.uiState.value.selection)
         }
 
@@ -435,11 +452,13 @@ class CollectionViewModelTest {
         viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
 
         viewModel.onAction(CollectionAction.DeleteSelected)
+        viewModel.onAction(CollectionAction.ConfirmDeleteSelected)
         advanceUntilIdle()
 
         verify(exactly = 0) { imageStorage.deleteStoredImages(any()) }
         assertTrue(viewModel.uiState.value.selection.isActive)
         assertFalse(viewModel.uiState.value.selection.isDeleting)
+        assertFalse(viewModel.uiState.value.selection.showDeleteConfirmDialog)
         assertEquals(setOf("card-1"), viewModel.uiState.value.selection.selectedImageIds)
     }
 
@@ -457,6 +476,7 @@ class CollectionViewModelTest {
         viewModel.onAction(CollectionAction.StartSelection)
         viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
         viewModel.onAction(CollectionAction.DeleteSelected)
+        viewModel.onAction(CollectionAction.ConfirmDeleteSelected)
         runCurrent()
 
         viewModel.onAction(CollectionAction.CancelSelection)
@@ -480,8 +500,10 @@ class CollectionViewModelTest {
         viewModel.onAction(CollectionAction.StartSelection)
 
         viewModel.onAction(CollectionAction.DeleteSelected)
+        viewModel.onAction(CollectionAction.ConfirmDeleteSelected)
         advanceUntilIdle()
 
+        assertFalse(viewModel.uiState.value.selection.showDeleteConfirmDialog)
         coVerify(exactly = 0) { repository.deleteCards(any()) }
     }
 

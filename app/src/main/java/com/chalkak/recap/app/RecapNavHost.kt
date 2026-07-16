@@ -44,6 +44,7 @@ import com.chalkak.recap.feature.settings.screen.PrivacyGuideScreen
 import com.chalkak.recap.feature.settings.screen.UsageGuideScreen
 import com.chalkak.recap.feature.screenshot.ScreenshotRoute
 import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
+import com.chalkak.recap.core.design.component.toast.RecapToastHostState
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -244,6 +245,7 @@ fun RecapNavHost(
 @Composable
 fun RecapMainTabNavHost(
     hazeState: HazeState,
+    toastHostState: RecapToastHostState,
     modifier: Modifier = Modifier,
     backStack: NavBackStack<NavKey>,
     onNavigateToDeveloper: () -> Unit,
@@ -287,6 +289,7 @@ fun RecapMainTabNavHost(
                 MainTabRoute.Collection -> NavEntry(route) {
                     CollectionRoute(
                         hazeState = hazeState,
+                        toastHostState = toastHostState,
                         onNavigateToOrganize = onNavigateToOrganize,
                         onNavigateToScreenshot = onNavigateToScreenshot,
                         onNavigateBack = { backStack.removeLastOrNull() },

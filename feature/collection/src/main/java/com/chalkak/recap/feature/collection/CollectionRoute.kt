@@ -7,6 +7,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
@@ -17,6 +18,9 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.toast.RecapToastHostState
+import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
@@ -26,6 +30,7 @@ import kotlinx.serialization.Serializable
 fun CollectionRoute(
     modifier: Modifier = Modifier,
     hazeState: HazeState,
+    toastHostState: RecapToastHostState,
     onNavigateToOrganize: () -> Unit,
     onNavigateToScreenshot: (String) -> Unit = {},
     onNavigateBack: () -> Unit = {},
@@ -34,6 +39,7 @@ fun CollectionRoute(
     viewModel: CollectionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val resources = LocalResources.current
     val backStack = rememberNavBackStack(CollectionDestination.Overview)
     val isAtRoot = backStack.size <= 1
     val canPredictivePopToHome = isAtRoot &&
@@ -63,6 +69,22 @@ fun CollectionRoute(
                 backStack.lastOrNull() == CollectionDestination.FavoriteDetail
             if (!alreadyOnFavoriteDetail) {
                 backStack.add(CollectionDestination.FavoriteDetail)
+            }
+        }
+    }
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                is CollectionEvent.ShowDeleteSuccessToast -> {
+                    toastHostState.showToast(
+                        message = resources.getString(
+                            R.string.collection_delete_success_toast,
+                            event.deletedCount,
+                        ),
+                        type = RecapToastType.Success,
+                    )
+                }
             }
         }
     }

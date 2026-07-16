@@ -2,41 +2,51 @@ package com.chalkak.recap.feature.collection
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.selection.triStateToggleable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -45,7 +55,9 @@ import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
+import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue300
+import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
@@ -111,62 +123,6 @@ private fun CollectionTextButton(
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Medium,
         )
-    }
-}
-
-@Composable
-internal fun CollectionSelectAllRow(
-    visible: Boolean,
-    itemImageIds: Set<String>,
-    selectedImageIds: Set<String>,
-    onToggleAll: () -> Unit,
-    modifier: Modifier = Modifier,
-    enabled: Boolean = true,
-) {
-    val selectedVisibleCount = itemImageIds.count(selectedImageIds::contains)
-    val effectivelyEnabled = enabled && itemImageIds.isNotEmpty()
-    val toggleableState = when {
-        selectedVisibleCount == 0 -> ToggleableState.Off
-        selectedVisibleCount == itemImageIds.size -> ToggleableState.On
-        else -> ToggleableState.Indeterminate
-    }
-
-    AnimatedVisibility(
-        visible = visible,
-        modifier = modifier,
-        enter = expandVertically(
-            animationSpec = collectionSelectionEnterTween(),
-            expandFrom = Alignment.Top,
-        ) + fadeIn(animationSpec = collectionSelectionEnterTween()),
-        exit = shrinkVertically(
-            animationSpec = collectionSelectionExitTween(),
-            shrinkTowards = Alignment.Top,
-        ) + fadeOut(animationSpec = collectionSelectionExitTween()),
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = CollectionSelectionTokens.MinimumTouchTarget)
-                .triStateToggleable(
-                    state = toggleableState,
-                    enabled = effectivelyEnabled,
-                    role = Role.Checkbox,
-                    onClick = onToggleAll,
-                )
-                .padding(vertical = CollectionSelectionTokens.SelectAllVerticalPadding),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            CollectionCheckboxIcon(
-                checked = toggleableState == ToggleableState.On,
-                modifier = Modifier.clearAndSetSemantics { },
-            )
-            Text(
-                text = stringResource(R.string.collection_select_all_action),
-                modifier = Modifier.padding(start = CollectionSelectionTokens.CheckboxEndSpacing),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-        }
     }
 }
 
@@ -267,56 +223,93 @@ internal fun CollectionSelectableCaptureItem(
         item.title,
         item.summary,
     )
-    val selectionModifier = if (selection.isActive) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressAnimationSpec = tween<Float>(
+        durationMillis = CollectionSelectionTokens.PressAnimationDurationMillis,
+        easing = FastOutSlowInEasing,
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) CollectionSelectionTokens.PressedScale else 1f,
+        animationSpec = pressAnimationSpec,
+        label = "collection_capture_item_press_scale",
+    )
+    val rowShape = RoundedCornerShape(CollectionSelectionTokens.RowCornerRadius)
+    val pressableModifier = if (selection.isActive) {
         Modifier
             .toggleable(
                 value = isSelected,
                 enabled = !selection.isDeleting,
                 role = Role.Checkbox,
+                interactionSource = interactionSource,
+                indication = null,
                 onValueChange = { onSelectionToggle() },
             )
             .semantics {
                 contentDescription = selectionContentDescription
             }
     } else {
-        Modifier
+        Modifier.clickable(
+            interactionSource = interactionSource,
+            indication = null,
+            role = Role.Button,
+            onClick = onOpenClick,
+        )
     }
 
-    Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .then(selectionModifier),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        CollectionSelectionCheckbox(
-            visible = selection.isActive,
-            checked = isSelected,
-        )
-        val itemClick = if (selection.isActive) onSelectionToggle else onOpenClick
-        Box(
+    Column(modifier = modifier.fillMaxWidth()) {
+        Spacer(modifier = Modifier.height(CollectionSelectionTokens.DividerGap))
+        Row(
             modifier = Modifier
-                .weight(1f)
-                .then(
-                    if (selection.isActive) {
-                        Modifier.clearAndSetSemantics { }
-                    } else {
-                        Modifier
-                    },
-                ),
+                .fillMaxWidth()
+                .padding(horizontal = CollectionSelectionTokens.ItemHorizontalPadding)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .clip(rowShape)
+                .background(RecapBackground)
+                .then(pressableModifier),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            ScreenshotCard(
-                thumbnailModel = item.thumbnailModel,
-                categoryType = item.categoryType,
-                organizedAtMillis = item.createdAtMillis,
-                metadataMode = metadataMode,
-                title = item.title,
-                description = item.summary,
-                isFavorite = item.isFavorite,
-                onClick = itemClick,
-                onFavoriteClick = onFavoriteClick,
-                horizontalContentPadding = 0.dp,
-                showFavoriteButton = !selection.isActive,
-                showBottomDivider = showBottomDivider,
+            CollectionSelectionCheckbox(
+                visible = selection.isActive,
+                checked = isSelected,
+            )
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .then(
+                        if (selection.isActive) {
+                            Modifier.clearAndSetSemantics { }
+                        } else {
+                            Modifier
+                        },
+                    ),
+            ) {
+                ScreenshotCard(
+                    thumbnailModel = item.thumbnailModel,
+                    categoryType = item.categoryType,
+                    organizedAtMillis = item.createdAtMillis,
+                    metadataMode = metadataMode,
+                    title = item.title,
+                    description = item.summary,
+                    isFavorite = item.isFavorite,
+                    onClick = onOpenClick,
+                    onFavoriteClick = onFavoriteClick,
+                    horizontalContentPadding = 0.dp,
+                    showFavoriteButton = !selection.isActive,
+                    showBottomDivider = false,
+                    containerClickEnabled = false,
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(CollectionSelectionTokens.DividerGap))
+        if (showBottomDivider) {
+            HorizontalDivider(
+                modifier = Modifier.fillMaxWidth(),
+                thickness = CollectionSelectionTokens.ItemDividerThickness,
+                color = RecapGray100,
             )
         }
     }
@@ -335,11 +328,15 @@ private fun <T> collectionSelectionExitTween() = tween<T>(
 private object CollectionSelectionTokens {
     const val EnterAnimationDurationMillis = 180
     const val ExitAnimationDurationMillis = 150
+    const val PressedScale = 0.9875f
+    const val PressAnimationDurationMillis = 100
+    val RowCornerRadius = 10.dp
+    val DividerGap = 2.dp
     val CheckboxContainerSize = 24.dp
     val CheckboxIconSize = 16.dp
     val CheckboxEndSpacing = 8.dp
-    val SelectAllVerticalPadding = 8.dp
-    val MinimumTouchTarget = 48.dp
+    val ItemHorizontalPadding = 16.dp
+    val ItemDividerThickness = 1.dp
     val TextButtonMinHeight = 40.dp
     val TextButtonPadding = 4.dp
 }
@@ -390,33 +387,6 @@ private fun CollectionSelectionActionsDeletingPreview() {
             onDeleteSelected = {},
             modifier = Modifier.padding(horizontal = 20.dp),
         )
-    }
-}
-
-@Preview(name = "Collection Select All Row", showBackground = true, widthDp = 360)
-@Composable
-private fun CollectionSelectAllRowPreview() {
-    RECAPTheme(dynamicColor = false) {
-        Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-            CollectionSelectAllRow(
-                visible = true,
-                itemImageIds = setOf("1", "2", "3"),
-                selectedImageIds = emptySet(),
-                onToggleAll = {},
-            )
-            CollectionSelectAllRow(
-                visible = true,
-                itemImageIds = setOf("1", "2", "3"),
-                selectedImageIds = setOf("1"),
-                onToggleAll = {},
-            )
-            CollectionSelectAllRow(
-                visible = true,
-                itemImageIds = setOf("1", "2", "3"),
-                selectedImageIds = setOf("1", "2", "3"),
-                onToggleAll = {},
-            )
-        }
     }
 }
 

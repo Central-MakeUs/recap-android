@@ -2,6 +2,7 @@ package com.chalkak.recap.core.design.component.card
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -9,9 +10,11 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,10 +26,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,11 +38,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -58,12 +61,14 @@ import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChipDefaults
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
+
 enum class ScreenshotCardMetadataMode {
     CategoryChip,
     OrganizedDate,
@@ -85,14 +90,45 @@ fun ScreenshotCard(
     horizontalContentPadding: Dp = ScreenshotCardTokens.ContainerHorizontalPadding,
     showFavoriteButton: Boolean = true,
     showBottomDivider: Boolean = true,
+    containerClickEnabled: Boolean = true,
 ) {
-    Surface(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth(),
-        color = Color.Transparent,
-        contentColor = RecapGray900,
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressActive = containerClickEnabled && isPressed
+    val pressAnimationSpec = tween<Float>(
+        durationMillis = ScreenshotCardTokens.PressAnimationDurationMillis,
+        easing = FastOutSlowInEasing,
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (pressActive) ScreenshotCardTokens.PressedScale else 1f,
+        animationSpec = pressAnimationSpec,
+        label = "screenshot_card_press_scale",
+    )
+    val rowShape = RoundedCornerShape(ScreenshotCardTokens.RowCornerRadius)
+
+    Column(modifier = modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .clip(rowShape)
+                .background(RecapBackground)
+                .then(
+                    if (containerClickEnabled) {
+                        Modifier.clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            role = Role.Button,
+                            onClick = onClick,
+                        )
+                    } else {
+                        Modifier
+                    },
+                ),
+        ) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -159,13 +195,14 @@ fun ScreenshotCard(
                     onFavoriteClick = onFavoriteClick,
                 )
             }
-            if (showBottomDivider) {
-                HorizontalDivider(
-                    modifier = Modifier.padding(horizontal = horizontalContentPadding),
-                    thickness = ScreenshotCardTokens.DividerThickness,
-                    color = RecapGray100,
-                )
-            }
+        }
+        if (showBottomDivider) {
+            Spacer(modifier = Modifier.height(ScreenshotCardTokens.DividerGap))
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = horizontalContentPadding),
+                thickness = ScreenshotCardTokens.DividerThickness,
+                color = RecapGray100,
+            )
         }
     }
 }
@@ -377,11 +414,15 @@ private object ScreenshotCardTokens {
     val ThumbnailHeight = 80.dp
     val ThumbnailBorderWidth = 0.5.dp
     val DividerThickness = 1.dp
+    val DividerGap = 2.dp
     val FavoriteIconOffsetX = 35.dp
     val FavoriteIconOffsetY = (-2).dp
     val FavoriteIconTouchSize = 28.dp
     val FavoriteIconPadding = 6.dp
     val FavoriteIconSize = 16.dp
+    const val PressedScale = 0.9875f
+    const val PressAnimationDurationMillis = 100
+    val RowCornerRadius = 10.dp
     const val ThumbnailViewBoxWidth = 62f
     const val ThumbnailViewBoxHeight = 80f
     const val TitleMaxLines = 1

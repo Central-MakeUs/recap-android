@@ -3,7 +3,10 @@ package com.chalkak.recap.app
 import android.annotation.SuppressLint
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -14,11 +17,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBar
+import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDestination
+import com.chalkak.recap.core.design.component.toast.RecapToastHost
+import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.organize.OrganizeRoute
@@ -44,9 +52,17 @@ fun RecapMainScreen(
     val backStack = rememberNavBackStack(MainTabRoute.Home)
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
     val hazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
+    val toastHostState = rememberRecapToastHostState()
     var collectionFavoritesNavigationRequestId by remember { mutableIntStateOf(0) }
     var collectionPredictiveBackProgress by remember { mutableFloatStateOf(0f) }
     var showOrganize by rememberSaveable { mutableStateOf(false) }
+    val navigationBarBottomPadding = WindowInsets.navigationBars
+        .asPaddingValues()
+        .calculateBottomPadding()
+    val toastBottomPadding = RecapBottomBarDefaults.Height +
+        RecapBottomBarDefaults.BottomPadding +
+        navigationBarBottomPadding +
+        8.dp
 
     LaunchedEffect(pendingOpenOrganize) {
         if (pendingOpenOrganize) {
@@ -110,6 +126,7 @@ fun RecapMainScreen(
         ) { _ ->
             RecapMainTabNavHost(
                 hazeState = hazeState,
+                toastHostState = toastHostState,
                 backStack = backStack,
                 onNavigateToDeveloper = onNavigateToDeveloper,
                 onNavigateToSettings = onNavigateToSettings,
@@ -127,6 +144,15 @@ fun RecapMainScreen(
                 modifier = Modifier.fillMaxSize(),
             )
         }
+
+        RecapToastHost(
+            hostState = toastHostState,
+            hazeState = hazeState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 24.dp)
+                .padding(bottom = toastBottomPadding),
+        )
 
         if (showOrganize) {
             OrganizeRoute(
