@@ -91,7 +91,10 @@ fun RecapPopupContent(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(RecapPopupTokens.ContentPadding),
+                .padding(
+                    horizontal = RecapPopupTokens.ContentHorizontalPadding,
+                    vertical = RecapPopupTokens.ContentVerticalPadding,
+                ),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(RecapPopupTokens.SectionSpacing),
         ) {
@@ -141,7 +144,8 @@ private object RecapPopupTokens {
     val DialogHorizontalMargin = 40.dp
     val MaxWidth = 320.dp
     val ContainerCornerRadius = 24.dp
-    val ContentPadding = 24.dp
+    val ContentHorizontalPadding = 28.dp
+    val ContentVerticalPadding = 24.dp
     val SectionSpacing = 24.dp
     val TextSpacing = 8.dp
     val ButtonSpacing = 12.dp

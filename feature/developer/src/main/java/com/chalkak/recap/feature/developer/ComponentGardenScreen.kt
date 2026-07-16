@@ -54,6 +54,8 @@ import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
 import com.chalkak.recap.core.design.component.card.HomeFavoriteCard
 import com.chalkak.recap.core.design.component.card.OrganizedCaptureCard
+import com.chalkak.recap.core.design.component.card.ShareFavoriteGuideCard
+import com.chalkak.recap.core.design.component.card.OrganizedScreenshotSummaryCard
 import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
@@ -157,6 +159,10 @@ internal fun ComponentGardenScreen(
                     organizedCaptureCount = ComponentGardenOrganizedCaptureCount,
                     onClick = {},
                 )
+                OrganizedScreenshotSummaryCard(
+                    organizedCount = ComponentGardenOrganizedScreenshotSummaryCount,
+                )
+                ShareFavoriteGuideCard(onClick = {})
                 RecentOrganizedScreenshotCard(
                     thumbnailModel = R.drawable.bid_landscape_24px,
                     title = stringResource(R.string.home_recent_screenshot_return_title),
@@ -734,6 +740,7 @@ private fun ComponentGardenScreenPreview() {
 
 private const val ComponentGardenReviewRequiredCount = 3
 private const val ComponentGardenOrganizedCaptureCount = 12
+private const val ComponentGardenOrganizedScreenshotSummaryCount = 128
 private const val ComponentGardenFrequentSaveTypeCount = 12
 private const val ComponentGardenScreenshotPickerMaxCount = 20
 private val ComponentGardenHazeFolderCardWidth = 99.dp

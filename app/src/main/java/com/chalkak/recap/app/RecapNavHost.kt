@@ -34,13 +34,14 @@ import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
 import com.chalkak.recap.feature.home.RecentOrganizedScreenshotsRoute
 import com.chalkak.recap.feature.home.SearchRoute
+import com.chalkak.recap.feature.settings.AccountManagementRoute
+import com.chalkak.recap.feature.settings.DataManagementRoute
 import com.chalkak.recap.feature.settings.NotificationSettingsRoute
 import com.chalkak.recap.feature.settings.SettingsAction
 import com.chalkak.recap.feature.settings.SettingsRoute
-import com.chalkak.recap.feature.settings.screen.DataManagementScreen
+import com.chalkak.recap.feature.onboarding.screen.OnboardingAddToFavoriteGuideScreen
 import com.chalkak.recap.feature.settings.screen.PrivacyGuideScreen
-import com.chalkak.recap.feature.settings.screen.ServiceInfoScreen
-import com.chalkak.recap.feature.settings.screen.UploadGuideScreen
+import com.chalkak.recap.feature.settings.screen.UsageGuideScreen
 import com.chalkak.recap.feature.screenshot.ScreenshotRoute
 import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 import dev.chrisbanes.haze.HazeState
@@ -136,7 +137,7 @@ fun RecapNavHost(
                                 }
 
                                 SettingsAction.OpenUsageGuide -> {
-                                    backStack.add(AppRoute.UploadGuide)
+                                    backStack.add(AppRoute.UsageGuide)
                                 }
 
                                 SettingsAction.OpenDataManagement -> {
@@ -153,7 +154,10 @@ fun RecapNavHost(
                                     )
                                 }
 
-                                SettingsAction.OpenAccountManagement,
+                                SettingsAction.OpenAccountManagement -> {
+                                    backStack.add(AppRoute.AccountManagement)
+                                }
+
                                 SettingsAction.OpenContact,
                                 -> Unit
                             }
@@ -167,24 +171,30 @@ fun RecapNavHost(
                     )
                 }
 
-                AppRoute.UploadGuide -> NavEntry(route) {
-                    UploadGuideScreen(
+                AppRoute.UsageGuide -> NavEntry(route) {
+                    UsageGuideScreen(
                         onBackClick = { backStack.removeLastOrNull() },
-                        onOpenSettingsClick = {
-                            context.startActivity(
-                                Intent(
-                                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                    Uri.fromParts("package", context.packageName, null),
-                                ),
-                            )
+                        onShareFavoriteGuideClick = {
+                            backStack.add(AppRoute.ShareFavoriteGuide)
                         },
                     )
                 }
 
-                AppRoute.DataManagement -> NavEntry(route) {
-                    DataManagementScreen(
+                AppRoute.ShareFavoriteGuide -> NavEntry(route) {
+                    OnboardingAddToFavoriteGuideScreen(
                         onBackClick = { backStack.removeLastOrNull() },
-                        onAccountManagementClick = {},
+                    )
+                }
+
+                AppRoute.DataManagement -> NavEntry(route) {
+                    DataManagementRoute(
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                    )
+                }
+
+                AppRoute.AccountManagement -> NavEntry(route) {
+                    AccountManagementRoute(
+                        onNavigateBack = { backStack.removeLastOrNull() },
                     )
                 }
 
@@ -193,17 +203,6 @@ fun RecapNavHost(
                         onBackClick = { backStack.removeLastOrNull() },
                         onPrivacyPolicyClick = {},
                         onTermsClick = {},
-                    )
-                }
-
-                AppRoute.ServiceInfo -> NavEntry(route) {
-                    ServiceInfoScreen(
-                        onBackClick = { backStack.removeLastOrNull() },
-                        onContactClick = {},
-                        onNoticeClick = {},
-                        onTermsClick = {},
-                        onPrivacyPolicyClick = {},
-                        onOpenSourceLicenseClick = {},
                     )
                 }
 

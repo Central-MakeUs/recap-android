@@ -18,11 +18,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.outlined.CheckBox
+import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -36,9 +36,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.topbar.RecapTopBar
+import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
 
@@ -156,86 +159,6 @@ internal fun SettingsGuideCard(
 }
 
 @Composable
-internal fun SettingsServiceSummaryCard(
-    modifier: Modifier = Modifier,
-) {
-    SettingsInfoCard(modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            Surface(
-                modifier = Modifier.size(58.dp),
-                shape = RoundedCornerShape(14.dp),
-                color = MaterialTheme.colorScheme.primary,
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(
-                        text = stringResource(R.string.settings_service_info_app_mark),
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        fontWeight = FontWeight.ExtraBold,
-                    )
-                }
-            }
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = stringResource(R.string.onboarding_brand_mark_name),
-                    style = MaterialTheme.typography.titleLarge,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.ExtraBold,
-                )
-                Text(
-                    text = stringResource(R.string.settings_service_info_tagline),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
-                Text(
-                    text = stringResource(R.string.settings_service_info_version),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = RecapGray300,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-        }
-    }
-}
-
-@Composable
-internal fun SettingsServiceMenuGroup(
-    items: List<SettingsServiceMenuItemData>,
-    modifier: Modifier = Modifier,
-) {
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(SettingsDetailTokens.CardRadius),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-        ),
-        border = BorderStroke(1.dp, RecapGray100),
-        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
-    ) {
-        Column {
-            items.forEachIndexed { index, item ->
-                SettingsServiceMenuItem(item = item)
-                if (index != items.lastIndex) {
-                    HorizontalDivider(
-                        color = RecapGray100,
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
 internal fun SettingsDataCard(
     @StringRes labelResId: Int,
     @StringRes titleResId: Int,
@@ -312,40 +235,6 @@ internal fun SettingsInfoDescription(
     )
 }
 
-@Composable
-private fun SettingsServiceMenuItem(
-    item: SettingsServiceMenuItemData,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        onClick = item.onClick,
-        modifier = modifier.fillMaxWidth(),
-        color = Color.Transparent,
-    ) {
-        Row(
-            modifier = Modifier.padding(
-                horizontal = SettingsDetailTokens.ServiceMenuItemHorizontalPadding,
-                vertical = SettingsDetailTokens.ServiceMenuItemVerticalPadding,
-            ),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                SettingsInfoTitle(text = stringResource(item.titleResId))
-                SettingsInfoDescription(text = stringResource(item.descriptionResId))
-            }
-            Icon(
-                imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.outline,
-            )
-        }
-    }
-}
-
 internal object SettingsDetailTokens {
     val HorizontalPadding = 16.dp
     val ContentTopPadding = 16.dp
@@ -360,14 +249,78 @@ internal object SettingsDetailTokens {
     val IconContainerRadius = 10.dp
     val IconSize = 22.dp
     val ActionTopSpacing = 8.dp
-    val ServiceMenuItemHorizontalPadding = 16.dp
-    val ServiceMenuItemVerticalPadding = 14.dp
     val WarningContainerColor = Color(0xFFFFF3D8)
     val WarningIconColor = Color(0xFFE8A21A)
 }
 
-internal data class SettingsServiceMenuItemData(
-    @get:StringRes val titleResId: Int,
-    @get:StringRes val descriptionResId: Int,
-    val onClick: () -> Unit,
-)
+@Preview(name = "Settings Detail Scaffold", showBackground = true, widthDp = 360, heightDp = 640)
+@Composable
+private fun SettingsDetailScreenScaffoldPreview() {
+    RECAPTheme(dynamicColor = false) {
+        SettingsDetailScreenScaffold(
+            titleResId = R.string.settings_usage_guide_title,
+            onBackClick = {},
+            bottomContent = {
+                SettingsDocumentButton(
+                    text = stringResource(R.string.settings_service_info_privacy_title),
+                    onClick = {},
+                )
+            },
+        ) {
+            SettingsGuideCard(
+                icon = Icons.Outlined.CheckBox,
+                titleResId = R.string.settings_usage_guide_select_title,
+                descriptionResId = R.string.settings_usage_guide_select_description,
+                iconTint = MaterialTheme.colorScheme.primary,
+                iconContainerColor = RecapBlue50,
+            )
+            SettingsGuideCard(
+                icon = Icons.Outlined.ErrorOutline,
+                titleResId = R.string.settings_usage_guide_permission_title,
+                descriptionResId = R.string.settings_usage_guide_permission_description,
+                iconTint = SettingsDetailTokens.WarningIconColor,
+                iconContainerColor = SettingsDetailTokens.WarningContainerColor,
+            )
+        }
+    }
+}
+
+@Preview(name = "Settings Document Button", showBackground = true, widthDp = 360)
+@Composable
+private fun SettingsDocumentButtonPreview() {
+    RECAPTheme(dynamicColor = false) {
+        SettingsDocumentButton(
+            text = stringResource(R.string.settings_service_info_privacy_title),
+            onClick = {},
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+}
+
+@Preview(name = "Settings Guide Card", showBackground = true, widthDp = 360)
+@Composable
+private fun SettingsGuideCardPreview() {
+    RECAPTheme(dynamicColor = false) {
+        SettingsGuideCard(
+            icon = Icons.Outlined.CheckBox,
+            titleResId = R.string.settings_usage_guide_select_title,
+            descriptionResId = R.string.settings_usage_guide_select_description,
+            iconTint = MaterialTheme.colorScheme.primary,
+            iconContainerColor = RecapBlue50,
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+}
+
+@Preview(name = "Settings Data Card", showBackground = true, widthDp = 360)
+@Composable
+private fun SettingsDataCardPreview() {
+    RECAPTheme(dynamicColor = false) {
+        SettingsDataCard(
+            labelResId = R.string.settings_data_management_organized_label,
+            titleResId = R.string.settings_data_management_organized_title,
+            descriptionResId = R.string.settings_data_management_organized_description,
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+}

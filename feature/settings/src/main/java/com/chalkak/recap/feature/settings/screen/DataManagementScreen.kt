@@ -1,96 +1,169 @@
 package com.chalkak.recap.feature.settings.screen
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.KeyboardArrowRight
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.button.RecapButton
+import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
+import com.chalkak.recap.core.design.component.button.RecapButtonSize
+import com.chalkak.recap.core.design.component.card.OrganizedScreenshotSummaryCard
+import com.chalkak.recap.core.design.component.popup.RecapPopup
+import com.chalkak.recap.core.design.component.toast.RecapToastHost
+import com.chalkak.recap.core.design.component.toast.RecapToastHostState
+import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
+import com.chalkak.recap.core.design.component.topbar.RecapTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.feature.settings.SettingsDataCard
-import com.chalkak.recap.feature.settings.SettingsDetailScreenScaffold
+import com.chalkak.recap.core.design.theme.RecapBackground
+import com.chalkak.recap.core.design.theme.RecapError
+import com.chalkak.recap.core.design.theme.RecapGray300
+import com.chalkak.recap.core.design.theme.RecapGray50
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import com.chalkak.recap.feature.settings.DataManagementAction
+import com.chalkak.recap.feature.settings.DataManagementUiState
+import dev.chrisbanes.haze.HazePositionStrategy
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 
 @Composable
 fun DataManagementScreen(
-    onBackClick: () -> Unit,
-    onAccountManagementClick: () -> Unit,
+    uiState: DataManagementUiState,
+    onAction: (DataManagementAction) -> Unit,
     modifier: Modifier = Modifier,
+    toastHostState: RecapToastHostState = rememberRecapToastHostState(),
 ) {
-    SettingsDetailScreenScaffold(
-        titleResId = R.string.settings_data_management_title,
-        onBackClick = onBackClick,
-        bottomContent = {
-            Text(
-                text = stringResource(R.string.settings_data_management_policy_note),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        },
-        modifier = modifier,
-    ) {
-        SettingsDataCard(
-            labelResId = R.string.settings_data_management_organized_label,
-            titleResId = R.string.settings_data_management_organized_title,
-            descriptionResId = R.string.settings_data_management_organized_description,
-        )
-        SettingsDataCard(
-            labelResId = R.string.settings_data_management_delete_label,
-            titleResId = R.string.settings_data_management_delete_title,
-            descriptionResId = R.string.settings_data_management_delete_description,
-        )
-        SettingsDataCard(
-            labelResId = R.string.settings_data_management_range_label,
-            titleResId = R.string.settings_data_management_range_title,
-            descriptionResId = R.string.settings_data_management_range_description,
-        )
-        SettingsDataCard(
-            labelResId = R.string.settings_data_management_all_data_label,
-            titleResId = R.string.settings_data_management_all_data_title,
-            descriptionResId = R.string.settings_data_management_all_data_description,
-            action = {
-                val buttonColor = MaterialTheme.colorScheme.primary
-                OutlinedButton(
-                    onClick = onAccountManagementClick,
-                    modifier = Modifier.height(34.dp),
-                    border = BorderStroke(1.dp, buttonColor),
-                    shape = RoundedCornerShape(10.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = buttonColor,
+    val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
+
+    Box(modifier = modifier.fillMaxSize()) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(state = toastHazeState),
+            color = RecapBackground,
+        ) {
+            Column(modifier = Modifier.fillMaxSize()) {
+                RecapTopBar(
+                    title = stringResource(R.string.settings_data_management_title),
+                    onBackClick = { onAction(DataManagementAction.NavigateBack) },
+                    backButtonContentDescription = stringResource(
+                        R.string.settings_back_content_description,
                     ),
-                    contentPadding = PaddingValues(
-                        horizontal = 10.dp,
-                        vertical = 0.dp,
-                    ),
+                    containerColor = RecapBackground,
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = DataManagementTokens.HorizontalPadding)
+                        .padding(
+                            top = DataManagementTokens.ContentTopPadding,
+                            bottom = DataManagementTokens.ContentBottomPadding,
+                        ),
+                    verticalArrangement = Arrangement.spacedBy(DataManagementTokens.SectionSpacing),
                 ) {
-                    Text(
-                        text = stringResource(R.string.settings_data_management_account_button),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = buttonColor,
-                        fontWeight = FontWeight.Bold,
+                    OrganizedScreenshotSummaryCard(organizedCount = uiState.organizedCount)
+                    RecapButton(
+                        text = stringResource(R.string.settings_data_management_delete_button),
+                        onClick = { onAction(DataManagementAction.DeleteDataClick) },
+                        modifier = Modifier.fillMaxWidth(),
+                        size = RecapButtonSize.Large,
+                        colors = RecapButtonDefaults.colors(
+                            containerColor = RecapGray50,
+                            contentColor = RecapError,
+                            disabledContainerColor = RecapGray50,
+                            disabledContentColor = RecapError.copy(alpha = 0.38f),
+                        ),
                     )
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Outlined.KeyboardArrowRight,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                        tint = buttonColor,
-                    )
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(
+                            DataManagementTokens.BulletItemSpacing,
+                        ),
+                    ) {
+                        DataManagementBulletItem(
+                            textResId = R.string.settings_data_management_note_account_kept,
+                        )
+                        DataManagementBulletItem(
+                            textResId = R.string.settings_data_management_note_irreversible,
+                        )
+                    }
                 }
-            },
+            }
+        }
+
+        RecapToastHost(
+            hostState = toastHostState,
+            hazeState = toastHazeState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
         )
     }
+
+    if (uiState.showDeleteConfirmDialog) {
+        RecapPopup(
+            title = stringResource(R.string.settings_data_management_delete_confirm_title),
+            description = stringResource(
+                R.string.settings_data_management_delete_confirm_description,
+            ),
+            confirmButtonText = stringResource(
+                R.string.settings_data_management_delete_confirm_button,
+            ),
+            cancelButtonText = stringResource(
+                R.string.settings_data_management_delete_confirm_cancel_button,
+            ),
+            onConfirmClick = { onAction(DataManagementAction.ConfirmDeleteData) },
+            onCancelClick = { onAction(DataManagementAction.DismissDeleteConfirmDialog) },
+            onDismissRequest = { onAction(DataManagementAction.DismissDeleteConfirmDialog) },
+            confirmButtonColor = RecapError,
+        )
+    }
+}
+
+@Composable
+private fun DataManagementBulletItem(
+    @StringRes textResId: Int,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(DataManagementTokens.BulletMarkerSpacing),
+    ) {
+        Text(
+            text = stringResource(R.string.settings_privacy_guide_bullet_marker),
+            style = RecapCaption1,
+            color = RecapGray300,
+        )
+        Text(
+            text = stringResource(textResId),
+            modifier = Modifier.weight(1f),
+            style = RecapCaption1,
+            color = RecapGray300,
+        )
+    }
+}
+
+private object DataManagementTokens {
+    val HorizontalPadding = 16.dp
+    val ContentTopPadding = 16.dp
+    val ContentBottomPadding = 32.dp
+    val SectionSpacing = 19.dp
+    val BulletItemSpacing = 8.dp
+    val BulletMarkerSpacing = 7.dp
 }
 
 @Preview(name = "Data Management", showBackground = true, widthDp = 360)
@@ -98,8 +171,26 @@ fun DataManagementScreen(
 private fun DataManagementScreenPreview() {
     RECAPTheme(dynamicColor = false) {
         DataManagementScreen(
-            onBackClick = {},
-            onAccountManagementClick = {},
+            uiState = DataManagementUiState(
+                organizedCount = DataManagementScreenPreviewCount,
+            ),
+            onAction = {},
         )
     }
 }
+
+@Preview(name = "Data Management Delete Confirm", showBackground = true, widthDp = 360)
+@Composable
+private fun DataManagementDeleteConfirmPreview() {
+    RECAPTheme(dynamicColor = false) {
+        DataManagementScreen(
+            uiState = DataManagementUiState(
+                organizedCount = DataManagementScreenPreviewCount,
+                showDeleteConfirmDialog = true,
+            ),
+            onAction = {},
+        )
+    }
+}
+
+private const val DataManagementScreenPreviewCount = 128

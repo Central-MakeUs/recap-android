@@ -11,9 +11,8 @@ class NotificationSettingsViewModelTest {
 
         assertEquals(
             NotificationSettingsUiState(
+                deviceNotificationsEnabled = true,
                 organizeCompleteEnabled = true,
-                reviewRequiredEnabled = true,
-                marketingEnabled = false,
             ),
             viewModel.uiState.value,
         )
@@ -27,32 +26,17 @@ class NotificationSettingsViewModelTest {
         viewModel.onAction(
             NotificationSettingsAction.OrganizeCompleteEnabledChanged(false),
         )
-        viewModel.onAction(
-            NotificationSettingsAction.ReviewRequiredEnabledChanged(false),
-        )
-        viewModel.onAction(
-            NotificationSettingsAction.MarketingEnabledChanged(true),
-        )
 
         assertEquals(
             NotificationSettingsUiState(
+                deviceNotificationsEnabled = true,
                 organizeCompleteEnabled = false,
-                reviewRequiredEnabled = false,
-                marketingEnabled = true,
             ),
             viewModel.uiState.value,
         )
         assertEquals(
             false,
             savedStateHandle.get<Boolean>(SETTINGS_NOTIFICATION_ORGANIZE_COMPLETE_ENABLED_KEY),
-        )
-        assertEquals(
-            false,
-            savedStateHandle.get<Boolean>(SETTINGS_NOTIFICATION_REVIEW_REQUIRED_ENABLED_KEY),
-        )
-        assertEquals(
-            true,
-            savedStateHandle.get<Boolean>(SETTINGS_NOTIFICATION_MARKETING_ENABLED_KEY),
         )
     }
 
@@ -61,17 +45,14 @@ class NotificationSettingsViewModelTest {
         val savedStateHandle = SavedStateHandle()
         NotificationSettingsViewModel(savedStateHandle).apply {
             onAction(NotificationSettingsAction.OrganizeCompleteEnabledChanged(false))
-            onAction(NotificationSettingsAction.ReviewRequiredEnabledChanged(false))
-            onAction(NotificationSettingsAction.MarketingEnabledChanged(true))
         }
 
         val recreatedViewModel = NotificationSettingsViewModel(savedStateHandle)
 
         assertEquals(
             NotificationSettingsUiState(
+                deviceNotificationsEnabled = true,
                 organizeCompleteEnabled = false,
-                reviewRequiredEnabled = false,
-                marketingEnabled = true,
             ),
             recreatedViewModel.uiState.value,
         )

@@ -18,17 +18,12 @@ class NotificationSettingsViewModel @Inject constructor(
 
     fun onAction(action: NotificationSettingsAction) {
         when (action) {
-            NotificationSettingsAction.NavigateBack -> Unit
+            NotificationSettingsAction.NavigateBack,
+            NotificationSettingsAction.OpenDeviceNotificationSettings,
+            -> Unit
+
             is NotificationSettingsAction.OrganizeCompleteEnabledChanged -> {
                 updateOrganizeCompleteEnabled(action.enabled)
-            }
-
-            is NotificationSettingsAction.ReviewRequiredEnabledChanged -> {
-                updateReviewRequiredEnabled(action.enabled)
-            }
-
-            is NotificationSettingsAction.MarketingEnabledChanged -> {
-                updateMarketingEnabled(action.enabled)
             }
         }
     }
@@ -39,38 +34,14 @@ class NotificationSettingsViewModel @Inject constructor(
             current.copy(organizeCompleteEnabled = enabled)
         }
     }
-
-    private fun updateReviewRequiredEnabled(enabled: Boolean) {
-        savedStateHandle[SETTINGS_NOTIFICATION_REVIEW_REQUIRED_ENABLED_KEY] = enabled
-        _uiState.update { current ->
-            current.copy(reviewRequiredEnabled = enabled)
-        }
-    }
-
-    private fun updateMarketingEnabled(enabled: Boolean) {
-        savedStateHandle[SETTINGS_NOTIFICATION_MARKETING_ENABLED_KEY] = enabled
-        _uiState.update { current ->
-            current.copy(marketingEnabled = enabled)
-        }
-    }
 }
 
 internal const val SETTINGS_NOTIFICATION_ORGANIZE_COMPLETE_ENABLED_KEY =
     "settings_notification_organize_complete_enabled"
-internal const val SETTINGS_NOTIFICATION_REVIEW_REQUIRED_ENABLED_KEY =
-    "settings_notification_review_required_enabled"
-internal const val SETTINGS_NOTIFICATION_MARKETING_ENABLED_KEY =
-    "settings_notification_marketing_enabled"
 
 private fun SavedStateHandle.restoreNotificationSettingsUiState(): NotificationSettingsUiState =
     NotificationSettingsUiState(
         organizeCompleteEnabled = get<Boolean>(
             SETTINGS_NOTIFICATION_ORGANIZE_COMPLETE_ENABLED_KEY,
         ) ?: true,
-        reviewRequiredEnabled = get<Boolean>(
-            SETTINGS_NOTIFICATION_REVIEW_REQUIRED_ENABLED_KEY,
-        ) ?: true,
-        marketingEnabled = get<Boolean>(
-            SETTINGS_NOTIFICATION_MARKETING_ENABLED_KEY,
-        ) ?: false,
     )
