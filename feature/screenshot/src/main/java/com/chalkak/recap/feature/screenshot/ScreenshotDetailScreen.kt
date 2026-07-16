@@ -42,8 +42,9 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 import coil3.compose.AsyncImage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
@@ -53,7 +54,10 @@ import com.chalkak.recap.core.design.category.toRecapCategoryType
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
-import com.chalkak.recap.core.design.component.chip.RecapCategoryChip
+import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
+import com.chalkak.recap.core.design.component.toast.RecapToastHost
+import com.chalkak.recap.core.design.component.toast.RecapToastHostState
+import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapError
@@ -62,11 +66,17 @@ import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading1
 import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisConfidence
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentTypes
+import dev.chrisbanes.haze.HazePositionStrategy
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 
 @Composable
 fun ScreenshotDetailScreen(
@@ -77,37 +87,51 @@ fun ScreenshotDetailScreen(
     onOpenFullscreen: () -> Unit,
     onOpenMore: () -> Unit,
     modifier: Modifier = Modifier,
+    toastHostState: RecapToastHostState = rememberRecapToastHostState(),
 ) {
     WhiteStatusBarIconsEffect()
+    val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
 
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = RecapBackground,
-    ) {
-        when (uiState) {
-            ScreenshotUiState.Loading -> ScreenshotDetailLoading()
-            is ScreenshotUiState.NotFound -> ScreenshotDetailErrorState(
-                message = stringResource(R.string.screenshot_detail_not_found),
-                actionErrorMessageResId = uiState.actionErrorMessageResId,
-                onRetry = { onAction(ScreenshotAction.RetryLoad) },
-                onNavigateBack = onNavigateBack,
-            )
+    Box(modifier = modifier.fillMaxSize()) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(state = toastHazeState),
+            color = RecapBackground,
+        ) {
+            when (uiState) {
+                ScreenshotUiState.Loading -> ScreenshotDetailLoading()
+                is ScreenshotUiState.NotFound -> ScreenshotDetailErrorState(
+                    message = stringResource(R.string.screenshot_detail_not_found),
+                    actionErrorMessageResId = uiState.actionErrorMessageResId,
+                    onRetry = { onAction(ScreenshotAction.RetryLoad) },
+                    onNavigateBack = onNavigateBack,
+                )
 
-            is ScreenshotUiState.LoadError -> ScreenshotDetailErrorState(
-                message = stringResource(R.string.screenshot_detail_load_error),
-                actionErrorMessageResId = null,
-                onRetry = { onAction(ScreenshotAction.RetryLoad) },
-                onNavigateBack = onNavigateBack,
-            )
+                is ScreenshotUiState.LoadError -> ScreenshotDetailErrorState(
+                    message = stringResource(R.string.screenshot_detail_load_error),
+                    actionErrorMessageResId = null,
+                    onRetry = { onAction(ScreenshotAction.RetryLoad) },
+                    onNavigateBack = onNavigateBack,
+                )
 
-            is ScreenshotUiState.Content -> ScreenshotDetailContent(
-                content = uiState,
-                onAction = onAction,
-                onNavigateBack = onNavigateBack,
-                onOpenFullscreen = onOpenFullscreen,
-                onOpenMore = onOpenMore,
-            )
+                is ScreenshotUiState.Content -> ScreenshotDetailContent(
+                    content = uiState,
+                    onAction = onAction,
+                    onNavigateBack = onNavigateBack,
+                    onOpenFullscreen = onOpenFullscreen,
+                    onOpenMore = onOpenMore,
+                )
+            }
         }
+
+        RecapToastHost(
+            hostState = toastHostState,
+            hazeState = toastHazeState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+        )
     }
 }
 
@@ -172,7 +196,7 @@ private fun ScreenshotDetailContent(
                     start = ScreenshotTokens.HorizontalPadding,
                     top = ScreenshotTokens.ContentTopPadding,
                     end = ScreenshotTokens.HorizontalPadding,
-                    bottom = ScreenshotTokens.ContentBottomPadding,
+                    bottom = ScreenshotDetailTokens.ContentBottomPadding,
                 ),
         ) {
             Row(
@@ -180,39 +204,41 @@ private fun ScreenshotDetailContent(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                RecapCategoryChip(type = categoryType)
+                RecapCategoryTextChip(
+                    type = categoryType,
+                    textSize = 14.sp,
+                )
                 Text(
                     text = stringResource(
                         R.string.screenshot_organized_date_format,
                         formatOrganizedDate(card.createdAtMillis),
                     ),
-                    style = MaterialTheme.typography.labelMedium,
+                    style = RecapCaption2,
                     color = RecapGray200,
                 )
             }
             Text(
                 text = analysis.title,
-                modifier = Modifier.padding(top = ScreenshotTokens.SectionSpacing),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = ScreenshotDetailTokens.SectionSpacing),
+                style = RecapHeading1,
                 color = RecapGray900,
             )
             Text(
                 text = analysis.summary,
-                modifier = Modifier.padding(top = ScreenshotTokens.TitleToSummarySpacing),
-                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.padding(top = ScreenshotDetailTokens.TitleToSummarySpacing),
+                style = RecapBody1,
                 color = RecapGray700,
             )
             Text(
                 text = bodyText,
-                modifier = Modifier.padding(top = ScreenshotTokens.SummaryToBodySpacing),
+                modifier = Modifier.padding(top = ScreenshotDetailTokens.SummaryToBodySpacing),
                 style = MaterialTheme.typography.bodyMedium,
                 color = RecapGray700,
             )
             content.actionErrorMessageResId?.let { errorResId ->
                 Text(
                     text = stringResource(errorResId),
-                    modifier = Modifier.padding(top = ScreenshotTokens.SectionSpacing),
+                    modifier = Modifier.padding(top = ScreenshotDetailTokens.SectionSpacing),
                     style = MaterialTheme.typography.bodyMedium,
                     color = RecapError,
                 )
@@ -237,7 +263,7 @@ private fun ScreenshotDetailHero(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(ScreenshotTokens.HeroHeight),
+            .height(ScreenshotDetailTokens.HeroHeight),
     ) {
         if (showPlaceholder) {
             Surface(
@@ -271,7 +297,7 @@ private fun ScreenshotDetailHero(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(ScreenshotTokens.HeroGradientHeightFraction)
+                .fillMaxHeight(ScreenshotDetailTokens.HeroGradientHeightFraction)
                 .align(Alignment.TopCenter)
                 .background(
                     brush = Brush.verticalGradient(
@@ -382,13 +408,13 @@ internal fun ScreenshotIconButton(
         )
     }
     if (outlined) {
-        val shape = RoundedCornerShape(ScreenshotTokens.IconButtonCornerRadius)
+        val shape = RoundedCornerShape(ScreenshotDetailTokens.IconButtonCornerRadius)
         Box(
             modifier = modifier
-                .size(ScreenshotTokens.IconButtonSize)
+                .size(ScreenshotDetailTokens.IconButtonSize)
                 .background(color = White, shape = shape)
                 .border(
-                    width = ScreenshotTokens.IconButtonBorderWidth,
+                    width = ScreenshotDetailTokens.IconButtonBorderWidth,
                     color = RecapGray200,
                     shape = shape,
                 )
@@ -399,13 +425,13 @@ internal fun ScreenshotIconButton(
                 painter = painterResource(iconResId),
                 contentDescription = contentDescription,
                 tint = tint,
-                modifier = Modifier.size(ScreenshotTokens.IconButtonIconSize),
+                modifier = Modifier.size(ScreenshotDetailTokens.IconButtonIconSize),
             )
         }
     } else {
         Box(
             modifier = modifier
-                .size(ScreenshotTokens.IconTouchTarget)
+                .size(ScreenshotDetailTokens.IconTouchTarget)
                 .then(clickModifier),
             contentAlignment = Alignment.Center,
         ) {
@@ -413,7 +439,7 @@ internal fun ScreenshotIconButton(
                 painter = painterResource(iconResId),
                 contentDescription = contentDescription,
                 tint = tint,
-                modifier = Modifier.size(ScreenshotTokens.IconSize),
+                modifier = Modifier.size(ScreenshotDetailTokens.IconSize),
             )
         }
     }
@@ -452,18 +478,18 @@ private fun ScreenshotDetailErrorState(
         actionErrorMessageResId?.let { errorResId ->
             Text(
                 text = stringResource(errorResId),
-                modifier = Modifier.padding(top = ScreenshotTokens.MetaRowSpacing),
+                modifier = Modifier.padding(top = ScreenshotDetailTokens.MetaRowSpacing),
                 style = MaterialTheme.typography.bodyMedium,
                 color = RecapError,
             )
         }
-        Spacer(modifier = Modifier.height(ScreenshotTokens.ErrorStateSpacing))
+        Spacer(modifier = Modifier.height(ScreenshotDetailTokens.ErrorStateSpacing))
         RecapButton(
             text = stringResource(R.string.screenshot_detail_retry),
             onClick = onRetry,
             size = RecapButtonSize.Medium,
         )
-        Spacer(modifier = Modifier.height(ScreenshotTokens.MetaRowSpacing))
+        Spacer(modifier = Modifier.height(ScreenshotDetailTokens.MetaRowSpacing))
         RecapButton(
             text = stringResource(R.string.screenshot_action_close),
             onClick = onNavigateBack,
@@ -569,4 +595,23 @@ private fun ScreenshotDetailEmptyBodyPreview() {
             onOpenMore = {},
         )
     }
+}
+
+private object ScreenshotDetailTokens {
+    val HeroHeight = 285.dp
+
+    /** Hero 전체 높이(시스템 status bar 영역 포함) 기준 상단 그라데이션 비율. */
+    const val HeroGradientHeightFraction = 0.831f
+    val ContentBottomPadding = 32.dp
+    val SectionSpacing = 17.dp
+    val MetaRowSpacing = 8.dp
+    val TitleToSummarySpacing = 8.dp
+    val SummaryToBodySpacing = 39.dp
+    val IconTouchTarget = 48.dp
+    val IconSize = 24.dp
+    val IconButtonSize = 21.dp
+    val IconButtonIconSize = 13.5.dp
+    val IconButtonCornerRadius = 2.dp
+    val IconButtonBorderWidth = 0.5.dp
+    val ErrorStateSpacing = 16.dp
 }

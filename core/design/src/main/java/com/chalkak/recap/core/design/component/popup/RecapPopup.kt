@@ -91,14 +91,12 @@ fun RecapPopupContent(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(
-                    horizontal = RecapPopupTokens.ContentHorizontalPadding,
-                    vertical = RecapPopupTokens.ContentVerticalPadding,
-                ),
+                .padding(vertical = RecapPopupTokens.ContentVerticalPadding),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(RecapPopupTokens.SectionSpacing),
         ) {
             Column(
+                modifier = Modifier.padding(horizontal = RecapPopupTokens.ContentHorizontalPadding),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(RecapPopupTokens.TextSpacing),
             ) {
@@ -117,7 +115,9 @@ fun RecapPopupContent(
             }
 
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = RecapPopupTokens.ButtonRowHorizontalPadding),
                 horizontalArrangement = Arrangement.spacedBy(RecapPopupTokens.ButtonSpacing),
             ) {
                 RecapButton(
@@ -141,14 +141,15 @@ fun RecapPopupContent(
 }
 
 private object RecapPopupTokens {
-    val DialogHorizontalMargin = 40.dp
+    val DialogHorizontalMargin = 24.dp
     val MaxWidth = 320.dp
     val ContainerCornerRadius = 24.dp
     val ContentHorizontalPadding = 28.dp
     val ContentVerticalPadding = 24.dp
     val SectionSpacing = 24.dp
     val TextSpacing = 8.dp
-    val ButtonSpacing = 12.dp
+    val ButtonRowHorizontalPadding = 21.dp
+    val ButtonSpacing = 14.dp
 }
 
 @Preview(name = "RecapPopup Destructive", showBackground = true, widthDp = 360, heightDp = 240)
@@ -194,6 +195,37 @@ private fun RecapPopupPrimaryPreview() {
                 onConfirmClick = {},
                 onCancelClick = {},
                 confirmButtonColor = RecapBlue300,
+            )
+        }
+    }
+}
+
+@Preview(
+    name = "RecapPopup Long Button Labels",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 240,
+)
+@Composable
+private fun RecapPopupLongButtonLabelsPreview() {
+    RECAPTheme(dynamicColor = false) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(RecapGray900.copy(alpha = 0.72f))
+                .padding(vertical = 40.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            RecapPopupContent(
+                title = stringResource(R.string.screenshot_edit_discard_confirm_title),
+                description = stringResource(R.string.screenshot_edit_discard_confirm_description),
+                confirmButtonText = stringResource(R.string.screenshot_edit_discard_confirm_quit),
+                cancelButtonText = stringResource(
+                    R.string.screenshot_edit_discard_confirm_keep_editing,
+                ),
+                onConfirmClick = {},
+                onCancelClick = {},
+                confirmButtonColor = RecapError,
             )
         }
     }

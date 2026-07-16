@@ -19,13 +19,16 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.chalkak.recap.BuildConfig
+import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBar
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDestination
 import com.chalkak.recap.core.design.component.toast.RecapToastHost
+import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
@@ -47,12 +50,15 @@ fun RecapMainScreen(
     homeNavigationRequestId: Int = 0,
     pendingOpenOrganize: Boolean = false,
     onPendingOpenOrganizeConsumed: () -> Unit = {},
+    pendingScreenshotDeletedToast: Boolean = false,
+    onPendingScreenshotDeletedToastConsumed: () -> Unit = {},
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
 ) {
     val backStack = rememberNavBackStack(MainTabRoute.Home)
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
     val hazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
     val toastHostState = rememberRecapToastHostState()
+    val resources = LocalResources.current
     var collectionFavoritesNavigationRequestId by remember { mutableIntStateOf(0) }
     var collectionPredictiveBackProgress by remember { mutableFloatStateOf(0f) }
     var showOrganize by rememberSaveable { mutableStateOf(false) }
@@ -69,6 +75,15 @@ fun RecapMainScreen(
             showOrganize = true
             onPendingOpenOrganizeConsumed()
         }
+    }
+
+    LaunchedEffect(pendingScreenshotDeletedToast) {
+        if (!pendingScreenshotDeletedToast) return@LaunchedEffect
+        onPendingScreenshotDeletedToastConsumed()
+        toastHostState.showToast(
+            message = resources.getString(R.string.screenshot_delete_success_toast),
+            type = RecapToastType.Success,
+        )
     }
 
     fun navigateTo(route: MainTabRoute) {

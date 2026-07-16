@@ -24,15 +24,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.button.RecapButton
-import com.chalkak.recap.core.design.component.button.RecapButtonColors
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapError
-import com.chalkak.recap.core.design.theme.RecapErrorContainer
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray50
-import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapSheetHandle
 import com.chalkak.recap.core.design.theme.White
@@ -87,32 +84,42 @@ fun ScreenshotActionBottomSheetContent(
 ) {
     Column(
         modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(ScreenshotTokens.BottomSheetButtonSpacing),
     ) {
         RecapButton(
             text = stringResource(R.string.screenshot_action_edit),
             onClick = onEditClick,
             modifier = Modifier.fillMaxWidth(),
             enabled = enabled,
-            size = RecapButtonSize.Medium,
-            colors = screenshotEditActionColors(),
+            size = RecapButtonSize.Large,
+            colors = RecapButtonDefaults.neutralColors(),
         )
+        Spacer(modifier = Modifier.height(10.dp))
         RecapButton(
             text = stringResource(R.string.screenshot_action_delete),
             onClick = onDeleteClick,
             modifier = Modifier.fillMaxWidth(),
             enabled = enabled,
-            size = RecapButtonSize.Medium,
-            colors = screenshotDeleteActionColors(),
+            size = RecapButtonSize.Large,
+            colors = RecapButtonDefaults.colors(
+                containerColor = RecapGray50,
+                contentColor = RecapError,
+                disabledContainerColor = RecapGray50.copy(alpha = 0.12f),
+                disabledContentColor = RecapError.copy(alpha = 0.38f),
+            ),
         )
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(24.dp))
         RecapButton(
             text = stringResource(R.string.screenshot_action_close),
             onClick = onCloseClick,
             modifier = Modifier.fillMaxWidth(),
             enabled = enabled,
-            size = RecapButtonSize.Medium,
-            colors = RecapButtonDefaults.outlinedColors(),
+            size = RecapButtonSize.Large,
+            colors = RecapButtonDefaults.colors(
+                containerColor = White,
+                contentColor = RecapGray900,
+                disabledContainerColor = White,
+                disabledContentColor = RecapGray900.copy(alpha = 0.38f),
+            ),
             border = BorderStroke(1.dp, RecapGray200),
         )
     }
@@ -125,34 +132,18 @@ internal fun ScreenshotSheetDragHandle(
     Surface(
         modifier = modifier
             .padding(
-                top = ScreenshotTokens.DragHandleTopPadding,
-                bottom = ScreenshotTokens.DragHandleBottomPadding,
+                top = ScreenshotActionBottomSheetTokens.DragHandleTopPadding,
+                bottom = ScreenshotActionBottomSheetTokens.DragHandleBottomPadding,
             )
             .size(
-                width = ScreenshotTokens.DragHandleWidth,
-                height = ScreenshotTokens.DragHandleHeight,
+                width = ScreenshotActionBottomSheetTokens.DragHandleWidth,
+                height = ScreenshotActionBottomSheetTokens.DragHandleHeight,
             ),
-        shape = RoundedCornerShape(ScreenshotTokens.DragHandleHeight),
+        shape = RoundedCornerShape(ScreenshotActionBottomSheetTokens.DragHandleHeight),
         color = RecapSheetHandle,
         content = {},
     )
 }
-
-@Composable
-private fun screenshotEditActionColors(): RecapButtonColors = RecapButtonColors(
-    containerColor = RecapGray50,
-    contentColor = RecapGray700,
-    disabledContainerColor = RecapGray50.copy(alpha = 0.12f),
-    disabledContentColor = RecapGray700.copy(alpha = 0.38f),
-)
-
-@Composable
-private fun screenshotDeleteActionColors(): RecapButtonColors = RecapButtonColors(
-    containerColor = RecapErrorContainer,
-    contentColor = RecapError,
-    disabledContainerColor = RecapErrorContainer.copy(alpha = 0.12f),
-    disabledContentColor = RecapError.copy(alpha = 0.38f),
-)
 
 @Preview(name = "Screenshot Action Bottom Sheet", showBackground = false, widthDp = 360)
 @Composable
@@ -190,4 +181,11 @@ private fun ScreenshotActionBottomSheetPreview() {
             }
         }
     }
+}
+
+private object ScreenshotActionBottomSheetTokens {
+    val DragHandleWidth = 43.dp
+    val DragHandleHeight = 5.dp
+    val DragHandleTopPadding = 13.dp
+    val DragHandleBottomPadding = 17.dp
 }

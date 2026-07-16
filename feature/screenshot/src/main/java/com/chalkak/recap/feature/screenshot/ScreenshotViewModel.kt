@@ -58,8 +58,12 @@ class ScreenshotViewModel @Inject constructor(
             ScreenshotAction.ToggleFavorite -> toggleFavorite()
             ScreenshotAction.PrepareEditDraft -> prepareEditDraft()
             ScreenshotAction.ClearActionError -> clearActionError()
-            is ScreenshotAction.UpdateEditTitle -> updateEditDraft { it.copy(title = action.title) }
-            is ScreenshotAction.UpdateEditSummary -> updateEditDraft { it.copy(summary = action.summary) }
+            is ScreenshotAction.UpdateEditTitle -> {
+                updateEditDraft { it.copy(title = sanitizeEditTitleInput(action.title)) }
+            }
+            is ScreenshotAction.UpdateEditSummary -> {
+                updateEditDraft { it.copy(summary = sanitizeEditSummaryInput(action.summary)) }
+            }
             is ScreenshotAction.UpdateEditBody -> updateEditDraft { it.copy(body = action.body) }
             is ScreenshotAction.UpdateEditContentType -> {
                 updateEditDraft { it.copy(contentType = action.contentType) }
@@ -67,8 +71,36 @@ class ScreenshotViewModel @Inject constructor(
 
             ScreenshotAction.DiscardEditDraft -> discardEditDraft()
             ScreenshotAction.SaveEdit -> saveEdit()
+            ScreenshotAction.ShowDiscardEditConfirmDialog -> showDiscardEditConfirmDialog()
+            ScreenshotAction.DismissDiscardEditConfirmDialog -> dismissDiscardEditConfirmDialog()
+            ScreenshotAction.ShowDeleteConfirmDialog -> showDeleteConfirmDialog()
+            ScreenshotAction.DismissDeleteConfirmDialog -> dismissDeleteConfirmDialog()
             ScreenshotAction.DeleteScreenshot -> deleteScreenshot()
         }
+    }
+
+    private fun showDiscardEditConfirmDialog() {
+        val content = _uiState.value as? ScreenshotUiState.Content ?: return
+        if (content.isSaving || !content.hasUnsavedEditChanges()) return
+        _uiState.updateContent { it.copy(showDiscardEditConfirmDialog = true) }
+    }
+
+    private fun dismissDiscardEditConfirmDialog() {
+        val content = _uiState.value as? ScreenshotUiState.Content ?: return
+        if (!content.showDiscardEditConfirmDialog || content.isSaving) return
+        _uiState.updateContent { it.copy(showDiscardEditConfirmDialog = false) }
+    }
+
+    private fun showDeleteConfirmDialog() {
+        val content = _uiState.value as? ScreenshotUiState.Content ?: return
+        if (content.isDeleting || content.isSaving) return
+        _uiState.updateContent { it.copy(showDeleteConfirmDialog = true) }
+    }
+
+    private fun dismissDeleteConfirmDialog() {
+        val content = _uiState.value as? ScreenshotUiState.Content ?: return
+        if (!content.showDeleteConfirmDialog || content.isDeleting) return
+        _uiState.updateContent { it.copy(showDeleteConfirmDialog = false) }
     }
 
     private fun observeCard(imageId: String) {
@@ -131,6 +163,7 @@ class ScreenshotViewModel @Inject constructor(
                 return@launch
             }
             _uiState.updateContent { it.copy(isFavoriteUpdating = false) }
+            eventChannel.send(ScreenshotEvent.ShowFavoriteToast(isFavorite = nextFavorite))
         }
     }
 
@@ -152,6 +185,7 @@ class ScreenshotViewModel @Inject constructor(
                 editDraft = content.card.toEditDraft(),
                 titleError = false,
                 isSaving = false,
+                showDiscardEditConfirmDialog = false,
                 actionErrorMessageResId = null,
             )
         }
@@ -189,7 +223,7 @@ class ScreenshotViewModel @Inject constructor(
 
     private fun saveEdit() {
         val content = _uiState.value as? ScreenshotUiState.Content ?: return
-        if (content.isSaving || content.isDeleting) return
+        if (content.isSaving || content.isDeleting || !content.hasUnsavedEditChanges()) return
         val normalized = content.editDraft.normalizedForSave()
         if (!normalized.isTitleValid()) {
             _uiState.updateContent {
@@ -249,7 +283,11 @@ class ScreenshotViewModel @Inject constructor(
         deleteJob?.cancel()
         deleteJob = viewModelScope.launch {
             _uiState.updateContent {
-                it.copy(isDeleting = true, actionErrorMessageResId = null)
+                it.copy(
+                    isDeleting = true,
+                    showDeleteConfirmDialog = false,
+                    actionErrorMessageResId = null,
+                )
             }
             try {
                 withContext(ioDispatcher) {

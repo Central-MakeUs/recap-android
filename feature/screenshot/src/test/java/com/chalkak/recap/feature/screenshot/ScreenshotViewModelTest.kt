@@ -136,10 +136,33 @@ class ScreenshotViewModelTest {
         cardFlow.emit(storedCard(imageId = "card-1", isFavorite = false))
         advanceUntilIdle()
 
-        viewModel.onAction(ScreenshotAction.ToggleFavorite)
-        advanceUntilIdle()
+        viewModel.events.test {
+            viewModel.onAction(ScreenshotAction.ToggleFavorite)
+            advanceUntilIdle()
+
+            assertEquals(ScreenshotEvent.ShowFavoriteToast(isFavorite = true), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
 
         coVerify(exactly = 1) { repository.updateFavorite("card-1", true) }
+    }
+
+    @Test
+    fun `toggle favorite off sends removed toast event`() = runTest(testDispatcher) {
+        coEvery { repository.updateFavorite("card-1", false) } just Runs
+        viewModel.bind("card-1")
+        cardFlow.emit(storedCard(imageId = "card-1", isFavorite = true))
+        advanceUntilIdle()
+
+        viewModel.events.test {
+            viewModel.onAction(ScreenshotAction.ToggleFavorite)
+            advanceUntilIdle()
+
+            assertEquals(ScreenshotEvent.ShowFavoriteToast(isFavorite = false), awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        coVerify(exactly = 1) { repository.updateFavorite("card-1", false) }
     }
 
     @Test
@@ -169,6 +192,67 @@ class ScreenshotViewModelTest {
         advanceUntilIdle()
 
         val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertEquals("원본", state.editDraft.title)
+    }
+
+    @Test
+    fun `show discard confirm dialog when edit draft has unsaved changes`() = runTest(testDispatcher) {
+        viewModel.bind("card-1")
+        cardFlow.emit(storedCard(imageId = "card-1", title = "원본"))
+        advanceUntilIdle()
+
+        viewModel.onAction(ScreenshotAction.UpdateEditTitle("변경"))
+        viewModel.onAction(ScreenshotAction.ShowDiscardEditConfirmDialog)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertTrue(state.showDiscardEditConfirmDialog)
+        assertTrue(state.hasUnsavedEditChanges())
+    }
+
+    @Test
+    fun `show discard confirm dialog is ignored when edit draft is unchanged`() = runTest(testDispatcher) {
+        viewModel.bind("card-1")
+        cardFlow.emit(storedCard(imageId = "card-1", title = "원본"))
+        advanceUntilIdle()
+
+        viewModel.onAction(ScreenshotAction.ShowDiscardEditConfirmDialog)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertFalse(state.showDiscardEditConfirmDialog)
+        assertFalse(state.hasUnsavedEditChanges())
+    }
+
+    @Test
+    fun `dismiss discard confirm dialog hides dialog and keeps draft`() = runTest(testDispatcher) {
+        viewModel.bind("card-1")
+        cardFlow.emit(storedCard(imageId = "card-1", title = "원본"))
+        advanceUntilIdle()
+
+        viewModel.onAction(ScreenshotAction.UpdateEditTitle("변경"))
+        viewModel.onAction(ScreenshotAction.ShowDiscardEditConfirmDialog)
+        viewModel.onAction(ScreenshotAction.DismissDiscardEditConfirmDialog)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertFalse(state.showDiscardEditConfirmDialog)
+        assertEquals("변경", state.editDraft.title)
+    }
+
+    @Test
+    fun `discard edit draft hides discard confirm dialog`() = runTest(testDispatcher) {
+        viewModel.bind("card-1")
+        cardFlow.emit(storedCard(imageId = "card-1", title = "원본"))
+        advanceUntilIdle()
+
+        viewModel.onAction(ScreenshotAction.UpdateEditTitle("변경"))
+        viewModel.onAction(ScreenshotAction.ShowDiscardEditConfirmDialog)
+        viewModel.onAction(ScreenshotAction.DiscardEditDraft)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertFalse(state.showDiscardEditConfirmDialog)
         assertEquals("원본", state.editDraft.title)
     }
 
@@ -245,11 +329,90 @@ class ScreenshotViewModelTest {
     }
 
     @Test
+    fun `update edit title strips newlines`() = runTest(testDispatcher) {
+        viewModel.bind("card-1")
+        cardFlow.emit(storedCard(imageId = "card-1", title = "원본"))
+        advanceUntilIdle()
+
+        viewModel.onAction(ScreenshotAction.UpdateEditTitle("a\nb"))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertEquals("ab", state.editDraft.title)
+    }
+
+    @Test
+    fun `update edit summary converts newlines to spaces`() = runTest(testDispatcher) {
+        viewModel.bind("card-1")
+        cardFlow.emit(storedCard(imageId = "card-1", title = "원본"))
+        advanceUntilIdle()
+
+        viewModel.onAction(ScreenshotAction.UpdateEditSummary("a\nb"))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertEquals("a b", state.editDraft.summary)
+    }
+
+    @Test
+    fun `save edit is ignored when draft is unchanged`() = runTest(testDispatcher) {
+        viewModel.bind("card-1")
+        cardFlow.emit(storedCard(imageId = "card-1", title = "원본"))
+        advanceUntilIdle()
+
+        viewModel.onAction(ScreenshotAction.PrepareEditDraft)
+        viewModel.onAction(ScreenshotAction.SaveEdit)
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) {
+            repository.updateCardContent(
+                imageId = any(),
+                title = any(),
+                summary = any(),
+                body = any(),
+                primaryContentType = any(),
+                updatedAtMillis = any(),
+            )
+        }
+    }
+
+    @Test
+    fun `delete request shows confirm dialog without deleting`() = runTest(testDispatcher) {
+        viewModel.bind("card-1")
+        cardFlow.emit(storedCard(imageId = "card-1"))
+        advanceUntilIdle()
+
+        viewModel.onAction(ScreenshotAction.ShowDeleteConfirmDialog)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertTrue(state.showDeleteConfirmDialog)
+        coVerify(exactly = 0) { repository.deleteCard(any()) }
+    }
+
+    @Test
+    fun `dismiss delete confirm dialog hides dialog`() = runTest(testDispatcher) {
+        viewModel.bind("card-1")
+        cardFlow.emit(storedCard(imageId = "card-1"))
+        advanceUntilIdle()
+
+        viewModel.onAction(ScreenshotAction.ShowDeleteConfirmDialog)
+        viewModel.onAction(ScreenshotAction.DismissDeleteConfirmDialog)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertFalse(state.showDeleteConfirmDialog)
+    }
+
+    @Test
     fun `delete success cleans images and emits event`() = runTest(testDispatcher) {
         coEvery { repository.deleteCard("card-1") } just Runs
 
         viewModel.bind("card-1")
         cardFlow.emit(storedCard(imageId = "card-1"))
+        advanceUntilIdle()
+
+        viewModel.onAction(ScreenshotAction.ShowDeleteConfirmDialog)
         advanceUntilIdle()
 
         viewModel.events.test {

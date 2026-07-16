@@ -4,16 +4,14 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -33,8 +31,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.category.toLabelResId
 import com.chalkak.recap.core.design.category.toRecapCategoryType
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
@@ -42,10 +40,10 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 
-// TODO : 다듬기
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScreenshotTypePickerBottomSheet(
@@ -96,37 +94,41 @@ fun ScreenshotTypePickerBottomSheetContent(
         Text(
             text = stringResource(R.string.screenshot_type_picker_title),
             color = RecapGray900,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = ScreenshotTokens.TypePickerTitleSpacing),
+            style = RecapHeading3,
+            modifier = Modifier.padding(bottom = ScreenshotTypePickerBottomSheetTokens.TypePickerTitleSpacing),
         )
-        LazyVerticalGrid(
-            columns = GridCells.Fixed(2),
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = ScreenshotTokens.TypePickerGridMaxHeight),
-            horizontalArrangement = Arrangement.spacedBy(ScreenshotTokens.TypePickerGridSpacing),
-            verticalArrangement = Arrangement.spacedBy(ScreenshotTokens.TypePickerGridSpacing),
-            contentPadding = PaddingValues(bottom = ScreenshotTokens.TypePickerConfirmTopSpacing),
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(
+                ScreenshotTypePickerBottomSheetTokens.TypePickerVerticalSpacing,
+            ),
         ) {
-            items(
-                items = ScreenshotContentType.entries,
-                key = { type -> type.name },
-            ) { type ->
-                ScreenshotTypeChip(
-                    type = type,
-                    selected = type == selectedType,
-                    onClick = { onTypeSelected(type) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
+            TypePickerOptions.chunked(ScreenshotTypePickerBottomSheetTokens.TypePickerColumns)
+                .forEach { rowTypes ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(
+                            ScreenshotTypePickerBottomSheetTokens.TypePickerHorizontalSpacing,
+                        ),
+                    ) {
+                        rowTypes.forEach { type ->
+                            ScreenshotTypeChip(
+                                type = type,
+                                selected = type == selectedType,
+                                onClick = { onTypeSelected(type) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
+                }
         }
+        Spacer(modifier = Modifier.height(ScreenshotTypePickerBottomSheetTokens.TypePickerConfirmTopSpacing))
         RecapButton(
             text = stringResource(R.string.screenshot_type_picker_confirm),
             onClick = onConfirmClick,
             modifier = Modifier.fillMaxWidth(),
             size = RecapButtonSize.Medium,
-            colors = RecapBlue300
+            colors = RecapBlue300,
         )
     }
 }
@@ -139,14 +141,14 @@ internal fun ScreenshotTypeChip(
     modifier: Modifier = Modifier,
 ) {
     val categoryType = type.toRecapCategoryType()
+    val containerColor = if (selected) categoryType.tintColor else White
     val borderColor = if (selected) categoryType.borderColor else RecapGray200
     val contentColor = if (selected) categoryType.contentColor else RecapGray900
-
-    val shape = RoundedCornerShape(percent = ScreenshotTokens.TypeChipCornerRadius)
+    val shape = RoundedCornerShape(percent = ScreenshotTypePickerBottomSheetTokens.TypeChipCornerRadius)
 
     Surface(
         modifier = modifier
-            .defaultMinSize(minHeight = ScreenshotTokens.TypeChipMinHeight)
+            .defaultMinSize(minHeight = ScreenshotTypePickerBottomSheetTokens.TypeChipMinHeight)
             .clip(shape)
             .selectable(
                 selected = selected,
@@ -154,26 +156,26 @@ internal fun ScreenshotTypeChip(
                 role = Role.RadioButton,
             ),
         shape = shape,
-        color = White,
+        color = containerColor,
         border = BorderStroke(
-            width = ScreenshotTokens.TypeChipBorderWidth,
+            width = ScreenshotTypePickerBottomSheetTokens.TypeChipBorderWidth,
             color = borderColor,
         ),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .defaultMinSize(minHeight = ScreenshotTokens.TypeChipMinHeight)
+                .defaultMinSize(minHeight = ScreenshotTypePickerBottomSheetTokens.TypeChipMinHeight)
                 .padding(
-                    horizontal = ScreenshotTokens.TypeChipHorizontalPadding,
-                    vertical = ScreenshotTokens.TypeChipVerticalPadding,
+                    horizontal = ScreenshotTypePickerBottomSheetTokens.TypeChipHorizontalPadding,
+                    vertical = ScreenshotTypePickerBottomSheetTokens.TypeChipVerticalPadding,
                 ),
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = stringResource(type.toLabelResId()),
+                text = stringResource(categoryType.labelResId),
                 color = contentColor,
-                style = MaterialTheme.typography.titleSmall,
+                style = MaterialTheme.typography.labelLarge,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
@@ -203,7 +205,7 @@ private fun ScreenshotTypePickerBottomSheetPreview() {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     ScreenshotSheetDragHandle()
                     ScreenshotTypePickerBottomSheetContent(
-                        selectedType = ScreenshotContentType.PLACE_RESTAURANT,
+                        selectedType = ScreenshotContentType.SCHEDULE_RESERVATION,
                         onTypeSelected = {},
                         onConfirmClick = {},
                         modifier = Modifier
@@ -219,4 +221,30 @@ private fun ScreenshotTypePickerBottomSheetPreview() {
             }
         }
     }
+}
+
+/** RecapCategoryType 표시 순서와 동일한 3x3 배치. */
+private val TypePickerOptions = listOf(
+    ScreenshotContentType.SHOPPING_PRODUCT,
+    ScreenshotContentType.PLACE_RESTAURANT,
+    ScreenshotContentType.SCHEDULE_RESERVATION,
+    ScreenshotContentType.INFO_KNOWLEDGE,
+    ScreenshotContentType.BOOK_CONTENT,
+    ScreenshotContentType.BENEFIT_EVENT,
+    ScreenshotContentType.RECORD_CAPTURE,
+    ScreenshotContentType.JOB_CAREER,
+    ScreenshotContentType.OTHER,
+)
+
+private object ScreenshotTypePickerBottomSheetTokens {
+    const val TypePickerColumns = 3
+    val TypePickerTitleSpacing = 23.dp
+    val TypePickerHorizontalSpacing = 8.dp
+    val TypePickerVerticalSpacing = 20.dp
+    val TypePickerConfirmTopSpacing = 61.dp
+    val TypeChipHorizontalPadding = 4.dp
+    val TypeChipVerticalPadding = 14.dp
+    val TypeChipMinHeight = 48.dp
+    val TypeChipBorderWidth = 1.dp
+    val TypeChipCornerRadius = 50
 }

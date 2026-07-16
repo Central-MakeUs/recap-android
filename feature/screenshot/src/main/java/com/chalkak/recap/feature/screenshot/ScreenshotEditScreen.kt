@@ -1,5 +1,6 @@
 package com.chalkak.recap.feature.screenshot
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -42,6 +43,7 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.toLabelResId
 import com.chalkak.recap.core.design.component.input.RecapInputField
 import com.chalkak.recap.core.design.component.input.RecapSelectField
+import com.chalkak.recap.core.design.component.popup.RecapPopupContent
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue500
@@ -57,10 +59,13 @@ fun ScreenshotEditScreen(
     onCancel: () -> Unit,
     onDone: () -> Unit,
     onChangeType: () -> Unit,
+    onOpenFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val draft = content.editDraft
-    val canDone = draft.isTitleValid() && !content.isSaving
+    val canDone = draft.isTitleValid() &&
+            content.hasUnsavedEditChanges() &&
+            !content.isSaving
     val fieldsEnabled = !content.isSaving
     val imageModel = resolveScreenshotImageModel(
         storedImagePath = content.card.imageRefs.storedImagePath,
@@ -104,7 +109,10 @@ fun ScreenshotEditScreen(
                     color = RecapGray500,
                 )
                 Spacer(modifier = Modifier.height(7.dp))
-                ScreenshotEditImagePreview(imageModel = imageModel)
+                ScreenshotEditImagePreview(
+                    imageModel = imageModel,
+                    onOpenFullscreen = onOpenFullscreen,
+                )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = stringResource(R.string.screenshot_edit_image_immutable_hint),
@@ -171,7 +179,7 @@ private fun ScreenshotEditTopBar(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .height(ScreenshotTokens.EditTopBarHeight)
+            .height(ScreenshotEditTokens.EditTopBarHeight)
             .padding(horizontal = ScreenshotTokens.HorizontalPadding),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -218,8 +226,8 @@ private fun ScreenshotTextAction(
     Box(
         modifier = Modifier
             .defaultMinSize(
-                minWidth = ScreenshotTokens.TextActionMinSize,
-                minHeight = ScreenshotTokens.TextActionMinSize,
+                minWidth = ScreenshotEditTokens.TextActionMinSize,
+                minHeight = ScreenshotEditTokens.TextActionMinSize,
             )
             .clickable(
                 enabled = enabled,
@@ -246,6 +254,7 @@ private fun ScreenshotTextAction(
 @Composable
 private fun ScreenshotEditImagePreview(
     imageModel: Any?,
+    onOpenFullscreen: () -> Unit,
 ) {
     var imageLoadFailed by remember(imageModel) { mutableStateOf(false) }
     val showPlaceholder = imageModel == null || imageLoadFailed
@@ -253,8 +262,8 @@ private fun ScreenshotEditImagePreview(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(ScreenshotTokens.EditImagePreviewHeight)
-            .clip(RoundedCornerShape(ScreenshotTokens.EditImagePreviewCornerRadius)),
+            .height(ScreenshotEditTokens.EditImagePreviewHeight)
+            .clip(RoundedCornerShape(ScreenshotEditTokens.EditImagePreviewCornerRadius)),
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -287,7 +296,7 @@ private fun ScreenshotEditImagePreview(
             contentDescription = stringResource(
                 R.string.screenshot_detail_fullscreen_content_description,
             ),
-            onClick = {},
+            onClick = onOpenFullscreen,
             tint = RecapGray900,
             outlined = true,
             modifier = Modifier
@@ -307,6 +316,58 @@ private fun ScreenshotEditScreenPreview() {
             onCancel = {},
             onDone = {},
             onChangeType = {},
+            onOpenFullscreen = {},
         )
     }
+}
+
+@Preview(
+    name = "Screenshot Edit Discard Confirm",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 800,
+)
+@Composable
+private fun ScreenshotEditDiscardConfirmPreview() {
+    RECAPTheme(dynamicColor = false) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            ScreenshotEditScreen(
+                content = previewScreenshotContent(),
+                onAction = {},
+                onCancel = {},
+                onDone = {},
+                onChangeType = {},
+                onOpenFullscreen = {},
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(RecapGray900.copy(alpha = 0.72f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                RecapPopupContent(
+                    title = stringResource(R.string.screenshot_edit_discard_confirm_title),
+                    description = stringResource(
+                        R.string.screenshot_edit_discard_confirm_description,
+                    ),
+                    confirmButtonText = stringResource(
+                        R.string.screenshot_edit_discard_confirm_quit,
+                    ),
+                    cancelButtonText = stringResource(
+                        R.string.screenshot_edit_discard_confirm_keep_editing,
+                    ),
+                    onConfirmClick = {},
+                    onCancelClick = {},
+                    confirmButtonColor = RecapError,
+                )
+            }
+        }
+    }
+}
+
+private object ScreenshotEditTokens {
+    val EditTopBarHeight = 56.dp
+    val EditImagePreviewHeight = 180.dp
+    val EditImagePreviewCornerRadius = 12.dp
+    val TextActionMinSize = 46.dp
 }

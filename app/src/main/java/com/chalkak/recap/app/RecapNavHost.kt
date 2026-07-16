@@ -66,6 +66,8 @@ fun RecapNavHost(
     val analysisProgressViewModel: ScreenshotAnalysisProgressViewModel = hiltViewModel()
     var homeNavigationRequestId by remember { mutableIntStateOf(0) }
     var requestOpenOrganize by remember { mutableStateOf(false) }
+    var pendingMainScreenshotDeletedToast by remember { mutableStateOf(false) }
+    var pendingRecentScreenshotDeletedToast by remember { mutableStateOf(false) }
     val analysisProgressFlow = remember(analysisProgressViewModel) {
         analysisProgressViewModel.uiState.map { state ->
             HomeAnalysisProgressUiModel(
@@ -113,6 +115,10 @@ fun RecapNavHost(
                                 } else {
                                     onPendingOpenOrganizeConsumed()
                                 }
+                            },
+                            pendingScreenshotDeletedToast = pendingMainScreenshotDeletedToast,
+                            onPendingScreenshotDeletedToastConsumed = {
+                                pendingMainScreenshotDeletedToast = false
                             },
                             analysisProgressFlow = analysisProgressFlow,
                         )
@@ -226,6 +232,10 @@ fun RecapNavHost(
                             requestOpenOrganize = true
                             backStack.removeLastOrNull()
                         },
+                        pendingScreenshotDeletedToast = pendingRecentScreenshotDeletedToast,
+                        onPendingScreenshotDeletedToastConsumed = {
+                            pendingRecentScreenshotDeletedToast = false
+                        },
                     )
                 }
 
@@ -233,6 +243,15 @@ fun RecapNavHost(
                     ScreenshotRoute(
                         imageId = route.imageId,
                         onNavigateBack = { backStack.removeLastOrNull() },
+                        onDeleteSucceeded = {
+                            val previousRoute = backStack.getOrNull(backStack.lastIndex - 1)
+                            if (previousRoute == AppRoute.RecentOrganizedScreenshots) {
+                                pendingRecentScreenshotDeletedToast = true
+                            } else {
+                                pendingMainScreenshotDeletedToast = true
+                            }
+                            backStack.removeLastOrNull()
+                        },
                     )
                 }
 
