@@ -37,7 +37,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -145,9 +144,13 @@ fun RecapToastHost(
     hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
-    val toastData = hostState.currentToastData
+    val currentToastData = hostState.currentToastData
+    var visibleToastData by remember { mutableStateOf<RecapToastData?>(null) }
+    if (currentToastData != null) {
+        visibleToastData = currentToastData
+    }
     AnimatedVisibility(
-        visible = toastData != null,
+        visible = currentToastData != null,
         modifier = modifier,
         enter = fadeIn(animationSpec = tween(RecapToastAnimationDurationMillis)) +
                 slideInVertically(
@@ -160,7 +163,7 @@ fun RecapToastHost(
                     targetOffsetY = { fullHeight -> fullHeight / 2 },
                 ),
     ) {
-        toastData?.let { data ->
+        visibleToastData?.let { data ->
             RecapToast(
                 message = data.message,
                 type = data.type,

@@ -160,35 +160,6 @@ internal fun CollectionSelectionCheckbox(
 }
 
 @Composable
-internal fun CollectionAnimatedFavoriteVisibility(
-    visible: Boolean,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    AnimatedVisibility(
-        visible = visible,
-        modifier = modifier,
-        // Exit uses enter tween so it starts with the checkbox, not FastOutLinearIn's slow start.
-        enter = expandHorizontally(
-            animationSpec = collectionSelectionExitTween(),
-            expandFrom = Alignment.End,
-        ) + slideInHorizontally(
-            animationSpec = collectionSelectionExitTween(),
-            initialOffsetX = { width -> width },
-        ) + fadeIn(animationSpec = collectionSelectionExitTween()),
-        exit = shrinkHorizontally(
-            animationSpec = collectionSelectionEnterTween(),
-            shrinkTowards = Alignment.End,
-        ) + slideOutHorizontally(
-            animationSpec = collectionSelectionEnterTween(),
-            targetOffsetX = { width -> width },
-        ) + fadeOut(animationSpec = collectionSelectionEnterTween()),
-    ) {
-        content()
-    }
-}
-
-@Composable
 private fun CollectionCheckboxIcon(
     checked: Boolean,
     modifier: Modifier = Modifier,
