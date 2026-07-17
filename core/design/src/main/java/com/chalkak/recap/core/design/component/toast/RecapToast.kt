@@ -90,7 +90,7 @@ data class RecapToastColors(
 
 object RecapToastDefaults {
     val HorizontalPadding = 21.dp
-    val VerticalPadding = 18.dp
+    val VerticalPadding = 10.5.dp
     val IconSize = 24.dp
     val IconSpacing = 10.dp
     val Shape = RoundedCornerShape(percent = 50)
