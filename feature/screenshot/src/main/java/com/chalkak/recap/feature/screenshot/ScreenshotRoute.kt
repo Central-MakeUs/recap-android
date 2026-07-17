@@ -1,5 +1,8 @@
 package com.chalkak.recap.feature.screenshot
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -7,8 +10,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
@@ -17,10 +22,14 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.popup.RecapPopup
+import com.chalkak.recap.core.design.component.toast.RecapToastHost
 import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
+import dev.chrisbanes.haze.HazePositionStrategy
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.serialization.Serializable
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -34,7 +43,9 @@ fun ScreenshotRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val backStack = rememberNavBackStack(ScreenshotDestination.Detail)
     val toastHostState = rememberRecapToastHostState()
-    val resources = LocalResources.current
+    val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
+    val favoriteAddedToastMessage = stringResource(R.string.screenshot_detail_favorite_added_toast)
+    val favoriteRemovedToastMessage = stringResource(R.string.screenshot_detail_favorite_removed_toast)
     var showActionSheet by rememberSaveable { mutableStateOf(false) }
     var showTypePicker by rememberSaveable { mutableStateOf(false) }
     var tempTypeSelection by rememberSaveable {
@@ -61,13 +72,11 @@ fun ScreenshotRoute(
 
                 is ScreenshotEvent.ShowFavoriteToast -> {
                     toastHostState.showToast(
-                        message = resources.getString(
-                            if (event.isFavorite) {
-                                R.string.screenshot_detail_favorite_added_toast
-                            } else {
-                                R.string.screenshot_detail_favorite_removed_toast
-                            },
-                        ),
+                        message = if (event.isFavorite) {
+                            favoriteAddedToastMessage
+                        } else {
+                            favoriteRemovedToastMessage
+                        },
                         type = RecapToastType.Success,
                     )
                 }
@@ -100,94 +109,108 @@ fun ScreenshotRoute(
         }
     }
 
-    NavDisplay(
-        backStack = backStack,
-        onBack = {
-            when {
-                backStack.size <= 1 -> onNavigateBack()
-                backStack.lastOrNull() is ScreenshotDestination.Edit -> leaveEditScreen()
-                else -> backStack.removeLastOrNull()
-            }
-        },
-        entryProvider = { destination ->
-            when (destination) {
-                ScreenshotDestination.Detail -> NavEntry(destination) {
-                    ScreenshotDetailScreen(
-                        uiState = uiState,
-                        onAction = viewModel::onAction,
-                        onNavigateBack = onNavigateBack,
-                        onOpenEdit = {
-                            showActionSheet = false
-                            viewModel.onAction(ScreenshotAction.PrepareEditDraft)
-                            if (backStack.lastOrNull() !is ScreenshotDestination.Edit) {
-                                backStack.add(ScreenshotDestination.Edit)
-                            }
-                        },
-                        onOpenFullscreen = {
-                            if (backStack.lastOrNull() !is ScreenshotDestination.Fullscreen) {
-                                backStack.add(ScreenshotDestination.Fullscreen)
-                            }
-                        },
-                        onOpenMore = { showActionSheet = true },
-                        toastHostState = toastHostState,
-                    )
-                }
-
-                ScreenshotDestination.Edit -> NavEntry(destination) {
-                    val editContent = uiState as? ScreenshotUiState.Content
-                    if (editContent == null) {
-                        ScreenshotDetailScreen(
-                            uiState = uiState,
-                            onAction = viewModel::onAction,
-                            onNavigateBack = {
-                                backStack.removeLastOrNull()
-                            },
-                            onOpenEdit = {},
-                            onOpenFullscreen = {},
-                            onOpenMore = {},
-                            toastHostState = toastHostState,
-                        )
-                    } else {
-                        ScreenshotEditScreen(
-                            content = editContent,
-                            onAction = viewModel::onAction,
-                            onCancel = ::leaveEditScreen,
-                            onDone = {
-                                viewModel.onAction(ScreenshotAction.SaveEdit)
-                            },
-                            onChangeType = {
-                                tempTypeSelection = editContent.editDraft.contentType.name
-                                showTypePicker = true
-                            },
-                            onOpenFullscreen = {
-                                if (backStack.lastOrNull() !is ScreenshotDestination.Fullscreen) {
-                                    backStack.add(ScreenshotDestination.Fullscreen)
-                                }
-                            },
-                        )
+    Box(modifier = Modifier.fillMaxSize()) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .hazeSource(state = toastHazeState),
+        ) {
+            NavDisplay(
+                backStack = backStack,
+                onBack = {
+                    when {
+                        backStack.size <= 1 -> onNavigateBack()
+                        backStack.lastOrNull() is ScreenshotDestination.Edit -> leaveEditScreen()
+                        else -> backStack.removeLastOrNull()
                     }
-                }
+                },
+                entryProvider = { destination ->
+                    when (destination) {
+                        ScreenshotDestination.Detail -> NavEntry(destination) {
+                            ScreenshotDetailScreen(
+                                uiState = uiState,
+                                onAction = viewModel::onAction,
+                                onNavigateBack = onNavigateBack,
+                                onOpenEdit = {
+                                    showActionSheet = false
+                                    viewModel.onAction(ScreenshotAction.PrepareEditDraft)
+                                    if (backStack.lastOrNull() !is ScreenshotDestination.Edit) {
+                                        backStack.add(ScreenshotDestination.Edit)
+                                    }
+                                },
+                                onOpenFullscreen = {
+                                    if (backStack.lastOrNull() !is ScreenshotDestination.Fullscreen) {
+                                        backStack.add(ScreenshotDestination.Fullscreen)
+                                    }
+                                },
+                                onOpenMore = { showActionSheet = true },
+                            )
+                        }
 
-                ScreenshotDestination.Fullscreen -> NavEntry(destination) {
-                    val fullscreenContent = uiState as? ScreenshotUiState.Content
-                    val imageModel = fullscreenContent?.let { content ->
-                        resolveScreenshotImageModel(
-                            storedImagePath = content.card.imageRefs.storedImagePath,
-                            sourceImageUri = content.card.imageRefs.sourceImageUri,
-                            thumbnailPath = content.card.imageRefs.thumbnailPath,
-                            priority = ScreenshotImageResolvePriority.Fullscreen,
-                        )
+                        ScreenshotDestination.Edit -> NavEntry(destination) {
+                            val editContent = uiState as? ScreenshotUiState.Content
+                            if (editContent == null) {
+                                ScreenshotDetailScreen(
+                                    uiState = uiState,
+                                    onAction = viewModel::onAction,
+                                    onNavigateBack = {
+                                        backStack.removeLastOrNull()
+                                    },
+                                    onOpenEdit = {},
+                                    onOpenFullscreen = {},
+                                    onOpenMore = {},
+                                )
+                            } else {
+                                ScreenshotEditScreen(
+                                    content = editContent,
+                                    onAction = viewModel::onAction,
+                                    onCancel = ::leaveEditScreen,
+                                    onDone = {
+                                        viewModel.onAction(ScreenshotAction.SaveEdit)
+                                    },
+                                    onChangeType = {
+                                        tempTypeSelection = editContent.editDraft.contentType.name
+                                        showTypePicker = true
+                                    },
+                                    onOpenFullscreen = {
+                                        if (backStack.lastOrNull() !is ScreenshotDestination.Fullscreen) {
+                                            backStack.add(ScreenshotDestination.Fullscreen)
+                                        }
+                                    },
+                                )
+                            }
+                        }
+
+                        ScreenshotDestination.Fullscreen -> NavEntry(destination) {
+                            val fullscreenContent = uiState as? ScreenshotUiState.Content
+                            val imageModel = fullscreenContent?.let { content ->
+                                resolveScreenshotImageModel(
+                                    storedImagePath = content.card.imageRefs.storedImagePath,
+                                    sourceImageUri = content.card.imageRefs.sourceImageUri,
+                                    thumbnailPath = content.card.imageRefs.thumbnailPath,
+                                    priority = ScreenshotImageResolvePriority.Fullscreen,
+                                )
+                            }
+                            ScreenshotFullscreenScreen(
+                                imageModel = imageModel,
+                                onNavigateBack = { backStack.removeLastOrNull() },
+                            )
+                        }
+
+                        else -> error("Unknown screenshot destination: $destination")
                     }
-                    ScreenshotFullscreenScreen(
-                        imageModel = imageModel,
-                        onNavigateBack = { backStack.removeLastOrNull() },
-                    )
-                }
+                },
+            )
+        }
 
-                else -> error("Unknown screenshot destination: $destination")
-            }
-        },
-    )
+        RecapToastHost(
+            hostState = toastHostState,
+            hazeState = toastHazeState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+        )
+    }
 
     if (showActionSheet && contentState != null) {
         ScreenshotActionBottomSheet(

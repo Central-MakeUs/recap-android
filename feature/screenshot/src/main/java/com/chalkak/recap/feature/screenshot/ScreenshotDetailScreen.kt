@@ -55,9 +55,6 @@ import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
-import com.chalkak.recap.core.design.component.toast.RecapToastHost
-import com.chalkak.recap.core.design.component.toast.RecapToastHostState
-import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapError
@@ -74,10 +71,6 @@ import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisConfidence
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentTypes
-import dev.chrisbanes.haze.HazePositionStrategy
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
-
 @Composable
 fun ScreenshotDetailScreen(
     uiState: ScreenshotUiState,
@@ -87,51 +80,37 @@ fun ScreenshotDetailScreen(
     onOpenFullscreen: () -> Unit,
     onOpenMore: () -> Unit,
     modifier: Modifier = Modifier,
-    toastHostState: RecapToastHostState = rememberRecapToastHostState(),
 ) {
     WhiteStatusBarIconsEffect()
-    val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .hazeSource(state = toastHazeState),
-            color = RecapBackground,
-        ) {
-            when (uiState) {
-                ScreenshotUiState.Loading -> ScreenshotDetailLoading()
-                is ScreenshotUiState.NotFound -> ScreenshotDetailErrorState(
-                    message = stringResource(R.string.screenshot_detail_not_found),
-                    actionErrorMessageResId = uiState.actionErrorMessageResId,
-                    onRetry = { onAction(ScreenshotAction.RetryLoad) },
-                    onNavigateBack = onNavigateBack,
-                )
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = RecapBackground,
+    ) {
+        when (uiState) {
+            ScreenshotUiState.Loading -> ScreenshotDetailLoading()
+            is ScreenshotUiState.NotFound -> ScreenshotDetailErrorState(
+                message = stringResource(R.string.screenshot_detail_not_found),
+                actionErrorMessageResId = uiState.actionErrorMessageResId,
+                onRetry = { onAction(ScreenshotAction.RetryLoad) },
+                onNavigateBack = onNavigateBack,
+            )
 
-                is ScreenshotUiState.LoadError -> ScreenshotDetailErrorState(
-                    message = stringResource(R.string.screenshot_detail_load_error),
-                    actionErrorMessageResId = null,
-                    onRetry = { onAction(ScreenshotAction.RetryLoad) },
-                    onNavigateBack = onNavigateBack,
-                )
+            is ScreenshotUiState.LoadError -> ScreenshotDetailErrorState(
+                message = stringResource(R.string.screenshot_detail_load_error),
+                actionErrorMessageResId = null,
+                onRetry = { onAction(ScreenshotAction.RetryLoad) },
+                onNavigateBack = onNavigateBack,
+            )
 
-                is ScreenshotUiState.Content -> ScreenshotDetailContent(
-                    content = uiState,
-                    onAction = onAction,
-                    onNavigateBack = onNavigateBack,
-                    onOpenFullscreen = onOpenFullscreen,
-                    onOpenMore = onOpenMore,
-                )
-            }
+            is ScreenshotUiState.Content -> ScreenshotDetailContent(
+                content = uiState,
+                onAction = onAction,
+                onNavigateBack = onNavigateBack,
+                onOpenFullscreen = onOpenFullscreen,
+                onOpenMore = onOpenMore,
+            )
         }
-
-        RecapToastHost(
-            hostState = toastHostState,
-            hazeState = toastHazeState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 24.dp, vertical = 24.dp),
-        )
     }
 }
 
