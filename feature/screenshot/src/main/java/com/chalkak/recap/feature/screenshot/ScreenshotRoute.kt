@@ -81,7 +81,9 @@ fun ScreenshotRoute(
     }.getOrDefault(ScreenshotContentType.OTHER)
 
     fun leaveEditScreen() {
-        if (contentState != null && contentState.hasUnsavedEditChanges()) {
+        // Prefer uiState over contentState snapshot (NavEntry content can be remembered).
+        val content = uiState as? ScreenshotUiState.Content
+        if (content != null && content.hasUnsavedEditChanges()) {
             viewModel.onAction(ScreenshotAction.ShowDiscardEditConfirmDialog)
             return
         }
@@ -132,7 +134,7 @@ fun ScreenshotRoute(
                 }
 
                 ScreenshotDestination.Edit -> NavEntry(destination) {
-                    val editContent = contentState
+                    val editContent = uiState as? ScreenshotUiState.Content
                     if (editContent == null) {
                         ScreenshotDetailScreen(
                             uiState = uiState,
@@ -167,7 +169,8 @@ fun ScreenshotRoute(
                 }
 
                 ScreenshotDestination.Fullscreen -> NavEntry(destination) {
-                    val imageModel = contentState?.let { content ->
+                    val fullscreenContent = uiState as? ScreenshotUiState.Content
+                    val imageModel = fullscreenContent?.let { content ->
                         resolveScreenshotImageModel(
                             storedImagePath = content.card.imageRefs.storedImagePath,
                             sourceImageUri = content.card.imageRefs.sourceImageUri,
