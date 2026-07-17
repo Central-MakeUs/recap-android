@@ -26,6 +26,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import com.chalkak.recap.core.design.component.toast.RecapToastHost
+import com.chalkak.recap.core.design.component.toast.RecapToastHostState
+import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.feature.onboarding.component.OnboardingLayoutDefaults
 import com.chalkak.recap.feature.onboarding.component.OnboardingTopBar
@@ -33,6 +36,10 @@ import com.chalkak.recap.feature.onboarding.screen.OnboardingAddToFavoriteScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingLandingScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingPermissionGuideScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingStartFirstAnalyzeScreen
+import com.chalkak.recap.feature.onboarding.screen.OnboardingUploadMethodGuideScreen
+import dev.chrisbanes.haze.HazePositionStrategy
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
@@ -42,49 +49,67 @@ fun OnboardingScreen(
     onAction: (OnboardingAction) -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState? = null,
+    toastHostState: RecapToastHostState? = null,
     showLandingLoginImmediately: Boolean = false,
+    showDebugEmailLogin: Boolean = false,
     illustrationSignalFlow: Flow<OnboardingIllustrationSignal> = emptyFlow(),
 ) {
     val resolvedSnackbarHostState = snackbarHostState ?: remember { SnackbarHostState() }
+    val resolvedToastHostState = toastHostState ?: rememberRecapToastHostState()
+    val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
 
-    Surface(
-        modifier = modifier
-            .fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
-    ) {
-        Box(
+    Box(modifier = modifier.fillMaxSize()) {
+        Surface(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background)
-                .safeDrawingPadding(),
+                .hazeSource(state = toastHazeState),
+            color = MaterialTheme.colorScheme.background,
         ) {
-            val screenModifier = Modifier
-                .fillMaxSize()
-                .padding(OnboardingLayoutDefaults.ScreenPadding)
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.background)
+                    .safeDrawingPadding(),
+            ) {
+                val screenModifier = Modifier
+                    .fillMaxSize()
+                    .padding(OnboardingLayoutDefaults.ScreenPadding)
 
-            when (uiState.step) {
-                OnboardingStep.Landing -> OnboardingLandingScreen(
-                    onAction = onAction,
-                    modifier = screenModifier,
-                    showLoginImmediately = showLandingLoginImmediately,
-                    illustrationSignalFlow = illustrationSignalFlow,
-                )
+                when (uiState.step) {
+                    OnboardingStep.Landing -> OnboardingLandingScreen(
+                        onAction = onAction,
+                        modifier = screenModifier,
+                        showLoginImmediately = showLandingLoginImmediately,
+                        isLoading = uiState.isLoading,
+                        showDebugEmailLogin = showDebugEmailLogin,
+                        illustrationSignalFlow = illustrationSignalFlow,
+                    )
 
-                OnboardingStep.PermissionGuide,
-                OnboardingStep.AddToFavorite,
-                OnboardingStep.StartFirstAnalyze -> OnboardingStepTransition(
-                    uiState = uiState,
-                    onAction = onAction,
-                    modifier = Modifier.fillMaxSize(),
+                    OnboardingStep.PermissionGuide,
+                    OnboardingStep.UploadMethodGuide,
+                    OnboardingStep.AddToFavorite,
+                    OnboardingStep.StartFirstAnalyze -> OnboardingStepTransition(
+                        uiState = uiState,
+                        onAction = onAction,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
+                SnackbarHost(
+                    hostState = resolvedSnackbarHostState,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(16.dp),
                 )
             }
-            SnackbarHost(
-                hostState = resolvedSnackbarHostState,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(16.dp),
-            )
         }
+
+        RecapToastHost(
+            hostState = resolvedToastHostState,
+            hazeState = toastHazeState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(horizontal = 24.dp, vertical = 24.dp),
+        )
     }
 }
 
@@ -105,6 +130,7 @@ private fun OnboardingStepTransition(
     ) {
         OnboardingTopBar(
             progress = topBarProgress,
+            stepCount = OnboardingProgressSteps.size,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 24.dp),
@@ -143,6 +169,11 @@ private fun OnboardingStepTransition(
                     modifier = pageModifier,
                 )
 
+                OnboardingStep.UploadMethodGuide -> OnboardingUploadMethodGuideScreen(
+                    onAction = onAction,
+                    modifier = pageModifier,
+                )
+
                 OnboardingStep.AddToFavorite -> OnboardingAddToFavoriteScreen(
                     uiState = uiState,
                     onAction = onAction,
@@ -165,6 +196,7 @@ private const val OnboardingStepTransitionDurationMillis = 300
 
 private val OnboardingProgressSteps = listOf(
     OnboardingStep.PermissionGuide,
+    OnboardingStep.UploadMethodGuide,
     OnboardingStep.AddToFavorite,
     OnboardingStep.StartFirstAnalyze,
 )
@@ -190,6 +222,17 @@ private fun OnboardingScreenPermissionGuidePreview() {
     RECAPTheme(dynamicColor = false) {
         OnboardingScreen(
             uiState = OnboardingUiState(step = OnboardingStep.PermissionGuide),
+            onAction = {},
+        )
+    }
+}
+
+@OnboardingScreenPreview
+@Composable
+private fun OnboardingScreenUploadMethodGuidePreview() {
+    RECAPTheme(dynamicColor = false) {
+        OnboardingScreen(
+            uiState = OnboardingUiState(step = OnboardingStep.UploadMethodGuide),
             onAction = {},
         )
     }

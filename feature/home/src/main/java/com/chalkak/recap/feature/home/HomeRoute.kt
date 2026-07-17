@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.flowOf
 fun HomeRoute(
     hazeState: HazeState,
     onNavigateToDeveloper: () -> Unit,
-    onNavigateToMyPage: () -> Unit,
+    onNavigateToSettings: () -> Unit,
     onNavigateToSearch: () -> Unit,
     onNavigateToRecentOrganizedScreenshots: () -> Unit,
     onNavigateToCollectionFavorites: () -> Unit,
@@ -39,7 +39,7 @@ fun HomeRoute(
             when (action) {
                 HomeAction.StartImport -> onNavigateToOrganize()
                 HomeAction.EnterDeveloperOptions -> onNavigateToDeveloper()
-                HomeAction.OpenSettings -> onNavigateToMyPage()
+                HomeAction.OpenSettings -> onNavigateToSettings()
                 HomeAction.OpenSearch -> onNavigateToSearch()
                 HomeAction.OpenRecentScreenshots -> onNavigateToRecentOrganizedScreenshots()
                 HomeAction.OpenFavoriteCategories -> onNavigateToCollectionFavorites()

@@ -57,6 +57,7 @@ data class CollectionSelectionUiState(
     val isActive: Boolean = false,
     val selectedImageIds: Set<String> = emptySet(),
     val isDeleting: Boolean = false,
+    val showDeleteConfirmDialog: Boolean = false,
 ) {
     val selectedCount: Int
         get() = selectedImageIds.size
@@ -89,8 +90,13 @@ sealed interface CollectionAction {
     data object StartSelection : CollectionAction
     data object CancelSelection : CollectionAction
     data class ToggleItemSelection(val imageId: String) : CollectionAction
-    data class ToggleAllSelection(val imageIds: Set<String>) : CollectionAction
     data object DeleteSelected : CollectionAction
+    data object ConfirmDeleteSelected : CollectionAction
+    data object DismissDeleteConfirmDialog : CollectionAction
+}
+
+sealed interface CollectionEvent {
+    data class ShowDeleteSuccessToast(val deletedCount: Int) : CollectionEvent
 }
 
 internal val CollectionOverviewCategoryOrder: List<ScreenshotContentType> = listOf(

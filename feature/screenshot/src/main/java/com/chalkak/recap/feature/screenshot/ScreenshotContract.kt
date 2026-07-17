@@ -19,6 +19,8 @@ sealed interface ScreenshotUiState {
         val isFavoriteUpdating: Boolean = false,
         val isSaving: Boolean = false,
         val isDeleting: Boolean = false,
+        val showDeleteConfirmDialog: Boolean = false,
+        val showDiscardEditConfirmDialog: Boolean = false,
         val titleError: Boolean = false,
         val actionErrorMessageResId: Int? = null,
     ) : ScreenshotUiState
@@ -43,12 +45,17 @@ sealed interface ScreenshotAction {
     data class UpdateEditContentType(val contentType: ScreenshotContentType) : ScreenshotAction
     data object DiscardEditDraft : ScreenshotAction
     data object SaveEdit : ScreenshotAction
+    data object ShowDiscardEditConfirmDialog : ScreenshotAction
+    data object DismissDiscardEditConfirmDialog : ScreenshotAction
+    data object ShowDeleteConfirmDialog : ScreenshotAction
+    data object DismissDeleteConfirmDialog : ScreenshotAction
     data object DeleteScreenshot : ScreenshotAction
 }
 
 sealed interface ScreenshotEvent {
     data object SaveSucceeded : ScreenshotEvent
     data object DeleteSucceeded : ScreenshotEvent
+    data class ShowFavoriteToast(val isFavorite: Boolean) : ScreenshotEvent
 }
 
 internal object ScreenshotLimits {
@@ -73,4 +80,14 @@ internal fun ScreenshotEditDraft.normalizedForSave(): ScreenshotEditDraft {
     )
 }
 
+internal fun sanitizeEditTitleInput(raw: String): String =
+    raw.replace("\r\n", "").replace("\n", "").replace("\r", "")
+
+internal fun sanitizeEditSummaryInput(raw: String): String =
+    raw.replace("\r\n", " ").replace("\n", " ").replace("\r", " ")
+
 internal fun ScreenshotEditDraft.isTitleValid(): Boolean = title.trim().isNotEmpty()
+
+internal fun ScreenshotUiState.Content.hasUnsavedEditChanges(): Boolean {
+    return editDraft != card.toEditDraft()
+}

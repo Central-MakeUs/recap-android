@@ -12,7 +12,6 @@ data class OnboardingUiState(
 sealed interface OnboardingAction {
     data object Back : OnboardingAction
     data object LoginWithKakao : OnboardingAction
-    data object LoginWithApple : OnboardingAction
     data object LoginWithEmail : OnboardingAction
     data object SelectFirstScreenshots : OnboardingAction
     data object OpenAddToFavoriteGuide : OnboardingAction
@@ -23,11 +22,19 @@ sealed interface OnboardingAction {
     data object SkipPermission : OnboardingAction
     data object OpenScreenshotPicker : OnboardingAction
     data object SkipStartFirstAnalyze : OnboardingAction
+    data object ConfirmUploadMethodGuide : OnboardingAction
+}
+
+sealed interface OnboardingEvent {
+    data class ShowLoginError(
+        val isCancelled: Boolean,
+    ) : OnboardingEvent
 }
 
 enum class OnboardingStep {
     Landing,
     PermissionGuide,
+    UploadMethodGuide,
     AddToFavorite,
     StartFirstAnalyze,
 }

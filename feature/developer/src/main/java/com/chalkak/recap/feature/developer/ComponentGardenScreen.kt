@@ -52,7 +52,10 @@ import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
+import com.chalkak.recap.core.design.component.card.HomeFavoriteCard
 import com.chalkak.recap.core.design.component.card.OrganizedCaptureCard
+import com.chalkak.recap.core.design.component.card.ShareFavoriteGuideCard
+import com.chalkak.recap.core.design.component.card.OrganizedScreenshotSummaryCard
 import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
@@ -62,13 +65,17 @@ import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChipWithIcon
 import com.chalkak.recap.core.design.component.chip.RecapFilterTag
 import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
+import com.chalkak.recap.core.design.component.icon.RecapHazeFolderIcon
 import com.chalkak.recap.core.design.component.input.RecapInputField
+import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
 import com.chalkak.recap.core.design.component.toast.RecapToast
 import com.chalkak.recap.core.design.component.toast.RecapToastHost
 import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapBlue300
+import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.feature.organize.OrganizeAction
 import com.chalkak.recap.feature.organize.OrganizeUiState
 import com.chalkak.recap.feature.organize.ScreenshotPicker
@@ -92,6 +99,8 @@ internal fun ComponentGardenScreen(
     var showLogoutConfirmationBottomSheet by remember { mutableStateOf(false) }
     var showWithdrawalConfirmationBottomSheet by remember { mutableStateOf(false) }
     var showScreenshotPicker by remember { mutableStateOf(false) }
+    var showConfirmPopupError by remember { mutableStateOf(false) }
+    var showConfirmPopupPrimary by remember { mutableStateOf(false) }
     var screenshotSelectionUiState by remember {
         mutableStateOf(
             OrganizeUiState(
@@ -150,6 +159,10 @@ internal fun ComponentGardenScreen(
                     organizedCaptureCount = ComponentGardenOrganizedCaptureCount,
                     onClick = {},
                 )
+                OrganizedScreenshotSummaryCard(
+                    organizedCount = ComponentGardenOrganizedScreenshotSummaryCount,
+                )
+                ShareFavoriteGuideCard(onClick = {})
                 RecentOrganizedScreenshotCard(
                     thumbnailModel = R.drawable.bid_landscape_24px,
                     title = stringResource(R.string.home_recent_screenshot_return_title),
@@ -161,11 +174,21 @@ internal fun ComponentGardenScreen(
                     recapCount = ComponentGardenFrequentSaveTypeCount,
                     onClick = {},
                 )
+                HomeFavoriteCard(
+                    categoryType = RecapCategoryType.RecordCapture,
+                    title = stringResource(R.string.home_favorite_card_preview_title),
+                    onClick = {},
+                )
             }
             ComponentGardenSection(
                 title = stringResource(R.string.component_garden_haze_folder_cards_section_title),
             ) {
                 ComponentGardenHazeFolderCards()
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_haze_folder_icon_section_title),
+            ) {
+                RecapHazeFolderIcon(size = 120.dp)
             }
             ComponentGardenSection(
                 title = stringResource(R.string.component_garden_category_chips_section_title),
@@ -246,6 +269,30 @@ internal fun ComponentGardenScreen(
                     size = RecapButtonSize.Medium,
                     shadowElevation = 12.dp
                 )
+            }
+            ComponentGardenSection(
+                title = stringResource(R.string.component_garden_popups_section_title),
+            ) {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { showConfirmPopupError = true },
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.component_garden_confirm_popup_error_button
+                        ),
+                    )
+                }
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = { showConfirmPopupPrimary = true },
+                ) {
+                    Text(
+                        text = stringResource(
+                            R.string.component_garden_confirm_popup_primary_button
+                        ),
+                    )
+                }
             }
             ComponentGardenSection(
                 title = stringResource(R.string.component_garden_toasts_section_title),
@@ -533,6 +580,30 @@ internal fun ComponentGardenScreen(
             onConfirmClick = { showScreenshotPicker = false },
         )
     }
+    if (showConfirmPopupError) {
+        RecapPopup(
+            title = stringResource(R.string.recap_popup_preview_title),
+            description = stringResource(R.string.recap_popup_preview_description),
+            confirmButtonText = stringResource(R.string.deletion_confirmation_delete_button),
+            cancelButtonText = stringResource(R.string.deletion_confirmation_cancel_button),
+            onConfirmClick = { showConfirmPopupError = false },
+            onCancelClick = { showConfirmPopupError = false },
+            onDismissRequest = { showConfirmPopupError = false },
+            confirmButtonColor = RecapError,
+        )
+    }
+    if (showConfirmPopupPrimary) {
+        RecapPopup(
+            title = stringResource(R.string.recap_popup_preview_title),
+            description = stringResource(R.string.recap_popup_preview_description),
+            confirmButtonText = stringResource(R.string.deletion_confirmation_delete_button),
+            cancelButtonText = stringResource(R.string.deletion_confirmation_cancel_button),
+            onConfirmClick = { showConfirmPopupPrimary = false },
+            onCancelClick = { showConfirmPopupPrimary = false },
+            onDismissRequest = { showConfirmPopupPrimary = false },
+            confirmButtonColor = RecapBlue300,
+        )
+    }
 }
 
 private fun OrganizeUiState.reduceGardenAction(action: OrganizeAction): OrganizeUiState {
@@ -669,6 +740,7 @@ private fun ComponentGardenScreenPreview() {
 
 private const val ComponentGardenReviewRequiredCount = 3
 private const val ComponentGardenOrganizedCaptureCount = 12
+private const val ComponentGardenOrganizedScreenshotSummaryCount = 128
 private const val ComponentGardenFrequentSaveTypeCount = 12
 private const val ComponentGardenScreenshotPickerMaxCount = 20
 private val ComponentGardenHazeFolderCardWidth = 99.dp

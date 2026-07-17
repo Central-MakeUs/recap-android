@@ -2,7 +2,6 @@ package com.chalkak.recap.core.design.component.chip
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,10 +23,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.chalkak.recap.core.design.category.RecapCategoryType
+import com.chalkak.recap.core.design.theme.PretendardFontFamily
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray900
 
@@ -47,6 +51,7 @@ object RecapCategoryChipDefaults {
     val IconSize = 12.dp
     val IconCornerRadius = 6.dp
     val IconTextSpacing = 8.dp
+    val TextChipFontSize = 10.sp
 
     fun colors(type: RecapCategoryType): RecapCategoryChipColors {
         return RecapCategoryChipColors(
@@ -54,6 +59,17 @@ object RecapCategoryChipDefaults {
             border = type.borderColor,
             content = type.contentColor,
             icon = type.borderColor,
+        )
+    }
+
+    fun textChipStyle(fontSize: TextUnit = TextChipFontSize): TextStyle {
+        val sizeSp = fontSize.value
+        return TextStyle(
+            fontFamily = PretendardFontFamily,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = fontSize,
+            lineHeight = (sizeSp * 1.4f).sp,
+            letterSpacing = (sizeSp * -0.02f).sp,
         )
     }
 }
@@ -133,11 +149,13 @@ fun RecapCategoryTextChip(
     type: RecapCategoryType,
     modifier: Modifier = Modifier,
     colors: RecapCategoryChipColors = RecapCategoryChipDefaults.colors(type),
+    textSize: TextUnit = RecapCategoryChipDefaults.TextChipFontSize,
 ) {
     RecapCategoryTextChip(
         label = stringResource(type.labelResId),
         colors = colors,
         modifier = modifier,
+        textSize = textSize,
     )
 }
 
@@ -146,11 +164,12 @@ fun RecapCategoryTextChip(
     label: String,
     colors: RecapCategoryChipColors,
     modifier: Modifier = Modifier,
+    textSize: TextUnit = RecapCategoryChipDefaults.TextChipFontSize,
 ) {
     Text(
         text = label,
         modifier = modifier,
-        style = MaterialTheme.typography.labelSmall,
+        style = RecapCategoryChipDefaults.textChipStyle(textSize),
         color = colors.content,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,

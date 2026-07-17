@@ -60,7 +60,7 @@ $env:GRADLE_USER_HOME="$env:USERPROFILE\.gradle"; .\gradlew.bat assembleDebug
 :feature:demo
 :feature:developer
 :feature:home
-:feature:mypage
+:feature:settings
 :feature:onboarding
 :feature:organize
 :feature:screenshot
@@ -80,7 +80,7 @@ com.chalkak.recap
     ├── demo               # OCR/AI 분석 데모 및 개발 검증 화면
     ├── developer          # 개발자 옵션 / component garden
     ├── home               # 홈
-    ├── mypage             # 마이페이지 및 하위 설정 화면
+    ├── settings           # 설정 및 하위 안내/관리 화면
     ├── organize           # 정리/분류 관련 화면
     ├── onboarding         # 온보딩 플로우
     └── screenshot         # 스크린샷 상세/수정/전체화면
@@ -112,8 +112,9 @@ com.chalkak.recap
 - main route:
   - Home
   - Collection
-  - My Page 및 하위 화면
+  - Settings(설정) 및 하위 화면
 - Organize(스크린샷 피커 → 확인)는 AppRoute가 아니라 MainTabs 위 오버레이다. 구조·의도·back 동작은 `docs/ORGANIZE_OVERLAY_NAVIGATION.md`를 본다.
+- 온보딩 `StartFirstAnalyze`의 "스크린샷 선택하기"는 온보딩 완료 후 MainTabs로 이동하며 Organize 피커를 바로 연다. "나중에 하기"는 홈만 연다.
 
 ## 데이터 / 외부 연동
 
@@ -134,9 +135,18 @@ com.chalkak.recap
 
 외부 API, Firebase, local.properties, google-services 파일, API key 등 시크릿은 커밋하지 않는다.
 
+## 디자인 패턴
+
+UI 색상·타이포는 `MaterialTheme.colorScheme` / `MaterialTheme.typography`보다 `core/design/theme` 디자인 토큰을 우선 사용한다.
+
+- **RecapColor** — `core/design/src/main/java/com/chalkak/recap/core/design/theme/Color.kt`에 정의된 `RecapBlue*`, `RecapGray*`, `RecapCategory*` 등 색상 토큰
+- **RecapTypo** — `core/design/src/main/java/com/chalkak/recap/core/design/theme/Type.kt`의 `RecapTypography` (`RecapHeading*`, `RecapBody*`, `RecapCaption*`)
+
+시맨틱 색·Material 역할 매핑이 필요할 때만 `MaterialTheme`을 보조로 쓴다. 색·타이포 임의 하드코딩은 금지한다.
+
 ## 컨벤션 (필수)
 
-- 테마 토큰만 사용: 색/타이포는 `MaterialTheme.colorScheme` / `MaterialTheme.typography` 또는 `core/design/theme` 토큰을 사용한다. 임의 하드코딩 금지.
+- 테마 토큰만 사용: 색/타이포는 위 디자인 패턴의 RecapColor·RecapTypo를 우선한다.
 - Material 아이콘 금지: 새 작업에서 `Icons.*`를 추가하지 않는다. 필요한 아이콘은 drawable/vector asset으로 추가하거나 handoff에 요청한다. 아이콘을 Canvas나 텍스트로 대체하지 않는다.
 - 문자열 리소스 필수: UI 텍스트는 `app/src/main/res/values/strings.xml`에 정의해서 사용한다.
 - Preview 필수: UI 컴포넌트와 화면에는 필요한 Preview를 작성하고 `RECAPTheme`로 감싼다. `core/design` 컴포넌트는 variant/state가 여러 개면 그만큼 Preview를 둔다. 기존 예시는 `RecapButton.kt`, `RecapActionBottomSheet.kt` 참고.

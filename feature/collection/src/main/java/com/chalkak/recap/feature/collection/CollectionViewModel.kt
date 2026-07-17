@@ -12,8 +12,11 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -26,6 +29,9 @@ class CollectionViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CollectionUiState())
     val uiState: StateFlow<CollectionUiState> = _uiState.asStateFlow()
+
+    private val _events = MutableSharedFlow<CollectionEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<CollectionEvent> = _events.asSharedFlow()
 
     private var storedCards: List<StoredScreenshotCard> = emptyList()
     private var detailFilter: CollectionDetailFilter? = null
@@ -158,30 +164,26 @@ class CollectionViewModel @Inject constructor(
                 publishState()
             }
 
-            is CollectionAction.ToggleAllSelection -> {
-                if (!selection.isActive || selection.isDeleting) {
-                    return
-                }
-                val storedImageIds = storedCards.mapTo(mutableSetOf()) { card ->
-                    card.analysisResult.imageId
-                }
-                val visibleImageIds = action.imageIds.intersect(storedImageIds)
-                if (visibleImageIds.isEmpty()) {
-                    return
-                }
-                val selectedImageIds = selection.selectedImageIds.toMutableSet().apply {
-                    if (containsAll(visibleImageIds)) {
-                        removeAll(visibleImageIds)
-                    } else {
-                        addAll(visibleImageIds)
-                    }
-                }
-                selection = selection.copy(selectedImageIds = selectedImageIds)
-                publishState()
-            }
-
-            CollectionAction.DeleteSelected -> deleteSelectedCards()
+            CollectionAction.DeleteSelected -> showDeleteConfirmDialog()
+            CollectionAction.ConfirmDeleteSelected -> deleteSelectedCards()
+            CollectionAction.DismissDeleteConfirmDialog -> dismissDeleteConfirmDialog()
         }
+    }
+
+    private fun showDeleteConfirmDialog() {
+        if (!selection.isActive || selection.isDeleting || selection.selectedCount == 0) {
+            return
+        }
+        selection = selection.copy(showDeleteConfirmDialog = true)
+        publishState()
+    }
+
+    private fun dismissDeleteConfirmDialog() {
+        if (!selection.showDeleteConfirmDialog || selection.isDeleting) {
+            return
+        }
+        selection = selection.copy(showDeleteConfirmDialog = false)
+        publishState()
     }
 
     private fun deleteSelectedCards() {
@@ -193,10 +195,15 @@ class CollectionViewModel @Inject constructor(
         }
         val imageIds = selection.selectedImageIds.intersect(storedImageIds)
         if (imageIds.isEmpty()) {
+            selection = selection.copy(showDeleteConfirmDialog = false)
+            publishState()
             return
         }
 
-        selection = selection.copy(isDeleting = true)
+        selection = selection.copy(
+            isDeleting = true,
+            showDeleteConfirmDialog = false,
+        )
         val deleteGeneration = selectionGeneration
         publishState()
         viewModelScope.launch {
@@ -211,6 +218,8 @@ class CollectionViewModel @Inject constructor(
                 }
                 return@launch
             }
+
+            _events.emit(CollectionEvent.ShowDeleteSuccessToast(deletedCount = imageIds.size))
 
             try {
                 withContext(ioDispatcher + NonCancellable) {

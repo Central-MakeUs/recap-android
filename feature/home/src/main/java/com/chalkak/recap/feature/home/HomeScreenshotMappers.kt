@@ -6,8 +6,8 @@ import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import timber.log.Timber
 
 private const val HomeRecentScreenshotLimit = 3
-private const val HomeFavoriteItemLimit = 3
-private const val HomeFrequentSaveTypeLimit = 3
+private const val HomeFavoriteItemLimit = 4
+private const val HomeFrequentSaveTypeLimit = 4
 
 internal fun StoredScreenshotCard.toThumbnailModel(): Any? {
     val thumbnail = imageRefs.thumbnailPath?.takeIf { it.isNotBlank() }

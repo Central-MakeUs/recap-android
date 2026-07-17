@@ -10,6 +10,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.feature.developer.DeveloperRoute
 import com.chalkak.recap.feature.onboarding.OnboardingRoute
@@ -27,6 +28,7 @@ fun RecapApp(
         }
 
         val readyState = uiState as RecapStartupUiState.Ready
+        val pendingOpenOrganize by startupViewModel.pendingOpenOrganize.collectAsStateWithLifecycle()
         val initialRoute = if (readyState.onboardingCompleted) {
             RecapRootRoute.Main
         } else {
@@ -54,6 +56,7 @@ fun RecapApp(
                     RecapRootRoute.Onboarding -> NavEntry(route) {
                         OnboardingRoute(
                             onOnboardingComplete = startupViewModel::completeOnboarding,
+                            isDebugBuild = BuildConfig.DEBUG,
                             viewModelKey = "onboarding-$onboardingSessionKey",
                         )
                     }
@@ -63,6 +66,9 @@ fun RecapApp(
                             onNavigateToDeveloper = {
                                 rootBackStack.add(RecapRootRoute.Developer)
                             },
+                            pendingOpenOrganize = pendingOpenOrganize,
+                            onPendingOpenOrganizeConsumed =
+                                startupViewModel::consumePendingOpenOrganize,
                         )
                     }
 

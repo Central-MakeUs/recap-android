@@ -48,7 +48,7 @@ fun OnboardingAddToFavoriteGuideScreen(
             RecapTopBar(
                 title = stringResource(R.string.onboarding_add_to_favorite_guide_title),
                 onBackClick = onBackClick,
-                backButtonContentDescription = stringResource(R.string.my_page_back_content_description),
+                backButtonContentDescription = stringResource(R.string.settings_back_content_description),
             )
             Column(
                 modifier = Modifier

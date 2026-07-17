@@ -21,6 +21,7 @@ data class RecentOrganizedScreenshotUiModel(
 sealed interface RecentOrganizedScreenshotsAction {
     data object NavigateBack : RecentOrganizedScreenshotsAction
     data object OpenSearch : RecentOrganizedScreenshotsAction
+    data object StartImport : RecentOrganizedScreenshotsAction
     data class SelectItem(val id: String) : RecentOrganizedScreenshotsAction
     data class ToggleFavorite(val id: String) : RecentOrganizedScreenshotsAction
 }

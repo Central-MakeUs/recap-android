@@ -1,16 +1,20 @@
 package com.chalkak.recap.feature.home
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.MaterialTheme
@@ -20,18 +24,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.button.RecapButton
+import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
+import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.OrganizedRelativeTimeFormatter
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.topbar.RecentOrganizedScreenshotsTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
-import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapGray700
+import com.chalkak.recap.core.design.theme.RecapTypography
 
 @Composable
 fun RecentOrganizedScreenshotsScreen(
@@ -58,33 +74,49 @@ fun RecentOrganizedScreenshotsScreen(
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
             RecentOrganizedScreenshotsTopBar(
+                title = stringResource(R.string.home_recent_organized_screenshots_title),
                 onBackClick = { onAction(RecentOrganizedScreenshotsAction.NavigateBack) },
                 onSearchClick = { onAction(RecentOrganizedScreenshotsAction.OpenSearch) },
             )
-            RecentOrganizedScreenshotsTitle(
-                count = visibleItems.size,
-                modifier = Modifier.padding(
-                    horizontal = RecentOrganizedScreenshotsTokens.HorizontalPadding,
-                    vertical = RecentOrganizedScreenshotsTokens.TitleVerticalPadding,
-                ),
-            )
+            if (visibleItems.isNotEmpty()) {
+                Text(
+                    text = buildAnnotatedString {
+                        withStyle(SpanStyle(color = RecapGray700)) {
+                            append(visibleItems.size.toString())
+                        }
+                        append(" ")
+                        withStyle(SpanStyle(color = RecapGray500)) {
+                            append(
+                                pluralStringResource(
+                                    R.plurals.recap_haze_folder_card_recap_label,
+                                    visibleItems.size,
+                                ),
+                            )
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(
+                            horizontal = RecentOrganizedScreenshotsTokens.HorizontalPadding,
+                            vertical = RecentOrganizedScreenshotsTokens.CountVerticalPadding,
+                        )
+                        .align(alignment = Alignment.End),
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             if (visibleItems.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = stringResource(R.string.home_recent_organized_screenshots_empty),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = RecapGray500,
-                    )
-                }
+                RecentOrganizedScreenshotsEmptyContent(
+                    onImportClick = {
+                        onAction(RecentOrganizedScreenshotsAction.StartImport)
+                    },
+                )
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(
                         bottom = RecentOrganizedScreenshotsTokens.ListVerticalPadding +
-                            navigationBarBottomPadding,
+                                navigationBarBottomPadding,
                     ),
                 ) {
                     itemsIndexed(
@@ -115,40 +147,74 @@ fun RecentOrganizedScreenshotsScreen(
 }
 
 @Composable
-private fun RecentOrganizedScreenshotsTitle(
-    count: Int,
+private fun RecentOrganizedScreenshotsEmptyContent(
+    onImportClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = RecentOrganizedScreenshotsTokens.HorizontalPadding),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
-        Text(
-            text = stringResource(R.string.home_recent_organized_screenshots_title),
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            color = RecapGray900,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+        Image(
+            painter = painterResource(R.drawable.recap_character_1),
+            contentDescription = stringResource(R.string.home_empty_character_content_description),
+            modifier = Modifier
+                .size(
+                    width = RecentOrganizedScreenshotsTokens.EmptyCharacterWidth,
+                    height = RecentOrganizedScreenshotsTokens.EmptyCharacterHeight,
+                )
+                .offset(x = RecentOrganizedScreenshotsTokens.EmptyCharacterOffsetX),
+            contentScale = ContentScale.Fit,
         )
+        Spacer(modifier = Modifier.height(RecentOrganizedScreenshotsTokens.EmptyCharacterSpacing))
         Text(
-            text = stringResource(R.string.collection_recap_count, count),
-            style = MaterialTheme.typography.labelLarge,
-            color = RecapGray500,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            text = stringResource(R.string.home_empty_title),
+            style = RecapTypography.RecapHeading3,
+            fontWeight = FontWeight.Bold,
+            color = RecapGray300,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(RecentOrganizedScreenshotsTokens.EmptyTitleSpacing))
+        Text(
+            text = stringResource(R.string.home_empty_description),
+            style = RecapTypography.RecapBody2,
+            color = RecapGray300,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(RecentOrganizedScreenshotsTokens.EmptyDescriptionSpacing))
+        RecapButton(
+            text = stringResource(R.string.home_empty_import_button),
+            onClick = onImportClick,
+            size = RecapButtonSize.Medium,
+            colors = RecapButtonDefaults.secondaryColors(),
+            modifier = Modifier.widthIn(min = RecentOrganizedScreenshotsTokens.EmptyImportButtonMinWidth),
+            textStyle = RecapTypography.RecapHeading3,
         )
     }
 }
 
 private object RecentOrganizedScreenshotsTokens {
     val HorizontalPadding = 16.dp
-    val TitleVerticalPadding = 8.dp
+    val CountVerticalPadding = 8.dp
     val ListVerticalPadding = 4.dp
+    val EmptyCharacterWidth = 122.67.dp
+    val EmptyCharacterHeight = 89.dp
+    val EmptyCharacterOffsetX = 6.dp
+    val EmptyCharacterSpacing = 20.dp
+    val EmptyTitleSpacing = 13.dp
+    val EmptyDescriptionSpacing = 23.dp
+    val EmptyImportButtonMinWidth = 200.dp
 }
 
-@Preview(name = "Recent Organized Screenshots", showBackground = true, widthDp = 360, heightDp = 800)
+@Preview(
+    name = "Recent Organized Screenshots",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 800
+)
 @Composable
 private fun RecentOrganizedScreenshotsScreenPreview() {
     RECAPTheme(dynamicColor = false) {
@@ -159,7 +225,12 @@ private fun RecentOrganizedScreenshotsScreenPreview() {
     }
 }
 
-@Preview(name = "Recent Organized Screenshots Empty", showBackground = true, widthDp = 360, heightDp = 800)
+@Preview(
+    name = "Recent Organized Screenshots Empty",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 800
+)
 @Composable
 private fun RecentOrganizedScreenshotsScreenEmptyPreview() {
     RECAPTheme(dynamicColor = false) {

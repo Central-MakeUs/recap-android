@@ -1,5 +1,6 @@
 package com.chalkak.recap.feature.collection
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -14,23 +15,29 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
@@ -39,12 +46,19 @@ import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
 import com.chalkak.recap.core.design.component.chip.RecapFilterTag
 import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
+import com.chalkak.recap.core.design.component.divider.RecapSectionDivider
+import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
 import com.chalkak.recap.core.design.component.topbar.CollectionDetailTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
+import com.chalkak.recap.core.design.theme.RecapError
+import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading4
 
 @Composable
 fun CollectionDetailScreen(
@@ -61,10 +75,12 @@ fun CollectionDetailScreen(
         .asPaddingValues()
         .calculateBottomPadding()
     val bottomContentPadding = RecapBottomBarDefaults.ContentScrollPadding +
-        navigationBarBottomPadding
+            navigationBarBottomPadding
     val categoryType = detail.categoryType
-    val itemImageIds = remember(detail.cards) {
-        detail.cards.mapTo(linkedSetOf()) { card -> card.imageId }
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(detail.sort) {
+        listState.scrollToItem(0)
     }
 
     Surface(
@@ -83,9 +99,8 @@ fun CollectionDetailScreen(
             } else {
                 CollectionDetailTopBar(
                     title = stringResource(detail.titleResId),
-                    countText = stringResource(R.string.collection_recap_count, detail.count),
                     leadingIconResId = categoryType?.iconResId,
-                    leadingIconTint = categoryType?.contentColor ?: RecapBlue500,
+                    leadingIconTint = categoryType?.borderColor ?: RecapBlue500,
                     onBackClick = onBackClick,
                     onSearchClick = { onAction(CollectionAction.ShowDetailSearch) },
                 )
@@ -100,32 +115,24 @@ fun CollectionDetailScreen(
                     vertical = CollectionDetailTokens.ToolbarVerticalPadding,
                 ),
             )
-            CollectionSelectAllRow(
-                visible = selection.isActive,
-                itemImageIds = itemImageIds,
-                selectedImageIds = selection.selectedImageIds,
-                onToggleAll = {
-                    onAction(CollectionAction.ToggleAllSelection(itemImageIds))
-                },
+            RecapSectionDivider(
+                height = 6.dp
+            )
+            CollectionDetailRecapCount(
+                count = detail.count,
                 modifier = Modifier.padding(
                     horizontal = CollectionDetailTokens.HorizontalPadding,
+                    vertical = CollectionDetailTokens.RecapCountVerticalPadding,
                 ),
-                enabled = !selection.isDeleting,
             )
             if (detail.cards.isEmpty()) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = stringResource(detail.emptyMessageResId),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = RecapGray500,
-                    )
-                }
+                CollectionDetailEmptyContent(
+                    messageResId = detail.emptyMessageResId,
+                )
             } else {
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
+                    state = listState,
                     contentPadding = PaddingValues(
                         top = CollectionDetailTokens.ListVerticalPadding,
                         bottom = CollectionDetailTokens.ListVerticalPadding + bottomContentPadding,
@@ -147,12 +154,27 @@ fun CollectionDetailScreen(
                                 onAction(CollectionAction.ToggleItemSelection(card.imageId))
                             },
                             showBottomDivider = index < detail.cards.lastIndex,
-                            modifier = Modifier.padding(horizontal = CollectionDetailTokens.HorizontalPadding),
                         )
                     }
                 }
             }
         }
+    }
+
+    if (selection.showDeleteConfirmDialog) {
+        RecapPopup(
+            title = stringResource(
+                R.string.collection_delete_confirm_title,
+                selection.selectedCount,
+            ),
+            description = stringResource(R.string.collection_delete_confirm_description),
+            confirmButtonText = stringResource(R.string.deletion_confirmation_delete_button),
+            cancelButtonText = stringResource(R.string.deletion_confirmation_cancel_button),
+            onConfirmClick = { onAction(CollectionAction.ConfirmDeleteSelected) },
+            onCancelClick = { onAction(CollectionAction.DismissDeleteConfirmDialog) },
+            onDismissRequest = { onAction(CollectionAction.DismissDeleteConfirmDialog) },
+            confirmButtonColor = RecapError,
+        )
     }
 }
 
@@ -209,6 +231,67 @@ private fun CollectionDetailSearchBar(
 }
 
 @Composable
+private fun CollectionDetailEmptyContent(
+    messageResId: Int,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = CollectionDetailTokens.HorizontalPadding),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.recap_character_1),
+            contentDescription = stringResource(
+                R.string.collection_detail_empty_character_content_description,
+            ),
+            modifier = Modifier
+                .size(
+                    width = CollectionDetailTokens.EmptyCharacterWidth,
+                    height = CollectionDetailTokens.EmptyCharacterHeight,
+                )
+                .offset(x = CollectionDetailTokens.EmptyCharacterOffsetX),
+            contentScale = ContentScale.Fit,
+        )
+        Spacer(modifier = Modifier.height(CollectionDetailTokens.EmptyCharacterSpacing))
+        Text(
+            text = stringResource(messageResId),
+            style = RecapHeading3,
+            color = RecapGray300,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun CollectionDetailRecapCount(
+    count: Int,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+    ) {
+        Text(
+            text = count.toString(),
+            style = RecapHeading4,
+            color = RecapGray900,
+        )
+        Text(
+            text = pluralStringResource(
+                R.plurals.recap_haze_folder_card_recap_label,
+                count,
+            ),
+            style = RecapBody2,
+            color = RecapGray500,
+        )
+    }
+}
+
+@Composable
 private fun CollectionDetailToolbar(
     selectedSort: CollectionListSort,
     selection: CollectionSelectionUiState,
@@ -254,8 +337,13 @@ private fun CollectionDetailToolbar(
 private object CollectionDetailTokens {
     val HorizontalPadding = 16.dp
     val ToolbarVerticalPadding = 8.dp
+    val RecapCountVerticalPadding = 12.dp
     val ListVerticalPadding = 4.dp
     val SearchBarHeight = 56.dp
+    val EmptyCharacterWidth = 122.67.dp
+    val EmptyCharacterHeight = 89.dp
+    val EmptyCharacterOffsetX = 6.dp
+    val EmptyCharacterSpacing = 20.dp
 }
 
 @Preview(name = "Collection Detail Populated", showBackground = true, widthDp = 360, heightDp = 800)
@@ -292,6 +380,28 @@ private fun CollectionDetailSelectionPreview() {
     }
 }
 
+@Preview(
+    name = "Collection Detail Delete Confirm",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 800,
+)
+@Composable
+private fun CollectionDetailDeleteConfirmPreview() {
+    RECAPTheme(dynamicColor = false) {
+        CollectionDetailScreen(
+            detail = previewCollectionDetailUiModel(),
+            selection = CollectionSelectionUiState(
+                isActive = true,
+                selectedImageIds = setOf("1", "2"),
+                showDeleteConfirmDialog = true,
+            ),
+            onBackClick = {},
+            onAction = {},
+        )
+    }
+}
+
 @Preview(name = "Collection Detail Search", showBackground = true, widthDp = 360, heightDp = 800)
 @Composable
 private fun CollectionDetailSearchPreview() {
@@ -313,12 +423,13 @@ private fun CollectionDetailEmptyPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionDetailScreen(
             detail = CollectionDetailUiModel(
-                titleResId = R.string.collection_favorites_detail_title,
+                titleResId = R.string.collection_content_type_shopping_product,
                 count = 0,
                 sort = CollectionListSort.Latest,
+                categoryType = RecapCategoryType.ShoppingProduct,
                 cards = emptyList(),
-                emptyMessageResId = R.string.collection_favorites_empty,
-                cardMetadataMode = ScreenshotCardMetadataMode.CategoryChip,
+                emptyMessageResId = R.string.collection_detail_empty,
+                cardMetadataMode = ScreenshotCardMetadataMode.OrganizedDate,
             ),
             selection = CollectionSelectionUiState(),
             onBackClick = {},

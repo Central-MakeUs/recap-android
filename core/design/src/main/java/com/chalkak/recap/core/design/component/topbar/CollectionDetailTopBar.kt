@@ -34,13 +34,11 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
-import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
 
 @Composable
 fun CollectionDetailTopBar(
     title: String,
-    countText: String,
     onBackClick: () -> Unit,
     onSearchClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -87,13 +85,6 @@ fun CollectionDetailTopBar(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = RecapGray900,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Text(
-                        text = countText,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = RecapGray500,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
@@ -148,7 +139,6 @@ private fun CollectionDetailTopBarPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionDetailTopBar(
             title = "쇼핑 · 상품",
-            countText = "3 recaps",
             leadingIconResId = R.drawable.ic_cart_16,
             onBackClick = {},
             onSearchClick = {},

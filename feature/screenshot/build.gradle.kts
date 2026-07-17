@@ -41,6 +41,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.coil.compose)
+    implementation(libs.chrisbanes.haze)
     implementation(libs.hilt.android)
     implementation(libs.timber)
     ksp(libs.hilt.compiler)
