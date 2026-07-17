@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -40,7 +39,6 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Constraints
@@ -55,6 +53,7 @@ import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapHazeFolderColor
 import com.chalkak.recap.core.design.theme.White
+import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.blurEffect
 import dev.chrisbanes.haze.blur.materials.CupertinoMaterials
@@ -139,6 +138,7 @@ fun RecapHazeFolderCard(
                     )
                     .clip(folderShape)
                     .hazeEffect(state = hazeState) {
+                        inputScale = HazeInputScale.Fixed(0.5f)
                         blurEffect {
                             blurEnabled = true
                             blurRadius = RecapHazeFolderCardTokens.BlurRadius
@@ -179,21 +179,22 @@ fun RecapHazeFolderCard(
 /**
  * 카드 콘텐츠는 원본 크기로 측정한 뒤, 부모 레이아웃에는 [scale]이 반영된 크기를 보고한다.
  */
-private fun Modifier.recapHazeFolderCardScale(scale: Float): Modifier = layout { measurable, constraints ->
-    val cardWidthPx = RecapHazeFolderCardTokens.CardWidth.roundToPx()
-    val cardHeightPx = RecapHazeFolderCardTokens.CardHeight.roundToPx()
-    val scaledWidthPx = (cardWidthPx * scale).roundToInt()
-    val scaledHeightPx = (cardHeightPx * scale).roundToInt()
+private fun Modifier.recapHazeFolderCardScale(scale: Float): Modifier =
+    layout { measurable, constraints ->
+        val cardWidthPx = RecapHazeFolderCardTokens.CardWidth.roundToPx()
+        val cardHeightPx = RecapHazeFolderCardTokens.CardHeight.roundToPx()
+        val scaledWidthPx = (cardWidthPx * scale).roundToInt()
+        val scaledHeightPx = (cardHeightPx * scale).roundToInt()
 
-    val placeable = measurable.measure(Constraints.fixed(cardWidthPx, cardHeightPx))
-    layout(scaledWidthPx, scaledHeightPx) {
-        placeable.placeWithLayer(0, 0) {
-            scaleX = scale
-            scaleY = scale
-            transformOrigin = TransformOrigin(0f, 0f)
+        val placeable = measurable.measure(Constraints.fixed(cardWidthPx, cardHeightPx))
+        layout(scaledWidthPx, scaledHeightPx) {
+            placeable.placeWithLayer(0, 0) {
+                scaleX = scale
+                scaleY = scale
+                transformOrigin = TransformOrigin(0f, 0f)
+            }
         }
     }
-}
 
 /**
  * Figma Vector.svg path를 파싱한 폴더 모양 [Shape].
@@ -268,7 +269,7 @@ private object RecapHazeFolderCardTokens {
     val IconContainerSize = 30.dp
     val IconContainerCornerRadius = 10.dp
     val IconSize = 16.dp
-    const val NoiseFactor = 0.2f
+    const val NoiseFactor = 0.0f
 
     val GlassBorderColor = White.copy(alpha = 0.5f)
     const val GlassTintStartAlpha = 0.60f
@@ -285,7 +286,12 @@ private object RecapHazeFolderCardTokens {
 }
 
 
-@Preview(name = "Recap Haze Folder Card Scaled", showBackground = true, widthDp = 120, heightDp = 100)
+@Preview(
+    name = "Recap Haze Folder Card Scaled",
+    showBackground = true,
+    widthDp = 120,
+    heightDp = 100
+)
 @Composable
 private fun RecapHazeFolderCardScaledPreview() {
     RECAPTheme(dynamicColor = false) {

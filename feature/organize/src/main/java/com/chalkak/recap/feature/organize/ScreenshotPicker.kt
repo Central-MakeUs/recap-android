@@ -57,6 +57,7 @@ import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.model.LocalImage
+import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.blurEffect
@@ -257,6 +258,7 @@ private fun ScreenshotPickerGlassIconButton(
                 spotColor = ScreenshotPickerTokens.GlassShadowColor,
             )
             .hazeEffect(state = hazeState) {
+                inputScale = HazeInputScale.Fixed(0.5f)
                 blurEffect {
                     blurEnabled = true
                     blurRadius = ScreenshotPickerTokens.GlassBlurRadius
@@ -419,7 +421,7 @@ private object ScreenshotPickerTokens {
     const val SheetHeightFraction = 0.88f
     const val GridColumns = 3
     const val GlassTintAlpha = 0.62f
-    const val GlassNoiseFactor = 0.12f
+    const val GlassNoiseFactor = 0.0f
 
     val SheetTopCornerRadius = 40.dp
     val ToolbarHeight = 64.dp
