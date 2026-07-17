@@ -2,7 +2,6 @@ package com.chalkak.recap.feature.settings.screen
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,7 +12,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -24,9 +22,6 @@ import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.OrganizedScreenshotSummaryCard
 import com.chalkak.recap.core.design.component.popup.RecapPopup
-import com.chalkak.recap.core.design.component.toast.RecapToastHost
-import com.chalkak.recap.core.design.component.toast.RecapToastHostState
-import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.design.component.topbar.RecapTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
@@ -36,82 +31,64 @@ import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.feature.settings.DataManagementAction
 import com.chalkak.recap.feature.settings.DataManagementUiState
-import dev.chrisbanes.haze.HazePositionStrategy
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.rememberHazeState
 
 @Composable
 fun DataManagementScreen(
     uiState: DataManagementUiState,
     onAction: (DataManagementAction) -> Unit,
     modifier: Modifier = Modifier,
-    toastHostState: RecapToastHostState = rememberRecapToastHostState(),
 ) {
-    val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
-
-    Box(modifier = modifier.fillMaxSize()) {
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .hazeSource(state = toastHazeState),
-            color = RecapBackground,
-        ) {
-            Column(modifier = Modifier.fillMaxSize()) {
-                RecapTopBar(
-                    title = stringResource(R.string.settings_data_management_title),
-                    onBackClick = { onAction(DataManagementAction.NavigateBack) },
-                    backButtonContentDescription = stringResource(
-                        R.string.settings_back_content_description,
+    Surface(
+        modifier = modifier.fillMaxSize(),
+        color = RecapBackground,
+    ) {
+        Column(modifier = Modifier.fillMaxSize()) {
+            RecapTopBar(
+                title = stringResource(R.string.settings_data_management_title),
+                onBackClick = { onAction(DataManagementAction.NavigateBack) },
+                backButtonContentDescription = stringResource(
+                    R.string.settings_back_content_description,
+                ),
+                containerColor = RecapBackground,
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = DataManagementTokens.HorizontalPadding)
+                    .padding(
+                        top = DataManagementTokens.ContentTopPadding,
+                        bottom = DataManagementTokens.ContentBottomPadding,
                     ),
-                    containerColor = RecapBackground,
+                verticalArrangement = Arrangement.spacedBy(DataManagementTokens.SectionSpacing),
+            ) {
+                OrganizedScreenshotSummaryCard(organizedCount = uiState.organizedCount)
+                RecapButton(
+                    text = stringResource(R.string.settings_data_management_delete_button),
+                    onClick = { onAction(DataManagementAction.DeleteDataClick) },
+                    modifier = Modifier.fillMaxWidth(),
+                    size = RecapButtonSize.Large,
+                    colors = RecapButtonDefaults.colors(
+                        containerColor = RecapGray50,
+                        contentColor = RecapError,
+                        disabledContainerColor = RecapGray50,
+                        disabledContentColor = RecapError.copy(alpha = 0.38f),
+                    ),
                 )
                 Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = DataManagementTokens.HorizontalPadding)
-                        .padding(
-                            top = DataManagementTokens.ContentTopPadding,
-                            bottom = DataManagementTokens.ContentBottomPadding,
-                        ),
-                    verticalArrangement = Arrangement.spacedBy(DataManagementTokens.SectionSpacing),
+                    verticalArrangement = Arrangement.spacedBy(
+                        DataManagementTokens.BulletItemSpacing,
+                    ),
                 ) {
-                    OrganizedScreenshotSummaryCard(organizedCount = uiState.organizedCount)
-                    RecapButton(
-                        text = stringResource(R.string.settings_data_management_delete_button),
-                        onClick = { onAction(DataManagementAction.DeleteDataClick) },
-                        modifier = Modifier.fillMaxWidth(),
-                        size = RecapButtonSize.Large,
-                        colors = RecapButtonDefaults.colors(
-                            containerColor = RecapGray50,
-                            contentColor = RecapError,
-                            disabledContainerColor = RecapGray50,
-                            disabledContentColor = RecapError.copy(alpha = 0.38f),
-                        ),
+                    DataManagementBulletItem(
+                        textResId = R.string.settings_data_management_note_account_kept,
                     )
-                    Column(
-                        verticalArrangement = Arrangement.spacedBy(
-                            DataManagementTokens.BulletItemSpacing,
-                        ),
-                    ) {
-                        DataManagementBulletItem(
-                            textResId = R.string.settings_data_management_note_account_kept,
-                        )
-                        DataManagementBulletItem(
-                            textResId = R.string.settings_data_management_note_irreversible,
-                        )
-                    }
+                    DataManagementBulletItem(
+                        textResId = R.string.settings_data_management_note_irreversible,
+                    )
                 }
             }
         }
-
-        RecapToastHost(
-            hostState = toastHostState,
-            hazeState = toastHazeState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 24.dp, vertical = 24.dp),
-        )
     }
 
     if (uiState.showDeleteConfirmDialog) {

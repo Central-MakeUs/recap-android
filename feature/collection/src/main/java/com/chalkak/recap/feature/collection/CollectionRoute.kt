@@ -19,7 +19,7 @@ import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.component.toast.RecapToastHostState
+import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import dev.chrisbanes.haze.HazeState
@@ -30,7 +30,6 @@ import kotlinx.serialization.Serializable
 fun CollectionRoute(
     modifier: Modifier = Modifier,
     hazeState: HazeState,
-    toastHostState: RecapToastHostState,
     onNavigateToOrganize: () -> Unit,
     onNavigateToScreenshot: (String) -> Unit = {},
     onNavigateBack: () -> Unit = {},
@@ -40,6 +39,7 @@ fun CollectionRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val resources = LocalResources.current
+    val toastDispatcher = LocalRecapToastDispatcher.current
     val backStack = rememberNavBackStack(CollectionDestination.Overview)
     val isAtRoot = backStack.size <= 1
     val canPredictivePopToHome = isAtRoot &&
@@ -77,7 +77,7 @@ fun CollectionRoute(
         viewModel.events.collect { event ->
             when (event) {
                 is CollectionEvent.ShowDeleteSuccessToast -> {
-                    toastHostState.showToast(
+                    toastDispatcher.showToast(
                         message = resources.getString(
                             R.string.collection_delete_success_toast,
                             event.deletedCount,

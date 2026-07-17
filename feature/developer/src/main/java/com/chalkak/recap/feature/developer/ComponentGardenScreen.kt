@@ -2,7 +2,6 @@ package com.chalkak.recap.feature.developer
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -32,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -69,10 +67,12 @@ import com.chalkak.recap.core.design.component.icon.RecapHazeFolderIcon
 import com.chalkak.recap.core.design.component.input.RecapInputField
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
+import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
+import com.chalkak.recap.core.design.component.toast.ProvideRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToast
-import com.chalkak.recap.core.design.component.toast.RecapToastHost
+import com.chalkak.recap.core.design.component.toast.RecapToastDispatcher
+import com.chalkak.recap.core.design.component.toast.RecapToastDuration
 import com.chalkak.recap.core.design.component.toast.RecapToastType
-import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapError
@@ -83,7 +83,6 @@ import com.chalkak.recap.feature.organize.ScreenshotPickerPreviewScreenshots
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -120,20 +119,16 @@ internal fun ComponentGardenScreen(
     var isScreenshotCardFavorited by remember { mutableStateOf(false) }
     var selectedFilterTagOptionId by remember { mutableStateOf("latest") }
     var isFilterTagExpanded by remember { mutableStateOf(false) }
-    val toastHostState = rememberRecapToastHostState()
     val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
-    val coroutineScope = rememberCoroutineScope()
+    val toastDispatcher = LocalRecapToastDispatcher.current
     val toastPreviewMessage = stringResource(R.string.recap_toast_preview_login_failed_message)
 
-    Box(
-        modifier = modifier.fillMaxSize(),
+    Surface(
+        modifier = modifier
+            .fillMaxSize()
+            .hazeSource(state = toastHazeState),
+        color = MaterialTheme.colorScheme.background,
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxSize()
-                .hazeSource(state = toastHazeState),
-            color = MaterialTheme.colorScheme.background,
-        ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -310,12 +305,10 @@ internal fun ComponentGardenScreen(
                 Button(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        coroutineScope.launch {
-                            toastHostState.showToast(
-                                message = toastPreviewMessage,
-                                type = RecapToastType.Success,
-                            )
-                        }
+                        toastDispatcher.showToast(
+                            message = toastPreviewMessage,
+                            type = RecapToastType.Success,
+                        )
                     },
                 ) {
                     Text(text = stringResource(R.string.component_garden_toast_success_button))
@@ -323,12 +316,10 @@ internal fun ComponentGardenScreen(
                 Button(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = {
-                        coroutineScope.launch {
-                            toastHostState.showToast(
-                                message = toastPreviewMessage,
-                                type = RecapToastType.Error,
-                            )
-                        }
+                        toastDispatcher.showToast(
+                            message = toastPreviewMessage,
+                            type = RecapToastType.Error,
+                        )
                     },
                 ) {
                     Text(text = stringResource(R.string.component_garden_toast_error_button))
@@ -432,15 +423,6 @@ internal fun ComponentGardenScreen(
                 }
             }
         }
-        }
-
-        RecapToastHost(
-            hostState = toastHostState,
-            hazeState = toastHazeState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(horizontal = 24.dp, vertical = 24.dp),
-        )
     }
 
     if (showPhotoAccessPermissionBottomSheet) {
@@ -734,7 +716,17 @@ private fun ComponentGardenSection(
 @Composable
 private fun ComponentGardenScreenPreview() {
     RECAPTheme(dynamicColor = false) {
-        ComponentGardenScreen()
+        ProvideRecapToastDispatcher(
+            dispatcher = object : RecapToastDispatcher {
+                override fun showToast(
+                    message: String,
+                    type: RecapToastType,
+                    duration: RecapToastDuration,
+                ) = Unit
+            },
+        ) {
+            ComponentGardenScreen()
+        }
     }
 }
 

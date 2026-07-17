@@ -14,8 +14,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToastType
-import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.core.model.ImageAccessLevel
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -37,7 +37,7 @@ fun OnboardingRoute(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
-    val toastHostState = rememberRecapToastHostState()
+    val toastDispatcher = LocalRecapToastDispatcher.current
     val coroutineScope = rememberCoroutineScope()
     val permissionRequiredMessage = stringResource(
         R.string.onboarding_full_access_permission_snackbar
@@ -52,7 +52,7 @@ fun OnboardingRoute(
         viewModel.events.collect { event ->
             when (event) {
                 is OnboardingEvent.ShowLoginError -> {
-                    toastHostState.showToast(
+                    toastDispatcher.showToast(
                         message = if (event.isCancelled) {
                             loginCancelledMessage
                         } else {
@@ -96,7 +96,6 @@ fun OnboardingRoute(
                     OnboardingScreen(
                         uiState = uiState,
                         snackbarHostState = snackbarHostState,
-                        toastHostState = toastHostState,
                         showDebugEmailLogin = isDebugBuild,
                         illustrationSignalFlow = viewModel.illustrationSignals,
                         onAction = { action ->

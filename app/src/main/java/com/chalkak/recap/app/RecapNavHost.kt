@@ -44,7 +44,6 @@ import com.chalkak.recap.feature.settings.screen.PrivacyGuideScreen
 import com.chalkak.recap.feature.settings.screen.UsageGuideScreen
 import com.chalkak.recap.feature.screenshot.ScreenshotRoute
 import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
-import com.chalkak.recap.core.design.component.toast.RecapToastHostState
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -66,8 +65,6 @@ fun RecapNavHost(
     val analysisProgressViewModel: ScreenshotAnalysisProgressViewModel = hiltViewModel()
     var homeNavigationRequestId by remember { mutableIntStateOf(0) }
     var requestOpenOrganize by remember { mutableStateOf(false) }
-    var pendingMainScreenshotDeletedToast by remember { mutableStateOf(false) }
-    var pendingRecentScreenshotDeletedToast by remember { mutableStateOf(false) }
     val analysisProgressFlow = remember(analysisProgressViewModel) {
         analysisProgressViewModel.uiState.map { state ->
             HomeAnalysisProgressUiModel(
@@ -115,10 +112,6 @@ fun RecapNavHost(
                                 } else {
                                     onPendingOpenOrganizeConsumed()
                                 }
-                            },
-                            pendingScreenshotDeletedToast = pendingMainScreenshotDeletedToast,
-                            onPendingScreenshotDeletedToastConsumed = {
-                                pendingMainScreenshotDeletedToast = false
                             },
                             analysisProgressFlow = analysisProgressFlow,
                         )
@@ -232,10 +225,6 @@ fun RecapNavHost(
                             requestOpenOrganize = true
                             backStack.removeLastOrNull()
                         },
-                        pendingScreenshotDeletedToast = pendingRecentScreenshotDeletedToast,
-                        onPendingScreenshotDeletedToastConsumed = {
-                            pendingRecentScreenshotDeletedToast = false
-                        },
                     )
                 }
 
@@ -244,12 +233,6 @@ fun RecapNavHost(
                         imageId = route.imageId,
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onDeleteSucceeded = {
-                            val previousRoute = backStack.getOrNull(backStack.lastIndex - 1)
-                            if (previousRoute == AppRoute.RecentOrganizedScreenshots) {
-                                pendingRecentScreenshotDeletedToast = true
-                            } else {
-                                pendingMainScreenshotDeletedToast = true
-                            }
                             backStack.removeLastOrNull()
                         },
                     )
@@ -264,7 +247,6 @@ fun RecapNavHost(
 @Composable
 fun RecapMainTabNavHost(
     hazeState: HazeState,
-    toastHostState: RecapToastHostState,
     modifier: Modifier = Modifier,
     backStack: NavBackStack<NavKey>,
     onNavigateToDeveloper: () -> Unit,
@@ -308,7 +290,6 @@ fun RecapMainTabNavHost(
                 MainTabRoute.Collection -> NavEntry(route) {
                     CollectionRoute(
                         hazeState = hazeState,
-                        toastHostState = toastHostState,
                         onNavigateToOrganize = onNavigateToOrganize,
                         onNavigateToScreenshot = onNavigateToScreenshot,
                         onNavigateBack = { backStack.removeLastOrNull() },

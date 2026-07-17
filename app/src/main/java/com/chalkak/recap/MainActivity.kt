@@ -11,11 +11,13 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.chalkak.recap.app.RecapApp
 import com.chalkak.recap.app.RecapStartupUiState
 import com.chalkak.recap.app.RecapStartupViewModel
+import com.chalkak.recap.app.RecapToastViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val startupViewModel: RecapStartupViewModel by viewModels()
+    private val toastViewModel: RecapToastViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen().setKeepOnScreenCondition {
@@ -33,7 +35,10 @@ class MainActivity : ComponentActivity() {
             ),
         )
         setContent {
-            RecapApp(startupViewModel = startupViewModel)
+            RecapApp(
+                startupViewModel = startupViewModel,
+                toastViewModel = toastViewModel,
+            )
         }
     }
 }
