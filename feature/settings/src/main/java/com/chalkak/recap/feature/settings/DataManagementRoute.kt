@@ -8,8 +8,8 @@ import androidx.compose.ui.platform.LocalResources
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToastType
-import com.chalkak.recap.core.design.component.toast.rememberRecapToastHostState
 import com.chalkak.recap.feature.settings.screen.DataManagementScreen
 
 @Composable
@@ -19,14 +19,14 @@ fun DataManagementRoute(
     viewModel: DataManagementViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val toastHostState = rememberRecapToastHostState()
+    val toastDispatcher = LocalRecapToastDispatcher.current
     val resources = LocalResources.current
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
                 is DataManagementEvent.ShowDeleteSuccessToast -> {
-                    toastHostState.showToast(
+                    toastDispatcher.showToast(
                         message = resources.getString(
                             R.string.settings_data_management_delete_success_toast,
                             event.deletedCount,
@@ -46,7 +46,6 @@ fun DataManagementRoute(
                 else -> viewModel.onAction(action)
             }
         },
-        toastHostState = toastHostState,
         modifier = modifier,
     )
 }

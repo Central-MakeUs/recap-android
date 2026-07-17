@@ -20,12 +20,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,8 +33,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -48,6 +50,8 @@ import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapSuccess
 import com.chalkak.recap.core.design.theme.RecapToastBackground
 import com.chalkak.recap.core.design.theme.RecapToastContent
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.blurEffect
@@ -55,10 +59,6 @@ import dev.chrisbanes.haze.blur.materials.CupertinoMaterials
 import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlin.time.Duration.Companion.milliseconds
 
 enum class RecapToastType(
     val iconTint: Color,
@@ -88,12 +88,6 @@ data class RecapToastColors(
     val content: Color,
 )
 
-@Immutable
-internal data class RecapToastData(
-    val message: String,
-    val type: RecapToastType,
-)
-
 object RecapToastDefaults {
     val HorizontalPadding = 21.dp
     val VerticalPadding = 18.dp
@@ -109,65 +103,38 @@ object RecapToastDefaults {
     )
 }
 
-@Stable
-class RecapToastHostState {
-    private val mutex = Mutex()
-
-    internal var currentToastData by mutableStateOf<RecapToastData?>(null)
-        private set
-
-    suspend fun showToast(
-        message: String,
-        type: RecapToastType = RecapToastType.Error,
-        duration: RecapToastDuration = RecapToastDuration.Short,
-    ) {
-        mutex.withLock {
-            try {
-                currentToastData = RecapToastData(
-                    message = message,
-                    type = type,
-                )
-                delay(duration.millis.milliseconds)
-            } finally {
-                currentToastData = null
-            }
-        }
-    }
-}
-
-@Composable
-fun rememberRecapToastHostState(): RecapToastHostState = remember { RecapToastHostState() }
-
 @Composable
 fun RecapToastHost(
-    hostState: RecapToastHostState,
+    currentToast: RecapToastPresentation?,
     hazeState: HazeState,
     modifier: Modifier = Modifier,
 ) {
-    val currentToastData = hostState.currentToastData
-    var visibleToastData by remember { mutableStateOf<RecapToastData?>(null) }
-    if (currentToastData != null) {
-        visibleToastData = currentToastData
+    var visibleToast by remember { mutableStateOf<RecapToastPresentation?>(null) }
+    if (currentToast != null) {
+        visibleToast = currentToast
     }
     AnimatedVisibility(
-        visible = currentToastData != null,
+        visible = currentToast != null,
         modifier = modifier,
-        enter = fadeIn(animationSpec = tween(RecapToastAnimationDurationMillis)) +
-                slideInVertically(
-                    animationSpec = tween(RecapToastAnimationDurationMillis),
-                    initialOffsetY = { fullHeight -> fullHeight / 2 },
-                ),
-        exit = fadeOut(animationSpec = tween(RecapToastAnimationDurationMillis)) +
-                slideOutVertically(
-                    animationSpec = tween(RecapToastAnimationDurationMillis),
-                    targetOffsetY = { fullHeight -> fullHeight / 2 },
-                ),
+        enter = fadeIn(animationSpec = tween(RecapToastExitAnimationDurationMillis)) +
+            slideInVertically(
+                animationSpec = tween(RecapToastExitAnimationDurationMillis),
+                initialOffsetY = { fullHeight -> fullHeight / 2 },
+            ),
+        exit = fadeOut(animationSpec = tween(RecapToastExitAnimationDurationMillis)) +
+            slideOutVertically(
+                animationSpec = tween(RecapToastExitAnimationDurationMillis),
+                targetOffsetY = { fullHeight -> fullHeight / 2 },
+            ),
     ) {
-        visibleToastData?.let { data ->
+        visibleToast?.let { toast ->
             RecapToast(
-                message = data.message,
-                type = data.type,
+                message = toast.message,
+                type = toast.type,
                 hazeState = hazeState,
+                modifier = Modifier.semantics {
+                    liveRegion = LiveRegionMode.Polite
+                },
             )
         }
     }
@@ -182,10 +149,14 @@ fun RecapToast(
     colors: RecapToastColors = RecapToastDefaults.colors(),
 ) {
     val blurStyle = CupertinoMaterials.ultraThin()
+    // Haze is a no-op in Compose Preview; fall back to the tint color so the toast is visible.
+    val containerColor =
+        if (LocalInspectionMode.current) colors.container else Color.Transparent
     Surface(
         modifier = modifier
             .clip(RecapToastDefaults.Shape)
             .hazeEffect(state = hazeState) {
+                inputScale = HazeInputScale.Auto
                 blurEffect {
                     blurEnabled = true
                     blurRadius = RecapToastDefaults.BlurRadius
@@ -197,7 +168,7 @@ fun RecapToast(
                 }
             },
         shape = RecapToastDefaults.Shape,
-        color = Color.Transparent,
+        color = containerColor,
         contentColor = colors.content,
     ) {
         Row(
@@ -211,7 +182,7 @@ fun RecapToast(
             RecapToastIcon(type = type)
             Text(
                 text = message,
-                style = MaterialTheme.typography.labelLarge,
+                style = RecapCaption1,
                 color = colors.content,
             )
         }
@@ -312,5 +283,3 @@ private fun RecapToastGlassPreviewBackground(
         content = content,
     )
 }
-
-private const val RecapToastAnimationDurationMillis = 200
