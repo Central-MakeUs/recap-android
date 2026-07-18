@@ -31,7 +31,7 @@ fun CollectionRoute(
     modifier: Modifier = Modifier,
     hazeState: HazeState,
     onNavigateToOrganize: () -> Unit,
-    onNavigateToScreenshot: (String) -> Unit = {},
+    onNavigateToScreenshot: (Long) -> Unit = {},
     onNavigateBack: () -> Unit = {},
     favoritesNavigationRequestId: Int = 0,
     onPredictiveBackProgress: (Float) -> Unit = {},
@@ -130,7 +130,7 @@ fun CollectionRoute(
             }
 
             is CollectionAction.OpenFavoriteItem -> {
-                onNavigateToScreenshot(action.imageId)
+                onNavigateToScreenshot(action.captureId)
             }
 
             else -> viewModel.onAction(action)

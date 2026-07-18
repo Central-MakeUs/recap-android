@@ -7,10 +7,8 @@ import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.model.LocalImage
-import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisConfidence
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
-import com.chalkak.recap.core.model.screenshot.ScreenshotContentTypes
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -32,6 +30,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.Instant
 import kotlin.time.Duration.Companion.milliseconds
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -72,7 +71,7 @@ class ScreenshotAnalysisProgressViewModelTest {
 
     @Test
     fun `startMockAnalysis sets running state and total count`() = runTest(testDispatcher) {
-        every { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult("result-1")
+        every { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult(1L)
 
         viewModel.startMockAnalysis(sampleImages(count = 2))
         runCurrent()
@@ -86,7 +85,7 @@ class ScreenshotAnalysisProgressViewModelTest {
 
     @Test
     fun `advancing time by 500ms per image increments completed count`() = runTest(testDispatcher) {
-        every { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult("result-1")
+        every { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult(1L)
 
         viewModel.startMockAnalysis(sampleImages(count = 2))
         runCurrent()
@@ -105,7 +104,7 @@ class ScreenshotAnalysisProgressViewModelTest {
 
     @Test
     fun `repository inputs use selected image display names in order`() = runTest(testDispatcher) {
-        every { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult("result-1")
+        every { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult(1L)
 
         val images = listOf(
             LocalImage(uri = "content://1", displayName = "first.png", dateAddedMillis = 1L),
@@ -125,7 +124,7 @@ class ScreenshotAnalysisProgressViewModelTest {
 
     @Test
     fun `starting a second job cancels and resets the previous job`() = runTest(testDispatcher) {
-        every { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult("result-1")
+        every { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult(1L)
 
         viewModel.startMockAnalysis(sampleImages(count = 3))
         runCurrent()
@@ -154,21 +153,21 @@ class ScreenshotAnalysisProgressViewModelTest {
         every { Uri.parse("content://1") } returns firstUri
         every { Uri.parse("content://2") } returns secondUri
 
-        val firstResult = analysisResult(imageId = "result-1")
-        val secondResult = analysisResult(imageId = "result-2")
+        val firstResult = analysisResult(captureId = 1L)
+        val secondResult = analysisResult(captureId = 2L)
         every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png")) } returns firstResult
         every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_2.png")) } returns secondResult
         every {
-            screenshotImageStorage.copyImageFromUri("result-1", firstUri)
-        } returns "/files/result-1"
+            screenshotImageStorage.copyImageFromUri(1L, firstUri)
+        } returns "/files/1"
         every {
-            screenshotImageStorage.copyImageFromUri("result-2", secondUri)
+            screenshotImageStorage.copyImageFromUri(2L, secondUri)
         } returns null
         every {
-            screenshotImageStorage.createThumbnailFromStoredImage("result-1")
-        } returns "/thumbs/result-1.jpg"
+            screenshotImageStorage.createThumbnailFromStoredImage(1L)
+        } returns "/thumbs/1.jpg"
         every {
-            screenshotImageStorage.createThumbnailFromUri("result-2", secondUri)
+            screenshotImageStorage.createThumbnailFromUri(2L, secondUri)
         } returns null
         coEvery {
             screenshotCardRepository.saveAnalysisResults(any(), any())
@@ -184,11 +183,11 @@ class ScreenshotAnalysisProgressViewModelTest {
         coVerify(exactly = 1) {
             screenshotCardRepository.saveAnalysisResults(
                 results = listOf(firstResult),
-                imageRefsByImageId = mapOf(
-                    "result-1" to ScreenshotCardImageRefs(
+                imageRefsByCaptureId = mapOf(
+                    1L to ScreenshotCardImageRefs(
                         sourceImageUri = "content://1",
-                        storedImagePath = "/files/result-1",
-                        thumbnailPath = "/thumbs/result-1.jpg",
+                        storedImagePath = "/files/1",
+                        thumbnailPath = "/thumbs/1.jpg",
                     ),
                 ),
             )
@@ -196,8 +195,8 @@ class ScreenshotAnalysisProgressViewModelTest {
         coVerify(exactly = 1) {
             screenshotCardRepository.saveAnalysisResults(
                 results = listOf(secondResult),
-                imageRefsByImageId = mapOf(
-                    "result-2" to ScreenshotCardImageRefs(
+                imageRefsByCaptureId = mapOf(
+                    2L to ScreenshotCardImageRefs(
                         sourceImageUri = "content://2",
                         storedImagePath = null,
                         thumbnailPath = null,
@@ -217,13 +216,13 @@ class ScreenshotAnalysisProgressViewModelTest {
         val firstUri = mockk<Uri>()
         every { Uri.parse("content://1") } returns firstUri
 
-        val firstResult = analysisResult(imageId = "result-1")
+        val firstResult = analysisResult(captureId = 1L)
         every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png")) } returns firstResult
         every {
-            screenshotImageStorage.copyImageFromUri("result-1", firstUri)
-        } returns "/files/result-1"
+            screenshotImageStorage.copyImageFromUri(1L, firstUri)
+        } returns "/files/1"
         every {
-            screenshotImageStorage.createThumbnailFromStoredImage("result-1")
+            screenshotImageStorage.createThumbnailFromStoredImage(1L)
         } returns null
         coEvery {
             screenshotCardRepository.saveAnalysisResults(any(), any())
@@ -237,10 +236,10 @@ class ScreenshotAnalysisProgressViewModelTest {
         coVerify(exactly = 1) {
             screenshotCardRepository.saveAnalysisResults(
                 results = listOf(firstResult),
-                imageRefsByImageId = mapOf(
-                    "result-1" to ScreenshotCardImageRefs(
+                imageRefsByCaptureId = mapOf(
+                    1L to ScreenshotCardImageRefs(
                         sourceImageUri = "content://1",
-                        storedImagePath = "/files/result-1",
+                        storedImagePath = "/files/1",
                         thumbnailPath = null,
                     ),
                 ),
@@ -258,14 +257,14 @@ class ScreenshotAnalysisProgressViewModelTest {
         val firstUri = mockk<Uri>()
         every { Uri.parse("content://1") } returns firstUri
 
-        val firstResult = analysisResult(imageId = "result-1")
+        val firstResult = analysisResult(captureId = 1L)
         every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png")) } returns firstResult
         every {
-            screenshotImageStorage.copyImageFromUri("result-1", firstUri)
+            screenshotImageStorage.copyImageFromUri(1L, firstUri)
         } returns null
         every {
-            screenshotImageStorage.createThumbnailFromUri("result-1", firstUri)
-        } returns "/files/recap/thumbnails/result-1.jpg"
+            screenshotImageStorage.createThumbnailFromUri(1L, firstUri)
+        } returns "/files/recap/thumbnails/1.jpg"
         coEvery {
             screenshotCardRepository.saveAnalysisResults(any(), any())
         } returns Unit
@@ -278,11 +277,11 @@ class ScreenshotAnalysisProgressViewModelTest {
         coVerify(exactly = 1) {
             screenshotCardRepository.saveAnalysisResults(
                 results = listOf(firstResult),
-                imageRefsByImageId = mapOf(
-                    "result-1" to ScreenshotCardImageRefs(
+                imageRefsByCaptureId = mapOf(
+                    1L to ScreenshotCardImageRefs(
                         sourceImageUri = "content://1",
                         storedImagePath = null,
-                        thumbnailPath = "/files/recap/thumbnails/result-1.jpg",
+                        thumbnailPath = "/files/recap/thumbnails/1.jpg",
                     ),
                 ),
             )
@@ -300,21 +299,21 @@ class ScreenshotAnalysisProgressViewModelTest {
         every { Uri.parse("content://1") } returns firstUri
         every { Uri.parse("content://2") } returns secondUri
 
-        val firstResult = analysisResult(imageId = "result-1")
-        val secondResult = analysisResult(imageId = "result-2")
+        val firstResult = analysisResult(captureId = 1L)
+        val secondResult = analysisResult(captureId = 2L)
         every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png")) } returns firstResult
         every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_2.png")) } returns secondResult
         every { screenshotImageStorage.copyImageFromUri(any(), any()) } returns "/files/image"
         coEvery {
             screenshotCardRepository.saveAnalysisResults(
                 results = listOf(firstResult),
-                imageRefsByImageId = any(),
+                imageRefsByCaptureId = any(),
             )
         } throws RuntimeException("room failure")
         coEvery {
             screenshotCardRepository.saveAnalysisResults(
                 results = listOf(secondResult),
-                imageRefsByImageId = any(),
+                imageRefsByCaptureId = any(),
             )
         } returns Unit
 
@@ -345,15 +344,16 @@ class ScreenshotAnalysisProgressViewModelTest {
         }
     }
 
-    private fun analysisResult(imageId: String): ScreenshotAnalysisResult {
+    private fun analysisResult(captureId: Long): ScreenshotAnalysisResult {
         return ScreenshotAnalysisResult(
-            imageId = imageId,
-            title = "title-$imageId",
-            summary = "summary-$imageId",
-            contentTypes = ScreenshotContentTypes(primaryContentType = ScreenshotContentType.OTHER),
-            keyFields = emptyList(),
-            confidence = ScreenshotAnalysisConfidence.HIGH,
+            captureId = captureId,
+            typeCode = ScreenshotContentType.ETC,
+            title = "title-$captureId",
+            summary = "summary-$captureId",
+            body = "body-$captureId",
+            originalImageUrl = "mock://captures/$captureId",
             isFavorite = false,
+            organizedAt = Instant.ofEpochMilli(1000L),
         )
     }
 }

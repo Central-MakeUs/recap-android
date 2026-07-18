@@ -9,7 +9,7 @@ data class RecentOrganizedScreenshotsUiState(
 )
 
 data class RecentOrganizedScreenshotUiModel(
-    val id: String,
+    val id: Long,
     val thumbnailModel: Any?,
     val categoryType: RecapCategoryType,
     val title: String,
@@ -22,14 +22,14 @@ sealed interface RecentOrganizedScreenshotsAction {
     data object NavigateBack : RecentOrganizedScreenshotsAction
     data object OpenSearch : RecentOrganizedScreenshotsAction
     data object StartImport : RecentOrganizedScreenshotsAction
-    data class SelectItem(val id: String) : RecentOrganizedScreenshotsAction
-    data class ToggleFavorite(val id: String) : RecentOrganizedScreenshotsAction
+    data class SelectItem(val id: Long) : RecentOrganizedScreenshotsAction
+    data class ToggleFavorite(val id: Long) : RecentOrganizedScreenshotsAction
 }
 
 internal val RecentOrganizedScreenshotsPreviewUiState = RecentOrganizedScreenshotsUiState(
     items = listOf(
         RecentOrganizedScreenshotUiModel(
-            id = "return",
+            id = 1L,
             thumbnailModel = R.drawable.mock_home_screenshot_return,
             categoryType = RecapCategoryType.RecordCapture,
             title = "택배 반품 절차 정리",
@@ -38,7 +38,7 @@ internal val RecentOrganizedScreenshotsPreviewUiState = RecentOrganizedScreensho
             isFavorite = false,
         ),
         RecentOrganizedScreenshotUiModel(
-            id = "hotel",
+            id = 2L,
             thumbnailModel = R.drawable.mock_home_screenshot_hotel,
             categoryType = RecapCategoryType.ScheduleReservation,
             title = "제주 숙소 예약 정보",
@@ -47,7 +47,7 @@ internal val RecentOrganizedScreenshotsPreviewUiState = RecentOrganizedScreensho
             isFavorite = false,
         ),
         RecentOrganizedScreenshotUiModel(
-            id = "recipe",
+            id = 3L,
             thumbnailModel = R.drawable.mock_home_screenshot_recipe,
             categoryType = RecapCategoryType.InfoKnowledge,
             title = "파스타 레시피 저장",

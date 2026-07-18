@@ -1,158 +1,57 @@
 package com.chalkak.recap.core.data.screenshot
 
-import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisConfidence
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 class MockScreenshotAnalysisRepositoryTest {
     @Test
-    fun `analyze composes title and summary from file name`() {
-        val repository = repository(
-            unitDoubles = listOf(0.0, 0.0, 0.0, 0.0),
-        )
+    fun `analyze composes title summary and body from file name`() {
+        val repository = repository(captureId = 1L)
 
         val result = repository.analyze(ScreenshotAnalysisInput(fileName = "capture_01.png"))
 
         assertEquals("스크린샷capture_01.png", result.title)
         assertEquals("요약capture_01.png", result.summary)
+        assertEquals("본문capture_01.png", result.body)
     }
 
     @Test
-    fun `analyze maps content type index to enum`() {
+    fun `analyze maps content type index 3 to SCHEDULE`() {
+        val repository = repository(captureId = 1L, contentTypeIndex = 3)
+
+        val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
+
+        assertEquals(ScreenshotContentType.SCHEDULE, result.typeCode)
+    }
+
+    @Test
+    fun `analyze maps last content type index to ETC`() {
         val repository = repository(
-            contentTypeIndex = 3,
-            unitDoubles = listOf(0.0, 0.0, 0.0, 0.0),
+            captureId = 1L,
+            contentTypeIndex = ScreenshotContentType.entries.lastIndex,
         )
 
         val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
 
-        assertEquals(
-            ScreenshotContentType.SCHEDULE_RESERVATION,
-            result.contentTypes.primaryContentType,
-        )
+        assertEquals(ScreenshotContentType.ETC, result.typeCode)
     }
 
     @Test
-    fun `analyze generates exactly three key fields with fixed labels values and priorities`() {
-        val repository = repository(
-            unitDoubles = listOf(0.0, 0.0, 0.0, 0.0),
-        )
+    fun `analyze uses injected captureId`() {
+        val repository = repository(captureId = 42L)
 
         val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
 
-        assertEquals(3, result.keyFields.size)
-        assertEquals("라벨1", result.keyFields[0].label)
-        assertEquals("값1", result.keyFields[0].value)
-        assertEquals(1, result.keyFields[0].displayPriority)
-        assertEquals("라벨2", result.keyFields[1].label)
-        assertEquals("값2", result.keyFields[1].value)
-        assertEquals(2, result.keyFields[1].displayPriority)
-        assertEquals("라벨3", result.keyFields[2].label)
-        assertEquals("값3", result.keyFields[2].value)
-        assertEquals(3, result.keyFields[2].displayPriority)
-    }
-
-    @Test
-    fun `analyze marks key field sensitive when random value is below threshold`() {
-        val repository = repository(
-            unitDoubles = listOf(0.04, 0.04, 0.04, 0.0),
-        )
-
-        val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
-
-        assertTrue(result.keyFields.all { it.isSensitive })
-    }
-
-    @Test
-    fun `analyze keeps key field non-sensitive when random value reaches threshold`() {
-        val repository = repository(
-            unitDoubles = listOf(0.05, 0.05, 0.05, 0.0),
-        )
-
-        val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
-
-        assertFalse(result.keyFields.any { it.isSensitive })
-    }
-
-    @Test
-    fun `analyze returns high confidence below high upper bound`() {
-        val repository = repository(
-            unitDoubles = listOf(0.0, 0.0, 0.0, 0.59),
-        )
-
-        val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
-
-        assertEquals(ScreenshotAnalysisConfidence.HIGH, result.confidence)
-    }
-
-    @Test
-    fun `analyze returns medium confidence at medium lower bound`() {
-        val repository = repository(
-            unitDoubles = listOf(0.0, 0.0, 0.0, 0.60),
-        )
-
-        val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
-
-        assertEquals(ScreenshotAnalysisConfidence.MEDIUM, result.confidence)
-    }
-
-    @Test
-    fun `analyze returns medium confidence below low lower bound`() {
-        val repository = repository(
-            unitDoubles = listOf(0.0, 0.0, 0.0, 0.84),
-        )
-
-        val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
-
-        assertEquals(ScreenshotAnalysisConfidence.MEDIUM, result.confidence)
-    }
-
-    @Test
-    fun `analyze returns low confidence at low lower bound`() {
-        val repository = repository(
-            unitDoubles = listOf(0.0, 0.0, 0.0, 0.85),
-        )
-
-        val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
-
-        assertEquals(ScreenshotAnalysisConfidence.LOW, result.confidence)
-    }
-
-    @Test
-    fun `analyze maps content type index to other`() {
-        val repository = repository(
-            contentTypeIndex = ScreenshotContentType.OTHER.ordinal,
-            unitDoubles = listOf(0.0, 0.0, 0.0, 0.0),
-        )
-
-        val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
-
-        assertEquals(
-            ScreenshotContentType.OTHER,
-            result.contentTypes.primaryContentType,
-        )
-    }
-
-    @Test
-    fun `analyze uses injected image id`() {
-        val repository = repository(
-            imageId = "mock-image-id",
-            unitDoubles = listOf(0.0, 0.0, 0.0, 0.0),
-        )
-
-        val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
-
-        assertEquals("mock-image-id", result.imageId)
+        assertEquals(42L, result.captureId)
     }
 
     @Test
     fun `analyze defaults isFavorite to false`() {
-        val repository = repository(
-            unitDoubles = listOf(0.0, 0.0, 0.0, 0.0),
-        )
+        val repository = repository(captureId = 1L)
 
         val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
 
@@ -161,13 +60,8 @@ class MockScreenshotAnalysisRepositoryTest {
 
     @Test
     fun `analyze batch preserves input order`() {
-        val repository = repository(
-            imageIds = listOf("first-id", "second-id"),
-            unitDoubles = listOf(
-                0.0, 0.0, 0.0, 0.0,
-                0.0, 0.0, 0.0, 0.0,
-            ),
-        )
+        val captureIds = mutableListOf(10L, 20L)
+        val repository = repository(captureIds = captureIds)
 
         val results = repository.analyze(
             inputs = listOf(
@@ -177,35 +71,73 @@ class MockScreenshotAnalysisRepositoryTest {
         )
 
         assertEquals(2, results.size)
-        assertEquals("first-id", results[0].imageId)
+        assertEquals(10L, results[0].captureId)
         assertEquals("스크린샷first.png", results[0].title)
-        assertEquals("second-id", results[1].imageId)
+        assertEquals(20L, results[1].captureId)
         assertEquals("스크린샷second.png", results[1].title)
     }
 
+    @Test
+    fun `analyze generates nonblank mock originalImageUrl`() {
+        val repository = repository(captureId = 99L)
+
+        val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
+
+        assertTrue(result.originalImageUrl.isNotBlank())
+        assertEquals("mock://captures/99", result.originalImageUrl)
+    }
+
+    @Test
+    fun `analyze uses injected organizedAt instant`() {
+        val fixedInstant = Instant.parse("2024-06-01T10:30:00Z")
+        val repository = repository(captureId = 1L, organizedAt = fixedInstant)
+
+        val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
+
+        assertEquals(fixedInstant, result.organizedAt)
+    }
+
+    @Test
+    fun `default captureId suppliers from separate randomizers do not restart from one`() {
+        val firstIds = List(8) { ScreenshotMockRandomizer().captureId() }
+        val secondIds = List(8) { ScreenshotMockRandomizer().captureId() }
+        val sequentialRestart = (1L..8L).toList()
+
+        assertTrue(firstIds.all { it > 0L })
+        assertTrue(secondIds.all { it > 0L })
+        assertFalse(firstIds == sequentialRestart)
+        assertFalse(secondIds == sequentialRestart)
+        assertEquals(firstIds.size, firstIds.toSet().size)
+        assertEquals(secondIds.size, secondIds.toSet().size)
+        assertTrue(firstIds.toSet().intersect(secondIds.toSet()).isEmpty())
+    }
+
+    @Test
+    fun `default captureId supplier yields positive ids that avoid sequential restart`() {
+        val ids = List(16) { ScreenshotMockRandomizer.nextPositiveCaptureId() }
+
+        assertTrue(ids.all { it > 0L })
+        assertEquals(ids.size, ids.toSet().size)
+        assertFalse(ids.take(8) == (1L..8L).toList())
+    }
+
     private fun repository(
-        imageId: String = "default-image-id",
-        imageIds: List<String>? = null,
+        captureId: Long = 1L,
+        captureIds: List<Long>? = null,
         contentTypeIndex: Int = 0,
-        unitDoubles: List<Double>,
+        organizedAt: Instant = Instant.parse("2024-01-01T00:00:00Z"),
     ): MockScreenshotAnalysisRepository {
-        val imageIdIterator = (imageIds ?: listOf(imageId)).iterator()
-        val unitDoubleIterator = unitDoubles.iterator()
+        val captureIdIterator = (captureIds ?: listOf(captureId)).iterator()
         return MockScreenshotAnalysisRepository(
             randomizer = ScreenshotMockRandomizer(
-                nextImageId = {
-                    if (imageIdIterator.hasNext()) {
-                        imageIdIterator.next()
+                nextCaptureId = {
+                    if (captureIdIterator.hasNext()) {
+                        captureIdIterator.next()
                     } else {
-                        imageId
+                        captureId
                     }
                 },
-                nextUnitDouble = {
-                    require(unitDoubleIterator.hasNext()) {
-                        "No more unit doubles configured for test"
-                    }
-                    unitDoubleIterator.next()
-                },
+                nextOrganizedAt = { organizedAt },
                 nextContentTypeIndex = { contentTypeIndex },
             ),
         )

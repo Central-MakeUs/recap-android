@@ -126,7 +126,7 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
             } else {
                 try {
                     screenshotImageStorage.copyImageFromUri(
-                        imageId = result.imageId,
+                        captureId = result.captureId,
                         sourceUri = sourceUri,
                     )
                 } catch (cancellation: CancellationException) {
@@ -141,10 +141,10 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
             } else {
                 try {
                     if (copiedPath != null) {
-                        screenshotImageStorage.createThumbnailFromStoredImage(result.imageId)
+                        screenshotImageStorage.createThumbnailFromStoredImage(result.captureId)
                     } else {
                         screenshotImageStorage.createThumbnailFromUri(
-                            imageId = result.imageId,
+                            captureId = result.captureId,
                             sourceUri = sourceUri,
                         )
                     }
@@ -164,14 +164,14 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
 
             if (thumbnailPath != null) {
                 Timber.d(
-                    "Persisting screenshot with thumbnail imageId=%s path=%s",
-                    result.imageId,
+                    "Persisting screenshot with thumbnail captureId=%s path=%s",
+                    result.captureId,
                     thumbnailPath,
                 )
             } else {
                 Timber.d(
-                    "Persisting screenshot without thumbnail imageId=%s storedImagePath=%s",
-                    result.imageId,
+                    "Persisting screenshot without thumbnail captureId=%s storedImagePath=%s",
+                    result.captureId,
                     copiedPath,
                 )
             }
@@ -179,7 +179,7 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
             try {
                 screenshotCardRepository.saveAnalysisResults(
                     results = listOf(result),
-                    imageRefsByImageId = mapOf(result.imageId to imageRefs),
+                    imageRefsByCaptureId = mapOf(result.captureId to imageRefs),
                 )
                 true
             } catch (cancellation: CancellationException) {

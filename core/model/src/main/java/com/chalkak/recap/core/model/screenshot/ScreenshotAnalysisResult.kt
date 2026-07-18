@@ -1,12 +1,14 @@
 package com.chalkak.recap.core.model.screenshot
 
+import java.time.Instant
+
 data class ScreenshotAnalysisResult(
-    val imageId: String,
+    val captureId: Long,
+    val typeCode: ScreenshotContentType,
     val title: String,
     val summary: String,
-    val contentTypes: ScreenshotContentTypes,
-    val keyFields: List<ScreenshotKeyField>,
-    val confidence: ScreenshotAnalysisConfidence,
+    val body: String,
+    val originalImageUrl: String,
     val isFavorite: Boolean,
-    val body: String = "",
+    val organizedAt: Instant,
 )

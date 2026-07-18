@@ -69,7 +69,7 @@ fun CollectionDetailScreen(
     modifier: Modifier = Modifier,
     searchQuery: String = "",
     isSearchVisible: Boolean = false,
-    onItemClick: (String) -> Unit = {},
+    onItemClick: (Long) -> Unit = {},
 ) {
     val navigationBarBottomPadding = WindowInsets.navigationBars
         .asPaddingValues()
@@ -140,18 +140,18 @@ fun CollectionDetailScreen(
                 ) {
                     itemsIndexed(
                         items = detail.cards,
-                        key = { _, card -> card.imageId },
+                        key = { _, card -> card.captureId },
                     ) { index, card ->
                         CollectionSelectableCaptureItem(
                             item = card,
                             selection = selection,
                             metadataMode = detail.cardMetadataMode,
-                            onOpenClick = { onItemClick(card.imageId) },
+                            onOpenClick = { onItemClick(card.captureId) },
                             onFavoriteClick = {
-                                onAction(CollectionAction.ToggleFavorite(card.imageId))
+                                onAction(CollectionAction.ToggleFavorite(card.captureId))
                             },
                             onSelectionToggle = {
-                                onAction(CollectionAction.ToggleItemSelection(card.imageId))
+                                onAction(CollectionAction.ToggleItemSelection(card.captureId))
                             },
                             showBottomDivider = index < detail.cards.lastIndex,
                         )
@@ -372,7 +372,7 @@ private fun CollectionDetailSelectionPreview() {
             detail = previewCollectionDetailUiModel(),
             selection = CollectionSelectionUiState(
                 isActive = true,
-                selectedImageIds = setOf("1"),
+                selectedCaptureIds = setOf(1L),
             ),
             onBackClick = {},
             onAction = {},
@@ -393,7 +393,7 @@ private fun CollectionDetailDeleteConfirmPreview() {
             detail = previewCollectionDetailUiModel(),
             selection = CollectionSelectionUiState(
                 isActive = true,
-                selectedImageIds = setOf("1", "2"),
+                selectedCaptureIds = setOf(1L, 2L),
                 showDeleteConfirmDialog = true,
             ),
             onBackClick = {},
@@ -447,32 +447,32 @@ private fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
         cardMetadataMode = ScreenshotCardMetadataMode.OrganizedDate,
         cards = listOf(
             CollectionCardItemUiModel(
-                imageId = "1",
+                captureId = 1L,
                 title = "여름 원피스 주문 내역",
                 summary = "가격과 배송 정보가 포함된 상품 캡처",
                 contentTypeLabelResId = R.string.collection_content_type_shopping_product,
                 categoryType = RecapCategoryType.ShoppingProduct,
-                createdAtMillis = 1_719_446_400_000L,
+                organizedAtMillis = 1_719_446_400_000L,
                 isFavorite = true,
                 thumbnailModel = null,
             ),
             CollectionCardItemUiModel(
-                imageId = "2",
+                captureId = 2L,
                 title = "택배 반품 절차",
                 summary = "반품 신청 전 확인해야 할 체크리스트",
                 contentTypeLabelResId = R.string.collection_content_type_shopping_product,
                 categoryType = RecapCategoryType.ShoppingProduct,
-                createdAtMillis = 1_718_208_000_000L,
+                organizedAtMillis = 1_718_208_000_000L,
                 isFavorite = false,
                 thumbnailModel = null,
             ),
             CollectionCardItemUiModel(
-                imageId = "3",
+                captureId = 3L,
                 title = "노트북 가격 비교",
                 summary = "쿠팡 · 컴퓨존 견적 캡처 비교",
                 contentTypeLabelResId = R.string.collection_content_type_shopping_product,
                 categoryType = RecapCategoryType.ShoppingProduct,
-                createdAtMillis = 1_717_862_400_000L,
+                organizedAtMillis = 1_717_862_400_000L,
                 isFavorite = false,
                 thumbnailModel = null,
             ),

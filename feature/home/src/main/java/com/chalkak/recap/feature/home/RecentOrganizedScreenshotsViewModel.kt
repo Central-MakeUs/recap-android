@@ -34,7 +34,7 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
                 viewModelScope.launch {
                     runCatching {
                         screenshotCardRepository.updateFavorite(
-                            imageId = action.id,
+                            captureId = action.id,
                             isFavorite = !currentItem.isFavorite,
                         )
                     }

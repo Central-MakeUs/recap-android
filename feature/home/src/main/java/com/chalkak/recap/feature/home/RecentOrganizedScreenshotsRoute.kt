@@ -11,7 +11,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun RecentOrganizedScreenshotsRoute(
     onNavigateBack: () -> Unit,
     onNavigateToSearch: () -> Unit,
-    onNavigateToScreenshot: (String) -> Unit,
+    onNavigateToScreenshot: (Long) -> Unit,
     onNavigateToOrganize: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: RecentOrganizedScreenshotsViewModel = hiltViewModel(),

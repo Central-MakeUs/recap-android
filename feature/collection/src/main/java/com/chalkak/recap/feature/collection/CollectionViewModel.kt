@@ -122,12 +122,12 @@ class CollectionViewModel @Inject constructor(
 
             is CollectionAction.ToggleFavorite -> {
                 val currentCard = storedCards.firstOrNull { card ->
-                    card.analysisResult.imageId == action.imageId
+                    card.analysisResult.captureId == action.captureId
                 } ?: return
                 viewModelScope.launch {
                     runCatching {
                         screenshotCardRepository.updateFavorite(
-                            imageId = action.imageId,
+                            captureId = action.captureId,
                             isFavorite = !currentCard.analysisResult.isFavorite,
                         )
                     }
@@ -149,18 +149,18 @@ class CollectionViewModel @Inject constructor(
                 if (!selection.isActive || selection.isDeleting) {
                     return
                 }
-                val storedImageIds = storedCards.mapTo(mutableSetOf()) { card ->
-                    card.analysisResult.imageId
+                val storedCaptureIds = storedCards.mapTo(mutableSetOf()) { card ->
+                    card.analysisResult.captureId
                 }
-                if (action.imageId !in storedImageIds) {
+                if (action.captureId !in storedCaptureIds) {
                     return
                 }
-                val selectedImageIds = selection.selectedImageIds.toMutableSet().apply {
-                    if (!add(action.imageId)) {
-                        remove(action.imageId)
+                val selectedCaptureIds = selection.selectedCaptureIds.toMutableSet().apply {
+                    if (!add(action.captureId)) {
+                        remove(action.captureId)
                     }
                 }
-                selection = selection.copy(selectedImageIds = selectedImageIds)
+                selection = selection.copy(selectedCaptureIds = selectedCaptureIds)
                 publishState()
             }
 
@@ -190,11 +190,11 @@ class CollectionViewModel @Inject constructor(
         if (!selection.isActive || selection.isDeleting) {
             return
         }
-        val storedImageIds = storedCards.mapTo(mutableSetOf()) { card ->
-            card.analysisResult.imageId
+        val storedCaptureIds = storedCards.mapTo(mutableSetOf()) { card ->
+            card.analysisResult.captureId
         }
-        val imageIds = selection.selectedImageIds.intersect(storedImageIds)
-        if (imageIds.isEmpty()) {
+        val captureIds = selection.selectedCaptureIds.intersect(storedCaptureIds)
+        if (captureIds.isEmpty()) {
             selection = selection.copy(showDeleteConfirmDialog = false)
             publishState()
             return
@@ -208,7 +208,7 @@ class CollectionViewModel @Inject constructor(
         publishState()
         viewModelScope.launch {
             try {
-                screenshotCardRepository.deleteCards(imageIds)
+                screenshotCardRepository.deleteCards(captureIds)
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (_: Exception) {
@@ -219,11 +219,11 @@ class CollectionViewModel @Inject constructor(
                 return@launch
             }
 
-            _events.emit(CollectionEvent.ShowDeleteSuccessToast(deletedCount = imageIds.size))
+            _events.emit(CollectionEvent.ShowDeleteSuccessToast(deletedCount = captureIds.size))
 
             try {
                 withContext(ioDispatcher + NonCancellable) {
-                    screenshotImageStorage.deleteStoredImages(imageIds)
+                    screenshotImageStorage.deleteStoredImages(captureIds)
                 }
             } catch (_: Exception) {
                 // Room is already committed; private file cleanup remains best-effort.
@@ -247,12 +247,12 @@ class CollectionViewModel @Inject constructor(
     }
 
     private fun publishState() {
-        val storedImageIds = storedCards.mapTo(mutableSetOf()) { card ->
-            card.analysisResult.imageId
+        val storedCaptureIds = storedCards.mapTo(mutableSetOf()) { card ->
+            card.analysisResult.captureId
         }
         if (selection.isActive) {
             selection = selection.copy(
-                selectedImageIds = selection.selectedImageIds.intersect(storedImageIds),
+                selectedCaptureIds = selection.selectedCaptureIds.intersect(storedCaptureIds),
             )
         }
         val hasStoredScreenshots = storedCards.isNotEmpty()

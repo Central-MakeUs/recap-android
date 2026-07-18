@@ -49,7 +49,7 @@ sealed interface AppRoute : NavKey {
     data object RecentOrganizedScreenshots : AppRoute
 
     @Serializable
-    data class Screenshot(val imageId: String) : AppRoute
+    data class Screenshot(val captureId: Long) : AppRoute
 }
 
 sealed interface MainTabRoute : NavKey {

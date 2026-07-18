@@ -18,7 +18,7 @@ fun HomeRoute(
     onNavigateToRecentOrganizedScreenshots: () -> Unit,
     onNavigateToCollectionFavorites: () -> Unit,
     onNavigateToOrganize: () -> Unit,
-    onNavigateToScreenshot: (String) -> Unit,
+    onNavigateToScreenshot: (Long) -> Unit,
     modifier: Modifier = Modifier,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
     viewModel: HomeViewModel = hiltViewModel(),

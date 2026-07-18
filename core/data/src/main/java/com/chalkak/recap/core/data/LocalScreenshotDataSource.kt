@@ -159,6 +159,7 @@ class LocalScreenshotDataSource @Inject constructor(
 
         val screenshotRelativePaths = listOf(
             "DCIM/Screenshots/",
+            "Pictures/Screenshots/"
         )
     }
 }

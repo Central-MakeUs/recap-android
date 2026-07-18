@@ -99,9 +99,9 @@ fun RecapNavHost(
                                 analysisProgressViewModel.startMockAnalysis(selectedScreenshots)
                                 homeNavigationRequestId += 1
                             },
-                            onNavigateToScreenshot = { imageId ->
-                                if (imageId.isNotBlank()) {
-                                    backStack.add(AppRoute.Screenshot(imageId))
+                            onNavigateToScreenshot = { captureId ->
+                                if (captureId > 0) {
+                                    backStack.add(AppRoute.Screenshot(captureId))
                                 }
                             },
                             homeNavigationRequestId = homeNavigationRequestId,
@@ -216,9 +216,9 @@ fun RecapNavHost(
                     RecentOrganizedScreenshotsRoute(
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onNavigateToSearch = { backStack.add(AppRoute.Search) },
-                        onNavigateToScreenshot = { imageId ->
-                            if (imageId.isNotBlank()) {
-                                backStack.add(AppRoute.Screenshot(imageId))
+                        onNavigateToScreenshot = { captureId ->
+                            if (captureId > 0) {
+                                backStack.add(AppRoute.Screenshot(captureId))
                             }
                         },
                         onNavigateToOrganize = {
@@ -230,7 +230,7 @@ fun RecapNavHost(
 
                 is AppRoute.Screenshot -> NavEntry(route) {
                     ScreenshotRoute(
-                        imageId = route.imageId,
+                        captureId = route.captureId,
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onDeleteSucceeded = {
                             backStack.removeLastOrNull()
@@ -255,7 +255,7 @@ fun RecapMainTabNavHost(
     onNavigateToRecentOrganizedScreenshots: () -> Unit,
     onNavigateToOrganize: () -> Unit,
     onNavigateToCollectionFavorites: () -> Unit = {},
-    onNavigateToScreenshot: (String) -> Unit = {},
+    onNavigateToScreenshot: (Long) -> Unit = {},
     collectionFavoritesNavigationRequestId: Int = 0,
     showDeveloperLogoShortcut: Boolean = false,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),

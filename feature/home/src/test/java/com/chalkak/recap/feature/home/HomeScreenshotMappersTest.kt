@@ -4,65 +4,64 @@ import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRef
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.category.toRecapCategoryType
-import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisConfidence
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
-import com.chalkak.recap.core.model.screenshot.ScreenshotContentTypes
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.Instant
 
 class HomeScreenshotMappersTest {
     @Test
     fun `toHomeUiState keeps four most recent favorites`() {
         val cards = listOf(
             storedCard(
-                imageId = "fav-1",
+                captureId = 1L,
                 title = "즐겨찾기 1",
-                contentType = ScreenshotContentType.SHOPPING_PRODUCT,
+                contentType = ScreenshotContentType.SHOPPING,
                 isFavorite = true,
-                createdAtMillis = 4_000L,
+                organizedAt = Instant.ofEpochMilli(4_000L),
             ),
             storedCard(
-                imageId = "fav-2",
+                captureId = 2L,
                 title = "즐겨찾기 2",
-                contentType = ScreenshotContentType.PLACE_RESTAURANT,
+                contentType = ScreenshotContentType.PLACE,
                 isFavorite = true,
-                createdAtMillis = 3_000L,
+                organizedAt = Instant.ofEpochMilli(3_000L),
             ),
             storedCard(
-                imageId = "fav-3",
+                captureId = 3L,
                 title = "즐겨찾기 3",
-                contentType = ScreenshotContentType.INFO_KNOWLEDGE,
+                contentType = ScreenshotContentType.KNOWLEDGE,
                 isFavorite = true,
-                createdAtMillis = 2_000L,
+                organizedAt = Instant.ofEpochMilli(2_000L),
             ),
             storedCard(
-                imageId = "fav-4",
+                captureId = 4L,
                 title = "즐겨찾기 4",
-                contentType = ScreenshotContentType.BOOK_CONTENT,
+                contentType = ScreenshotContentType.CONTENT,
                 isFavorite = true,
-                createdAtMillis = 1_000L,
+                organizedAt = Instant.ofEpochMilli(1_000L),
             ),
             storedCard(
-                imageId = "fav-5",
+                captureId = 5L,
                 title = "즐겨찾기 5",
-                contentType = ScreenshotContentType.RECORD_CAPTURE,
+                contentType = ScreenshotContentType.RECORD,
                 isFavorite = true,
-                createdAtMillis = 500L,
+                organizedAt = Instant.ofEpochMilli(500L),
             ),
             storedCard(
-                imageId = "normal",
+                captureId = 6L,
                 title = "일반",
-                contentType = ScreenshotContentType.SHOPPING_PRODUCT,
+                contentType = ScreenshotContentType.SHOPPING,
                 isFavorite = false,
-                createdAtMillis = 5_000L,
+                organizedAt = Instant.ofEpochMilli(5_000L),
             ),
         )
 
         val state = cards.toHomeUiState()
 
-        assertEquals(listOf("fav-1", "fav-2", "fav-3", "fav-4"), state.favoriteItems.map { it.id })
+        assertEquals(listOf(1L, 2L, 3L, 4L), state.favoriteItems.map { it.id })
         assertTrue(state.favoriteItems.all { it.isFavorite })
     }
 
@@ -72,49 +71,49 @@ class HomeScreenshotMappersTest {
             repeat(5) { index ->
                 add(
                     storedCard(
-                        imageId = "shopping-$index",
+                        captureId = 100L + index,
                         title = "쇼핑 $index",
-                        contentType = ScreenshotContentType.SHOPPING_PRODUCT,
-                        createdAtMillis = 1_000L + index,
+                        contentType = ScreenshotContentType.SHOPPING,
+                        organizedAt = Instant.ofEpochMilli(1_000L + index),
                     ),
                 )
             }
             repeat(4) { index ->
                 add(
                     storedCard(
-                        imageId = "place-$index",
+                        captureId = 200L + index,
                         title = "장소 $index",
-                        contentType = ScreenshotContentType.PLACE_RESTAURANT,
-                        createdAtMillis = 2_000L + index,
+                        contentType = ScreenshotContentType.PLACE,
+                        organizedAt = Instant.ofEpochMilli(2_000L + index),
                     ),
                 )
             }
             repeat(3) { index ->
                 add(
                     storedCard(
-                        imageId = "info-$index",
+                        captureId = 300L + index,
                         title = "정보 $index",
-                        contentType = ScreenshotContentType.INFO_KNOWLEDGE,
-                        createdAtMillis = 3_000L + index,
+                        contentType = ScreenshotContentType.KNOWLEDGE,
+                        organizedAt = Instant.ofEpochMilli(3_000L + index),
                     ),
                 )
             }
             repeat(2) { index ->
                 add(
                     storedCard(
-                        imageId = "book-$index",
+                        captureId = 400L + index,
                         title = "책 $index",
-                        contentType = ScreenshotContentType.BOOK_CONTENT,
-                        createdAtMillis = 4_000L + index,
+                        contentType = ScreenshotContentType.CONTENT,
+                        organizedAt = Instant.ofEpochMilli(4_000L + index),
                     ),
                 )
             }
             add(
                 storedCard(
-                    imageId = "record-0",
+                    captureId = 500L,
                     title = "기록",
-                    contentType = ScreenshotContentType.RECORD_CAPTURE,
-                    createdAtMillis = 5_000L,
+                    contentType = ScreenshotContentType.RECORD,
+                    organizedAt = Instant.ofEpochMilli(5_000L),
                 ),
             )
         }
@@ -137,49 +136,49 @@ class HomeScreenshotMappersTest {
     fun `toHomeUiState maps recent screenshots newest first`() {
         val cards = listOf(
             storedCard(
-                imageId = "older",
+                captureId = 1L,
                 title = "이전",
-                contentType = ScreenshotContentType.SHOPPING_PRODUCT,
-                createdAtMillis = 1_000L,
+                contentType = ScreenshotContentType.SHOPPING,
+                organizedAt = Instant.ofEpochMilli(1_000L),
             ),
             storedCard(
-                imageId = "newer",
+                captureId = 2L,
                 title = "최근",
-                contentType = ScreenshotContentType.PLACE_RESTAURANT,
-                createdAtMillis = 2_000L,
+                contentType = ScreenshotContentType.PLACE,
+                organizedAt = Instant.ofEpochMilli(2_000L),
             ),
         )
 
         val state = cards.toHomeUiState()
 
-        assertEquals(listOf("newer", "older"), state.recentScreenshots.map { it.id })
+        assertEquals(listOf(2L, 1L), state.recentScreenshots.map { it.id })
     }
 
     @Test
     fun `toRecapCategoryType maps job career`() {
-        assertEquals(RecapCategoryType.JobCareer, ScreenshotContentType.JOB_CAREER.toRecapCategoryType())
+        assertEquals(RecapCategoryType.JobCareer, ScreenshotContentType.JOB.toRecapCategoryType())
     }
 
     private fun storedCard(
-        imageId: String,
+        captureId: Long,
         title: String,
         contentType: ScreenshotContentType,
         isFavorite: Boolean = false,
-        createdAtMillis: Long,
+        organizedAt: Instant,
     ): StoredScreenshotCard {
         return StoredScreenshotCard(
             analysisResult = ScreenshotAnalysisResult(
-                imageId = imageId,
+                captureId = captureId,
+                typeCode = contentType,
                 title = title,
                 summary = "$title 요약",
-                contentTypes = ScreenshotContentTypes(primaryContentType = contentType),
-                keyFields = emptyList(),
-                confidence = ScreenshotAnalysisConfidence.HIGH,
+                body = "body-$captureId",
+                originalImageUrl = "mock://captures/$captureId",
                 isFavorite = isFavorite,
+                organizedAt = organizedAt,
             ),
-            imageRefs = ScreenshotCardImageRefs(thumbnailPath = "thumb/$imageId"),
-            createdAtMillis = createdAtMillis,
-            updatedAtMillis = createdAtMillis,
+            imageRefs = ScreenshotCardImageRefs(thumbnailPath = "thumb/$captureId"),
+            updatedAtMillis = organizedAt.toEpochMilli(),
         )
     }
 }

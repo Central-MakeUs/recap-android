@@ -9,39 +9,27 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 abstract class ScreenshotCardDao {
-    @Transaction
-    @Query("SELECT * FROM screenshot_cards ORDER BY createdAtMillis DESC")
-    abstract fun observeAllCards(): Flow<List<ScreenshotCardWithKeyFields>>
+    @Query("SELECT * FROM screenshot_cards ORDER BY organizedAtMillis DESC")
+    abstract fun observeAllCards(): Flow<List<ScreenshotCardEntity>>
 
-    @Transaction
-    @Query("SELECT * FROM screenshot_cards WHERE imageId = :imageId")
-    abstract fun observeCard(imageId: String): Flow<ScreenshotCardWithKeyFields?>
+    @Query("SELECT * FROM screenshot_cards WHERE captureId = :captureId")
+    abstract fun observeCard(captureId: Long): Flow<ScreenshotCardEntity?>
 
-    @Transaction
-    @Query("SELECT * FROM screenshot_cards WHERE imageId = :imageId")
-    abstract suspend fun getCardByImageId(imageId: String): ScreenshotCardWithKeyFields?
-
-    @Query("SELECT * FROM screenshot_cards WHERE imageId = :imageId")
-    abstract suspend fun getCardEntityByImageId(imageId: String): ScreenshotCardEntity?
+    @Query("SELECT * FROM screenshot_cards WHERE captureId = :captureId")
+    abstract suspend fun getCardByCaptureId(captureId: Long): ScreenshotCardEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     abstract suspend fun insertCards(cards: List<ScreenshotCardEntity>)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    abstract suspend fun insertKeyFields(fields: List<ScreenshotKeyFieldEntity>)
-
-    @Query("DELETE FROM screenshot_key_fields WHERE imageId = :imageId")
-    abstract suspend fun deleteKeyFieldsByImageId(imageId: String)
 
     @Query(
         """
         UPDATE screenshot_cards
         SET isFavorite = :isFavorite, updatedAtMillis = :updatedAtMillis
-        WHERE imageId = :imageId
+        WHERE captureId = :captureId
         """,
     )
     abstract suspend fun updateFavorite(
-        imageId: String,
+        captureId: Long,
         isFavorite: Boolean,
         updatedAtMillis: Long,
     )
@@ -52,33 +40,33 @@ abstract class ScreenshotCardDao {
         SET title = :title,
             summary = :summary,
             body = :body,
-            primaryContentType = :primaryContentType,
+            typeCode = :typeCode,
             updatedAtMillis = :updatedAtMillis
-        WHERE imageId = :imageId
+        WHERE captureId = :captureId
         """,
     )
     abstract suspend fun updateCardContent(
-        imageId: String,
+        captureId: Long,
         title: String,
         summary: String,
         body: String,
-        primaryContentType: String,
+        typeCode: String,
         updatedAtMillis: Long,
     ): Int
 
-    @Query("DELETE FROM screenshot_cards WHERE imageId = :imageId")
-    abstract suspend fun deleteByImageId(imageId: String)
+    @Query("DELETE FROM screenshot_cards WHERE captureId = :captureId")
+    abstract suspend fun deleteByCaptureId(captureId: Long)
 
-    @Query("DELETE FROM screenshot_cards WHERE imageId IN (:imageIds)")
-    abstract suspend fun deleteByImageIdsChunk(imageIds: List<String>)
+    @Query("DELETE FROM screenshot_cards WHERE captureId IN (:captureIds)")
+    abstract suspend fun deleteByCaptureIdsChunk(captureIds: List<Long>)
 
     @Query("DELETE FROM screenshot_cards")
     abstract suspend fun deleteAllCards()
 
     @Transaction
-    open suspend fun deleteByImageIds(imageIds: List<String>) {
-        imageIds.chunked(DeleteBatchSize).forEach { chunk ->
-            deleteByImageIdsChunk(chunk)
+    open suspend fun deleteByCaptureIds(captureIds: List<Long>) {
+        captureIds.chunked(DeleteBatchSize).forEach { chunk ->
+            deleteByCaptureIdsChunk(chunk)
         }
     }
 
@@ -86,9 +74,8 @@ abstract class ScreenshotCardDao {
     open suspend fun saveAnalysisResults(entries: List<ScreenshotCardSaveEntry>) {
         val baseTimeMillis = System.currentTimeMillis()
         entries.forEachIndexed { index, entry ->
-            val existingCard = getCardEntityByImageId(entry.analysisResult.imageId)
+            val existingCard = getCardByCaptureId(entry.analysisResult.captureId)
             val timestampMillis = baseTimeMillis + index
-            val createdAtMillis = existingCard?.createdAtMillis ?: timestampMillis
             val mergedResult = entry.analysisResult.copy(
                 body = entry.analysisResult.body.ifBlank {
                     existingCard?.body.orEmpty()
@@ -96,12 +83,9 @@ abstract class ScreenshotCardDao {
             )
             val cardEntity = mergedResult.toCardEntity(
                 imageRefs = mergeImageRefs(entry.imageRefs, existingCard),
-                createdAtMillis = createdAtMillis,
                 updatedAtMillis = timestampMillis,
             )
             insertCards(listOf(cardEntity))
-            deleteKeyFieldsByImageId(cardEntity.imageId)
-            insertKeyFields(mergedResult.toKeyFieldEntities())
         }
     }
 

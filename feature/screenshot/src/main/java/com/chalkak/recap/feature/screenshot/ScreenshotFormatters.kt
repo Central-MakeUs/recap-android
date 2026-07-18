@@ -5,12 +5,12 @@ import java.time.ZoneId
 import timber.log.Timber
 
 fun formatOrganizedDate(
-    createdAtMillis: Long,
+    organizedAtMillis: Long,
     zoneId: ZoneId = ZoneId.systemDefault(),
     nowMillis: Long = System.currentTimeMillis(),
 ): String {
     return formatOrganizedAbsoluteDate(
-        organizedAtMillis = createdAtMillis,
+        organizedAtMillis = organizedAtMillis,
         nowMillis = nowMillis,
         zoneId = zoneId,
     )

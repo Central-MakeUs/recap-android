@@ -15,12 +15,12 @@ enum class CollectionListSort {
 }
 
 data class CollectionCardItemUiModel(
-    val imageId: String,
+    val captureId: Long,
     val title: String,
     val summary: String,
     val contentTypeLabelResId: Int,
     val categoryType: RecapCategoryType,
-    val createdAtMillis: Long,
+    val organizedAtMillis: Long,
     val isFavorite: Boolean,
     val thumbnailModel: Any?,
 )
@@ -55,12 +55,12 @@ data class CollectionDetailUiModel(
 
 data class CollectionSelectionUiState(
     val isActive: Boolean = false,
-    val selectedImageIds: Set<String> = emptySet(),
+    val selectedCaptureIds: Set<Long> = emptySet(),
     val isDeleting: Boolean = false,
     val showDeleteConfirmDialog: Boolean = false,
 ) {
     val selectedCount: Int
-        get() = selectedImageIds.size
+        get() = selectedCaptureIds.size
 }
 
 data class CollectionUiState(
@@ -82,14 +82,14 @@ sealed interface CollectionAction {
     data class UpdateDetailSearchQuery(val query: String) : CollectionAction
     data class SetTypeViewMode(val viewMode: CollectionTypeViewMode) : CollectionAction
     data object OpenFavoriteDetail : CollectionAction
-    data class OpenFavoriteItem(val imageId: String) : CollectionAction
+    data class OpenFavoriteItem(val captureId: Long) : CollectionAction
     data class OpenTypeDetail(val contentType: ScreenshotContentType) : CollectionAction
     data object CloseDetail : CollectionAction
     data class SetDetailSort(val sort: CollectionListSort) : CollectionAction
-    data class ToggleFavorite(val imageId: String) : CollectionAction
+    data class ToggleFavorite(val captureId: Long) : CollectionAction
     data object StartSelection : CollectionAction
     data object CancelSelection : CollectionAction
-    data class ToggleItemSelection(val imageId: String) : CollectionAction
+    data class ToggleItemSelection(val captureId: Long) : CollectionAction
     data object DeleteSelected : CollectionAction
     data object ConfirmDeleteSelected : CollectionAction
     data object DismissDeleteConfirmDialog : CollectionAction
@@ -100,15 +100,15 @@ sealed interface CollectionEvent {
 }
 
 internal val CollectionOverviewCategoryOrder: List<ScreenshotContentType> = listOf(
-    ScreenshotContentType.SHOPPING_PRODUCT,
-    ScreenshotContentType.PLACE_RESTAURANT,
-    ScreenshotContentType.SCHEDULE_RESERVATION,
-    ScreenshotContentType.INFO_KNOWLEDGE,
-    ScreenshotContentType.BOOK_CONTENT,
-    ScreenshotContentType.BENEFIT_EVENT,
-    ScreenshotContentType.RECORD_CAPTURE,
-    ScreenshotContentType.JOB_CAREER,
-    ScreenshotContentType.OTHER,
+    ScreenshotContentType.SHOPPING,
+    ScreenshotContentType.PLACE,
+    ScreenshotContentType.SCHEDULE,
+    ScreenshotContentType.KNOWLEDGE,
+    ScreenshotContentType.CONTENT,
+    ScreenshotContentType.BENEFIT,
+    ScreenshotContentType.RECORD,
+    ScreenshotContentType.JOB,
+    ScreenshotContentType.ETC,
 )
 
 internal fun StoredScreenshotCard.toThumbnailModel(): Any? {
@@ -117,14 +117,14 @@ internal fun StoredScreenshotCard.toThumbnailModel(): Any? {
 }
 
 internal fun StoredScreenshotCard.toCardItemUiModel(): CollectionCardItemUiModel {
-    val contentType = analysisResult.contentTypes.primaryContentType
+    val contentType = analysisResult.typeCode
     return CollectionCardItemUiModel(
-        imageId = analysisResult.imageId,
+        captureId = analysisResult.captureId,
         title = analysisResult.title,
         summary = analysisResult.summary,
         contentTypeLabelResId = contentType.toLabelResId(),
         categoryType = contentType.toRecapCategoryType(),
-        createdAtMillis = createdAtMillis,
+        organizedAtMillis = analysisResult.organizedAt.toEpochMilli(),
         isFavorite = analysisResult.isFavorite,
         thumbnailModel = toThumbnailModel(),
     )
@@ -134,7 +134,7 @@ internal fun List<StoredScreenshotCard>.toOverviewUiModel(
     searchQuery: String = "",
 ): CollectionOverviewUiModel {
     val normalizedQuery = searchQuery.trim()
-    val sortedCards = sortedByDescending { card -> card.createdAtMillis }
+    val sortedCards = sortedByDescending { card -> card.analysisResult.organizedAt.toEpochMilli() }
         .filter { card ->
             if (normalizedQuery.isEmpty()) {
                 true
@@ -148,7 +148,7 @@ internal fun List<StoredScreenshotCard>.toOverviewUiModel(
 
     val typeSummaries = CollectionOverviewCategoryOrder.mapNotNull { contentType ->
         val typeCards = sortedCards.filter { card ->
-            card.analysisResult.contentTypes.primaryContentType == contentType
+            card.analysisResult.typeCode == contentType
         }
         if (typeCards.isEmpty()) {
             return@mapNotNull null
@@ -177,7 +177,7 @@ internal fun List<StoredScreenshotCard>.toDetailUiModel(
 ): CollectionDetailUiModel {
     val filteredCards = when (filter) {
         is CollectionDetailFilter.ByType -> filter { card ->
-            card.analysisResult.contentTypes.primaryContentType == filter.contentType
+            card.analysisResult.typeCode == filter.contentType
         }
         CollectionDetailFilter.Favorites -> filter { card -> card.analysisResult.isFavorite }
     }
@@ -191,8 +191,8 @@ internal fun List<StoredScreenshotCard>.toDetailUiModel(
         }
     }
     val sortedCards = when (sort) {
-        CollectionListSort.Latest -> queryFilteredCards.sortedByDescending { card -> card.createdAtMillis }
-        CollectionListSort.Oldest -> queryFilteredCards.sortedBy { card -> card.createdAtMillis }
+        CollectionListSort.Latest -> queryFilteredCards.sortedByDescending { card -> card.analysisResult.organizedAt.toEpochMilli() }
+        CollectionListSort.Oldest -> queryFilteredCards.sortedBy { card -> card.analysisResult.organizedAt.toEpochMilli() }
     }
     val titleResId = when (filter) {
         is CollectionDetailFilter.ByType -> filter.contentType.toLabelResId()

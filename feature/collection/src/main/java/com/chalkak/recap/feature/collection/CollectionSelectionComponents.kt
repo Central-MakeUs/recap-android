@@ -188,7 +188,7 @@ internal fun CollectionSelectableCaptureItem(
     metadataMode: ScreenshotCardMetadataMode = ScreenshotCardMetadataMode.CategoryChip,
     showBottomDivider: Boolean = true,
 ) {
-    val isSelected = item.imageId in selection.selectedImageIds
+    val isSelected = item.captureId in selection.selectedCaptureIds
     val selectionContentDescription = stringResource(
         R.string.collection_selection_item_content_description,
         item.title,
@@ -261,7 +261,7 @@ internal fun CollectionSelectableCaptureItem(
                 ScreenshotCard(
                     thumbnailModel = item.thumbnailModel,
                     categoryType = item.categoryType,
-                    organizedAtMillis = item.createdAtMillis,
+                    organizedAtMillis = item.organizedAtMillis,
                     metadataMode = metadataMode,
                     title = item.title,
                     description = item.summary,
@@ -333,7 +333,7 @@ private fun CollectionSelectionActionsActivePreview() {
         CollectionSelectionActions(
             selection = CollectionSelectionUiState(
                 isActive = true,
-                selectedImageIds = setOf("1", "2"),
+                selectedCaptureIds = setOf(1L, 2L),
             ),
             onStartSelection = {},
             onCancelSelection = {},
@@ -350,7 +350,7 @@ private fun CollectionSelectionActionsDeletingPreview() {
         CollectionSelectionActions(
             selection = CollectionSelectionUiState(
                 isActive = true,
-                selectedImageIds = setOf("1"),
+                selectedCaptureIds = setOf(1L),
                 isDeleting = true,
             ),
             onStartSelection = {},
@@ -405,12 +405,12 @@ private fun CollectionSelectableCaptureItemPreview() {
             )
             CollectionSelectableCaptureItem(
                 item = previewCollectionCaptureItem(
-                    imageId = "preview-capture-selected",
+                    captureId = 99L,
                     categoryType = RecapCategoryType.Other,
                 ),
                 selection = CollectionSelectionUiState(
                     isActive = true,
-                    selectedImageIds = setOf("preview-capture-selected"),
+                    selectedCaptureIds = setOf(99L),
                 ),
                 metadataMode = ScreenshotCardMetadataMode.OrganizedDate,
                 onOpenClick = {},
@@ -422,16 +422,16 @@ private fun CollectionSelectableCaptureItemPreview() {
 }
 
 private fun previewCollectionCaptureItem(
-    imageId: String = "preview-capture",
+    captureId: Long = 100L,
     categoryType: RecapCategoryType,
 ): CollectionCardItemUiModel {
     return CollectionCardItemUiModel(
-        imageId = imageId,
+        captureId = captureId,
         title = "미분류 메모",
         summary = "카테고리 없이 저장된 캡처",
         contentTypeLabelResId = R.string.collection_content_type_other,
         categoryType = categoryType,
-        createdAtMillis = 1_719_446_400_000L,
+        organizedAtMillis = 1_719_446_400_000L,
         isFavorite = false,
         thumbnailModel = null,
     )

@@ -31,7 +31,7 @@ class ScreenshotViewModel @Inject constructor(
     private val eventChannel = Channel<ScreenshotEvent>(Channel.BUFFERED)
     val events = eventChannel.receiveAsFlow()
 
-    private var boundImageId: String? = null
+    private var boundCaptureId: Long? = null
     private var observeJob: Job? = null
     private var favoriteJob: Job? = null
     private var saveJob: Job? = null
@@ -39,20 +39,20 @@ class ScreenshotViewModel @Inject constructor(
 
     internal var ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 
-    fun bind(imageId: String) {
-        require(imageId.isNotBlank()) { "imageId must not be blank" }
-        if (boundImageId == imageId && observeJob?.isActive == true) {
+    fun bind(captureId: Long) {
+        require(captureId > 0) { "captureId must be positive" }
+        if (boundCaptureId == captureId && observeJob?.isActive == true) {
             return
         }
-        boundImageId = imageId
-        observeCard(imageId)
+        boundCaptureId = captureId
+        observeCard(captureId)
     }
 
     fun onAction(action: ScreenshotAction) {
         when (action) {
             ScreenshotAction.RetryLoad -> {
-                val imageId = boundImageId ?: return
-                observeCard(imageId)
+                val captureId = boundCaptureId ?: return
+                observeCard(captureId)
             }
 
             ScreenshotAction.ToggleFavorite -> toggleFavorite()
@@ -103,12 +103,12 @@ class ScreenshotViewModel @Inject constructor(
         _uiState.updateContent { it.copy(showDeleteConfirmDialog = false) }
     }
 
-    private fun observeCard(imageId: String) {
+    private fun observeCard(captureId: Long) {
         observeJob?.cancel()
         _uiState.value = ScreenshotUiState.Loading
         observeJob = viewModelScope.launch {
             try {
-                screenshotCardRepository.observeCard(imageId).collect { card ->
+                screenshotCardRepository.observeCard(captureId).collect { card ->
                     if (card == null) {
                         val current = _uiState.value
                         if (current is ScreenshotUiState.Content && current.isDeleting) {
@@ -142,14 +142,14 @@ class ScreenshotViewModel @Inject constructor(
     private fun toggleFavorite() {
         val content = _uiState.value as? ScreenshotUiState.Content ?: return
         if (content.isFavoriteUpdating || content.isDeleting) return
-        val imageId = content.card.analysisResult.imageId
+        val captureId = content.card.analysisResult.captureId
         val nextFavorite = !content.card.analysisResult.isFavorite
         favoriteJob?.cancel()
         favoriteJob = viewModelScope.launch {
             _uiState.updateContent { it.copy(isFavoriteUpdating = true, actionErrorMessageResId = null) }
             try {
                 withContext(ioDispatcher) {
-                    screenshotCardRepository.updateFavorite(imageId, nextFavorite)
+                    screenshotCardRepository.updateFavorite(captureId, nextFavorite)
                 }
             } catch (cancellation: CancellationException) {
                 throw cancellation
@@ -234,7 +234,7 @@ class ScreenshotViewModel @Inject constructor(
             }
             return
         }
-        val imageId = content.card.analysisResult.imageId
+        val captureId = content.card.analysisResult.captureId
         saveJob?.cancel()
         saveJob = viewModelScope.launch {
             _uiState.updateContent {
@@ -248,11 +248,11 @@ class ScreenshotViewModel @Inject constructor(
             val updated = try {
                 withContext(ioDispatcher) {
                     screenshotCardRepository.updateCardContent(
-                        imageId = imageId,
+                        captureId = captureId,
                         title = normalized.title,
                         summary = normalized.summary,
                         body = normalized.body,
-                        primaryContentType = normalized.contentType,
+                        typeCode = normalized.contentType,
                     )
                 }
             } catch (cancellation: CancellationException) {
@@ -279,7 +279,7 @@ class ScreenshotViewModel @Inject constructor(
     private fun deleteScreenshot() {
         val content = _uiState.value as? ScreenshotUiState.Content ?: return
         if (content.isDeleting || content.isSaving) return
-        val imageId = content.card.analysisResult.imageId
+        val captureId = content.card.analysisResult.captureId
         deleteJob?.cancel()
         deleteJob = viewModelScope.launch {
             _uiState.updateContent {
@@ -291,7 +291,7 @@ class ScreenshotViewModel @Inject constructor(
             }
             try {
                 withContext(ioDispatcher) {
-                    screenshotCardRepository.deleteCard(imageId)
+                    screenshotCardRepository.deleteCard(captureId)
                 }
             } catch (cancellation: CancellationException) {
                 throw cancellation
@@ -306,7 +306,7 @@ class ScreenshotViewModel @Inject constructor(
             }
             try {
                 withContext(ioDispatcher) {
-                    screenshotImageStorage.deleteStoredImages(setOf(imageId))
+                    screenshotImageStorage.deleteStoredImages(setOf(captureId))
                 }
             } catch (_: Exception) {
                 // Best-effort private file cleanup; DB delete already succeeded.

@@ -15,15 +15,15 @@ internal fun StoredScreenshotCard.toThumbnailModel(): Any? {
 }
 
 internal fun List<StoredScreenshotCard>.toHomeUiState(): HomeUiState {
-    val sortedCards = sortedByDescending { card -> card.createdAtMillis }
+    val sortedCards = sortedByDescending { card -> card.analysisResult.organizedAt.toEpochMilli() }
 
     val recentSource = sortedCards.take(HomeRecentScreenshotLimit)
     val recentScreenshots = recentSource.map { card ->
         HomeRecentScreenshotUiModel(
-            id = card.analysisResult.imageId,
+            id = card.analysisResult.captureId,
             thumbnailModel = card.toThumbnailModel(),
             title = card.analysisResult.title,
-            categoryType = card.analysisResult.contentTypes.primaryContentType.toRecapCategoryType(),
+            categoryType = card.analysisResult.typeCode.toRecapCategoryType(),
         )
     }
 
@@ -32,24 +32,24 @@ internal fun List<StoredScreenshotCard>.toHomeUiState(): HomeUiState {
         .take(HomeFavoriteItemLimit)
     val favoriteItems = favoriteSource.map { card ->
         HomeFavoriteItemUiModel(
-            id = card.analysisResult.imageId,
+            id = card.analysisResult.captureId,
             thumbnailModel = card.toThumbnailModel(),
-            categoryType = card.analysisResult.contentTypes.primaryContentType.toRecapCategoryType(),
+            categoryType = card.analysisResult.typeCode.toRecapCategoryType(),
             title = card.analysisResult.title,
             description = card.analysisResult.summary,
-            organizedAtMillis = card.createdAtMillis,
+            organizedAtMillis = card.analysisResult.organizedAt.toEpochMilli(),
             isFavorite = card.analysisResult.isFavorite,
         )
     }
 
     (recentSource + favoriteSource)
-        .distinctBy { card -> card.analysisResult.imageId }
+        .distinctBy { card -> card.analysisResult.captureId }
         .logThumbnailSummary()
 
     val frequentSaveTypes = ScreenshotContentType.entries
         .mapNotNull { contentType ->
             val count = sortedCards.count { card ->
-                card.analysisResult.contentTypes.primaryContentType == contentType
+                card.analysisResult.typeCode == contentType
             }
             if (count <= 0) {
                 return@mapNotNull null
