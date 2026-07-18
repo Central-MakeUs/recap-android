@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.auth.AuthException
 import com.chalkak.recap.core.data.auth.AuthRepository
-import com.chalkak.recap.core.data.ocr.ImagePermissionRepository
+import com.chalkak.recap.core.data.screenshot.ImagePermissionRepository
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.auth.AuthError
 import dagger.hilt.android.lifecycle.HiltViewModel

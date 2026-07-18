@@ -9,7 +9,6 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import com.chalkak.recap.feature.demo.DemoScreen
 import kotlinx.serialization.Serializable
 
 @Composable
@@ -29,14 +28,9 @@ fun DeveloperRoute(
             when (route) {
                 DeveloperDestination.Options -> NavEntry(route) {
                     DeveloperOptionsScreen(
-                        ocrRawResults = uiState.ocrRawResults,
                         feedbackMessageResId = uiState.feedbackMessageResId,
                         onAction = { action ->
                             when (action) {
-                                DeveloperOptionAction.OpenTechnicalDemo -> {
-                                    backStack.add(DeveloperDestination.TechnicalDemo)
-                                }
-
                                 DeveloperOptionAction.OpenComponentGarden -> {
                                     backStack.add(DeveloperDestination.ComponentGarden)
                                 }
@@ -48,10 +42,6 @@ fun DeveloperRoute(
                             }
                         },
                     )
-                }
-
-                DeveloperDestination.TechnicalDemo -> NavEntry(route) {
-                    DemoScreen()
                 }
 
                 DeveloperDestination.ComponentGarden -> NavEntry(route) {
@@ -68,9 +58,6 @@ fun DeveloperRoute(
 private sealed interface DeveloperDestination : NavKey {
     @Serializable
     data object Options : DeveloperDestination
-
-    @Serializable
-    data object TechnicalDemo : DeveloperDestination
 
     @Serializable
     data object ComponentGarden : DeveloperDestination

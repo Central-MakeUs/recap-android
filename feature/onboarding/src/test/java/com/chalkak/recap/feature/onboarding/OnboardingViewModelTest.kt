@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import com.chalkak.recap.core.data.auth.AuthException
 import com.chalkak.recap.core.data.auth.AuthRepository
-import com.chalkak.recap.core.data.ocr.ImagePermissionRepository
+import com.chalkak.recap.core.data.screenshot.ImagePermissionRepository
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.auth.AuthError
 import com.chalkak.recap.core.model.auth.AuthSignInResult

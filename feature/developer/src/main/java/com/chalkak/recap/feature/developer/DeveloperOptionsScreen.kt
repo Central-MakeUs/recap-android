@@ -12,22 +12,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.model.OcrImageResult
 
 @Composable
 internal fun DeveloperOptionsScreen(
     onAction: (DeveloperOptionAction) -> Unit,
     modifier: Modifier = Modifier,
-    ocrRawResults: List<OcrImageResult> = emptyList(),
     feedbackMessageResId: Int? = null,
 ) {
     Surface(
@@ -63,71 +59,6 @@ internal fun DeveloperOptionsScreen(
                     Text(stringResource(option.labelResId))
                 }
             }
-            OcrRawResultList(
-                results = ocrRawResults,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-    }
-}
-
-@Composable
-private fun OcrRawResultList(
-    results: List<OcrImageResult>,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
-        Text(
-            text = stringResource(R.string.developer_options_ocr_raw_result_title),
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onBackground,
-            fontWeight = FontWeight.Bold,
-        )
-        if (results.isEmpty()) {
-            Text(
-                text = stringResource(R.string.developer_options_ocr_raw_result_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-        } else {
-            results.forEach { result ->
-                OcrRawResultItem(
-                    result = result,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun OcrRawResultItem(
-    result: OcrImageResult,
-    modifier: Modifier = Modifier,
-) {
-    OutlinedCard(modifier = modifier) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            Text(
-                text = result.displayName,
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontWeight = FontWeight.Bold,
-            )
-            Text(
-                text = result.rawText.ifBlank {
-                    stringResource(R.string.developer_options_ocr_raw_result_blank)
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
         }
     }
 }
@@ -136,10 +67,6 @@ internal enum class DeveloperOption(
     @get:StringRes val labelResId: Int,
     val action: DeveloperOptionAction,
 ) {
-    TechnicalDemo(
-        labelResId = R.string.developer_options_technical_demo_button,
-        action = DeveloperOptionAction.OpenTechnicalDemo,
-    ),
     ComponentGarden(
         labelResId = R.string.developer_options_component_garden_button,
         action = DeveloperOptionAction.OpenComponentGarden,
@@ -155,7 +82,6 @@ internal enum class DeveloperOption(
 }
 
 internal sealed interface DeveloperOptionAction {
-    data object OpenTechnicalDemo : DeveloperOptionAction
     data object OpenComponentGarden : DeveloperOptionAction
     data object ResetOnboarding : DeveloperOptionAction
     data object ResetScreenshotData : DeveloperOptionAction

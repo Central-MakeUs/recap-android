@@ -1,4 +1,4 @@
-package com.chalkak.recap.core.data.ocr
+package com.chalkak.recap.core.data.screenshot
 
 import com.chalkak.recap.core.model.ImageAccessLevel
 

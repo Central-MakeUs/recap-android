@@ -1,5 +1,6 @@
-package com.chalkak.recap.core.data.ocr
+package com.chalkak.recap.core.data.screenshot
 
+import com.chalkak.recap.core.data.LocalScreenshotDataSource
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -8,10 +9,10 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class OcrRepositoryModule {
+abstract class ImagePermissionModule {
     @Binds
     @Singleton
     abstract fun bindImagePermissionRepository(
-        ocrRepository: OcrRepository,
+        localScreenshotDataSource: LocalScreenshotDataSource,
     ): ImagePermissionRepository
 }
