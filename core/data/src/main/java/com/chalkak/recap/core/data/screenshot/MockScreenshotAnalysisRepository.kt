@@ -9,11 +9,11 @@ import javax.inject.Singleton
 class MockScreenshotAnalysisRepository @Inject constructor(
     private val randomizer: ScreenshotMockRandomizer,
 ) : ScreenshotAnalysisRepository {
-    override fun analyze(input: ScreenshotAnalysisInput): ScreenshotAnalysisResult {
+    override suspend fun analyze(input: ScreenshotAnalysisInput): ScreenshotAnalysisResult {
         return buildResult(input)
     }
 
-    override fun analyze(inputs: List<ScreenshotAnalysisInput>): List<ScreenshotAnalysisResult> {
+    override suspend fun analyze(inputs: List<ScreenshotAnalysisInput>): List<ScreenshotAnalysisResult> {
         return inputs.map(::buildResult)
     }
 

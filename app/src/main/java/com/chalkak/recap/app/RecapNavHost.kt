@@ -96,7 +96,7 @@ fun RecapNavHost(
                                 backStack.add(AppRoute.RecentOrganizedScreenshots)
                             },
                             onOrganizeComplete = { selectedScreenshots ->
-                                analysisProgressViewModel.startMockAnalysis(selectedScreenshots)
+                                analysisProgressViewModel.startAnalysis(selectedScreenshots)
                                 homeNavigationRequestId += 1
                             },
                             onNavigateToScreenshot = { captureId ->

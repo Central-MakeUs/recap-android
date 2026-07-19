@@ -1,6 +1,7 @@
 package com.chalkak.recap.core.data.screenshot
 
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
+import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -9,7 +10,7 @@ import java.time.Instant
 
 class MockScreenshotAnalysisRepositoryTest {
     @Test
-    fun `analyze composes title summary and body from file name`() {
+    fun `analyze composes title summary and body from file name`() = runTest {
         val repository = repository(captureId = 1L)
 
         val result = repository.analyze(ScreenshotAnalysisInput(fileName = "capture_01.png"))
@@ -20,7 +21,7 @@ class MockScreenshotAnalysisRepositoryTest {
     }
 
     @Test
-    fun `analyze maps content type index 3 to SCHEDULE`() {
+    fun `analyze maps content type index 3 to SCHEDULE`() = runTest {
         val repository = repository(captureId = 1L, contentTypeIndex = 3)
 
         val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
@@ -29,7 +30,7 @@ class MockScreenshotAnalysisRepositoryTest {
     }
 
     @Test
-    fun `analyze maps last content type index to ETC`() {
+    fun `analyze maps last content type index to ETC`() = runTest {
         val repository = repository(
             captureId = 1L,
             contentTypeIndex = ScreenshotContentType.entries.lastIndex,
@@ -41,7 +42,7 @@ class MockScreenshotAnalysisRepositoryTest {
     }
 
     @Test
-    fun `analyze uses injected captureId`() {
+    fun `analyze uses injected captureId`() = runTest {
         val repository = repository(captureId = 42L)
 
         val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
@@ -50,7 +51,7 @@ class MockScreenshotAnalysisRepositoryTest {
     }
 
     @Test
-    fun `analyze defaults isFavorite to false`() {
+    fun `analyze defaults isFavorite to false`() = runTest {
         val repository = repository(captureId = 1L)
 
         val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
@@ -59,7 +60,7 @@ class MockScreenshotAnalysisRepositoryTest {
     }
 
     @Test
-    fun `analyze batch preserves input order`() {
+    fun `analyze batch preserves input order`() = runTest {
         val captureIds = mutableListOf(10L, 20L)
         val repository = repository(captureIds = captureIds)
 
@@ -78,7 +79,7 @@ class MockScreenshotAnalysisRepositoryTest {
     }
 
     @Test
-    fun `analyze generates nonblank mock originalImageUrl`() {
+    fun `analyze generates nonblank mock originalImageUrl`() = runTest {
         val repository = repository(captureId = 99L)
 
         val result = repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
@@ -88,7 +89,7 @@ class MockScreenshotAnalysisRepositoryTest {
     }
 
     @Test
-    fun `analyze uses injected organizedAt instant`() {
+    fun `analyze uses injected organizedAt instant`() = runTest {
         val fixedInstant = Instant.parse("2024-06-01T10:30:00Z")
         val repository = repository(captureId = 1L, organizedAt = fixedInstant)
 

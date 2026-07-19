@@ -28,7 +28,7 @@ fun DeveloperRoute(
             when (route) {
                 DeveloperDestination.Options -> NavEntry(route) {
                     DeveloperOptionsScreen(
-                        feedbackMessageResId = uiState.feedbackMessageResId,
+                        uiState = uiState,
                         onAction = { action ->
                             when (action) {
                                 DeveloperOptionAction.OpenComponentGarden -> {
@@ -36,9 +36,7 @@ fun DeveloperRoute(
                                 }
 
                                 DeveloperOptionAction.ResetOnboarding -> onResetOnboarding()
-                                DeveloperOptionAction.ResetScreenshotData -> {
-                                    viewModel.resetScreenshotData()
-                                }
+                                else -> viewModel.onAction(action)
                             }
                         },
                     )

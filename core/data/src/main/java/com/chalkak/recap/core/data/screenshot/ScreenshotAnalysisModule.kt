@@ -13,7 +13,7 @@ abstract class ScreenshotAnalysisModule {
     @Binds
     @Singleton
     abstract fun bindScreenshotAnalysisRepository(
-        repository: MockScreenshotAnalysisRepository,
+        repository: SwitchingScreenshotAnalysisRepository,
     ): ScreenshotAnalysisRepository
 
     companion object {

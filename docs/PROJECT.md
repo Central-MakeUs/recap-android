@@ -118,7 +118,7 @@ com.chalkak.recap
 - `RecapDatabase`: Room database (`screenshot_cards` 등)
 - 스크린샷 분석/저장:
   - `ScreenshotCardRepository`
-  - `ScreenshotAnalysisRepository` (현재 mock)
+  - `ScreenshotAnalysisRepository` (Debug에서 Mock/Remote 런타임 전환 가능, 구조는 `docs/ANALYSIS_DATA_SOURCE.md`)
   - `LocalScreenshotDataSource` / `ImagePermissionRepository`
 - OCR/AI 분석은 서버에서 수행한다. 로컬 ML Kit OCR 및 Firebase AI 클라이언트는 사용하지 않는다.
 
@@ -152,4 +152,5 @@ UI 색상·타이포는 `MaterialTheme.colorScheme` / `MaterialTheme.typography`
 - `docs/BACKLOG.md`: 두 에이전트가 공유해야 하는 후속 항목
 - `docs/TESTING.md`: 테스트/검증 정책
 - `docs/LOCAL_DATA.md`: 로컬 데이터 구현체와 저장 정책
+- `docs/ANALYSIS_DATA_SOURCE.md`: 스크린샷 분석 Mock/Remote 런타임 스위치
 - `docs/handoff/HANDOFF.md`: Codex가 작성하고 Cursor가 구현할 작업 스펙

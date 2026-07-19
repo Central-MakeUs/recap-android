@@ -1,8 +1,10 @@
 package com.chalkak.recap.app
 
 import android.net.Uri
+import com.chalkak.recap.core.data.screenshot.RemoteAnalysisNotWiredException
 import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisInput
 import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisRepository
+import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisRunState
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
@@ -15,7 +17,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
-import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -39,6 +40,7 @@ class ScreenshotAnalysisProgressViewModelTest {
     private val repository = mockk<ScreenshotAnalysisRepository>()
     private val screenshotCardRepository = mockk<ScreenshotCardRepository>(relaxed = true)
     private val screenshotImageStorage = mockk<ScreenshotImageStorage>(relaxed = true)
+    private val screenshotAnalysisRunState = ScreenshotAnalysisRunState()
     private lateinit var viewModel: ScreenshotAnalysisProgressViewModel
 
     @BeforeEach
@@ -48,6 +50,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             screenshotAnalysisRepository = repository,
             screenshotCardRepository = screenshotCardRepository,
             screenshotImageStorage = screenshotImageStorage,
+            screenshotAnalysisRunState = screenshotAnalysisRunState,
         ).apply {
             ioDispatcher = testDispatcher
         }
@@ -67,13 +70,14 @@ class ScreenshotAnalysisProgressViewModelTest {
         assertEquals(0, state.totalCount)
         assertEquals(0f, state.progress)
         assertTrue(state.results.isEmpty())
+        assertFalse(screenshotAnalysisRunState.isRunning.value)
     }
 
     @Test
-    fun `startMockAnalysis sets running state and total count`() = runTest(testDispatcher) {
-        every { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult(1L)
+    fun `startAnalysis sets running state and total count`() = runTest(testDispatcher) {
+        coEvery { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult(1L)
 
-        viewModel.startMockAnalysis(sampleImages(count = 2))
+        viewModel.startAnalysis(sampleImages(count = 2))
         runCurrent()
 
         val state = viewModel.uiState.value
@@ -81,13 +85,14 @@ class ScreenshotAnalysisProgressViewModelTest {
         assertEquals(2, state.totalCount)
         assertEquals(0, state.completedCount)
         assertEquals(0f, state.progress)
+        assertTrue(screenshotAnalysisRunState.isRunning.value)
     }
 
     @Test
     fun `advancing time by 500ms per image increments completed count`() = runTest(testDispatcher) {
-        every { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult(1L)
+        coEvery { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult(1L)
 
-        viewModel.startMockAnalysis(sampleImages(count = 2))
+        viewModel.startAnalysis(sampleImages(count = 2))
         runCurrent()
 
         advanceTimeBy(500.milliseconds)
@@ -100,49 +105,78 @@ class ScreenshotAnalysisProgressViewModelTest {
         assertEquals(2, viewModel.uiState.value.completedCount)
         assertEquals(1f, viewModel.uiState.value.progress)
         assertFalse(viewModel.uiState.value.isRunning)
+        assertFalse(screenshotAnalysisRunState.isRunning.value)
     }
 
     @Test
     fun `repository inputs use selected image display names in order`() = runTest(testDispatcher) {
-        every { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult(1L)
+        coEvery { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult(1L)
 
         val images = listOf(
             LocalImage(uri = "content://1", displayName = "first.png", dateAddedMillis = 1L),
             LocalImage(uri = "content://2", displayName = "second.png", dateAddedMillis = 2L),
         )
 
-        viewModel.startMockAnalysis(images)
+        viewModel.startAnalysis(images)
         runCurrent()
         advanceTimeBy(500.milliseconds)
         runCurrent()
         advanceTimeBy(500.milliseconds)
         runCurrent()
 
-        verify(exactly = 1) { repository.analyze(ScreenshotAnalysisInput(fileName = "first.png")) }
-        verify(exactly = 1) { repository.analyze(ScreenshotAnalysisInput(fileName = "second.png")) }
+        coVerify(exactly = 1) { repository.analyze(ScreenshotAnalysisInput(fileName = "first.png")) }
+        coVerify(exactly = 1) { repository.analyze(ScreenshotAnalysisInput(fileName = "second.png")) }
     }
 
     @Test
     fun `starting a second job cancels and resets the previous job`() = runTest(testDispatcher) {
-        every { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult(1L)
+        coEvery { repository.analyze(any<ScreenshotAnalysisInput>()) } returns analysisResult(1L)
 
-        viewModel.startMockAnalysis(sampleImages(count = 3))
+        viewModel.startAnalysis(sampleImages(count = 3))
         runCurrent()
         advanceTimeBy(500.milliseconds)
         runCurrent()
         assertEquals(1, viewModel.uiState.value.completedCount)
 
-        viewModel.startMockAnalysis(sampleImages(count = 1))
+        viewModel.startAnalysis(sampleImages(count = 1))
         runCurrent()
         assertEquals(1, viewModel.uiState.value.totalCount)
         assertEquals(0, viewModel.uiState.value.completedCount)
         assertEquals(0f, viewModel.uiState.value.progress)
+        assertTrue(screenshotAnalysisRunState.isRunning.value)
 
         advanceTimeBy(500.milliseconds)
         runCurrent()
         assertEquals(1, viewModel.uiState.value.completedCount)
         assertEquals(1f, viewModel.uiState.value.progress)
         assertFalse(viewModel.uiState.value.isRunning)
+        assertFalse(screenshotAnalysisRunState.isRunning.value)
+    }
+
+    @Test
+    fun `empty analysis restores idle run state`() = runTest(testDispatcher) {
+        viewModel.startAnalysis(emptyList())
+        runCurrent()
+
+        assertFalse(viewModel.uiState.value.isRunning)
+        assertFalse(screenshotAnalysisRunState.isRunning.value)
+    }
+
+    @Test
+    fun `repository exception sets safe error and restores idle`() = runTest(testDispatcher) {
+        coEvery {
+            repository.analyze(any<ScreenshotAnalysisInput>())
+        } throws RemoteAnalysisNotWiredException()
+
+        viewModel.startAnalysis(sampleImages(count = 1))
+        runCurrent()
+        advanceTimeBy(500.milliseconds)
+        runCurrent()
+
+        val state = viewModel.uiState.value
+        assertEquals("Failed to analyze screenshot", state.errorMessage)
+        assertFalse(state.isRunning)
+        assertFalse(screenshotAnalysisRunState.isRunning.value)
     }
 
     @Test
@@ -155,8 +189,12 @@ class ScreenshotAnalysisProgressViewModelTest {
 
         val firstResult = analysisResult(captureId = 1L)
         val secondResult = analysisResult(captureId = 2L)
-        every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png")) } returns firstResult
-        every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_2.png")) } returns secondResult
+        coEvery {
+            repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png"))
+        } returns firstResult
+        coEvery {
+            repository.analyze(ScreenshotAnalysisInput(fileName = "image_2.png"))
+        } returns secondResult
         every {
             screenshotImageStorage.copyImageFromUri(1L, firstUri)
         } returns "/files/1"
@@ -173,7 +211,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             screenshotCardRepository.saveAnalysisResults(any(), any())
         } returns Unit
 
-        viewModel.startMockAnalysis(sampleImages(count = 2))
+        viewModel.startAnalysis(sampleImages(count = 2))
         runCurrent()
         advanceTimeBy(500.milliseconds)
         runCurrent()
@@ -217,7 +255,9 @@ class ScreenshotAnalysisProgressViewModelTest {
         every { Uri.parse("content://1") } returns firstUri
 
         val firstResult = analysisResult(captureId = 1L)
-        every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png")) } returns firstResult
+        coEvery {
+            repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png"))
+        } returns firstResult
         every {
             screenshotImageStorage.copyImageFromUri(1L, firstUri)
         } returns "/files/1"
@@ -228,7 +268,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             screenshotCardRepository.saveAnalysisResults(any(), any())
         } returns Unit
 
-        viewModel.startMockAnalysis(sampleImages(count = 1))
+        viewModel.startAnalysis(sampleImages(count = 1))
         runCurrent()
         advanceTimeBy(500.milliseconds)
         runCurrent()
@@ -258,7 +298,9 @@ class ScreenshotAnalysisProgressViewModelTest {
         every { Uri.parse("content://1") } returns firstUri
 
         val firstResult = analysisResult(captureId = 1L)
-        every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png")) } returns firstResult
+        coEvery {
+            repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png"))
+        } returns firstResult
         every {
             screenshotImageStorage.copyImageFromUri(1L, firstUri)
         } returns null
@@ -269,7 +311,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             screenshotCardRepository.saveAnalysisResults(any(), any())
         } returns Unit
 
-        viewModel.startMockAnalysis(sampleImages(count = 1))
+        viewModel.startAnalysis(sampleImages(count = 1))
         runCurrent()
         advanceTimeBy(500.milliseconds)
         runCurrent()
@@ -301,8 +343,12 @@ class ScreenshotAnalysisProgressViewModelTest {
 
         val firstResult = analysisResult(captureId = 1L)
         val secondResult = analysisResult(captureId = 2L)
-        every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png")) } returns firstResult
-        every { repository.analyze(ScreenshotAnalysisInput(fileName = "image_2.png")) } returns secondResult
+        coEvery {
+            repository.analyze(ScreenshotAnalysisInput(fileName = "image_1.png"))
+        } returns firstResult
+        coEvery {
+            repository.analyze(ScreenshotAnalysisInput(fileName = "image_2.png"))
+        } returns secondResult
         every { screenshotImageStorage.copyImageFromUri(any(), any()) } returns "/files/image"
         coEvery {
             screenshotCardRepository.saveAnalysisResults(
@@ -317,7 +363,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             )
         } returns Unit
 
-        viewModel.startMockAnalysis(sampleImages(count = 2))
+        viewModel.startAnalysis(sampleImages(count = 2))
         runCurrent()
         advanceTimeBy(500.milliseconds)
         runCurrent()
