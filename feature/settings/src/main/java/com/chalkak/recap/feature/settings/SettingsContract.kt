@@ -32,7 +32,6 @@ sealed interface NotificationSettingsAction {
 }
 
 data class AccountManagementUiState(
-    val accountEmail: String = "",
     val joinedDate: String = "",
     val dialog: AccountManagementDialog = AccountManagementDialog.None,
 )

@@ -1,6 +1,7 @@
 package com.chalkak.recap.feature.settings
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -14,6 +15,10 @@ fun AccountManagementRoute(
     viewModel: AccountManagementViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.loadAccountInfo()
+    }
 
     AccountManagementScreen(
         uiState = uiState,

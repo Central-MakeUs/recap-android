@@ -13,6 +13,7 @@ import com.chalkak.recap.core.data.network.mapHttpException
 import com.chalkak.recap.core.model.auth.AuthError
 import com.chalkak.recap.core.model.auth.AuthProvider
 import com.chalkak.recap.core.model.auth.AuthSignInResult
+import com.chalkak.recap.core.model.auth.KakaoUserProfile
 import com.chalkak.recap.core.model.auth.SocialAuthCredential
 import java.io.IOException
 import javax.inject.Inject
@@ -30,6 +31,10 @@ class AuthRepository @Inject constructor(
             onSuccess = { credential -> loginWithServer(credential) },
             onFailure = { Result.failure(it) },
         )
+
+    suspend fun getKakaoUserProfile(): Result<KakaoUserProfile> =
+        kakaoLoginClient.fetchUserProfile()
+
 
     suspend fun refresh(): Result<AuthSignInResult.Success> {
         val refreshToken = sessionTokenStore.getRefreshToken()
@@ -58,15 +63,12 @@ class AuthRepository @Inject constructor(
             return Result.success(Unit)
         }
 
-        return try {
+        val result = try {
             val response = authApi.logout(
                 body = LogoutRequestDto(refreshToken = refreshToken),
             )
             when {
-                response.success -> {
-                    sessionTokenStore.clear()
-                    Result.success(Unit)
-                }
+                response.success -> Result.success(Unit)
                 response.error != null -> {
                     Result.failure(
                         AuthException(
@@ -88,6 +90,9 @@ class AuthRepository @Inject constructor(
         } catch (error: Throwable) {
             Result.failure(AuthException(AuthError.Unknown, error))
         }
+        // 서버 실패여도 로컬 세션은 비워 재로그인 가능하게 한다.
+        sessionTokenStore.clear()
+        return result
     }
 
     private suspend fun loginWithServer(

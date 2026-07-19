@@ -17,8 +17,8 @@
     <string name="settings_account_logout">로그아웃</string>
     <string name="settings_account_withdraw">회원 탈퇴</string>
     <string name="settings_account_joined_format">%1$s 가입</string>
+    <string name="settings_account_kakao_login_status">Kakao 계정으로 로그인됨</string>
     <string name="settings_account_kakao_content_description">카카오 계정</string>
-    <string name="settings_account_preview_email">Recap@kakao.com</string>
     <string name="settings_account_preview_joined_date">2026.6.12</string>
     <string name="settings_item_app_notification">앱 알림 설정</string>
     <string name="settings_item_photo_access">사진 접근 권한</string>

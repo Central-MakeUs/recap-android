@@ -265,4 +265,15 @@ class AuthRepositoryTest {
         assertTrue(result.isSuccess)
         coVerify(exactly = 1) { sessionTokenStore.clear() }
     }
+
+    @Test
+    fun `logout clears session tokens even when server fails`() = runTest {
+        coEvery { sessionTokenStore.getRefreshToken() } returns "refresh-token"
+        coEvery { authApi.logout(any()) } throws IOException("offline")
+
+        val result = repository.logout()
+
+        assertTrue(result.isFailure)
+        coVerify(exactly = 1) { sessionTokenStore.clear() }
+    }
 }

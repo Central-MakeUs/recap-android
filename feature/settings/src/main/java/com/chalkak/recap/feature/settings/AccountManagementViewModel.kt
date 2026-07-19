@@ -3,6 +3,7 @@ package com.chalkak.recap.feature.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.LocalAppDataResetter
+import com.chalkak.recap.core.data.auth.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,16 +14,22 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class AccountManagementViewModel @Inject constructor(
+    private val authRepository: AuthRepository,
     private val localAppDataResetter: LocalAppDataResetter,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(
-        AccountManagementUiState(
-            // 계정 프로필 API 연동 전 임시 표시값
-            accountEmail = PREVIEW_ACCOUNT_EMAIL,
-            joinedDate = PREVIEW_JOINED_DATE,
-        ),
-    )
+    private val _uiState = MutableStateFlow(AccountManagementUiState())
     val uiState: StateFlow<AccountManagementUiState> = _uiState.asStateFlow()
+
+    fun loadAccountInfo() {
+        viewModelScope.launch {
+            val loaded = authRepository.getKakaoUserProfile().getOrNull()
+            _uiState.update {
+                it.copy(
+                    joinedDate = loaded?.connectedAt?.let(::formatJoinedDate).orEmpty(),
+                )
+            }
+        }
+    }
 
     fun onAction(action: AccountManagementAction) {
         when (action) {
@@ -40,20 +47,16 @@ class AccountManagementViewModel @Inject constructor(
             AccountManagementAction.ConfirmWithdraw,
             -> {
                 _uiState.update { it.copy(dialog = AccountManagementDialog.None) }
-                resetLocalAccountData()
+                logoutAndResetLocalData()
             }
         }
     }
 
-    private fun resetLocalAccountData() {
+    private fun logoutAndResetLocalData() {
         viewModelScope.launch {
+            // 서버 실패여도 AuthRepository가 로컬 토큰을 clear한다.
+            authRepository.logout()
             localAppDataResetter.resetDatabaseAndOnboarding()
         }
-    }
-
-    companion object {
-        // string resource 값은 ViewModel에서 읽지 않으므로 화면 프리뷰와 동일한 임시값을 둔다.
-        const val PREVIEW_ACCOUNT_EMAIL = "Recap@kakao.com"
-        const val PREVIEW_JOINED_DATE = "2026.6.12"
     }
 }

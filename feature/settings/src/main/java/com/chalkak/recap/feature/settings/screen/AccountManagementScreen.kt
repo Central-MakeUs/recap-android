@@ -99,7 +99,6 @@ fun AccountManagementScreen(
                     )
                     Spacer(modifier = Modifier.height(AccountManagementTokens.SectionHeaderBottomPadding))
                     AccountLoginInfoRow(
-                        email = uiState.accountEmail,
                         joinedDate = uiState.joinedDate,
                     )
                     Spacer(modifier = Modifier.height(AccountManagementTokens.DividerTopPadding))
@@ -165,7 +164,6 @@ fun AccountManagementScreen(
 
 @Composable
 private fun AccountLoginInfoRow(
-    email: String,
     joinedDate: String,
     modifier: Modifier = Modifier,
 ) {
@@ -194,7 +192,7 @@ private fun AccountLoginInfoRow(
             verticalArrangement = Arrangement.spacedBy(AccountManagementTokens.AccountTextSpacing),
         ) {
             Text(
-                text = email,
+                text = stringResource(R.string.settings_account_kakao_login_status),
                 style = RecapBody1,
                 color = RecapGray900,
             )
@@ -298,7 +296,6 @@ private fun AccountManagementScreenPreview() {
     RECAPTheme(dynamicColor = false) {
         AccountManagementScreen(
             uiState = AccountManagementUiState(
-                accountEmail = stringResource(R.string.settings_account_preview_email),
                 joinedDate = stringResource(R.string.settings_account_preview_joined_date),
             ),
             onAction = {},
@@ -317,7 +314,6 @@ private fun AccountManagementLogoutDialogPreview() {
     RECAPTheme(dynamicColor = false) {
         AccountManagementScreen(
             uiState = AccountManagementUiState(
-                accountEmail = stringResource(R.string.settings_account_preview_email),
                 joinedDate = stringResource(R.string.settings_account_preview_joined_date),
                 dialog = AccountManagementDialog.Logout,
             ),
@@ -337,7 +333,6 @@ private fun AccountManagementWithdrawDialogPreview() {
     RECAPTheme(dynamicColor = false) {
         AccountManagementScreen(
             uiState = AccountManagementUiState(
-                accountEmail = stringResource(R.string.settings_account_preview_email),
                 joinedDate = stringResource(R.string.settings_account_preview_joined_date),
                 dialog = AccountManagementDialog.Withdraw,
             ),
