@@ -34,6 +34,22 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
+    suspend fun getOnboardingStep(): String? {
+        return dataStore.data.first()[ONBOARDING_STEP]
+    }
+
+    suspend fun setOnboardingStep(step: String) {
+        dataStore.edit { preferences ->
+            preferences[ONBOARDING_STEP] = step
+        }
+    }
+
+    suspend fun clearOnboardingStep() {
+        dataStore.edit { preferences ->
+            preferences.remove(ONBOARDING_STEP)
+        }
+    }
+
     suspend fun getAnalysisDataSourceMode(): AnalysisDataSourceMode {
         return analysisDataSourceMode.first()
     }
@@ -56,6 +72,7 @@ class UserPreferencesRepository @Inject constructor(
 
     private companion object {
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
+        val ONBOARDING_STEP = stringPreferencesKey("onboarding_step")
         val ANALYSIS_DATA_SOURCE_MODE = stringPreferencesKey("analysis_data_source_mode")
     }
 }

@@ -43,6 +43,22 @@ class UserPreferencesRepositoryTest {
     }
 
     @Test
+    fun `onboardingStep defaults to null`() = runTest {
+        assertEquals(null, repository.getOnboardingStep())
+    }
+
+    @Test
+    fun `setOnboardingStep persists and clearOnboardingStep removes value`() = runTest {
+        repository.setOnboardingStep("PermissionGuide")
+
+        assertEquals("PermissionGuide", repository.getOnboardingStep())
+
+        repository.clearOnboardingStep()
+
+        assertEquals(null, repository.getOnboardingStep())
+    }
+
+    @Test
     fun `analysisDataSourceMode defaults to MOCK`() = runTest {
         assertEquals(AnalysisDataSourceMode.MOCK, repository.analysisDataSourceMode.first())
         assertEquals(AnalysisDataSourceMode.MOCK, repository.getAnalysisDataSourceMode())

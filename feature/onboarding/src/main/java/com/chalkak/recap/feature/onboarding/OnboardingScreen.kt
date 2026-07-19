@@ -44,7 +44,6 @@ fun OnboardingScreen(
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState? = null,
     showLandingLoginImmediately: Boolean = false,
-    showDebugEmailLogin: Boolean = false,
     illustrationSignalFlow: Flow<OnboardingIllustrationSignal> = emptyFlow(),
 ) {
     val resolvedSnackbarHostState = snackbarHostState ?: remember { SnackbarHostState() }
@@ -69,7 +68,6 @@ fun OnboardingScreen(
                     modifier = screenModifier,
                     showLoginImmediately = showLandingLoginImmediately,
                     isLoading = uiState.isLoading,
-                    showDebugEmailLogin = showDebugEmailLogin,
                     illustrationSignalFlow = illustrationSignalFlow,
                 )
 

@@ -4,8 +4,10 @@ import android.content.Context
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.auth.AuthException
 import com.chalkak.recap.core.data.auth.AuthRepository
+import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.data.screenshot.ImagePermissionRepository
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.auth.AuthError
@@ -25,10 +27,10 @@ class OnboardingViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val imagePermissionRepository: ImagePermissionRepository,
     private val authRepository: AuthRepository,
+    private val sessionTokenStore: SessionTokenStore,
+    private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(
-        OnboardingUiState(step = savedStateHandle.restoreOnboardingStep()),
-    )
+    private val _uiState = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
     private val _illustrationSignals = MutableSharedFlow<OnboardingIllustrationSignal>(
         extraBufferCapacity = 1,
@@ -40,6 +42,9 @@ class OnboardingViewModel @Inject constructor(
 
     init {
         refreshImagePermissionLevel()
+        viewModelScope.launch {
+            applyStep(resolveInitialStep())
+        }
     }
 
     fun imagePermissionRequest(): Array<String> = imagePermissionRepository.imagePermissionRequest()
@@ -96,7 +101,6 @@ class OnboardingViewModel @Inject constructor(
         when (action) {
             OnboardingAction.Back -> moveBack()
             OnboardingAction.LoginWithKakao -> Unit
-            OnboardingAction.LoginWithEmail -> proceedAfterLogin()
 
             OnboardingAction.SelectFirstScreenshots -> {
                 val accessLevel = refreshImagePermissionLevel()
@@ -141,6 +145,13 @@ class OnboardingViewModel @Inject constructor(
     }
 
     private fun moveTo(step: OnboardingStep) {
+        applyStep(step)
+        viewModelScope.launch {
+            userPreferencesRepository.setOnboardingStep(step.name)
+        }
+    }
+
+    private fun applyStep(step: OnboardingStep) {
         savedStateHandle[ONBOARDING_STEP_SAVED_STATE_KEY] = step.name
         _uiState.update { current ->
             current.copy(step = step, errorMessage = null)
@@ -149,6 +160,38 @@ class OnboardingViewModel @Inject constructor(
 
     private fun moveBack() {
         moveTo(_uiState.value.step.previousStep())
+    }
+
+    private suspend fun resolveInitialStep(): OnboardingStep {
+        val refreshToken = sessionTokenStore.getRefreshToken()
+        if (refreshToken == null) {
+            userPreferencesRepository.clearOnboardingStep()
+            return OnboardingStep.Landing
+        }
+
+        val refreshResult = authRepository.refresh()
+        val refreshError = (refreshResult.exceptionOrNull() as? AuthException)?.authError
+        if (refreshError is AuthError.Server &&
+            refreshError.code in INVALID_REFRESH_TOKEN_CODES
+        ) {
+            sessionTokenStore.clear()
+            userPreferencesRepository.clearOnboardingStep()
+            return OnboardingStep.Landing
+        }
+
+        val storedStep = userPreferencesRepository.getOnboardingStep()
+            ?.let { name -> runCatching { OnboardingStep.valueOf(name) }.getOrNull() }
+        return when (storedStep) {
+            null, OnboardingStep.Landing -> OnboardingStep.PermissionGuide
+            else -> storedStep
+        }
+    }
+
+    private companion object {
+        val INVALID_REFRESH_TOKEN_CODES = setOf(
+            "INVALID_REFRESH_TOKEN",
+            "EXPIRED_REFRESH_TOKEN",
+        )
     }
 }
 
@@ -162,9 +205,3 @@ private fun OnboardingStep.previousStep(): OnboardingStep =
     }
 
 internal const val ONBOARDING_STEP_SAVED_STATE_KEY = "onboarding_step"
-
-private fun SavedStateHandle.restoreOnboardingStep(): OnboardingStep {
-    val savedStepName = get<String>(ONBOARDING_STEP_SAVED_STATE_KEY) ?: return OnboardingStep.Landing
-    return runCatching { OnboardingStep.valueOf(savedStepName) }
-        .getOrDefault(OnboardingStep.Landing)
-}

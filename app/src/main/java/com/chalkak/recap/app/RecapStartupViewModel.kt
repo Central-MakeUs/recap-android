@@ -3,6 +3,7 @@ package com.chalkak.recap.app
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.UserPreferencesRepository
+import com.chalkak.recap.core.data.network.SessionTokenStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +17,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class RecapStartupViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
+    private val sessionTokenStore: SessionTokenStore,
 ) : ViewModel() {
     private val _pendingOpenOrganize = MutableStateFlow(false)
     val pendingOpenOrganize: StateFlow<Boolean> = _pendingOpenOrganize.asStateFlow()
@@ -45,6 +47,8 @@ class RecapStartupViewModel @Inject constructor(
     fun resetOnboarding() {
         viewModelScope.launch {
             _pendingOpenOrganize.value = false
+            sessionTokenStore.clear()
+            userPreferencesRepository.clearOnboardingStep()
             userPreferencesRepository.setOnboardingCompleted(false)
         }
     }
