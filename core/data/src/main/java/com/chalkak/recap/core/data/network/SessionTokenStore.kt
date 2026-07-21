@@ -59,9 +59,11 @@ class SessionTokenStore @Inject constructor(
 
     suspend fun getRefreshToken(): String? = getTokens()?.refreshToken
 
-    fun peekAccessToken(): String? {
-        cached?.accessToken?.let { return it }
-        return runBlocking { getAccessToken() }
+    fun peekAccessToken(): String? = peekTokens()?.accessToken
+
+    fun peekTokens(): SessionTokens? {
+        cached?.let { return it }
+        return runBlocking { getTokens() }
     }
 
     private suspend fun ensureHydrated() {
