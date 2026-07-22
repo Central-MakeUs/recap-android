@@ -4,32 +4,22 @@
 
 ## Status
 
-
 ## Owner
-
 
 ## Context
 
-
 ## Spec
-
 
 ## Files to Touch
 
-
 ## Acceptance Criteria
-
 
 ## Validation
 
-
 ## Out of scope
-
 
 ## Technical Debt
 
-
 ## Cursor Result
-
 
 ## Codex Review

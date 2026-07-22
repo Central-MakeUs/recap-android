@@ -383,11 +383,17 @@
     <string name="organize_notification_permission_later_button">나중에 하기</string>
     <string name="organize_notification_permission_notice">알림 설정은 설정에서 언제든 변경할 수 있어요.</string>
     <string name="organize_screenshot_selection_title">스크린샷 선택</string>
+    <string name="organize_discard_selection_confirm_title">스크린샷 선택을 그만둘까요?</string>
+    <string name="organize_discard_selection_confirm_description">지금 나가면 선택한 스크린샷이\n모두 해제돼요.</string>
+    <string name="organize_discard_selection_confirm_keep_organizing">계속 정리하기</string>
+    <string name="organize_discard_selection_confirm_quit">그만두기</string>
     <string name="screenshot_picker_close_content_description">닫기</string>
     <string name="screenshot_picker_confirm_content_description">선택 완료</string>
     <string name="organize_cancel">취소</string>
     <string name="organize_next_with_count">다음(%1$d)</string>
     <string name="organize_selection_complete_with_count">선택 완료 (%1$d장)</string>
+    <string name="organize_selection_count">%1$d/%2$d</string>
+    <string name="organize_selection_complete_button">%1$d장 선택 완료</string>
     <string name="organize_confirm_title">선택 이미지 확인</string>
     <string name="organize_confirm_count">%1$d장</string>
     <string name="organize_start_organizing">정리 시작하기</string>

@@ -1,6 +1,5 @@
 package com.chalkak.recap.feature.organize
 
-import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -9,10 +8,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,16 +18,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.model.LocalImage
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun OrganizeRoute(
     onNavigateBack: () -> Unit,
@@ -45,8 +36,7 @@ fun OrganizeRoute(
         viewModel.refreshScreenshots()
     }
 
-    val snackbarHostState = remember { SnackbarHostState() }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val coroutineScope = rememberCoroutineScope()
     var destination by rememberSaveable { mutableStateOf(OrganizeDestination.Selection) }
     // Destination과 분리: Confirmation fade-in과 시트 hide를 동시에 진행한다.
@@ -57,10 +47,6 @@ fun OrganizeRoute(
     var suppressPickerDismiss by remember { mutableStateOf(false) }
     // Exiting 상태가 복원되면 취소된 hide coroutine을 재실행하지 않고 즉시 종료한다.
     var isAnimatedExitRunning by remember { mutableStateOf(false) }
-    val maxSelectionMessage = stringResource(
-        R.string.organize_max_selection_message,
-        MAX_SELECTION_COUNT,
-    )
 
     fun navigateBackToPicker() {
         destination = OrganizeDestination.Selection
@@ -96,13 +82,6 @@ fun OrganizeRoute(
         }
     }
 
-    LaunchedEffect(uiState.showMaxSelectionReached) {
-        if (uiState.showMaxSelectionReached) {
-            snackbarHostState.showSnackbar(maxSelectionMessage)
-            viewModel.onAction(OrganizeAction.DismissMaxSelectionMessage)
-        }
-    }
-
     LaunchedEffect(destination) {
         if (destination == OrganizeDestination.Exiting && !isAnimatedExitRunning) {
             exitOrganizeImmediately()
@@ -122,52 +101,45 @@ fun OrganizeRoute(
         exitOrganizeImmediately()
     }
 
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        containerColor = Color.Transparent,
-        contentColor = MaterialTheme.colorScheme.onBackground,
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
-    ) { _ ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            AnimatedVisibility(
-                visible = destination == OrganizeDestination.Confirmation,
-                enter = fadeIn(animationSpec = tween(OrganizeTransitionTokens.ConfirmationFadeMs)),
-                exit = fadeOut(animationSpec = tween(OrganizeTransitionTokens.ConfirmationFadeMs)),
-            ) {
-                ScreenshotConfirmationScreen(
-                    uiState = uiState,
-                    onAction = viewModel::onAction,
-                    onBackClick = ::exitOrganizeImmediately,
-                    onAddMoreClick = ::navigateBackToPicker,
-                    onStartOrganizingClick = {
-                        if (uiState.canProceed) {
-                            val selectedScreenshots = uiState.availableScreenshots
-                                .filter { screenshot -> screenshot.uri in uiState.selectedUris }
-                                .sortedBy { screenshot ->
-                                    uiState.selectedUris.indexOf(screenshot.uri)
-                                }
-                            viewModel.onAction(OrganizeAction.ClearSelection)
-                            onOrganizeComplete(selectedScreenshots)
-                        }
-                    },
-                )
-            }
+    Box(modifier = Modifier.fillMaxSize()) {
+        AnimatedVisibility(
+            visible = destination == OrganizeDestination.Confirmation,
+            enter = fadeIn(animationSpec = tween(OrganizeTransitionTokens.ConfirmationFadeMs)),
+            exit = fadeOut(animationSpec = tween(OrganizeTransitionTokens.ConfirmationFadeMs)),
+        ) {
+            ScreenshotConfirmationScreen(
+                uiState = uiState,
+                onAction = viewModel::onAction,
+                onBackClick = ::exitOrganizeImmediately,
+                onAddMoreClick = ::navigateBackToPicker,
+                onStartOrganizingClick = {
+                    if (uiState.canProceed) {
+                        val selectedScreenshots = uiState.availableScreenshots
+                            .filter { screenshot -> screenshot.uri in uiState.selectedUris }
+                            .sortedBy { screenshot ->
+                                uiState.selectedUris.indexOf(screenshot.uri)
+                            }
+                        viewModel.onAction(OrganizeAction.ClearSelection)
+                        onOrganizeComplete(selectedScreenshots)
+                    }
+                },
+            )
+        }
 
-            if (showScreenshotPicker) {
-                ScreenshotPicker(
-                    uiState = uiState,
-                    onAction = viewModel::onAction,
-                    onDismissRequest = {
-                        // Material이 이미 hide 애니메이션을 끝낸 뒤 호출된다.
-                        if (!suppressPickerDismiss) {
-                            exitOrganizeImmediately()
-                        }
-                    },
-                    onCloseClick = ::dismissScreenshotPickerAndExit,
-                    onConfirmClick = ::navigateToConfirmation,
-                    sheetState = sheetState,
-                )
-            }
+        if (showScreenshotPicker) {
+            ScreenshotPicker(
+                uiState = uiState,
+                onAction = viewModel::onAction,
+                onDismissRequest = {
+                    // Material이 이미 hide 애니메이션을 끝낸 뒤 호출된다.
+                    if (!suppressPickerDismiss) {
+                        exitOrganizeImmediately()
+                    }
+                },
+                onCloseClick = ::dismissScreenshotPickerAndExit,
+                onConfirmClick = ::navigateToConfirmation,
+                sheetState = sheetState,
+            )
         }
     }
 }
