@@ -45,8 +45,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
         buildConfig = true
@@ -68,7 +68,6 @@ dependencies {
     implementation(project(":core:design"))
     implementation(project(":feature:home"))
     implementation(project(":feature:collection"))
-    implementation(project(":feature:demo"))
     implementation(project(":feature:developer"))
     implementation(project(":feature:settings"))
     implementation(project(":feature:onboarding"))
@@ -92,19 +91,15 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.chrisbanes.haze)
     implementation(libs.androidx.hilt.navigation.compose)
-    implementation(libs.androidx.hilt.work)
-    implementation(libs.androidx.work.runtime.ktx)
     implementation(libs.hilt.android)
     implementation(libs.kakao.user)
     implementation(libs.play.services.oss.licenses)
     implementation(libs.timber)
-    ksp(libs.androidx.hilt.compiler)
     ksp(libs.hilt.compiler)
     ksp(libs.kotlin.metadata.jvm)
     testImplementation(libs.junit)
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.androidx.room.testing)
-    testImplementation(libs.androidx.work.testing)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)

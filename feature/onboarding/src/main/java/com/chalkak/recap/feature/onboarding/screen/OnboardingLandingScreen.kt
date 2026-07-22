@@ -5,16 +5,13 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -43,13 +40,11 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -86,7 +81,6 @@ fun OnboardingLandingScreen(
     modifier: Modifier = Modifier,
     showLoginImmediately: Boolean = false,
     isLoading: Boolean = false,
-    showDebugEmailLogin: Boolean = false,
     illustrationSignalFlow: Flow<OnboardingIllustrationSignal> = emptyFlow(),
 ) {
     var showLogin by rememberSaveable { mutableStateOf(showLoginImmediately) }
@@ -178,9 +172,7 @@ fun OnboardingLandingScreen(
 
         SocialLoginSection(
             onKakaoClick = { onAction(OnboardingAction.LoginWithKakao) },
-            onEmailClick = { onAction(OnboardingAction.LoginWithEmail) },
             isLoading = isLoading,
-            showDebugEmailLogin = showDebugEmailLogin,
             interactive = showLogin,
             onLoginLabelPositioned = { topInRoot ->
                 loginLabelTopY = topInRoot
@@ -323,9 +315,7 @@ private fun BrandHeadline(
 @Composable
 private fun SocialLoginSection(
     onKakaoClick: () -> Unit,
-    onEmailClick: () -> Unit,
     isLoading: Boolean,
-    showDebugEmailLogin: Boolean,
     interactive: Boolean,
     onLoginLabelPositioned: (topInRoot: Float) -> Unit,
     modifier: Modifier = Modifier,
@@ -376,20 +366,6 @@ private fun SocialLoginSection(
                     )
                 }
             }
-        }
-        if (showDebugEmailLogin) {
-            Spacer(modifier = Modifier.height(20.dp))
-            Text(
-                text = stringResource(R.string.onboarding_email_login_button),
-                style = MaterialTheme.typography.bodyLarge,
-                color = OnboardingGray300,
-                textDecoration = TextDecoration.Underline,
-                modifier = Modifier.clickable(
-                    enabled = interactive && !isLoading,
-                    role = Role.Button,
-                    onClick = onEmailClick,
-                ),
-            )
         }
     }
 }

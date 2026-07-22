@@ -103,7 +103,7 @@ fun ScreenshotEditScreen(
                 Text(
                     text = stringResource(
                         R.string.screenshot_organized_date_format,
-                        formatOrganizedDate(content.card.createdAtMillis),
+                        formatOrganizedDate(content.card.analysisResult.organizedAt.toEpochMilli()),
                     ),
                     style = MaterialTheme.typography.labelMedium,
                     color = RecapGray500,

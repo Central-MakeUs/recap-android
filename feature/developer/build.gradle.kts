@@ -17,8 +17,8 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     buildFeatures {
@@ -26,11 +26,14 @@ android {
     }
 }
 
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
+
 dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:design"))
     implementation(project(":core:model"))
-    implementation(project(":feature:demo"))
     implementation(project(":feature:organize"))
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.material3)
@@ -45,5 +48,12 @@ dependencies {
     implementation(libs.chrisbanes.haze)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)
+    testImplementation(libs.junit)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.mockk)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testRuntimeOnly(libs.junit.vintage.engine)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }

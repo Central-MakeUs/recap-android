@@ -8,13 +8,14 @@
 :core:data
 ├── LocalScreenshotDataSource.kt        # MediaStore 기반 로컬 스크린샷 조회
 ├── RecapDatabase.kt                    # Room DB 정의
-├── RecapDatabaseMigrations.kt          # Room migration 정의
 ├── DatabaseModule.kt                   # Room DB/DAO Hilt 제공
 ├── UserPreferencesDataStoreOwner.kt    # user_preferences DataStore owner
 ├── UserPreferencesModule.kt            # DataStore Hilt 제공
 ├── UserPreferencesRepository.kt        # 사용자 설정 repository
-├── ocr/                                # OCR 작업/결과 로컬 저장
 └── screenshot/
+    ├── permission/                     # 이미지 권한 인터페이스/모듈
+    ├── analysis/                       # 분석 repository (mock/remote/switching)
+    ├── backend/                        # Mock/Remote 백엔드 모드 전환
     ├── image/                          # 앱 private 이미지 경로 관리
     └── persistence/                    # 분석 카드 Room 저장
 ```
@@ -27,23 +28,21 @@
 - 기기 MediaStore에서 로컬 스크린샷 목록을 조회한다.
 - Android 버전에 맞는 이미지 권한 요청 목록을 제공한다.
 - 현재 이미지 접근 수준을 `ImageAccessLevel`로 반환한다.
-- `OcrOrganizeRange` 기준으로 스크린샷 개수 또는 목록을 조회한다.
+- `ImagePermissionRepository`를 구현한다.
 
 주요 API:
 - `imagePermissionRequest()`
 - `currentImageAccessLevel()`
-- `countScreenshots(range)`
 - `queryRecentScreenshots(limit)`
 - `queryAllScreenshots()`
-- `queryScreenshots(range)`
 
 현재 조회 범위:
 - `MediaStore.Images.Media`
-- `RELATIVE_PATH = "DCIM/Screenshots/"`
+- `RELATIVE_PATH = "DCIM/Screenshots/"` 또는 `"Pictures/Screenshots/"`
 - 최신순 정렬: `DATE_ADDED DESC`
 
 주의사항:
-- 권한이 없으면 빈 목록 또는 `0`을 반환한다.
+- 권한이 없으면 빈 목록을 반환한다.
 - MediaStore 조회 실패는 예외를 밖으로 던지지 않고 빈 목록으로 처리한다.
 - 반환 모델은 `LocalImage`이며, 실제 이미지 bytes를 읽지 않는다.
 
@@ -54,92 +53,21 @@
 역할:
 - 앱 로컬 Room database의 단일 정의다.
 - DB 파일명은 `recap.db`다.
-- 현재 version은 `4`다.
+- 현재 version은 `1`다.
 - `exportSchema = false` 상태다.
+- schema 변경 시 version을 올리고 명시적 migration을 추가한다. destructive fallback은 사용하지 않는다.
 
 등록된 entity:
-- `OcrJobEntity`
-- `OcrResultEntity`
 - `ScreenshotCardEntity`
-- `ScreenshotKeyFieldEntity`
 
 제공 DAO:
-- `ocrDao()`
 - `screenshotCardDao()`
 
 ### `DatabaseModule`
 
 역할:
 - Hilt `SingletonComponent`에 `RecapDatabase` singleton을 제공한다.
-- `OcrDao`, `ScreenshotCardDao`를 DI로 제공한다.
-- `MIGRATION_1_2`, `MIGRATION_2_3`, `MIGRATION_3_4`를 Room builder에 등록한다.
-
-### `RecapDatabaseMigrations`
-
-현재 migration:
-- `MIGRATION_1_2`
-- `MIGRATION_2_3`
-- `MIGRATION_3_4`
-
-하는 일:
-- `MIGRATION_1_2`: 기존 OCR 테이블을 유지한 채 `screenshot_cards` 테이블을 추가한다.
-- `MIGRATION_1_2`: `screenshot_key_fields` 테이블을 추가한다.
-- `MIGRATION_1_2`: `screenshot_key_fields.imageId` index를 추가한다.
-- `MIGRATION_2_3`: `screenshot_cards`에 editable `body` 컬럼을 추가한다. 기존 row는 `''`로 초기화된다.
-- `MIGRATION_3_4`: legacy `primaryContentType = 'DESIGN_REFERENCE'` row만 `'OTHER'`로 치환한다. 다른 card/key-field 컬럼은 변경하지 않는다.
-
-주의사항:
-- 앱 데이터 삭제 후 새 설치하면 migration은 실행되지 않고 version 4 schema가 바로 생성된다.
-- 기존 version 1/2/3 DB가 남아 있는 기기에서는 등록된 migration이 필요하다.
-
-## OCR 로컬 저장
-
-### `ocr/OcrEntities`
-
-저장 테이블:
-- `ocr_jobs`
-- `ocr_results`
-
-`ocr_jobs` 역할:
-- WorkManager OCR 작업 단위의 상태를 저장한다.
-- `jobId`가 primary key다.
-- 작업 범위, 상태, 진행 개수, 시작/종료 시간, error message를 가진다.
-
-`ocr_results` 역할:
-- OCR 대상 이미지별 결과를 저장한다.
-- `resultId`는 auto-generated primary key다.
-- `jobId`, `imageUri`, `displayName`, `rawText`, `rawTextBlocksJson`, `sortIndex`를 가진다.
-
-mapper:
-- `OcrJobEntity.toDomain(results)`
-- `OcrResultEntity.toDomain()`
-- `List<OcrTextBlock>.toJson()`
-
-### `ocr/OcrDao`
-
-역할:
-- 최신 OCR job과 그 결과를 observe한다.
-- job/result insert 및 job progress/status update를 담당한다.
-
-주요 API:
-- `observeLatestJob()`
-- `observeResults(jobId)`
-- `insertJob(job)`
-- `insertResult(result)`
-- `updateJobProgress(...)`
-- `finishJob(...)`
-- `finishActiveJobs(...)`
-
-### `ocr/OcrRepository`
-
-역할:
-- `LocalScreenshotDataSource`, `OcrDao`, `WorkManager`를 묶는 OCR facade다.
-- 이미지 권한 관련 API는 `ImagePermissionRepository`로 노출한다.
-- OCR 시작 시 기존 active job을 cancel 상태로 마감하고 새 WorkManager job을 enqueue한다.
-
-주의사항:
-- 실제 OCR 처리는 `OcrWorker`가 담당한다.
-- repository는 UI가 Room/WorkManager 세부사항을 알지 않도록 숨긴다.
+- `ScreenshotCardDao`를 DI로 제공한다.
 
 ## 분석 카드 로컬 저장
 
@@ -147,79 +75,44 @@ mapper:
 
 저장 테이블:
 - `screenshot_cards`
-- `screenshot_key_fields`
 
 `screenshot_cards` 역할:
-- 분석된 스크린샷 카드의 parent row다.
-- primary key는 `imageId`다.
+- 분석된 스크린샷 카드 row다.
+- primary key는 `captureId`다.
 - 이미지 참조 경로와 분석 요약 정보를 저장한다.
 
 주요 컬럼:
-- `imageId`
+- `captureId`
 - `sourceImageUri`
 - `storedImagePath`
 - `thumbnailPath`
 - `title`
 - `summary`
 - `body`
-- `primaryContentType`
-- `confidence`
+- `typeCode`
+- `originalImageUrl`
 - `isFavorite`
-- `createdAtMillis`
+- `organizedAtMillis`
 - `updatedAtMillis`
-
-`screenshot_key_fields` 역할:
-- 분석 카드에 딸린 key-value field를 저장한다.
-- `imageId`로 `screenshot_cards.imageId`를 참조한다.
-- parent 삭제 시 cascade delete된다.
-- `imageId` index가 있다.
-
-주요 컬럼:
-- `id`
-- `imageId`
-- `label`
-- `value`
-- `displayPriority`
-- `isSensitive`
-
-relation holder:
-- `ScreenshotCardWithKeyFields`
 
 ### `screenshot/persistence/ScreenshotCardDao`
 
 역할:
-- 분석 카드와 key fields 저장/조회/수정/삭제를 담당한다.
+- 분석 카드 저장/조회/수정/삭제를 담당한다.
 
 주요 API:
-- `observeAllCards()`: `createdAtMillis DESC` 정렬로 전체 observe
-- `observeCard(imageId)`: 단일 카드 observe
-- `getCardByImageId(imageId)`
-- `saveAnalysisResults(entries)`
-- `updateFavorite(imageId, isFavorite, updatedAtMillis)`
-- `updateCardContent(imageId, title, summary, body, primaryContentType, updatedAtMillis)`
-- `deleteByImageId(imageId)`
-
-저장 정책:
-- `saveAnalysisResults`는 transaction으로 실행한다.
-- 기존 카드 재저장 시 기존 `createdAtMillis`는 유지한다.
-- key fields는 해당 `imageId`의 기존 row를 삭제한 뒤 새 목록으로 교체한다.
-- favorite은 `ScreenshotAnalysisResult.isFavorite` 값으로 저장된다.
+- `observeAllCards()`: `organizedAtMillis DESC` 정렬로 전체 observe
+- `observeCard(captureId)`: 단일 카드 observe
+- `getCardByCaptureId(captureId)`
+- `insertCards(cards)`
+- `updateFavorite(captureId, isFavorite, updatedAtMillis)`
+- `updateCardContent(captureId, title, summary, body, typeCode, updatedAtMillis)`
+- `deleteByCaptureId(captureId)`
 
 ### `screenshot/persistence/ScreenshotCardMappers`
 
 역할:
 - Room entity와 domain model 사이를 변환한다.
-- 이미지 참조값은 `ScreenshotAnalysisResult`에 강제로 넣지 않고 별도 `ScreenshotCardImageRefs`로 둔다.
-
-주요 타입:
-- `ScreenshotCardImageRefs`
-- `StoredScreenshotCard`
-- `ScreenshotCardSaveEntry`
-
-주요 mapper:
-- `ScreenshotAnalysisResult.toCardEntity(...)`
-- `ScreenshotAnalysisResult.toKeyFieldEntities()`
-- `ScreenshotCardWithKeyFields.toStoredScreenshotCard()`
 
 ### `screenshot/persistence/ScreenshotCardRepository`
 
@@ -229,13 +122,12 @@ relation holder:
 
 주요 API:
 - `observeStoredCards()`
-- `observeCard(imageId)`
-- `getCard(imageId)`
-- `saveAnalysisResults(results, imageRefsByImageId)`
-- `updateFavorite(imageId, isFavorite)`
-- `updateCardContent(imageId, title, summary, body, primaryContentType, updatedAtMillis)`
-- `deleteCard(imageId)`
-- `deleteCards(imageIds)`
+- `observeCard(captureId)`
+- `getCard(captureId)`
+- `updateFavorite(captureId, isFavorite)`
+- `updateCardContent(...)`
+- `deleteCard(captureId)`
+- `deleteCards(captureIds)`
 - `deleteAllCards()`
 
 ### `screenshot/persistence/ScreenshotCardModule`
@@ -285,27 +177,55 @@ relation holder:
 
 역할:
 - 사용자 설정 접근 API를 제공한다.
-- 현재는 온보딩 완료 여부만 관리한다.
+- 현재는 온보딩 완료 여부/단계만 관리한다.
 
 주요 API:
 - `onboardingCompleted: Flow<Boolean>`
 - `setOnboardingCompleted(completed)`
+- `getOnboardingStep()` / `setOnboardingStep(step)` / `clearOnboardingStep()`
 
 저장 key:
 - `onboarding_completed`
+- `onboarding_step`
 
 주의사항:
-- 외부 API는 기존과 동일하게 유지한다.
+- 스크린샷 backend 모드는 `ScreenshotBackendModeStore`가 같은 `user_preferences` DataStore에서 관리한다.
 - 새 설정을 추가할 때는 같은 `user_preferences` DataStore를 사용하고, 별도 DataStore 파일을 만들지 않는다.
+
+### `ScreenshotBackendModeStore`
+
+역할:
+- 전역 스크린샷 backend 모드(`MOCK` / `REMOTE`)를 관찰·저장한다.
+- Debug에서만 저장값을 사용하고, non-debug 현재 단계는 항상 `MOCK`이다.
+
+저장 key:
+- `screenshot_backend_mode` (신규, 우선)
+- `analysis_data_source_mode` (legacy fallback, `setMode` 시 제거)
+
+자세한 전환 구조는 `docs/ANALYSIS_DATA_SOURCE.md`를 본다.
+
+## Mock backend vs Remote backend 저장 SoT
+
+| | Mock backend | Remote backend |
+|--|--------------|----------------|
+| 정보카드 SoT | Room `ScreenshotCardRepository` | 서버 Capture/Storage API |
+| 원본 이미지 | 앱 private `ScreenshotImageStorage` | 서버 URL (기기 원본 캐시 없음) |
+| 썸네일 | 앱 private 썸네일 파일 | `RemoteCaptureThumbnailCache` (capture ID 기반 로컬 캐시) |
+| Mock 구현 | `MockHomeRepository`, `MockStorageRepository`, `MockCaptureMutationRepository` 등 | — |
+| Remote 구현 | — | `RemoteHomeRepository`, `RemoteStorageRepository`, `RemoteCaptureMutationRepository` 등 |
+
+모드 전환 시 `MockScreenshotDataResetter`가 Mock Room 카드와 private 원본/썸네일만 삭제한다. session token·onboarding·일반 사용자 설정은 유지한다.
 
 ## 현재 연결되지 않은 부분
 
 다음 항목은 구현체는 존재하지만 아직 앱 flow에 완전히 연결되지 않았다.
 
-- Home/Collection UI는 아직 `ScreenshotCardRepository`의 Room 데이터를 표시하지 않는다.
-- 실제 OCR/Firebase AI 결과를 `ScreenshotCardRepository`에 저장하는 연결은 아직 없다.
-- 썸네일 생성은 아직 없다.
+- Capture 상세의 Mock/Remote repository 전환은 아직 없다. (즐겨찾기 토글은 `CaptureMutationRepository`로 연결됨)
+- 썸네일 생성 pipeline(원본→썸네일)은 Mock 경로에 제한적으로만 있다.
 - 이미지 bytes는 Room BLOB으로 저장하지 않는다.
+
+Remote 업로드/정리 파이프라인(`issueUploadUrls` → PUT → `organize` → status poll → ack)은
+`RemoteScreenshotAnalysisRepository`에서 `CaptureRepository`를 통해 연결된다.
 
 ## 테스트
 

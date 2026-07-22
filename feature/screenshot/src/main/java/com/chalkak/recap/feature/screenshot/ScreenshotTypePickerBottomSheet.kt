@@ -205,7 +205,7 @@ private fun ScreenshotTypePickerBottomSheetPreview() {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     ScreenshotSheetDragHandle()
                     ScreenshotTypePickerBottomSheetContent(
-                        selectedType = ScreenshotContentType.SCHEDULE_RESERVATION,
+                        selectedType = ScreenshotContentType.SCHEDULE,
                         onTypeSelected = {},
                         onConfirmClick = {},
                         modifier = Modifier
@@ -225,15 +225,15 @@ private fun ScreenshotTypePickerBottomSheetPreview() {
 
 /** RecapCategoryType 표시 순서와 동일한 3x3 배치. */
 private val TypePickerOptions = listOf(
-    ScreenshotContentType.SHOPPING_PRODUCT,
-    ScreenshotContentType.PLACE_RESTAURANT,
-    ScreenshotContentType.SCHEDULE_RESERVATION,
-    ScreenshotContentType.INFO_KNOWLEDGE,
-    ScreenshotContentType.BOOK_CONTENT,
-    ScreenshotContentType.BENEFIT_EVENT,
-    ScreenshotContentType.RECORD_CAPTURE,
-    ScreenshotContentType.JOB_CAREER,
-    ScreenshotContentType.OTHER,
+    ScreenshotContentType.SHOPPING,
+    ScreenshotContentType.PLACE,
+    ScreenshotContentType.SCHEDULE,
+    ScreenshotContentType.KNOWLEDGE,
+    ScreenshotContentType.CONTENT,
+    ScreenshotContentType.BENEFIT,
+    ScreenshotContentType.RECORD,
+    ScreenshotContentType.JOB,
+    ScreenshotContentType.ETC,
 )
 
 private object ScreenshotTypePickerBottomSheetTokens {

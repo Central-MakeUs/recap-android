@@ -27,7 +27,7 @@ import kotlinx.serialization.Serializable
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScreenshotRoute(
-    imageId: String,
+    captureId: Long,
     onNavigateBack: () -> Unit,
     onDeleteSucceeded: () -> Unit,
     viewModel: ScreenshotViewModel = hiltViewModel(),
@@ -41,11 +41,11 @@ fun ScreenshotRoute(
     var showActionSheet by rememberSaveable { mutableStateOf(false) }
     var showTypePicker by rememberSaveable { mutableStateOf(false) }
     var tempTypeSelection by rememberSaveable {
-        mutableStateOf(ScreenshotContentType.OTHER.name)
+        mutableStateOf(ScreenshotContentType.ETC.name)
     }
 
-    LaunchedEffect(imageId) {
-        viewModel.bind(imageId)
+    LaunchedEffect(captureId) {
+        viewModel.bind(captureId)
     }
 
     LaunchedEffect(viewModel) {
@@ -83,7 +83,7 @@ fun ScreenshotRoute(
     val contentState = uiState as? ScreenshotUiState.Content
     val tempType = runCatching {
         ScreenshotContentType.valueOf(tempTypeSelection)
-    }.getOrDefault(ScreenshotContentType.OTHER)
+    }.getOrDefault(ScreenshotContentType.ETC)
 
     fun leaveEditScreen() {
         // Prefer uiState over contentState snapshot (NavEntry content can be remembered).

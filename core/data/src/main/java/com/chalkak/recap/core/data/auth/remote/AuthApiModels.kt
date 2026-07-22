@@ -1,21 +1,9 @@
 package com.chalkak.recap.core.data.auth.remote
 
+import com.chalkak.recap.core.data.network.ApiResponseDto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonElement
-
-@Serializable
-data class ApiResponseDto<T>(
-    val success: Boolean,
-    val data: T? = null,
-    val error: ApiErrorDto? = null,
-)
-
-@Serializable
-data class ApiErrorDto(
-    val code: String,
-    val message: String,
-)
 
 @Serializable
 data class OAuthLoginRequestDto(

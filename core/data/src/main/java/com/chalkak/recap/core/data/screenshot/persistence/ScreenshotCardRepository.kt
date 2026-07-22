@@ -10,29 +10,29 @@ import javax.inject.Singleton
 interface ScreenshotCardRepository {
     fun observeStoredCards(): Flow<List<StoredScreenshotCard>>
 
-    fun observeCard(imageId: String): Flow<StoredScreenshotCard?>
+    fun observeCard(captureId: Long): Flow<StoredScreenshotCard?>
 
-    suspend fun getCard(imageId: String): StoredScreenshotCard?
+    suspend fun getCard(captureId: Long): StoredScreenshotCard?
 
     suspend fun saveAnalysisResults(
         results: List<ScreenshotAnalysisResult>,
-        imageRefsByImageId: Map<String, ScreenshotCardImageRefs> = emptyMap(),
+        imageRefsByCaptureId: Map<Long, ScreenshotCardImageRefs> = emptyMap(),
     )
 
-    suspend fun updateFavorite(imageId: String, isFavorite: Boolean)
+    suspend fun updateFavorite(captureId: Long, isFavorite: Boolean)
 
     suspend fun updateCardContent(
-        imageId: String,
+        captureId: Long,
         title: String,
         summary: String,
         body: String,
-        primaryContentType: ScreenshotContentType,
+        typeCode: ScreenshotContentType,
         updatedAtMillis: Long = System.currentTimeMillis(),
     ): Boolean
 
-    suspend fun deleteCard(imageId: String)
+    suspend fun deleteCard(captureId: Long)
 
-    suspend fun deleteCards(imageIds: Set<String>)
+    suspend fun deleteCards(captureIds: Set<Long>)
 
     suspend fun deleteAllCards()
 }
@@ -43,23 +43,23 @@ class DefaultScreenshotCardRepository @Inject constructor(
 ) : ScreenshotCardRepository {
     override fun observeStoredCards(): Flow<List<StoredScreenshotCard>> {
         return screenshotCardDao.observeAllCards().map { cards ->
-            cards.map(ScreenshotCardWithKeyFields::toStoredScreenshotCard)
+            cards.map(ScreenshotCardEntity::toStoredScreenshotCard)
         }
     }
 
-    override fun observeCard(imageId: String): Flow<StoredScreenshotCard?> {
-        return screenshotCardDao.observeCard(imageId).map { card ->
+    override fun observeCard(captureId: Long): Flow<StoredScreenshotCard?> {
+        return screenshotCardDao.observeCard(captureId).map { card ->
             card?.toStoredScreenshotCard()
         }
     }
 
-    override suspend fun getCard(imageId: String): StoredScreenshotCard? {
-        return screenshotCardDao.getCardByImageId(imageId)?.toStoredScreenshotCard()
+    override suspend fun getCard(captureId: Long): StoredScreenshotCard? {
+        return screenshotCardDao.getCardByCaptureId(captureId)?.toStoredScreenshotCard()
     }
 
     override suspend fun saveAnalysisResults(
         results: List<ScreenshotAnalysisResult>,
-        imageRefsByImageId: Map<String, ScreenshotCardImageRefs>,
+        imageRefsByCaptureId: Map<Long, ScreenshotCardImageRefs>,
     ) {
         if (results.isEmpty()) {
             return
@@ -67,48 +67,48 @@ class DefaultScreenshotCardRepository @Inject constructor(
         val entries = results.map { result ->
             ScreenshotCardSaveEntry(
                 analysisResult = result,
-                imageRefs = imageRefsByImageId[result.imageId] ?: ScreenshotCardImageRefs(),
+                imageRefs = imageRefsByCaptureId[result.captureId] ?: ScreenshotCardImageRefs(),
             )
         }
         screenshotCardDao.saveAnalysisResults(entries)
     }
 
-    override suspend fun updateFavorite(imageId: String, isFavorite: Boolean) {
+    override suspend fun updateFavorite(captureId: Long, isFavorite: Boolean) {
         screenshotCardDao.updateFavorite(
-            imageId = imageId,
+            captureId = captureId,
             isFavorite = isFavorite,
             updatedAtMillis = System.currentTimeMillis(),
         )
     }
 
     override suspend fun updateCardContent(
-        imageId: String,
+        captureId: Long,
         title: String,
         summary: String,
         body: String,
-        primaryContentType: ScreenshotContentType,
+        typeCode: ScreenshotContentType,
         updatedAtMillis: Long,
     ): Boolean {
         val updatedRows = screenshotCardDao.updateCardContent(
-            imageId = imageId,
+            captureId = captureId,
             title = title,
             summary = summary,
             body = body,
-            primaryContentType = primaryContentType.name,
+            typeCode = typeCode.name,
             updatedAtMillis = updatedAtMillis,
         )
         return updatedRows > 0
     }
 
-    override suspend fun deleteCard(imageId: String) {
-        screenshotCardDao.deleteByImageId(imageId)
+    override suspend fun deleteCard(captureId: Long) {
+        screenshotCardDao.deleteByCaptureId(captureId)
     }
 
-    override suspend fun deleteCards(imageIds: Set<String>) {
-        if (imageIds.isEmpty()) {
+    override suspend fun deleteCards(captureIds: Set<Long>) {
+        if (captureIds.isEmpty()) {
             return
         }
-        screenshotCardDao.deleteByImageIds(imageIds.toList())
+        screenshotCardDao.deleteByCaptureIds(captureIds.toList())
     }
 
     override suspend fun deleteAllCards() {

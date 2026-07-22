@@ -67,10 +67,9 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading1
 import com.chalkak.recap.core.design.theme.White
-import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisConfidence
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
-import com.chalkak.recap.core.model.screenshot.ScreenshotContentTypes
+import java.time.Instant
 @Composable
 fun ScreenshotDetailScreen(
     uiState: ScreenshotUiState,
@@ -148,7 +147,7 @@ private fun ScreenshotDetailContent(
         thumbnailPath = card.imageRefs.thumbnailPath,
         priority = ScreenshotImageResolvePriority.Preview,
     )
-    val contentType = analysis.contentTypes.primaryContentType
+    val contentType = analysis.typeCode
     val categoryType = contentType.toRecapCategoryType()
     val bodyText = analysis.body.ifBlank {
         stringResource(R.string.screenshot_body_empty)
@@ -190,7 +189,7 @@ private fun ScreenshotDetailContent(
                 Text(
                     text = stringResource(
                         R.string.screenshot_organized_date_format,
-                        formatOrganizedDate(card.createdAtMillis),
+                        formatOrganizedDate(card.analysisResult.organizedAt.toEpochMilli()),
                     ),
                     style = RecapCaption2,
                     color = RecapGray200,
@@ -482,31 +481,30 @@ internal fun previewScreenshotContent(
     title: String = "제주 숙소 예약 정보",
     summary: String = "체크인 15:00, 체크아웃 11:00",
     body: String = "예약 번호 ABC-1234\n게스트 2명",
-    contentType: ScreenshotContentType = ScreenshotContentType.PLACE_RESTAURANT,
+    contentType: ScreenshotContentType = ScreenshotContentType.PLACE,
     isFavorite: Boolean = false,
 ): ScreenshotUiState.Content {
     val analysis = ScreenshotAnalysisResult(
-        imageId = "preview-image-id",
+        captureId = 1L,
         title = title,
         summary = summary,
-        contentTypes = ScreenshotContentTypes(primaryContentType = contentType),
-        keyFields = emptyList(),
-        confidence = ScreenshotAnalysisConfidence.HIGH,
-        isFavorite = isFavorite,
+        typeCode = contentType,
         body = body,
+        originalImageUrl = "mock://preview",
+        isFavorite = isFavorite,
+        organizedAt = Instant.ofEpochMilli(1_720_000_000_000L),
     )
     return ScreenshotUiState.Content(
         card = StoredScreenshotCard(
             analysisResult = analysis,
             imageRefs = ScreenshotCardImageRefs(),
-            createdAtMillis = 1_720_000_000_000L,
             updatedAtMillis = 1_720_000_000_000L,
         ),
         editDraft = ScreenshotEditDraft(
             title = analysis.title,
             summary = analysis.summary,
             body = analysis.body,
-            contentType = analysis.contentTypes.primaryContentType,
+            contentType = analysis.typeCode,
         ),
     )
 }

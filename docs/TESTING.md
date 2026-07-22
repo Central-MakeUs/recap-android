@@ -8,7 +8,7 @@
 - 로컬 단위 테스트는 JUnit5 중심으로 작성한다.
 - 기존 JUnit4 테스트는 JUnit Vintage engine으로 당분간 함께 실행한다.
 - Compose UI test, AndroidX test 의존성은 설정되어 있다.
-- MockK, Turbine, coroutines-test, Room testing, WorkManager testing 의존성이 설정되어 있다.
+- MockK, Turbine, coroutines-test, Room testing 의존성이 설정되어 있다.
 
 현재 설정된 주요 테스트 의존성:
 
@@ -19,7 +19,6 @@
 - Coroutines test: `org.jetbrains.kotlinx:kotlinx-coroutines-test`
 - Turbine: `app.cash.turbine:turbine`
 - Room testing: `androidx.room:room-testing`
-- WorkManager testing: `androidx.work:work-testing`
 
 Instrumentation/Compose UI test는 AndroidX Compose test가 JUnit4 rule 기반이므로 별도 정책을 유지한다.
 
@@ -80,9 +79,9 @@ fun `onAction updates selected tab`() {
 
 ```kotlin
 @Test
-fun `throws when job id is blank`() {
+fun `throws when capture id is invalid`() {
     assertThrows<IllegalArgumentException> {
-        OcrJobId("")
+        require(captureId > 0)
     }
 }
 ```
@@ -95,12 +94,12 @@ fun `throws when job id is blank`() {
 - 반환값이 테스트와 무관한 부수 의존성에만 `relaxed = true`를 예외적으로 쓴다.
 
 ```kotlin
-val repository = mockk<OcrRepository>()
-coEvery { repository.enqueueOcr(any()) } returns OcrJobId("job-1")
+val repository = mockk<ScreenshotCardRepository>()
+coEvery { repository.deleteAllCards() } returns Unit
 
-viewModel.onAction(DemoAction.StartOcr)
+viewModel.resetScreenshotData()
 
-coVerify(exactly = 1) { repository.enqueueOcr(any()) }
+coVerify(exactly = 1) { repository.deleteAllCards() }
 ```
 
 ## 코루틴 테스트
@@ -167,10 +166,7 @@ viewModel.uiState.test {
 4. Room DAO 테스트
    - insert/query/update/delete
    - migration 추가 시 migration test
-5. WorkManager 테스트
-   - OCR job input/output
-   - 실패 시 retry 또는 failure result
-6. Compose UI 테스트
+5. Compose UI 테스트
    - 핵심 화면의 state별 렌더링
    - 주요 버튼 action
 

@@ -9,9 +9,9 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.core.content.ContextCompat
+import com.chalkak.recap.core.data.screenshot.permission.ImagePermissionRepository
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.LocalImage
-import com.chalkak.recap.core.model.OcrOrganizeRange
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -21,8 +21,8 @@ import javax.inject.Singleton
 @Singleton
 class LocalScreenshotDataSource @Inject constructor(
     @param:ApplicationContext private val context: Context,
-) {
-    fun imagePermissionRequest(): Array<String> {
+) : ImagePermissionRepository {
+    override fun imagePermissionRequest(): Array<String> {
         return when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> arrayOf(
                 Manifest.permission.READ_MEDIA_IMAGES,
@@ -39,7 +39,7 @@ class LocalScreenshotDataSource @Inject constructor(
         }
     }
 
-    fun currentImageAccessLevel(): ImageAccessLevel {
+    override fun currentImageAccessLevel(): ImageAccessLevel {
         return when {
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
                     context.hasPermission(Manifest.permission.READ_MEDIA_IMAGES) -> ImageAccessLevel.Full
@@ -54,40 +54,15 @@ class LocalScreenshotDataSource @Inject constructor(
         }
     }
 
-    suspend fun countScreenshots(range: OcrOrganizeRange): Int = withContext(Dispatchers.IO) {
-        if (currentImageAccessLevel() == ImageAccessLevel.Denied) {
-            0
-        } else {
-            queryScreenshots(range).size
-        }
-    }
-
     suspend fun queryRecentScreenshots(limit: Int): List<LocalImage> = withContext(Dispatchers.IO) {
-        queryScreenshotImages(
-            cutoffSeconds = null,
-            limit = limit,
-        )
+        queryScreenshotImages(limit = limit)
     }
 
     suspend fun queryAllScreenshots(): List<LocalImage> = withContext(Dispatchers.IO) {
-        queryScreenshotImages(
-            cutoffSeconds = null,
-            limit = null,
-        )
+        queryScreenshotImages(limit = null)
     }
 
-    suspend fun queryScreenshots(range: OcrOrganizeRange): List<LocalImage> = withContext(Dispatchers.IO) {
-        val cutoffSeconds = (System.currentTimeMillis() / MILLIS_PER_SECOND) - (range.days * SECONDS_PER_DAY)
-        queryScreenshotImages(
-            cutoffSeconds = cutoffSeconds,
-            limit = null,
-        )
-    }
-
-    private fun queryScreenshotImages(
-        cutoffSeconds: Long?,
-        limit: Int?,
-    ): List<LocalImage> {
+    private fun queryScreenshotImages(limit: Int?): List<LocalImage> {
         if (currentImageAccessLevel() == ImageAccessLevel.Denied) {
             return emptyList()
         }
@@ -101,19 +76,12 @@ class LocalScreenshotDataSource @Inject constructor(
         val pathSelection = screenshotRelativePaths.joinToString(separator = " OR ") {
             "${MediaStore.Images.Media.RELATIVE_PATH} = ?"
         }
-        val selection = if (cutoffSeconds == null) {
-            "($pathSelection)"
-        } else {
-            "($pathSelection) AND ${MediaStore.Images.Media.DATE_ADDED} >= ?"
-        }
-        val selectionArgs = if (cutoffSeconds == null) {
-            screenshotRelativePaths
-        } else {
-            screenshotRelativePaths + cutoffSeconds.toString()
-        }
         val queryArgs = Bundle().apply {
-            putString(ContentResolver.QUERY_ARG_SQL_SELECTION, selection)
-            putStringArray(ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS, selectionArgs.toTypedArray())
+            putString(ContentResolver.QUERY_ARG_SQL_SELECTION, "($pathSelection)")
+            putStringArray(
+                ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
+                screenshotRelativePaths.toTypedArray(),
+            )
             putStringArray(
                 ContentResolver.QUERY_ARG_SORT_COLUMNS,
                 arrayOf(MediaStore.Images.Media.DATE_ADDED),
@@ -155,10 +123,10 @@ class LocalScreenshotDataSource @Inject constructor(
 
     private companion object {
         const val MILLIS_PER_SECOND = 1_000L
-        const val SECONDS_PER_DAY = 86_400L
 
         val screenshotRelativePaths = listOf(
             "DCIM/Screenshots/",
+            "Pictures/Screenshots/"
         )
     }
 }

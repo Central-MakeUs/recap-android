@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.ContextWrapper
 import com.chalkak.recap.core.model.auth.AuthError
 import com.chalkak.recap.core.model.auth.AuthProvider
+import com.chalkak.recap.core.model.auth.KakaoUserProfile
 import com.chalkak.recap.core.model.auth.SocialAuthCredential
 import com.kakao.sdk.auth.model.OAuthToken
 import com.kakao.sdk.common.model.ClientError
@@ -71,6 +72,67 @@ class KakaoLoginClient @Inject constructor(
         }
     }
 
+    suspend fun fetchUserProfile(): Result<KakaoUserProfile> =
+        suspendCancellableCoroutine { continuation ->
+            UserApiClient.instance.me { user, error ->
+                if (!continuation.isActive) return@me
+                when {
+                    error != null -> {
+                        Timber.w(error, "Kakao me() failed")
+                        continuation.resume(
+                            Result.failure(AuthException(AuthError.ProviderUnavailable, error)),
+                        )
+                    }
+                    user != null -> {
+                        continuation.resume(
+                            Result.success(
+                                KakaoUserProfile(
+                                    email = user.kakaoAccount?.email,
+                                    connectedAt = user.connectedAt?.toInstant(),
+                                    emailNeedsAgreement =
+                                        user.kakaoAccount?.emailNeedsAgreement == true,
+                                ),
+                            ),
+                        )
+                    }
+                    else -> {
+                        continuation.resume(Result.failure(AuthException(AuthError.Unknown)))
+                    }
+                }
+            }
+        }
+
+    /**
+     * 이메일 동의 항목이 아직 없을 때 추가 동의를 요청한다.
+     * 카카오 로그인 API에는 scopes 파라미터가 없어 loginWithNewScopes를 사용한다.
+     */
+    suspend fun requestEmailConsent(context: Context): Result<Unit> {
+        val activity = context.findActivity()
+            ?: return Result.failure(AuthException(AuthError.ProviderUnavailable))
+
+        return suspendCancellableCoroutine { continuation ->
+            UserApiClient.instance.loginWithNewScopes(
+                activity,
+                listOf(SCOPE_ACCOUNT_EMAIL),
+            ) { token, error ->
+                if (!continuation.isActive) return@loginWithNewScopes
+                when {
+                    token != null -> continuation.resume(Result.success(Unit))
+                    error is ClientError && error.reason == ClientErrorCause.Cancelled -> {
+                        continuation.resume(Result.failure(AuthException(AuthError.Cancelled)))
+                    }
+                    error != null -> {
+                        Timber.w(error, "Kakao email consent failed")
+                        continuation.resume(
+                            Result.failure(AuthException(AuthError.ProviderUnavailable, error)),
+                        )
+                    }
+                    else -> continuation.resume(Result.failure(AuthException(AuthError.Unknown)))
+                }
+            }
+        }
+    }
+
     private fun toLoginResult(
         token: OAuthToken?,
         error: Throwable?,
@@ -90,6 +152,10 @@ class KakaoLoginClient @Inject constructor(
             accessToken = accessToken,
             idToken = idToken,
         )
+
+    companion object {
+        const val SCOPE_ACCOUNT_EMAIL = "account_email"
+    }
 }
 
 private tailrec fun Context.findActivity(): Activity? =

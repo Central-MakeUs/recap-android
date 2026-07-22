@@ -30,7 +30,6 @@ import kotlinx.serialization.Serializable
 @Composable
 fun OnboardingRoute(
     onOnboardingComplete: (openOrganize: Boolean) -> Unit,
-    isDebugBuild: Boolean = false,
     viewModelKey: String? = null,
     viewModel: OnboardingViewModel = hiltViewModel(key = viewModelKey),
 ) {
@@ -96,7 +95,6 @@ fun OnboardingRoute(
                     OnboardingScreen(
                         uiState = uiState,
                         snackbarHostState = snackbarHostState,
-                        showDebugEmailLogin = isDebugBuild,
                         illustrationSignalFlow = viewModel.illustrationSignals,
                         onAction = { action ->
                             when (action) {

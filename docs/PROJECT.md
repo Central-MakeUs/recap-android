@@ -5,7 +5,7 @@
 ## 프로젝트 정체성
 
 - 앱 이름: RECAP
-- 현재 목표: 사용자가 선택하거나 공유한 스크린샷을 OCR/AI 분석으로 정리하고, 컬렉션으로 관리한다.
+- 현재 목표: 사용자가 선택하거나 공유한 스크린샷을 서버 OCR/AI 분석으로 정리하고, 컬렉션으로 관리한다.
 - 현재 지원 방향: 화이트모드 우선
 
 ## 패키지 / 앱 정보
@@ -31,11 +31,9 @@
 - Annotation processing: KSP
 - Async: Kotlin Coroutines / Flow
 - Persistence: DataStore, Room
-- Background work: WorkManager + HiltWorker
-- OCR: ML Kit Text Recognition
-- AI: Firebase AI
 - Image loading: Coil
 - Logging: Timber
+- Analytics: Firebase Analytics
 
 ## 빌드 명령
 
@@ -57,7 +55,6 @@ $env:GRADLE_USER_HOME="$env:USERPROFILE\.gradle"; .\gradlew.bat assembleDebug
 :core:design
 :core:model
 :feature:collection
-:feature:demo
 :feature:developer
 :feature:home
 :feature:settings
@@ -72,18 +69,20 @@ $env:GRADLE_USER_HOME="$env:USERPROFILE\.gradle"; .\gradlew.bat assembleDebug
 com.chalkak.recap
 ├── app                    # 앱 루트, root navigation, main tab shell
 ├── core
-│   ├── data               # DataStore, Room, WorkManager, OCR, AI repository
+│   ├── data               # DataStore, Room, screenshot repository, network
 │   ├── design             # theme, common components
 │   └── model              # 앱 공통 모델
 └── feature
     ├── collection         # 컬렉션 화면
-    ├── demo               # OCR/AI 분석 데모 및 개발 검증 화면
     ├── developer          # 개발자 옵션 / component garden
-    ├── home               # 홈
-    ├── settings           # 설정 및 하위 안내/관리 화면
+    ├── home               # 홈 (search/, recent/ 하위 패키지)
+    ├── settings           # 설정 (account/, data/, notification/, guide/)
     ├── organize           # 정리/분류 관련 화면
     ├── onboarding         # 온보딩 플로우
     └── screenshot         # 스크린샷 상세/수정/전체화면
+
+core.data.screenshot 하위:
+    permission/ · analysis/ · backend/ · image/ · persistence/
 ```
 
 ## 목표 아키텍처
@@ -119,19 +118,16 @@ com.chalkak.recap
 ## 데이터 / 외부 연동
 
 - `UserPreferencesRepository`: DataStore 기반 사용자 설정 및 온보딩 상태 관리
-- `RecapDatabase`: Room database
-- OCR:
-  - `OcrRepository`
-  - `OcrWorker`
-  - `OcrDao`
-  - ML Kit text recognition
-- AI 분석:
-  - `RecapAnalysisRepository`
-  - `RecapAnalysisPrompt`
-  - `RecapAnalysisSchema`
-  - Firebase AI
-- WorkManager:
-  - HiltWorkerFactory를 `RecapApplication`에서 연결한다.
+- `RecapDatabase`: Room database (`screenshot_cards` 등)
+- 스크린샷 분석/저장:
+  - `ScreenshotCardRepository`
+  - `ScreenshotAnalysisRepository` (Debug에서 Mock/Remote 런타임 전환 가능, 구조는 `docs/ANALYSIS_DATA_SOURCE.md`)
+  - 현재 스위치는 분석뿐 아니라 Home/Storage/Capture command 등 스크린샷 도메인 전역 backend 선택이다.
+  - `LocalScreenshotDataSource` / `ImagePermissionRepository`
+- OCR/AI 분석은 서버에서 수행한다. 로컬 ML Kit OCR 및 Firebase AI 클라이언트는 사용하지 않는다.
+- `ScreenshotBackendModeStore`: Debug 런타임 Mock/Remote 전역 스크린샷 backend 모드 (DataStore `user_preferences`)
+- `ScreenshotBackendSwitcher`: 모드 전환 정책(분석 중 거부, Mock 데이터 초기화 후 저장, 직렬화)
+- Switching repository(`SwitchingScreenshotAnalysisRepository`, `SwitchingHomeRepository`, `SwitchingStorageRepository` 등)가 동일 Store를 기준으로 Mock/Remote delegate를 선택한다.
 
 외부 API, Firebase, local.properties, google-services 파일, API key 등 시크릿은 커밋하지 않는다.
 
@@ -163,4 +159,5 @@ UI 색상·타이포는 `MaterialTheme.colorScheme` / `MaterialTheme.typography`
 - `docs/BACKLOG.md`: 두 에이전트가 공유해야 하는 후속 항목
 - `docs/TESTING.md`: 테스트/검증 정책
 - `docs/LOCAL_DATA.md`: 로컬 데이터 구현체와 저장 정책
+- `docs/ANALYSIS_DATA_SOURCE.md`: 스크린샷 분석 Mock/Remote 런타임 스위치
 - `docs/handoff/HANDOFF.md`: Codex가 작성하고 Cursor가 구현할 작업 스펙

@@ -35,7 +35,7 @@ fun RecapMainScreen(
     onNavigateToSearch: () -> Unit = {},
     onNavigateToRecentOrganizedScreenshots: () -> Unit = {},
     onOrganizeComplete: (List<LocalImage>) -> Unit = {},
-    onNavigateToScreenshot: (String) -> Unit = {},
+    onNavigateToScreenshot: (Long) -> Unit = {},
     homeNavigationRequestId: Int = 0,
     pendingOpenOrganize: Boolean = false,
     onPendingOpenOrganizeConsumed: () -> Unit = {},

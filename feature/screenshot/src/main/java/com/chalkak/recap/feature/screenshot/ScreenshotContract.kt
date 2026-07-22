@@ -7,7 +7,7 @@ data class ScreenshotEditDraft(
     val title: String = "",
     val summary: String = "",
     val body: String = "",
-    val contentType: ScreenshotContentType = ScreenshotContentType.OTHER,
+    val contentType: ScreenshotContentType = ScreenshotContentType.ETC,
 )
 
 sealed interface ScreenshotUiState {
@@ -68,7 +68,7 @@ internal fun StoredScreenshotCard.toEditDraft(): ScreenshotEditDraft {
         title = analysisResult.title,
         summary = analysisResult.summary,
         body = analysisResult.body,
-        contentType = analysisResult.contentTypes.primaryContentType,
+        contentType = analysisResult.typeCode,
     )
 }
 
