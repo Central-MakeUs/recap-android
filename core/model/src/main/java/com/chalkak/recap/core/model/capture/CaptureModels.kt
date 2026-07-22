@@ -28,6 +28,20 @@ data class CaptureList(
     val items: List<CaptureSummary>,
 )
 
+data class CaptureDeleteResult(
+    val deletedIds: Set<Long>,
+    val failedIds: Set<Long>,
+) {
+    val isFullSuccess: Boolean
+        get() = failedIds.isEmpty()
+
+    val isPartialSuccess: Boolean
+        get() = deletedIds.isNotEmpty() && failedIds.isNotEmpty()
+
+    val isFullFailure: Boolean
+        get() = deletedIds.isEmpty() && failedIds.isNotEmpty()
+}
+
 data class UploadItem(
     val imageKey: String,
     val uploadUrl: String,

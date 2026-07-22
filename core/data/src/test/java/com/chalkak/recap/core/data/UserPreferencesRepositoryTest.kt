@@ -1,9 +1,7 @@
 package com.chalkak.recap.core.data
 
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import com.chalkak.recap.core.data.screenshot.AnalysisDataSourceMode
+import com.chalkak.recap.core.data.testdouble.InMemoryPreferencesDataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -11,23 +9,15 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 class UserPreferencesRepositoryTest {
-    @TempDir
-    lateinit var tempDir: File
-
+    private lateinit var dataStore: InMemoryPreferencesDataStore
     private lateinit var repository: UserPreferencesRepository
 
     @BeforeEach
     fun setUp() {
-        val dataStore = PreferenceDataStoreFactory.create(
-            produceFile = { File(tempDir, "user_preferences.preferences_pb") },
-        )
-        repository = UserPreferencesRepository(dataStore).apply {
-            isDebugBuild = true
-        }
+        dataStore = InMemoryPreferencesDataStore()
+        repository = UserPreferencesRepository(dataStore)
     }
 
     @Test
@@ -56,51 +46,6 @@ class UserPreferencesRepositoryTest {
         repository.clearOnboardingStep()
 
         assertEquals(null, repository.getOnboardingStep())
-    }
-
-    @Test
-    fun `analysisDataSourceMode defaults to MOCK`() = runTest {
-        assertEquals(AnalysisDataSourceMode.MOCK, repository.analysisDataSourceMode.first())
-        assertEquals(AnalysisDataSourceMode.MOCK, repository.getAnalysisDataSourceMode())
-    }
-
-    @Test
-    fun `setAnalysisDataSourceMode persists REMOTE in debug`() = runTest {
-        repository.setAnalysisDataSourceMode(AnalysisDataSourceMode.REMOTE)
-
-        assertEquals(AnalysisDataSourceMode.REMOTE, repository.analysisDataSourceMode.first())
-        assertEquals(AnalysisDataSourceMode.REMOTE, repository.getAnalysisDataSourceMode())
-    }
-
-    @Test
-    fun `unknown stored analysis mode recovers to MOCK`() = runTest {
-        val dataStore = PreferenceDataStoreFactory.create(
-            produceFile = { File(tempDir, "unknown_mode.preferences_pb") },
-        )
-        dataStore.edit { preferences ->
-            preferences[stringPreferencesKey("analysis_data_source_mode")] = "UNKNOWN"
-        }
-        val unknownModeRepository = UserPreferencesRepository(dataStore).apply {
-            isDebugBuild = true
-        }
-
-        assertEquals(AnalysisDataSourceMode.MOCK, unknownModeRepository.getAnalysisDataSourceMode())
-    }
-
-    @Test
-    fun `non debug effective mode stays MOCK even when REMOTE is stored`() = runTest {
-        repository.setAnalysisDataSourceMode(AnalysisDataSourceMode.REMOTE)
-        repository.isDebugBuild = false
-
-        assertEquals(AnalysisDataSourceMode.MOCK, repository.getAnalysisDataSourceMode())
-    }
-
-    @Test
-    fun `non debug rejects REMOTE mode writes`() = runTest {
-        repository.isDebugBuild = false
-        repository.setAnalysisDataSourceMode(AnalysisDataSourceMode.REMOTE)
-
-        repository.isDebugBuild = true
-        assertEquals(AnalysisDataSourceMode.MOCK, repository.getAnalysisDataSourceMode())
+        assertEquals(null, dataStore.current()[stringPreferencesKey("onboarding_step")])
     }
 }

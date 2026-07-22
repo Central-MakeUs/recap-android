@@ -1,15 +1,15 @@
 package com.chalkak.recap.feature.developer
 
-import com.chalkak.recap.core.data.UserPreferencesRepository
-import com.chalkak.recap.core.data.screenshot.AnalysisDataSourceMode
+import com.chalkak.recap.core.data.screenshot.MockScreenshotDataResetter
 import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisRunState
-import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
-import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
+import com.chalkak.recap.core.data.screenshot.ScreenshotBackendMode
+import com.chalkak.recap.core.data.screenshot.ScreenshotBackendModeStore
+import com.chalkak.recap.core.data.screenshot.ScreenshotBackendSwitchResult
+import com.chalkak.recap.core.data.screenshot.ScreenshotBackendSwitcher
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,20 +29,23 @@ import org.junit.jupiter.api.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class DeveloperViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
-    private val screenshotCardRepository = mockk<ScreenshotCardRepository>()
-    private val screenshotImageStorage = mockk<ScreenshotImageStorage>(relaxed = true)
-    private val modeFlow = MutableStateFlow(AnalysisDataSourceMode.MOCK)
-    private val userPreferencesRepository = mockk<UserPreferencesRepository>()
+    private val modeFlow = MutableStateFlow(ScreenshotBackendMode.MOCK)
+    private val isSwitchingFlow = MutableStateFlow(false)
+    private val modeStore = mockk<ScreenshotBackendModeStore>()
+    private val switcher = mockk<ScreenshotBackendSwitcher>()
+    private val resetter = mockk<MockScreenshotDataResetter>()
     private val screenshotAnalysisRunState = ScreenshotAnalysisRunState()
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        every { userPreferencesRepository.analysisDataSourceMode } returns modeFlow
-        coEvery { userPreferencesRepository.setAnalysisDataSourceMode(any()) } coAnswers {
+        every { modeStore.mode } returns modeFlow
+        every { switcher.isSwitching } returns isSwitchingFlow
+        coEvery { switcher.switchTo(any()) } coAnswers {
             modeFlow.value = firstArg()
+            ScreenshotBackendSwitchResult.Success
         }
-        coEvery { screenshotCardRepository.deleteAllCards() } returns Unit
+        coEvery { resetter.reset() } returns Unit
     }
 
     @AfterEach
@@ -56,12 +59,12 @@ class DeveloperViewModelTest {
         advanceUntilIdle()
 
         viewModel.onAction(
-            DeveloperOptionAction.RequestAnalysisDataSourceSwitch(AnalysisDataSourceMode.MOCK),
+            DeveloperOptionAction.RequestScreenshotBackendSwitch(ScreenshotBackendMode.MOCK),
         )
         advanceUntilIdle()
 
         assertNull(viewModel.uiState.value.pendingSwitchTargetMode)
-        coVerify(exactly = 0) { screenshotCardRepository.deleteAllCards() }
+        coVerify(exactly = 0) { switcher.switchTo(any()) }
     }
 
     @Test
@@ -70,15 +73,15 @@ class DeveloperViewModelTest {
         advanceUntilIdle()
 
         viewModel.onAction(
-            DeveloperOptionAction.RequestAnalysisDataSourceSwitch(AnalysisDataSourceMode.REMOTE),
+            DeveloperOptionAction.RequestScreenshotBackendSwitch(ScreenshotBackendMode.REMOTE),
         )
         advanceUntilIdle()
 
         assertEquals(
-            AnalysisDataSourceMode.REMOTE,
+            ScreenshotBackendMode.REMOTE,
             viewModel.uiState.value.pendingSwitchTargetMode,
         )
-        coVerify(exactly = 0) { screenshotCardRepository.deleteAllCards() }
+        coVerify(exactly = 0) { switcher.switchTo(any()) }
     }
 
     @Test
@@ -86,64 +89,58 @@ class DeveloperViewModelTest {
         val viewModel = createViewModel()
         advanceUntilIdle()
         viewModel.onAction(
-            DeveloperOptionAction.RequestAnalysisDataSourceSwitch(AnalysisDataSourceMode.REMOTE),
+            DeveloperOptionAction.RequestScreenshotBackendSwitch(ScreenshotBackendMode.REMOTE),
         )
         advanceUntilIdle()
 
-        viewModel.onAction(DeveloperOptionAction.DismissAnalysisDataSourceSwitchDialog)
+        viewModel.onAction(DeveloperOptionAction.DismissScreenshotBackendSwitchDialog)
         advanceUntilIdle()
 
         assertNull(viewModel.uiState.value.pendingSwitchTargetMode)
-        assertEquals(AnalysisDataSourceMode.MOCK, viewModel.uiState.value.analysisDataSourceMode)
-        coVerify(exactly = 0) { screenshotCardRepository.deleteAllCards() }
-        verify(exactly = 0) { screenshotImageStorage.clearStoredImages() }
-        coVerify(exactly = 0) { userPreferencesRepository.setAnalysisDataSourceMode(any()) }
+        assertEquals(ScreenshotBackendMode.MOCK, viewModel.uiState.value.screenshotBackendMode)
+        coVerify(exactly = 0) { switcher.switchTo(any()) }
+        coVerify(exactly = 0) { resetter.reset() }
     }
 
     @Test
-    fun `confirm switch clears data then saves new mode`() = runTest(testDispatcher) {
+    fun `confirm switch delegates to switcher and shows success feedback`() = runTest(testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
         viewModel.onAction(
-            DeveloperOptionAction.RequestAnalysisDataSourceSwitch(AnalysisDataSourceMode.REMOTE),
+            DeveloperOptionAction.RequestScreenshotBackendSwitch(ScreenshotBackendMode.REMOTE),
         )
         advanceUntilIdle()
 
-        viewModel.onAction(DeveloperOptionAction.ConfirmAnalysisDataSourceSwitch)
+        viewModel.onAction(DeveloperOptionAction.ConfirmScreenshotBackendSwitch)
         advanceUntilIdle()
 
-        assertEquals(AnalysisDataSourceMode.REMOTE, viewModel.uiState.value.analysisDataSourceMode)
+        assertEquals(ScreenshotBackendMode.REMOTE, viewModel.uiState.value.screenshotBackendMode)
         assertNull(viewModel.uiState.value.pendingSwitchTargetMode)
         assertEquals(
-            com.chalkak.recap.core.design.R.string.developer_options_switch_analysis_data_source_success,
+            com.chalkak.recap.core.design.R.string.developer_options_switch_screenshot_backend_success,
             viewModel.uiState.value.feedbackMessageResId,
         )
-        coVerify(exactly = 1) { screenshotCardRepository.deleteAllCards() }
-        verify(exactly = 1) { screenshotImageStorage.clearStoredImages() }
-        coVerify(exactly = 1) {
-            userPreferencesRepository.setAnalysisDataSourceMode(AnalysisDataSourceMode.REMOTE)
-        }
+        coVerify(exactly = 1) { switcher.switchTo(ScreenshotBackendMode.REMOTE) }
     }
 
     @Test
     fun `failed switch keeps previous mode and shows failure feedback`() = runTest(testDispatcher) {
-        coEvery { screenshotCardRepository.deleteAllCards() } throws RuntimeException("db fail")
+        coEvery { switcher.switchTo(any()) } returns ScreenshotBackendSwitchResult.Failure
         val viewModel = createViewModel()
         advanceUntilIdle()
         viewModel.onAction(
-            DeveloperOptionAction.RequestAnalysisDataSourceSwitch(AnalysisDataSourceMode.REMOTE),
+            DeveloperOptionAction.RequestScreenshotBackendSwitch(ScreenshotBackendMode.REMOTE),
         )
         advanceUntilIdle()
 
-        viewModel.onAction(DeveloperOptionAction.ConfirmAnalysisDataSourceSwitch)
+        viewModel.onAction(DeveloperOptionAction.ConfirmScreenshotBackendSwitch)
         advanceUntilIdle()
 
-        assertEquals(AnalysisDataSourceMode.MOCK, viewModel.uiState.value.analysisDataSourceMode)
+        assertEquals(ScreenshotBackendMode.MOCK, viewModel.uiState.value.screenshotBackendMode)
         assertEquals(
-            com.chalkak.recap.core.design.R.string.developer_options_switch_analysis_data_source_failure,
+            com.chalkak.recap.core.design.R.string.developer_options_switch_screenshot_backend_failure,
             viewModel.uiState.value.feedbackMessageResId,
         )
-        coVerify(exactly = 0) { userPreferencesRepository.setAnalysisDataSourceMode(any()) }
     }
 
     @Test
@@ -153,49 +150,62 @@ class DeveloperViewModelTest {
         advanceUntilIdle()
 
         viewModel.onAction(
-            DeveloperOptionAction.RequestAnalysisDataSourceSwitch(AnalysisDataSourceMode.REMOTE),
+            DeveloperOptionAction.RequestScreenshotBackendSwitch(ScreenshotBackendMode.REMOTE),
         )
         advanceUntilIdle()
 
         assertNull(viewModel.uiState.value.pendingSwitchTargetMode)
         assertTrue(viewModel.uiState.value.isAnalysisRunning)
-        assertFalse(viewModel.uiState.value.canSwitchAnalysisDataSource)
+        assertFalse(viewModel.uiState.value.canSwitchScreenshotBackend)
         assertEquals(
-            com.chalkak.recap.core.design.R.string.developer_options_switch_analysis_data_source_rejected_busy,
+            com.chalkak.recap.core.design.R.string.developer_options_switch_screenshot_backend_rejected_busy,
             viewModel.uiState.value.feedbackMessageResId,
         )
-        coVerify(exactly = 0) { screenshotCardRepository.deleteAllCards() }
+        coVerify(exactly = 0) { switcher.switchTo(any()) }
     }
 
     @Test
-    fun `confirm while analysis running is rejected without data changes`() = runTest(testDispatcher) {
+    fun `confirm while analysis running is rejected without switch`() = runTest(testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
         viewModel.onAction(
-            DeveloperOptionAction.RequestAnalysisDataSourceSwitch(AnalysisDataSourceMode.REMOTE),
+            DeveloperOptionAction.RequestScreenshotBackendSwitch(ScreenshotBackendMode.REMOTE),
         )
         advanceUntilIdle()
         screenshotAnalysisRunState.beginRun()
 
-        viewModel.onAction(DeveloperOptionAction.ConfirmAnalysisDataSourceSwitch)
+        viewModel.onAction(DeveloperOptionAction.ConfirmScreenshotBackendSwitch)
         advanceUntilIdle()
 
         assertNull(viewModel.uiState.value.pendingSwitchTargetMode)
-        assertEquals(AnalysisDataSourceMode.MOCK, viewModel.uiState.value.analysisDataSourceMode)
+        assertEquals(ScreenshotBackendMode.MOCK, viewModel.uiState.value.screenshotBackendMode)
         assertEquals(
-            com.chalkak.recap.core.design.R.string.developer_options_switch_analysis_data_source_rejected_busy,
+            com.chalkak.recap.core.design.R.string.developer_options_switch_screenshot_backend_rejected_busy,
             viewModel.uiState.value.feedbackMessageResId,
         )
-        coVerify(exactly = 0) { screenshotCardRepository.deleteAllCards() }
-        verify(exactly = 0) { screenshotImageStorage.clearStoredImages() }
-        coVerify(exactly = 0) { userPreferencesRepository.setAnalysisDataSourceMode(any()) }
+        coVerify(exactly = 0) { switcher.switchTo(any()) }
+    }
+
+    @Test
+    fun `reset screenshot data uses mock resetter`() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onAction(DeveloperOptionAction.ResetScreenshotData)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { resetter.reset() }
+        assertEquals(
+            com.chalkak.recap.core.design.R.string.developer_options_reset_screenshot_data_success,
+            viewModel.uiState.value.feedbackMessageResId,
+        )
     }
 
     private fun createViewModel(): DeveloperViewModel {
         return DeveloperViewModel(
-            screenshotCardRepository = screenshotCardRepository,
-            screenshotImageStorage = screenshotImageStorage,
-            userPreferencesRepository = userPreferencesRepository,
+            screenshotBackendModeStore = modeStore,
+            screenshotBackendSwitcher = switcher,
+            mockScreenshotDataResetter = resetter,
             screenshotAnalysisRunState = screenshotAnalysisRunState,
         )
     }

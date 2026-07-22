@@ -8,6 +8,12 @@ data class StorageType(
     val representativeTitles: List<String>,
 )
 
+data class StorageOverview(
+    val hasAnyCapture: Boolean,
+    val favoriteCount: Int,
+    val types: List<StorageType>,
+)
+
 enum class CaptureSort {
     Latest,
     Oldest,

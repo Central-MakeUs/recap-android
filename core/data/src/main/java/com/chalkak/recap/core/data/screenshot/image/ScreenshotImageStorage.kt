@@ -152,6 +152,44 @@ class ScreenshotImageStorage @Inject constructor(
         }
     }
 
+    fun cacheThumbnailBytes(captureId: Long, bytes: ByteArray): String? {
+        if (bytes.isEmpty()) {
+            return null
+        }
+        var tempFile: File? = null
+        val targetFile = buildThumbnailPath(captureId)
+        return try {
+            resolveThumbnailsDirectory()
+            tempFile = File(
+                requireNotNull(targetFile.parentFile),
+                "${targetFile.name}$TEMP_SUFFIX",
+            )
+            if (tempFile.exists() && !tempFile.delete()) {
+                Timber.w("Failed to clear thumbnail temp file before remote cache write")
+                return null
+            }
+            tempFile.outputStream().use { output ->
+                output.write(bytes)
+            }
+            if (!publishThumbnail(tempFile = tempFile, targetFile = targetFile)) {
+                Timber.w("Failed to publish remote thumbnail cache")
+                return null
+            }
+            tempFile = null
+            targetFile.absolutePath
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (throwable: Exception) {
+            Timber.w(throwable, "Failed to save remote thumbnail cache")
+            null
+        } finally {
+            tempFile?.let { leftover ->
+                if (leftover.exists() && !leftover.delete()) {
+                    Timber.w("Failed to delete leftover remote thumbnail temp file")
+                }
+            }
+        }
+    }
     private fun decodeHalfSizeBitmap(openInputStream: () -> InputStream?): Bitmap {
         val orientation = readExifOrientation(openInputStream)
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }

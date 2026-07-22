@@ -1,13 +1,12 @@
 package com.chalkak.recap.core.data.screenshot
 
-import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class SwitchingScreenshotAnalysisRepository @Inject constructor(
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val screenshotBackendModeStore: ScreenshotBackendModeStore,
     private val mockScreenshotAnalysisRepository: MockScreenshotAnalysisRepository,
     private val remoteScreenshotAnalysisRepository: RemoteScreenshotAnalysisRepository,
 ) : ScreenshotAnalysisRepository {
@@ -22,9 +21,9 @@ class SwitchingScreenshotAnalysisRepository @Inject constructor(
     }
 
     private suspend fun resolveDelegate(): ScreenshotAnalysisRepository {
-        return when (userPreferencesRepository.getAnalysisDataSourceMode()) {
-            AnalysisDataSourceMode.MOCK -> mockScreenshotAnalysisRepository
-            AnalysisDataSourceMode.REMOTE -> remoteScreenshotAnalysisRepository
+        return when (screenshotBackendModeStore.currentMode()) {
+            ScreenshotBackendMode.MOCK -> mockScreenshotAnalysisRepository
+            ScreenshotBackendMode.REMOTE -> remoteScreenshotAnalysisRepository
         }
     }
 }

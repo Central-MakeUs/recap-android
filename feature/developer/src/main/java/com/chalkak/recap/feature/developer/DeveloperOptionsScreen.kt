@@ -19,7 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.chalkak.recap.core.data.screenshot.AnalysisDataSourceMode
+import com.chalkak.recap.core.data.screenshot.ScreenshotBackendMode
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.theme.RECAPTheme
@@ -31,14 +31,14 @@ internal fun DeveloperOptionsScreen(
     onAction: (DeveloperOptionAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val switchTargetMode = when (uiState.analysisDataSourceMode) {
-        AnalysisDataSourceMode.MOCK -> AnalysisDataSourceMode.REMOTE
-        AnalysisDataSourceMode.REMOTE -> AnalysisDataSourceMode.MOCK
+    val switchTargetMode = when (uiState.screenshotBackendMode) {
+        ScreenshotBackendMode.MOCK -> ScreenshotBackendMode.REMOTE
+        ScreenshotBackendMode.REMOTE -> ScreenshotBackendMode.MOCK
     }
-    val currentModeLabel = stringResource(uiState.analysisDataSourceMode.labelResId)
+    val currentModeLabel = stringResource(uiState.screenshotBackendMode.labelResId)
     val switchButtonLabelResId = when (switchTargetMode) {
-        AnalysisDataSourceMode.MOCK -> R.string.developer_options_switch_to_mock_button
-        AnalysisDataSourceMode.REMOTE -> R.string.developer_options_switch_to_remote_button
+        ScreenshotBackendMode.MOCK -> R.string.developer_options_switch_to_mock_button
+        ScreenshotBackendMode.REMOTE -> R.string.developer_options_switch_to_remote_button
     }
 
     Surface(
@@ -68,7 +68,7 @@ internal fun DeveloperOptionsScreen(
             }
             Text(
                 text = stringResource(
-                    R.string.developer_options_analysis_data_source_current,
+                    R.string.developer_options_screenshot_backend_current,
                     currentModeLabel,
                 ),
                 style = MaterialTheme.typography.bodyMedium,
@@ -76,9 +76,9 @@ internal fun DeveloperOptionsScreen(
             )
             Button(
                 modifier = Modifier.fillMaxWidth(),
-                enabled = uiState.canSwitchAnalysisDataSource,
+                enabled = uiState.canSwitchScreenshotBackend,
                 onClick = {
-                    onAction(DeveloperOptionAction.RequestAnalysisDataSourceSwitch(switchTargetMode))
+                    onAction(DeveloperOptionAction.RequestScreenshotBackendSwitch(switchTargetMode))
                 },
             ) {
                 Text(stringResource(switchButtonLabelResId))
@@ -97,31 +97,31 @@ internal fun DeveloperOptionsScreen(
     val pendingTarget = uiState.pendingSwitchTargetMode
     if (pendingTarget != null) {
         RecapPopup(
-            title = stringResource(R.string.developer_options_switch_analysis_data_source_confirm_title),
+            title = stringResource(R.string.developer_options_switch_screenshot_backend_confirm_title),
             description = stringResource(
-                R.string.developer_options_switch_analysis_data_source_confirm_description,
+                R.string.developer_options_switch_screenshot_backend_confirm_description,
             ),
             confirmButtonText = stringResource(
-                R.string.developer_options_switch_analysis_data_source_confirm_button,
+                R.string.developer_options_switch_screenshot_backend_confirm_button,
             ),
             cancelButtonText = stringResource(
-                R.string.developer_options_switch_analysis_data_source_cancel_button,
+                R.string.developer_options_switch_screenshot_backend_cancel_button,
             ),
-            onConfirmClick = { onAction(DeveloperOptionAction.ConfirmAnalysisDataSourceSwitch) },
-            onCancelClick = { onAction(DeveloperOptionAction.DismissAnalysisDataSourceSwitchDialog) },
+            onConfirmClick = { onAction(DeveloperOptionAction.ConfirmScreenshotBackendSwitch) },
+            onCancelClick = { onAction(DeveloperOptionAction.DismissScreenshotBackendSwitchDialog) },
             onDismissRequest = {
-                onAction(DeveloperOptionAction.DismissAnalysisDataSourceSwitchDialog)
+                onAction(DeveloperOptionAction.DismissScreenshotBackendSwitchDialog)
             },
             confirmButtonColor = RecapError,
         )
     }
 }
 
-private val AnalysisDataSourceMode.labelResId: Int
+private val ScreenshotBackendMode.labelResId: Int
     @StringRes
     get() = when (this) {
-        AnalysisDataSourceMode.MOCK -> R.string.developer_options_analysis_data_source_mock
-        AnalysisDataSourceMode.REMOTE -> R.string.developer_options_analysis_data_source_remote
+        ScreenshotBackendMode.MOCK -> R.string.developer_options_screenshot_backend_mock
+        ScreenshotBackendMode.REMOTE -> R.string.developer_options_screenshot_backend_remote
     }
 
 internal enum class DeveloperOption(
@@ -146,12 +146,12 @@ internal sealed interface DeveloperOptionAction {
     data object OpenComponentGarden : DeveloperOptionAction
     data object ResetOnboarding : DeveloperOptionAction
     data object ResetScreenshotData : DeveloperOptionAction
-    data class RequestAnalysisDataSourceSwitch(
-        val targetMode: AnalysisDataSourceMode,
+    data class RequestScreenshotBackendSwitch(
+        val targetMode: ScreenshotBackendMode,
     ) : DeveloperOptionAction
 
-    data object ConfirmAnalysisDataSourceSwitch : DeveloperOptionAction
-    data object DismissAnalysisDataSourceSwitchDialog : DeveloperOptionAction
+    data object ConfirmScreenshotBackendSwitch : DeveloperOptionAction
+    data object DismissScreenshotBackendSwitchDialog : DeveloperOptionAction
 }
 
 @Preview(name = "Developer Options Mock", showBackground = true, widthDp = 360)
@@ -160,7 +160,7 @@ private fun DeveloperOptionsScreenMockPreview() {
     RECAPTheme(dynamicColor = false) {
         DeveloperOptionsScreen(
             uiState = DeveloperOptionsUiState(
-                analysisDataSourceMode = AnalysisDataSourceMode.MOCK,
+                screenshotBackendMode = ScreenshotBackendMode.MOCK,
             ),
             onAction = {},
         )
@@ -173,7 +173,7 @@ private fun DeveloperOptionsScreenRemoteRunningPreview() {
     RECAPTheme(dynamicColor = false) {
         DeveloperOptionsScreen(
             uiState = DeveloperOptionsUiState(
-                analysisDataSourceMode = AnalysisDataSourceMode.REMOTE,
+                screenshotBackendMode = ScreenshotBackendMode.REMOTE,
                 isAnalysisRunning = true,
             ),
             onAction = {},
@@ -187,8 +187,8 @@ private fun DeveloperOptionsScreenSwitchConfirmPreview() {
     RECAPTheme(dynamicColor = false) {
         DeveloperOptionsScreen(
             uiState = DeveloperOptionsUiState(
-                analysisDataSourceMode = AnalysisDataSourceMode.MOCK,
-                pendingSwitchTargetMode = AnalysisDataSourceMode.REMOTE,
+                screenshotBackendMode = ScreenshotBackendMode.MOCK,
+                pendingSwitchTargetMode = ScreenshotBackendMode.REMOTE,
             ),
             onAction = {},
         )

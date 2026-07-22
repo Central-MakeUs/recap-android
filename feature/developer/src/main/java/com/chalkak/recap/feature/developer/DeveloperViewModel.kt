@@ -3,11 +3,12 @@ package com.chalkak.recap.feature.developer
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chalkak.recap.core.data.UserPreferencesRepository
-import com.chalkak.recap.core.data.screenshot.AnalysisDataSourceMode
+import com.chalkak.recap.core.data.screenshot.MockScreenshotDataResetter
 import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisRunState
-import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
-import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
+import com.chalkak.recap.core.data.screenshot.ScreenshotBackendMode
+import com.chalkak.recap.core.data.screenshot.ScreenshotBackendModeStore
+import com.chalkak.recap.core.data.screenshot.ScreenshotBackendSwitchResult
+import com.chalkak.recap.core.data.screenshot.ScreenshotBackendSwitcher
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,36 +19,35 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class DeveloperOptionsUiState(
-    val analysisDataSourceMode: AnalysisDataSourceMode = AnalysisDataSourceMode.MOCK,
+    val screenshotBackendMode: ScreenshotBackendMode = ScreenshotBackendMode.MOCK,
     val isAnalysisRunning: Boolean = false,
     val isSwitching: Boolean = false,
-    val pendingSwitchTargetMode: AnalysisDataSourceMode? = null,
+    val pendingSwitchTargetMode: ScreenshotBackendMode? = null,
     @get:StringRes val feedbackMessageResId: Int? = null,
 ) {
-    val canSwitchAnalysisDataSource: Boolean
+    val canSwitchScreenshotBackend: Boolean
         get() = !isAnalysisRunning && !isSwitching
 }
 
 @HiltViewModel
 class DeveloperViewModel @Inject constructor(
-    private val screenshotCardRepository: ScreenshotCardRepository,
-    private val screenshotImageStorage: ScreenshotImageStorage,
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val screenshotBackendModeStore: ScreenshotBackendModeStore,
+    private val screenshotBackendSwitcher: ScreenshotBackendSwitcher,
+    private val mockScreenshotDataResetter: MockScreenshotDataResetter,
     private val screenshotAnalysisRunState: ScreenshotAnalysisRunState,
 ) : ViewModel() {
-    private val isSwitching = MutableStateFlow(false)
-    private val pendingSwitchTargetMode = MutableStateFlow<AnalysisDataSourceMode?>(null)
+    private val pendingSwitchTargetMode = MutableStateFlow<ScreenshotBackendMode?>(null)
     private val feedbackMessageResId = MutableStateFlow<Int?>(null)
 
     val uiState: StateFlow<DeveloperOptionsUiState> = combine(
-        userPreferencesRepository.analysisDataSourceMode,
+        screenshotBackendModeStore.mode,
         screenshotAnalysisRunState.isRunning,
-        isSwitching,
+        screenshotBackendSwitcher.isSwitching,
         pendingSwitchTargetMode,
         feedbackMessageResId,
     ) { mode, running, switching, pendingTarget, feedback ->
         DeveloperOptionsUiState(
-            analysisDataSourceMode = mode,
+            screenshotBackendMode = mode,
             isAnalysisRunning = running,
             isSwitching = switching,
             pendingSwitchTargetMode = pendingTarget,
@@ -66,15 +66,15 @@ class DeveloperViewModel @Inject constructor(
                 -> Unit
 
             DeveloperOptionAction.ResetScreenshotData -> resetScreenshotData()
-            is DeveloperOptionAction.RequestAnalysisDataSourceSwitch -> {
-                requestAnalysisDataSourceSwitch(action.targetMode)
+            is DeveloperOptionAction.RequestScreenshotBackendSwitch -> {
+                requestScreenshotBackendSwitch(action.targetMode)
             }
 
-            DeveloperOptionAction.ConfirmAnalysisDataSourceSwitch -> {
-                confirmAnalysisDataSourceSwitch()
+            DeveloperOptionAction.ConfirmScreenshotBackendSwitch -> {
+                confirmScreenshotBackendSwitch()
             }
 
-            DeveloperOptionAction.DismissAnalysisDataSourceSwitchDialog -> {
+            DeveloperOptionAction.DismissScreenshotBackendSwitchDialog -> {
                 pendingSwitchTargetMode.value = null
             }
         }
@@ -83,8 +83,7 @@ class DeveloperViewModel @Inject constructor(
     fun resetScreenshotData() {
         viewModelScope.launch {
             val result = runCatching {
-                screenshotCardRepository.deleteAllCards()
-                screenshotImageStorage.clearStoredImages()
+                mockScreenshotDataResetter.reset()
             }
             feedbackMessageResId.value = if (result.isSuccess) {
                 com.chalkak.recap.core.design.R.string.developer_options_reset_screenshot_data_success
@@ -94,42 +93,40 @@ class DeveloperViewModel @Inject constructor(
         }
     }
 
-    private fun requestAnalysisDataSourceSwitch(targetMode: AnalysisDataSourceMode) {
+    private fun requestScreenshotBackendSwitch(targetMode: ScreenshotBackendMode) {
         val current = uiState.value
-        if (targetMode == current.analysisDataSourceMode) {
+        if (targetMode == current.screenshotBackendMode) {
             return
         }
-        if (!current.canSwitchAnalysisDataSource) {
+        if (!current.canSwitchScreenshotBackend) {
             feedbackMessageResId.value =
-                com.chalkak.recap.core.design.R.string.developer_options_switch_analysis_data_source_rejected_busy
+                com.chalkak.recap.core.design.R.string.developer_options_switch_screenshot_backend_rejected_busy
             return
         }
         pendingSwitchTargetMode.value = targetMode
     }
 
-    private fun confirmAnalysisDataSourceSwitch() {
+    private fun confirmScreenshotBackendSwitch() {
         val targetMode = pendingSwitchTargetMode.value ?: return
-        if (screenshotAnalysisRunState.isRunning.value || isSwitching.value) {
+        if (screenshotAnalysisRunState.isRunning.value || screenshotBackendSwitcher.isSwitching.value) {
             pendingSwitchTargetMode.value = null
             feedbackMessageResId.value =
-                com.chalkak.recap.core.design.R.string.developer_options_switch_analysis_data_source_rejected_busy
+                com.chalkak.recap.core.design.R.string.developer_options_switch_screenshot_backend_rejected_busy
             return
         }
 
         viewModelScope.launch {
-            isSwitching.value = true
             pendingSwitchTargetMode.value = null
-            val result = runCatching {
-                screenshotCardRepository.deleteAllCards()
-                screenshotImageStorage.clearStoredImages()
-                userPreferencesRepository.setAnalysisDataSourceMode(targetMode)
+            feedbackMessageResId.value = when (screenshotBackendSwitcher.switchTo(targetMode)) {
+                ScreenshotBackendSwitchResult.Success ->
+                    com.chalkak.recap.core.design.R.string.developer_options_switch_screenshot_backend_success
+
+                ScreenshotBackendSwitchResult.RejectedBusy ->
+                    com.chalkak.recap.core.design.R.string.developer_options_switch_screenshot_backend_rejected_busy
+
+                ScreenshotBackendSwitchResult.Failure ->
+                    com.chalkak.recap.core.design.R.string.developer_options_switch_screenshot_backend_failure
             }
-            feedbackMessageResId.value = if (result.isSuccess) {
-                com.chalkak.recap.core.design.R.string.developer_options_switch_analysis_data_source_success
-            } else {
-                com.chalkak.recap.core.design.R.string.developer_options_switch_analysis_data_source_failure
-            }
-            isSwitching.value = false
         }
     }
 }

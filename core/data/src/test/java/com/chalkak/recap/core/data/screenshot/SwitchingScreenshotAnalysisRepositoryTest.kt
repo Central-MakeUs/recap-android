@@ -1,6 +1,5 @@
 package com.chalkak.recap.core.data.screenshot
 
-import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import io.mockk.coEvery
@@ -14,11 +13,11 @@ import org.junit.jupiter.api.Test
 import java.time.Instant
 
 class SwitchingScreenshotAnalysisRepositoryTest {
-    private val userPreferencesRepository = mockk<UserPreferencesRepository>()
+    private val screenshotBackendModeStore = mockk<ScreenshotBackendModeStore>()
     private val mockRepository = mockk<MockScreenshotAnalysisRepository>()
     private val remoteRepository = mockk<RemoteScreenshotAnalysisRepository>()
     private val switchingRepository = SwitchingScreenshotAnalysisRepository(
-        userPreferencesRepository = userPreferencesRepository,
+        screenshotBackendModeStore = screenshotBackendModeStore,
         mockScreenshotAnalysisRepository = mockRepository,
         remoteScreenshotAnalysisRepository = remoteRepository,
     )
@@ -27,7 +26,7 @@ class SwitchingScreenshotAnalysisRepositoryTest {
     fun `delegates single analyze to mock when mode is MOCK`() = runTest {
         val input = ScreenshotAnalysisInput(fileName = "a.png")
         val expected = analysisResult(1L)
-        coEvery { userPreferencesRepository.getAnalysisDataSourceMode() } returns AnalysisDataSourceMode.MOCK
+        coEvery { screenshotBackendModeStore.currentMode() } returns ScreenshotBackendMode.MOCK
         coEvery { mockRepository.analyze(input) } returns expected
 
         val result = switchingRepository.analyze(input)
@@ -41,8 +40,8 @@ class SwitchingScreenshotAnalysisRepositoryTest {
     fun `delegates single analyze to remote when mode is REMOTE`() = runTest {
         val input = ScreenshotAnalysisInput(fileName = "a.png")
         coEvery {
-            userPreferencesRepository.getAnalysisDataSourceMode()
-        } returns AnalysisDataSourceMode.REMOTE
+            screenshotBackendModeStore.currentMode()
+        } returns ScreenshotBackendMode.REMOTE
         coEvery { remoteRepository.analyze(input) } throws RemoteAnalysisNotWiredException()
 
         val result = runCatching { switchingRepository.analyze(input) }
@@ -59,14 +58,14 @@ class SwitchingScreenshotAnalysisRepositoryTest {
             ScreenshotAnalysisInput(fileName = "b.png"),
         )
         val expected = listOf(analysisResult(1L), analysisResult(2L))
-        coEvery { userPreferencesRepository.getAnalysisDataSourceMode() } returns AnalysisDataSourceMode.MOCK
+        coEvery { screenshotBackendModeStore.currentMode() } returns ScreenshotBackendMode.MOCK
         coEvery { mockRepository.analyze(inputs) } returns expected
 
         val results = switchingRepository.analyze(inputs)
 
         assertEquals(expected, results)
         coVerify(exactly = 1) { mockRepository.analyze(inputs) }
-        coVerify(exactly = 1) { userPreferencesRepository.getAnalysisDataSourceMode() }
+        coVerify(exactly = 1) { screenshotBackendModeStore.currentMode() }
     }
 
     private fun analysisResult(captureId: Long): ScreenshotAnalysisResult {

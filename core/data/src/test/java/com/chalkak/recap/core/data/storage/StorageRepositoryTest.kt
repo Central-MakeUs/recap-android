@@ -1,5 +1,7 @@
 package com.chalkak.recap.core.data.storage
 
+import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
 import com.chalkak.recap.core.data.capture.remote.CaptureListResponseDto
 import com.chalkak.recap.core.data.capture.remote.CaptureSummaryResponseDto
 import com.chalkak.recap.core.data.capture.remote.CardTypeDto
@@ -23,15 +25,24 @@ import org.junit.jupiter.api.Test
 
 class StorageRepositoryTest {
     private val storageApi = mockk<StorageApi>()
-    private lateinit var repository: StorageRepository
+    private val thumbnailCache = mockk<RemoteCaptureThumbnailCache>(relaxed = true)
+    private val changeNotifier = RemoteCaptureChangeNotifier()
+    private lateinit var repository: RemoteStorageRepository
 
     @BeforeEach
     fun setUp() {
-        repository = StorageRepository(storageApi = storageApi)
+        coEvery { thumbnailCache.resolveThumbnailSources(any()) } answers {
+            firstArg<List<Pair<Long, String?>>>().associate { (id, url) -> id to url }
+        }
+        repository = RemoteStorageRepository(
+            storageApi = storageApi,
+            thumbnailCache = thumbnailCache,
+            changeNotifier = changeNotifier,
+        )
     }
 
     @Test
-    fun `getTypes maps success response`() = runTest {
+    fun `getStorageTypes maps success response`() = runTest {
         coEvery { storageApi.getTypes() } returns ApiResponseDto(
             success = true,
             data = listOf(
@@ -43,14 +54,14 @@ class StorageRepositoryTest {
             ),
         )
 
-        val result = repository.getTypes()
+        val result = repository.getStorageTypes()
 
         assertEquals(ScreenshotContentType.KNOWLEDGE, result.getOrNull()?.single()?.typeCode)
         assertEquals(2L, result.getOrNull()?.single()?.count)
     }
 
     @Test
-    fun `getTypeCaptures sends type code and sort query`() = runTest {
+    fun `getCapturesByType sends type code and sort query`() = runTest {
         coEvery {
             storageApi.getTypeCaptures(typeCode = "KNOWLEDGE", sort = "oldest")
         } returns ApiResponseDto(
@@ -71,7 +82,7 @@ class StorageRepositoryTest {
             ),
         )
 
-        val result = repository.getTypeCaptures(
+        val result = repository.getCapturesByType(
             typeCode = ScreenshotContentType.KNOWLEDGE,
             sort = CaptureSort.Oldest,
         )
@@ -84,24 +95,24 @@ class StorageRepositoryTest {
     }
 
     @Test
-    fun `getFavorites maps server error`() = runTest {
+    fun `getFavoriteCaptures maps server error`() = runTest {
         coEvery { storageApi.getFavorites() } returns ApiResponseDto(
             success = false,
             data = null,
             error = ApiErrorDto(code = "INVALID_INPUT", message = "bad"),
         )
 
-        val result = repository.getFavorites()
+        val result = repository.getFavoriteCaptures()
 
         val error = result.exceptionOrNull() as RemoteApiException
         assertEquals("INVALID_INPUT", error.code)
     }
 
     @Test
-    fun `getEtc maps network failure`() = runTest {
+    fun `getEtcCaptures maps network failure`() = runTest {
         coEvery { storageApi.getEtc(any()) } throws IOException("offline")
 
-        val result = repository.getEtc()
+        val result = repository.getEtcCaptures()
 
         assertTrue(result.exceptionOrNull() is RemoteNetworkException)
     }

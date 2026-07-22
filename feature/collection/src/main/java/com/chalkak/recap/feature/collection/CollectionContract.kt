@@ -1,12 +1,15 @@
 package com.chalkak.recap.feature.collection
 
-import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.category.toLabelResId
 import com.chalkak.recap.core.design.category.toRecapCategoryType
 import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
 import com.chalkak.recap.core.design.component.topbar.CollectionTypeViewMode
+import com.chalkak.recap.core.model.capture.CaptureList
+import com.chalkak.recap.core.model.capture.CaptureSummary
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
+import com.chalkak.recap.core.model.storage.StorageOverview
+import java.time.Instant
 import timber.log.Timber
 
 enum class CollectionListSort {
@@ -97,103 +100,50 @@ sealed interface CollectionAction {
 
 sealed interface CollectionEvent {
     data class ShowDeleteSuccessToast(val deletedCount: Int) : CollectionEvent
+    data class ShowDeletePartialFailureToast(
+        val deletedCount: Int,
+        val failedCount: Int,
+    ) : CollectionEvent
+
+    data object ShowDeleteFailureToast : CollectionEvent
 }
 
-internal val CollectionOverviewCategoryOrder: List<ScreenshotContentType> = listOf(
-    ScreenshotContentType.SHOPPING,
-    ScreenshotContentType.PLACE,
-    ScreenshotContentType.SCHEDULE,
-    ScreenshotContentType.KNOWLEDGE,
-    ScreenshotContentType.CONTENT,
-    ScreenshotContentType.BENEFIT,
-    ScreenshotContentType.RECORD,
-    ScreenshotContentType.JOB,
-    ScreenshotContentType.ETC,
-)
-
-internal fun StoredScreenshotCard.toThumbnailModel(): Any? {
-    val thumbnail = imageRefs.thumbnailPath?.takeIf { it.isNotBlank() }
-    return thumbnail ?: imageRefs.storedImagePath ?: imageRefs.sourceImageUri
+internal fun StorageOverview.toOverviewUiModel(): CollectionOverviewUiModel {
+    return CollectionOverviewUiModel(
+        favoriteSummary = CollectionFavoriteSummaryUiModel(count = favoriteCount),
+        typeSummaries = types.map { type ->
+            val categoryType = type.typeCode.toRecapCategoryType()
+            CollectionTypeSummaryUiModel(
+                contentType = type.typeCode,
+                labelResId = categoryType.labelResId,
+                categoryType = categoryType,
+                count = type.count.toInt(),
+                exampleTitles = type.representativeTitles.take(2),
+                additionalExampleCount = (type.count.toInt() - 2).coerceAtLeast(0),
+            )
+        },
+    )
 }
 
-internal fun StoredScreenshotCard.toCardItemUiModel(): CollectionCardItemUiModel {
-    val contentType = analysisResult.typeCode
+internal fun CaptureSummary.toCardItemUiModel(): CollectionCardItemUiModel {
+    val contentType = typeCode
     return CollectionCardItemUiModel(
-        captureId = analysisResult.captureId,
-        title = analysisResult.title,
-        summary = analysisResult.summary,
+        captureId = captureId,
+        title = title,
+        summary = summary,
         contentTypeLabelResId = contentType.toLabelResId(),
         categoryType = contentType.toRecapCategoryType(),
-        organizedAtMillis = analysisResult.organizedAt.toEpochMilli(),
-        isFavorite = analysisResult.isFavorite,
-        thumbnailModel = toThumbnailModel(),
+        organizedAtMillis = organizedAtMillis(),
+        isFavorite = isFavorite,
+        thumbnailModel = thumbnailModel(),
     )
 }
 
-internal fun List<StoredScreenshotCard>.toOverviewUiModel(
-    searchQuery: String = "",
-): CollectionOverviewUiModel {
-    val normalizedQuery = searchQuery.trim()
-    val sortedCards = sortedByDescending { card -> card.analysisResult.organizedAt.toEpochMilli() }
-        .filter { card ->
-            if (normalizedQuery.isEmpty()) {
-                true
-            } else {
-                card.analysisResult.title.contains(normalizedQuery, ignoreCase = true) ||
-                    card.analysisResult.summary.contains(normalizedQuery, ignoreCase = true)
-            }
-        }
-    val favoriteCards = sortedCards.filter { card -> card.analysisResult.isFavorite }
-    val favoriteSummary = CollectionFavoriteSummaryUiModel(count = favoriteCards.size)
-
-    val typeSummaries = CollectionOverviewCategoryOrder.mapNotNull { contentType ->
-        val typeCards = sortedCards.filter { card ->
-            card.analysisResult.typeCode == contentType
-        }
-        if (typeCards.isEmpty()) {
-            return@mapNotNull null
-        }
-        val categoryType = contentType.toRecapCategoryType()
-        CollectionTypeSummaryUiModel(
-            contentType = contentType,
-            labelResId = categoryType.labelResId,
-            categoryType = categoryType,
-            count = typeCards.size,
-            exampleTitles = typeCards.map { card -> card.analysisResult.title }.take(2),
-            additionalExampleCount = if (typeCards.size >= 3) typeCards.size - 2 else 0,
-        )
-    }
-
-    return CollectionOverviewUiModel(
-        favoriteSummary = favoriteSummary,
-        typeSummaries = typeSummaries,
-    )
-}
-
-internal fun List<StoredScreenshotCard>.toDetailUiModel(
+internal fun CaptureList.toDetailUiModel(
     filter: CollectionDetailFilter,
     sort: CollectionListSort,
-    searchQuery: String = "",
 ): CollectionDetailUiModel {
-    val filteredCards = when (filter) {
-        is CollectionDetailFilter.ByType -> filter { card ->
-            card.analysisResult.typeCode == filter.contentType
-        }
-        CollectionDetailFilter.Favorites -> filter { card -> card.analysisResult.isFavorite }
-    }
-    val normalizedQuery = searchQuery.trim()
-    val queryFilteredCards = if (normalizedQuery.isEmpty()) {
-        filteredCards
-    } else {
-        filteredCards.filter { card ->
-            card.analysisResult.title.contains(normalizedQuery, ignoreCase = true) ||
-                card.analysisResult.summary.contains(normalizedQuery, ignoreCase = true)
-        }
-    }
-    val sortedCards = when (sort) {
-        CollectionListSort.Latest -> queryFilteredCards.sortedByDescending { card -> card.analysisResult.organizedAt.toEpochMilli() }
-        CollectionListSort.Oldest -> queryFilteredCards.sortedBy { card -> card.analysisResult.organizedAt.toEpochMilli() }
-    }
+    items.logThumbnailSummary()
     val titleResId = when (filter) {
         is CollectionDetailFilter.ByType -> filter.contentType.toLabelResId()
         CollectionDetailFilter.Favorites -> com.chalkak.recap.core.design.R.string.collection_favorites_detail_title
@@ -210,20 +160,25 @@ internal fun List<StoredScreenshotCard>.toDetailUiModel(
         CollectionDetailFilter.Favorites -> ScreenshotCardMetadataMode.CategoryChip
         is CollectionDetailFilter.ByType -> ScreenshotCardMetadataMode.OrganizedDate
     }
-    sortedCards.logThumbnailSummary()
     return CollectionDetailUiModel(
         titleResId = titleResId,
-        count = sortedCards.size,
+        count = count,
         sort = sort,
-        cards = sortedCards.map(StoredScreenshotCard::toCardItemUiModel),
+        cards = items.map(CaptureSummary::toCardItemUiModel),
         emptyMessageResId = emptyMessageResId,
         categoryType = categoryType,
         cardMetadataMode = cardMetadataMode,
     )
 }
 
-private fun List<StoredScreenshotCard>.logThumbnailSummary() {
-    val found = count { card -> !card.imageRefs.thumbnailPath.isNullOrBlank() }
+internal fun CaptureSummary.thumbnailModel(): Any? = thumbnailUrl?.takeIf { it.isNotBlank() }
+
+internal fun CaptureSummary.organizedAtMillis(): Long {
+    return runCatching { Instant.parse(organizedAt).toEpochMilli() }.getOrDefault(0L)
+}
+
+private fun List<CaptureSummary>.logThumbnailSummary() {
+    val found = count { summary -> !summary.thumbnailUrl.isNullOrBlank() }
     val fallback = size - found
     Timber.d("%d개의 이미지의 썸네일을 찾음, %d개의 이미지가 fallback됨", found, fallback)
 }

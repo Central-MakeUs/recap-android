@@ -1,53 +1,34 @@
 package com.chalkak.recap.core.data.storage
 
-import com.chalkak.recap.core.data.capture.remote.toCardTypeDto
-import com.chalkak.recap.core.data.capture.remote.toDomain
-import com.chalkak.recap.core.data.network.mapApiResponse
-import com.chalkak.recap.core.data.network.runRemoteCatchingSuspend
-import com.chalkak.recap.core.data.storage.remote.StorageApi
-import com.chalkak.recap.core.data.storage.remote.toDomain
 import com.chalkak.recap.core.model.capture.CaptureList
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import com.chalkak.recap.core.model.storage.CaptureSort
+import com.chalkak.recap.core.model.storage.StorageOverview
 import com.chalkak.recap.core.model.storage.StorageType
-import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 
-class StorageRepository @Inject constructor(
-    private val storageApi: StorageApi,
-) {
-    suspend fun getTypes(): Result<List<StorageType>> =
-        runRemoteCatchingSuspend {
-            mapApiResponse(storageApi.getTypes()) { list ->
-                list.map { it.toDomain() }
-            }.getOrThrow()
-        }
+interface StorageRepository {
+    fun observeOverview(searchQuery: String): Flow<StorageOverview>
 
-    suspend fun getTypeCaptures(
+    fun observeCapturesByType(
         typeCode: ScreenshotContentType,
         sort: CaptureSort = CaptureSort.Latest,
-    ): Result<CaptureList> =
-        runRemoteCatchingSuspend {
-            mapApiResponse(
-                storageApi.getTypeCaptures(
-                    typeCode = typeCode.toCardTypeDto().name,
-                    sort = sort.toQuery(),
-                ),
-            ) { it.toDomain() }.getOrThrow()
-        }
+        searchQuery: String = "",
+    ): Flow<CaptureList>
 
-    suspend fun getFavorites(): Result<CaptureList> =
-        runRemoteCatchingSuspend {
-            mapApiResponse(storageApi.getFavorites()) { it.toDomain() }.getOrThrow()
-        }
+    fun observeFavoriteCaptures(
+        sort: CaptureSort = CaptureSort.Latest,
+        searchQuery: String = "",
+    ): Flow<CaptureList>
 
-    suspend fun getEtc(sort: CaptureSort = CaptureSort.Latest): Result<CaptureList> =
-        runRemoteCatchingSuspend {
-            mapApiResponse(storageApi.getEtc(sort = sort.toQuery())) { it.toDomain() }.getOrThrow()
-        }
+    suspend fun getStorageTypes(): Result<List<StorageType>>
 
-    private fun CaptureSort.toQuery(): String =
-        when (this) {
-            CaptureSort.Latest -> "latest"
-            CaptureSort.Oldest -> "oldest"
-        }
+    suspend fun getCapturesByType(
+        typeCode: ScreenshotContentType,
+        sort: CaptureSort = CaptureSort.Latest,
+    ): Result<CaptureList>
+
+    suspend fun getFavoriteCaptures(): Result<CaptureList>
+
+    suspend fun getEtcCaptures(sort: CaptureSort = CaptureSort.Latest): Result<CaptureList>
 }

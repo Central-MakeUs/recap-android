@@ -2,30 +2,32 @@ package com.chalkak.recap.feature.collection
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
-import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
-import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
+import com.chalkak.recap.core.data.capture.CaptureMutationRepository
+import com.chalkak.recap.core.data.storage.StorageRepository
 import com.chalkak.recap.core.design.component.topbar.CollectionTypeViewMode
+import com.chalkak.recap.core.model.capture.CaptureList
+import com.chalkak.recap.core.model.storage.CaptureSort
+import com.chalkak.recap.core.model.storage.StorageOverview
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class CollectionViewModel @Inject constructor(
-    private val screenshotCardRepository: ScreenshotCardRepository,
-    private val screenshotImageStorage: ScreenshotImageStorage,
+    private val storageRepository: StorageRepository,
+    private val captureMutationRepository: CaptureMutationRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CollectionUiState())
     val uiState: StateFlow<CollectionUiState> = _uiState.asStateFlow()
@@ -33,24 +35,49 @@ class CollectionViewModel @Inject constructor(
     private val _events = MutableSharedFlow<CollectionEvent>(extraBufferCapacity = 1)
     val events: SharedFlow<CollectionEvent> = _events.asSharedFlow()
 
-    private var storedCards: List<StoredScreenshotCard> = emptyList()
-    private var detailFilter: CollectionDetailFilter? = null
-    private var detailSort: CollectionListSort = CollectionListSort.Latest
-    private var searchQuery: String = ""
-    private var detailSearchQuery: String = ""
-    private var isDetailSearchVisible: Boolean = false
-    private var typeViewMode: CollectionTypeViewMode = CollectionTypeViewMode.Grid
-    private var selection = CollectionSelectionUiState()
+    private val searchQuery = MutableStateFlow("")
+    private val detailSearchQuery = MutableStateFlow("")
+    private val detailFilter = MutableStateFlow<CollectionDetailFilter?>(null)
+    private val detailSort = MutableStateFlow(CollectionListSort.Latest)
+    private val isDetailSearchVisible = MutableStateFlow(false)
+    private val typeViewMode = MutableStateFlow(CollectionTypeViewMode.Grid)
+    private val selection = MutableStateFlow(CollectionSelectionUiState())
     private var selectionGeneration = 0L
-    private var hasReceivedFirstEmission = false
 
-    internal var ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+    private var latestOverview = StorageOverview(
+        hasAnyCapture = false,
+        favoriteCount = 0,
+        types = emptyList(),
+    )
+    private var latestDetailCards: CaptureList? = null
+    private var detailCaptureIds: Set<Long> = emptySet()
+    private var favoriteStates: Map<Long, Boolean> = emptyMap()
+    private var hasReceivedFirstOverview = false
 
     init {
         viewModelScope.launch {
-            screenshotCardRepository.observeStoredCards().collect { cards ->
-                hasReceivedFirstEmission = true
-                storedCards = cards
+            searchQuery
+                .flatMapLatest { query -> storageRepository.observeOverview(query) }
+                .collect { overview ->
+                    hasReceivedFirstOverview = true
+                    latestOverview = overview
+                    publishState()
+                }
+        }
+
+        viewModelScope.launch {
+            combine(detailFilter, detailSort, detailSearchQuery) { filter, sort, query ->
+                Triple(filter, sort, query)
+            }.flatMapLatest { (filter, sort, query) ->
+                if (filter == null) {
+                    flowOf(null)
+                } else {
+                    observeDetail(filter = filter, sort = sort, searchQuery = query)
+                }
+            }.collect { detail ->
+                latestDetailCards = detail
+                detailCaptureIds = detail?.items?.map { it.captureId }?.toSet().orEmpty()
+                favoriteStates = detail?.items?.associate { it.captureId to it.isFavorite }.orEmpty()
                 publishState()
             }
         }
@@ -59,15 +86,15 @@ class CollectionViewModel @Inject constructor(
     fun onAction(action: CollectionAction) {
         when (action) {
             is CollectionAction.UpdateSearchQuery -> {
-                if (searchQuery != action.query) {
+                if (searchQuery.value != action.query) {
                     clearSelection()
                 }
-                searchQuery = action.query
+                searchQuery.value = action.query
                 publishState()
             }
 
             CollectionAction.ShowDetailSearch -> {
-                isDetailSearchVisible = true
+                isDetailSearchVisible.value = true
                 publishState()
             }
 
@@ -77,23 +104,23 @@ class CollectionViewModel @Inject constructor(
             }
 
             is CollectionAction.UpdateDetailSearchQuery -> {
-                if (detailSearchQuery != action.query) {
+                if (detailSearchQuery.value != action.query) {
                     clearSelection()
                 }
-                detailSearchQuery = action.query
+                detailSearchQuery.value = action.query
                 publishState()
             }
 
             is CollectionAction.SetTypeViewMode -> {
-                typeViewMode = action.viewMode
+                typeViewMode.value = action.viewMode
                 publishState()
             }
 
             CollectionAction.OpenFavoriteDetail -> {
                 clearSelection()
                 clearDetailSearch()
-                detailFilter = CollectionDetailFilter.Favorites
-                detailSort = CollectionListSort.Latest
+                detailFilter.value = CollectionDetailFilter.Favorites
+                detailSort.value = CollectionListSort.Latest
                 publishState()
             }
 
@@ -102,41 +129,37 @@ class CollectionViewModel @Inject constructor(
             is CollectionAction.OpenTypeDetail -> {
                 clearSelection()
                 clearDetailSearch()
-                detailFilter = CollectionDetailFilter.ByType(action.contentType)
-                detailSort = CollectionListSort.Latest
+                detailFilter.value = CollectionDetailFilter.ByType(action.contentType)
+                detailSort.value = CollectionListSort.Latest
                 publishState()
             }
 
             CollectionAction.CloseDetail -> {
                 clearSelection()
                 clearDetailSearch()
-                detailFilter = null
-                detailSort = CollectionListSort.Latest
+                detailFilter.value = null
+                detailSort.value = CollectionListSort.Latest
                 publishState()
             }
 
             is CollectionAction.SetDetailSort -> {
-                detailSort = action.sort
+                detailSort.value = action.sort
                 publishState()
             }
 
             is CollectionAction.ToggleFavorite -> {
-                val currentCard = storedCards.firstOrNull { card ->
-                    card.analysisResult.captureId == action.captureId
-                } ?: return
+                val currentFavorite = favoriteStates[action.captureId] ?: return
                 viewModelScope.launch {
-                    runCatching {
-                        screenshotCardRepository.updateFavorite(
-                            captureId = action.captureId,
-                            isFavorite = !currentCard.analysisResult.isFavorite,
-                        )
-                    }
+                    captureMutationRepository.updateFavorite(
+                        captureId = action.captureId,
+                        isFavorite = !currentFavorite,
+                    )
                 }
             }
 
             CollectionAction.StartSelection -> {
                 selectionGeneration += 1
-                selection = CollectionSelectionUiState(isActive = true)
+                selection.value = CollectionSelectionUiState(isActive = true)
                 publishState()
             }
 
@@ -146,21 +169,19 @@ class CollectionViewModel @Inject constructor(
             }
 
             is CollectionAction.ToggleItemSelection -> {
-                if (!selection.isActive || selection.isDeleting) {
+                val current = selection.value
+                if (!current.isActive || current.isDeleting) {
                     return
                 }
-                val storedCaptureIds = storedCards.mapTo(mutableSetOf()) { card ->
-                    card.analysisResult.captureId
-                }
-                if (action.captureId !in storedCaptureIds) {
+                if (action.captureId !in detailCaptureIds) {
                     return
                 }
-                val selectedCaptureIds = selection.selectedCaptureIds.toMutableSet().apply {
+                val selectedCaptureIds = current.selectedCaptureIds.toMutableSet().apply {
                     if (!add(action.captureId)) {
                         remove(action.captureId)
                     }
                 }
-                selection = selection.copy(selectedCaptureIds = selectedCaptureIds)
+                selection.value = current.copy(selectedCaptureIds = selectedCaptureIds)
                 publishState()
             }
 
@@ -170,65 +191,101 @@ class CollectionViewModel @Inject constructor(
         }
     }
 
+    private fun observeDetail(
+        filter: CollectionDetailFilter,
+        sort: CollectionListSort,
+        searchQuery: String,
+    ) = when (filter) {
+        CollectionDetailFilter.Favorites ->
+            storageRepository.observeFavoriteCaptures(
+                sort = sort.toCaptureSort(),
+                searchQuery = searchQuery,
+            )
+        is CollectionDetailFilter.ByType ->
+            storageRepository.observeCapturesByType(
+                typeCode = filter.contentType,
+                sort = sort.toCaptureSort(),
+                searchQuery = searchQuery,
+            )
+    }
+
     private fun showDeleteConfirmDialog() {
-        if (!selection.isActive || selection.isDeleting || selection.selectedCount == 0) {
+        val current = selection.value
+        if (!current.isActive || current.isDeleting || current.selectedCount == 0) {
             return
         }
-        selection = selection.copy(showDeleteConfirmDialog = true)
+        selection.value = current.copy(showDeleteConfirmDialog = true)
         publishState()
     }
 
     private fun dismissDeleteConfirmDialog() {
-        if (!selection.showDeleteConfirmDialog || selection.isDeleting) {
+        val current = selection.value
+        if (!current.showDeleteConfirmDialog || current.isDeleting) {
             return
         }
-        selection = selection.copy(showDeleteConfirmDialog = false)
+        selection.value = current.copy(showDeleteConfirmDialog = false)
         publishState()
     }
 
     private fun deleteSelectedCards() {
-        if (!selection.isActive || selection.isDeleting) {
+        val current = selection.value
+        if (!current.isActive || current.isDeleting) {
             return
         }
-        val storedCaptureIds = storedCards.mapTo(mutableSetOf()) { card ->
-            card.analysisResult.captureId
-        }
-        val captureIds = selection.selectedCaptureIds.intersect(storedCaptureIds)
+        val captureIds = current.selectedCaptureIds.intersect(detailCaptureIds)
         if (captureIds.isEmpty()) {
-            selection = selection.copy(showDeleteConfirmDialog = false)
+            selection.value = current.copy(showDeleteConfirmDialog = false)
             publishState()
             return
         }
 
-        selection = selection.copy(
+        selection.value = current.copy(
             isDeleting = true,
             showDeleteConfirmDialog = false,
         )
         val deleteGeneration = selectionGeneration
         publishState()
         viewModelScope.launch {
-            try {
-                screenshotCardRepository.deleteCards(captureIds)
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (_: Exception) {
-                if (selectionGeneration == deleteGeneration) {
-                    selection = selection.copy(isDeleting = false)
-                    publishState()
-                }
+            val result = captureMutationRepository.deleteCaptures(captureIds)
+            if (selectionGeneration != deleteGeneration) {
+                return@launch
+            }
+            val deleteResult = result.getOrNull()
+            if (result.isFailure || deleteResult == null) {
+                selection.value = selection.value.copy(isDeleting = false)
+                publishState()
+                _events.emit(CollectionEvent.ShowDeleteFailureToast)
                 return@launch
             }
 
-            _events.emit(CollectionEvent.ShowDeleteSuccessToast(deletedCount = captureIds.size))
-
-            try {
-                withContext(ioDispatcher + NonCancellable) {
-                    screenshotImageStorage.deleteStoredImages(captureIds)
+            when {
+                deleteResult.isFullFailure -> {
+                    selection.value = selection.value.copy(isDeleting = false)
+                    publishState()
+                    _events.emit(CollectionEvent.ShowDeleteFailureToast)
                 }
-            } catch (_: Exception) {
-                // Room is already committed; private file cleanup remains best-effort.
-            } finally {
-                if (selectionGeneration == deleteGeneration) {
+
+                deleteResult.isPartialSuccess -> {
+                    selection.value = selection.value.copy(
+                        selectedCaptureIds = deleteResult.failedIds,
+                        isDeleting = false,
+                        showDeleteConfirmDialog = false,
+                    )
+                    publishState()
+                    _events.emit(
+                        CollectionEvent.ShowDeletePartialFailureToast(
+                            deletedCount = deleteResult.deletedIds.size,
+                            failedCount = deleteResult.failedIds.size,
+                        ),
+                    )
+                }
+
+                else -> {
+                    _events.emit(
+                        CollectionEvent.ShowDeleteSuccessToast(
+                            deletedCount = deleteResult.deletedIds.size,
+                        ),
+                    )
                     clearSelection()
                     publishState()
                 }
@@ -238,45 +295,50 @@ class CollectionViewModel @Inject constructor(
 
     private fun clearSelection() {
         selectionGeneration += 1
-        selection = CollectionSelectionUiState()
+        selection.value = CollectionSelectionUiState()
     }
 
     private fun clearDetailSearch() {
-        detailSearchQuery = ""
-        isDetailSearchVisible = false
+        detailSearchQuery.value = ""
+        isDetailSearchVisible.value = false
     }
 
     private fun publishState() {
-        val storedCaptureIds = storedCards.mapTo(mutableSetOf()) { card ->
-            card.analysisResult.captureId
-        }
-        if (selection.isActive) {
-            selection = selection.copy(
-                selectedCaptureIds = selection.selectedCaptureIds.intersect(storedCaptureIds),
+        var currentSelection = selection.value
+        if (currentSelection.isActive) {
+            currentSelection = currentSelection.copy(
+                selectedCaptureIds = currentSelection.selectedCaptureIds.intersect(detailCaptureIds),
             )
+            selection.value = currentSelection
         }
-        val hasStoredScreenshots = storedCards.isNotEmpty()
-        val overview = storedCards.toOverviewUiModel(searchQuery = searchQuery)
-        val detail = detailFilter?.let { filter ->
-            storedCards.toDetailUiModel(
-                filter = filter,
-                sort = detailSort,
-                searchQuery = detailSearchQuery,
-            )
+
+        val filter = detailFilter.value
+        val detail = filter?.let { activeFilter ->
+            (latestDetailCards ?: CaptureList(count = 0, items = emptyList()))
+                .toDetailUiModel(
+                    filter = activeFilter,
+                    sort = detailSort.value,
+                )
         }
 
         _uiState.update {
             CollectionUiState(
-                isLoading = !hasReceivedFirstEmission,
-                hasStoredScreenshots = hasStoredScreenshots,
-                searchQuery = searchQuery,
-                detailSearchQuery = detailSearchQuery,
-                isDetailSearchVisible = isDetailSearchVisible,
-                typeViewMode = typeViewMode,
-                overview = overview,
+                isLoading = !hasReceivedFirstOverview,
+                hasStoredScreenshots = latestOverview.hasAnyCapture,
+                searchQuery = searchQuery.value,
+                detailSearchQuery = detailSearchQuery.value,
+                isDetailSearchVisible = isDetailSearchVisible.value,
+                typeViewMode = typeViewMode.value,
+                overview = latestOverview.toOverviewUiModel(),
                 detail = detail,
-                selection = selection,
+                selection = currentSelection,
             )
         }
     }
+
+    private fun CollectionListSort.toCaptureSort(): CaptureSort =
+        when (this) {
+            CollectionListSort.Latest -> CaptureSort.Latest
+            CollectionListSort.Oldest -> CaptureSort.Oldest
+        }
 }

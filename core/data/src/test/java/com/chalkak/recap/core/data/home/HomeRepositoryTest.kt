@@ -1,5 +1,7 @@
 package com.chalkak.recap.core.data.home
 
+import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
 import com.chalkak.recap.core.data.capture.remote.CaptureSummaryResponseDto
 import com.chalkak.recap.core.data.capture.remote.CardTypeDto
 import com.chalkak.recap.core.data.home.remote.HomeApi
@@ -21,11 +23,20 @@ import org.junit.jupiter.api.Test
 
 class HomeRepositoryTest {
     private val homeApi = mockk<HomeApi>()
-    private lateinit var repository: HomeRepository
+    private val thumbnailCache = mockk<RemoteCaptureThumbnailCache>(relaxed = true)
+    private val changeNotifier = RemoteCaptureChangeNotifier()
+    private lateinit var repository: RemoteHomeRepository
 
     @BeforeEach
     fun setUp() {
-        repository = HomeRepository(homeApi = homeApi)
+        coEvery { thumbnailCache.resolveThumbnailSources(any()) } answers {
+            firstArg<List<Pair<Long, String?>>>().associate { (id, url) -> id to url }
+        }
+        repository = RemoteHomeRepository(
+            homeApi = homeApi,
+            thumbnailCache = thumbnailCache,
+            changeNotifier = changeNotifier,
+        )
     }
 
     @Test

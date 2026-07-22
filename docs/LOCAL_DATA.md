@@ -176,26 +176,52 @@
 
 역할:
 - 사용자 설정 접근 API를 제공한다.
-- 현재는 온보딩 완료 여부만 관리한다.
+- 현재는 온보딩 완료 여부/단계만 관리한다.
 
 주요 API:
 - `onboardingCompleted: Flow<Boolean>`
 - `setOnboardingCompleted(completed)`
+- `getOnboardingStep()` / `setOnboardingStep(step)` / `clearOnboardingStep()`
 
 저장 key:
 - `onboarding_completed`
+- `onboarding_step`
 
 주의사항:
-- 외부 API는 기존과 동일하게 유지한다.
+- 스크린샷 backend 모드는 `ScreenshotBackendModeStore`가 같은 `user_preferences` DataStore에서 관리한다.
 - 새 설정을 추가할 때는 같은 `user_preferences` DataStore를 사용하고, 별도 DataStore 파일을 만들지 않는다.
+
+### `ScreenshotBackendModeStore`
+
+역할:
+- 전역 스크린샷 backend 모드(`MOCK` / `REMOTE`)를 관찰·저장한다.
+- Debug에서만 저장값을 사용하고, non-debug 현재 단계는 항상 `MOCK`이다.
+
+저장 key:
+- `screenshot_backend_mode` (신규, 우선)
+- `analysis_data_source_mode` (legacy fallback, `setMode` 시 제거)
+
+자세한 전환 구조는 `docs/ANALYSIS_DATA_SOURCE.md`를 본다.
+
+## Mock backend vs Remote backend 저장 SoT
+
+| | Mock backend | Remote backend |
+|--|--------------|----------------|
+| 정보카드 SoT | Room `ScreenshotCardRepository` | 서버 Capture/Storage API |
+| 원본 이미지 | 앱 private `ScreenshotImageStorage` | 서버 URL (기기 원본 캐시 없음) |
+| 썸네일 | 앱 private 썸네일 파일 | `RemoteCaptureThumbnailCache` (capture ID 기반 로컬 캐시) |
+| Mock 구현 | `MockHomeRepository`, `MockStorageRepository`, `MockCaptureMutationRepository` 등 | — |
+| Remote 구현 | — | `RemoteHomeRepository`, `RemoteStorageRepository`, `RemoteCaptureMutationRepository` 등 |
+
+모드 전환 시 `MockScreenshotDataResetter`가 Mock Room 카드와 private 원본/썸네일만 삭제한다. session token·onboarding·일반 사용자 설정은 유지한다.
 
 ## 현재 연결되지 않은 부분
 
 다음 항목은 구현체는 존재하지만 아직 앱 flow에 완전히 연결되지 않았다.
 
-- Home/Collection UI는 아직 `ScreenshotCardRepository`의 Room 데이터를 표시하지 않는다.
-- 실제 서버 OCR/AI 결과를 `ScreenshotCardRepository`에 저장하는 연결은 아직 없다.
-- 썸네일 생성은 아직 없다.
+- Capture 상세의 Mock/Remote repository 전환은 아직 없다.
+- 실제 upload / organize / poll Remote 분석 파이프라인은 stub이다.
+- 썸네일 생성 pipeline(원본→썸네일)은 Mock 경로에 제한적으로만 있다.
 - 이미지 bytes는 Room BLOB으로 저장하지 않는다.
 
 ## 테스트

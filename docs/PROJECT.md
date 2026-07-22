@@ -119,8 +119,12 @@ com.chalkak.recap
 - 스크린샷 분석/저장:
   - `ScreenshotCardRepository`
   - `ScreenshotAnalysisRepository` (Debug에서 Mock/Remote 런타임 전환 가능, 구조는 `docs/ANALYSIS_DATA_SOURCE.md`)
+  - 현재 스위치는 분석뿐 아니라 Home/Storage/Capture command 등 스크린샷 도메인 전역 backend 선택이다.
   - `LocalScreenshotDataSource` / `ImagePermissionRepository`
 - OCR/AI 분석은 서버에서 수행한다. 로컬 ML Kit OCR 및 Firebase AI 클라이언트는 사용하지 않는다.
+- `ScreenshotBackendModeStore`: Debug 런타임 Mock/Remote 전역 스크린샷 backend 모드 (DataStore `user_preferences`)
+- `ScreenshotBackendSwitcher`: 모드 전환 정책(분석 중 거부, Mock 데이터 초기화 후 저장, 직렬화)
+- Switching repository(`SwitchingScreenshotAnalysisRepository`, `SwitchingHomeRepository`, `SwitchingStorageRepository` 등)가 동일 Store를 기준으로 Mock/Remote delegate를 선택한다.
 
 외부 API, Firebase, local.properties, google-services 파일, API key 등 시크릿은 커밋하지 않는다.
 
