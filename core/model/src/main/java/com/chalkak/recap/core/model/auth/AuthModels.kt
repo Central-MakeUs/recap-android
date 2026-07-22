@@ -1,5 +1,7 @@
 package com.chalkak.recap.core.model.auth
 
+import java.time.Instant
+
 enum class AuthProvider {
     Kakao,
     Email,
@@ -9,6 +11,12 @@ data class SocialAuthCredential(
     val provider: AuthProvider,
     val accessToken: String,
     val idToken: String? = null,
+)
+
+data class KakaoUserProfile(
+    val email: String?,
+    val connectedAt: Instant?,
+    val emailNeedsAgreement: Boolean = false,
 )
 
 sealed interface AuthSignInResult {

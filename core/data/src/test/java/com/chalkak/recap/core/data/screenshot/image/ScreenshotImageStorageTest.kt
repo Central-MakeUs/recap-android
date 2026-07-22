@@ -55,21 +55,21 @@ class ScreenshotImageStorageTest {
     }
 
     @Test
-    fun buildImagePath_returnsStablePathForImageId() {
-        val imagePath = storage.buildImagePath("image-123")
+    fun buildImagePath_returnsStablePathForCaptureId() {
+        val imagePath = storage.buildImagePath(123L)
 
         assertEquals(
-            File(storage.resolveImagesDirectory(), "image-123"),
+            File(storage.resolveImagesDirectory(), "123"),
             imagePath,
         )
     }
 
     @Test
-    fun buildThumbnailPath_returnsJpgPathForImageId() {
-        val thumbnailPath = storage.buildThumbnailPath("image-123")
+    fun buildThumbnailPath_returnsJpgPathForCaptureId() {
+        val thumbnailPath = storage.buildThumbnailPath(123L)
 
         assertEquals(
-            File(storage.resolveThumbnailsDirectory(), "image-123.jpg"),
+            File(storage.resolveThumbnailsDirectory(), "123.jpg"),
             thumbnailPath,
         )
     }
@@ -83,14 +83,14 @@ class ScreenshotImageStorageTest {
         )
 
         val thumbnailPath = storage.createThumbnailFromUri(
-            imageId = "image-half",
+            captureId = 1L,
             sourceUri = Uri.fromFile(sourceFile),
         )
 
         assertNotNull(thumbnailPath)
         val thumbnailFile = File(requireNotNull(thumbnailPath))
         assertTrue(thumbnailFile.exists())
-        assertEquals(storage.buildThumbnailPath("image-half").absolutePath, thumbnailPath)
+        assertEquals(storage.buildThumbnailPath(1L).absolutePath, thumbnailPath)
         assertTrue(isJpegFile(thumbnailFile))
 
         val bounds = decodeBounds(thumbnailFile)
@@ -114,7 +114,7 @@ class ScreenshotImageStorageTest {
         }
 
         val thumbnailPath = storage.createThumbnailFromUri(
-            imageId = "image-oriented",
+            captureId = 2L,
             sourceUri = Uri.fromFile(sourceFile),
         )
 
@@ -132,7 +132,7 @@ class ScreenshotImageStorageTest {
             height = 2401,
         )
         val oddThumbnailPath = storage.createThumbnailFromUri(
-            imageId = "image-odd",
+            captureId = 3L,
             sourceUri = Uri.fromFile(oddSource),
         )
         val oddBounds = decodeBounds(File(requireNotNull(oddThumbnailPath)))
@@ -145,7 +145,7 @@ class ScreenshotImageStorageTest {
             height = 1,
         )
         val tinyThumbnailPath = storage.createThumbnailFromUri(
-            imageId = "image-tiny",
+            captureId = 4L,
             sourceUri = Uri.fromFile(tinySource),
         )
         val tinyBounds = decodeBounds(File(requireNotNull(tinyThumbnailPath)))
@@ -162,7 +162,7 @@ class ScreenshotImageStorageTest {
         )
 
         val thumbnailPath = storage.createThumbnailFromUri(
-            imageId = "image-large",
+            captureId = 5L,
             sourceUri = Uri.fromFile(sourceFile),
         )
 
@@ -174,15 +174,15 @@ class ScreenshotImageStorageTest {
 
     @Test
     fun createThumbnailFromStoredImage_doesNotReopenOriginalUri() {
-        val imageId = "image-stored"
+        val captureId = 6L
         val sourceFile = writeSolidJpeg(
             fileName = "source-stored-1080x2400.jpg",
             width = 1080,
             height = 2400,
         )
-        sourceFile.copyTo(storage.buildImagePath(imageId), overwrite = true)
+        sourceFile.copyTo(storage.buildImagePath(captureId), overwrite = true)
 
-        val thumbnailPath = storage.createThumbnailFromStoredImage(imageId)
+        val thumbnailPath = storage.createThumbnailFromStoredImage(captureId)
 
         assertNotNull(thumbnailPath)
         val bounds = decodeBounds(File(requireNotNull(thumbnailPath)))
@@ -192,18 +192,18 @@ class ScreenshotImageStorageTest {
 
     @Test
     fun createThumbnailFromUri_publishFailurePreservesExistingTarget() {
-        val imageId = "image-preserve"
+        val captureId = 7L
         val sourceFile = writeSolidJpeg(
             fileName = "source-preserve.jpg",
             width = 200,
             height = 400,
         )
         val createdPath = storage.createThumbnailFromUri(
-            imageId = imageId,
+            captureId = captureId,
             sourceUri = Uri.fromFile(sourceFile),
         )
         assertNotNull(createdPath)
-        val targetFile = storage.buildThumbnailPath(imageId)
+        val targetFile = storage.buildThumbnailPath(captureId)
         val originalBytes = targetFile.readBytes()
 
         val backupBlocker = File(targetFile.parentFile, "${targetFile.name}.bak")
@@ -216,7 +216,7 @@ class ScreenshotImageStorageTest {
             height = 600,
         )
         val result = storage.createThumbnailFromUri(
-            imageId = imageId,
+            captureId = captureId,
             sourceUri = Uri.fromFile(newerSource),
         )
 
@@ -239,12 +239,12 @@ class ScreenshotImageStorageTest {
         val missingUri = Uri.fromFile(File(context.cacheDir, "missing-source.jpg"))
 
         val thumbnailPath = storage.createThumbnailFromUri(
-            imageId = "image-missing",
+            captureId = 8L,
             sourceUri = missingUri,
         )
 
         assertNull(thumbnailPath)
-        assertFalse(storage.buildThumbnailPath("image-missing").exists())
+        assertFalse(storage.buildThumbnailPath(8L).exists())
         val leftoverTemps = storage.resolveThumbnailsDirectory()
             .listFiles()
             ?.filter { it.name.endsWith(".tmp") }
@@ -254,11 +254,11 @@ class ScreenshotImageStorageTest {
 
     @Test
     fun clearStoredImages_deletesFilesUnderRecapDirectories() {
-        val imageFile = storage.buildImagePath("image-1").apply {
+        val imageFile = storage.buildImagePath(1L).apply {
             parentFile?.mkdirs()
             writeText("image")
         }
-        val thumbnailFile = storage.buildThumbnailPath("image-1").apply {
+        val thumbnailFile = storage.buildThumbnailPath(1L).apply {
             parentFile?.mkdirs()
             writeText("thumbnail")
         }
@@ -271,38 +271,20 @@ class ScreenshotImageStorageTest {
 
     @Test
     fun deleteStoredImages_deletesOnlySelectedImageAndJpgThumbnailFiles() {
-        val selectedImage = storage.buildImagePath("selected").apply { writeText("image") }
-        val selectedThumbnail = storage.buildThumbnailPath("selected").apply {
+        val selectedImage = storage.buildImagePath(1L).apply { writeText("image") }
+        val selectedThumbnail = storage.buildThumbnailPath(1L).apply {
             writeText("thumbnail")
         }
-        val keptImage = storage.buildImagePath("kept").apply { writeText("image") }
-        val keptThumbnail = storage.buildThumbnailPath("kept").apply { writeText("thumbnail") }
+        val keptImage = storage.buildImagePath(2L).apply { writeText("image") }
+        val keptThumbnail = storage.buildThumbnailPath(2L).apply { writeText("thumbnail") }
 
-        storage.deleteStoredImages(setOf("selected"))
+        storage.deleteStoredImages(setOf(1L))
 
         assertFalse(selectedImage.exists())
         assertFalse(selectedThumbnail.exists())
         assertTrue(keptImage.exists())
         assertTrue(keptThumbnail.exists())
-        assertEquals("selected.jpg", selectedThumbnail.name)
-    }
-
-    @Test
-    fun deleteStoredImages_rejectsTraversalAndContinuesDeletingValidFiles() {
-        val outsideFile = File(storage.resolveImagesDirectory().parentFile, "outside").apply {
-            writeText("outside")
-        }
-        val selectedImage = storage.buildImagePath("selected").apply { writeText("image") }
-        val selectedThumbnail = storage.buildThumbnailPath("selected").apply {
-            writeText("thumbnail")
-        }
-
-        storage.deleteStoredImages(linkedSetOf("../outside", "selected"))
-
-        assertTrue(outsideFile.exists())
-        assertFalse(selectedImage.exists())
-        assertFalse(selectedThumbnail.exists())
-        outsideFile.delete()
+        assertEquals("1.jpg", selectedThumbnail.name)
     }
 
     private fun writeSolidJpeg(fileName: String, width: Int, height: Int): File {

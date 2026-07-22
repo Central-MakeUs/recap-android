@@ -188,7 +188,7 @@ private fun HomeEmptyOrganizePrompt(
 private fun RecentOrganizedScreenshotsSection(
     screenshots: List<HomeRecentScreenshotUiModel>,
     onMoreClick: () -> Unit,
-    onScreenshotClick: (String) -> Unit,
+    onScreenshotClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -230,7 +230,7 @@ private fun RecentOrganizedScreenshotsSection(
 private fun FavoriteItemsSection(
     items: List<HomeFavoriteItemUiModel>,
     onMoreClick: () -> Unit,
-    onItemClick: (String) -> Unit,
+    onItemClick: (Long) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     HomeSection(

@@ -1,14 +1,14 @@
 package com.chalkak.recap.feature.collection
 
+import com.chalkak.recap.core.data.capture.MockCaptureMutationRepository
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
-import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisConfidence
+import com.chalkak.recap.core.data.storage.MockStorageRepository
+import com.chalkak.recap.core.model.capture.CaptureDeleteResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
-import com.chalkak.recap.core.model.screenshot.ScreenshotContentTypes
-import com.chalkak.recap.core.model.screenshot.ScreenshotKeyField
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -36,23 +36,32 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CollectionViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
-    private val repository = mockk<ScreenshotCardRepository>()
+    private val cardRepository = mockk<ScreenshotCardRepository>()
     private val imageStorage = mockk<ScreenshotImageStorage>()
     private val cardsFlow = MutableSharedFlow<List<StoredScreenshotCard>>(replay = 1)
+    private lateinit var captureMutations: MockCaptureMutationRepository
     private lateinit var viewModel: CollectionViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        every { repository.observeStoredCards() } returns cardsFlow
+        every { cardRepository.observeStoredCards() } returns cardsFlow
         every { imageStorage.deleteStoredImages(any()) } just Runs
-        viewModel = CollectionViewModel(repository, imageStorage).apply {
+        captureMutations = MockCaptureMutationRepository(
+            screenshotCardRepository = cardRepository,
+            screenshotImageStorage = imageStorage,
+        ).apply {
             ioDispatcher = testDispatcher
         }
+        viewModel = CollectionViewModel(
+            storageRepository = MockStorageRepository(cardRepository),
+            captureMutationRepository = captureMutations,
+        )
     }
 
     @After
@@ -77,10 +86,10 @@ class CollectionViewModelTest {
         cardsFlow.emit(
             listOf(
                 storedCard(
-                    imageId = "shopping-1",
+                    captureId = 1L,
                     title = "택배 반품 절차",
-                    contentType = ScreenshotContentType.SHOPPING_PRODUCT,
-                    createdAtMillis = 200L,
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(200L),
                 ),
             ),
         )
@@ -97,16 +106,16 @@ class CollectionViewModelTest {
         cardsFlow.emit(
             listOf(
                 storedCard(
-                    imageId = "favorite-1",
+                    captureId = 1L,
                     title = "즐겨찾기 1",
                     isFavorite = true,
-                    createdAtMillis = 300L,
+                    organizedAt = Instant.ofEpochMilli(300L),
                 ),
                 storedCard(
-                    imageId = "favorite-2",
+                    captureId = 2L,
                     title = "즐겨찾기 2",
                     isFavorite = true,
-                    createdAtMillis = 200L,
+                    organizedAt = Instant.ofEpochMilli(200L),
                 ),
             ),
         )
@@ -120,22 +129,22 @@ class CollectionViewModelTest {
         cardsFlow.emit(
             listOf(
                 storedCard(
-                    imageId = "shopping-1",
+                    captureId = 1L,
                     title = "택배 반품 절차",
-                    contentType = ScreenshotContentType.SHOPPING_PRODUCT,
-                    createdAtMillis = 300L,
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(300L),
                 ),
                 storedCard(
-                    imageId = "shopping-2",
+                    captureId = 2L,
                     title = "노트북 가격 비교",
-                    contentType = ScreenshotContentType.SHOPPING_PRODUCT,
-                    createdAtMillis = 200L,
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(200L),
                 ),
                 storedCard(
-                    imageId = "shopping-3",
+                    captureId = 3L,
                     title = "여름 원피스 주문내역",
-                    contentType = ScreenshotContentType.SHOPPING_PRODUCT,
-                    createdAtMillis = 100L,
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
                 ),
             ),
         )
@@ -155,22 +164,22 @@ class CollectionViewModelTest {
         cardsFlow.emit(
             listOf(
                 storedCard(
-                    imageId = "other-1",
+                    captureId = 1L,
                     title = "연말정산 서류 목록",
-                    contentType = ScreenshotContentType.OTHER,
-                    createdAtMillis = 300L,
+                    contentType = ScreenshotContentType.ETC,
+                    organizedAt = Instant.ofEpochMilli(300L),
                 ),
                 storedCard(
-                    imageId = "shopping-1",
+                    captureId = 2L,
                     title = "택배 반품 절차",
-                    contentType = ScreenshotContentType.SHOPPING_PRODUCT,
-                    createdAtMillis = 200L,
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(200L),
                 ),
                 storedCard(
-                    imageId = "other-2",
+                    captureId = 3L,
                     title = "미분류 메모",
-                    contentType = ScreenshotContentType.OTHER,
-                    createdAtMillis = 100L,
+                    contentType = ScreenshotContentType.ETC,
+                    organizedAt = Instant.ofEpochMilli(100L),
                 ),
             ),
         )
@@ -179,8 +188,8 @@ class CollectionViewModelTest {
         val overview = viewModel.uiState.value.overview
         assertEquals(
             listOf(
-                ScreenshotContentType.SHOPPING_PRODUCT,
-                ScreenshotContentType.OTHER,
+                ScreenshotContentType.SHOPPING,
+                ScreenshotContentType.ETC,
             ),
             overview.typeSummaries.map { it.contentType },
         )
@@ -192,17 +201,17 @@ class CollectionViewModelTest {
         cardsFlow.emit(
             listOf(
                 storedCard(
-                    imageId = "shopping-1",
+                    captureId = 1L,
                     title = "택배 반품 절차",
-                    contentType = ScreenshotContentType.SHOPPING_PRODUCT,
-                    createdAtMillis = 200L,
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(200L),
                 ),
             ),
         )
         advanceUntilIdle()
 
         assertEquals(
-            listOf(ScreenshotContentType.SHOPPING_PRODUCT),
+            listOf(ScreenshotContentType.SHOPPING),
             viewModel.uiState.value.overview.typeSummaries.map { it.contentType },
         )
     }
@@ -212,24 +221,24 @@ class CollectionViewModelTest {
         cardsFlow.emit(
             listOf(
                 storedCard(
-                    imageId = "match-favorite",
+                    captureId = 1L,
                     title = "노트북 할인",
-                    contentType = ScreenshotContentType.SHOPPING_PRODUCT,
+                    contentType = ScreenshotContentType.SHOPPING,
                     isFavorite = true,
-                    createdAtMillis = 300L,
+                    organizedAt = Instant.ofEpochMilli(300L),
                 ),
                 storedCard(
-                    imageId = "miss-favorite",
+                    captureId = 2L,
                     title = "카페 예약",
-                    contentType = ScreenshotContentType.PLACE_RESTAURANT,
+                    contentType = ScreenshotContentType.PLACE,
                     isFavorite = true,
-                    createdAtMillis = 200L,
+                    organizedAt = Instant.ofEpochMilli(200L),
                 ),
                 storedCard(
-                    imageId = "match-other",
+                    captureId = 3L,
                     title = "노트북 메모",
-                    contentType = ScreenshotContentType.OTHER,
-                    createdAtMillis = 100L,
+                    contentType = ScreenshotContentType.ETC,
+                    organizedAt = Instant.ofEpochMilli(100L),
                 ),
             ),
         )
@@ -242,8 +251,8 @@ class CollectionViewModelTest {
         assertEquals(1, overview.favoriteSummary.count)
         assertEquals(
             listOf(
-                ScreenshotContentType.SHOPPING_PRODUCT,
-                ScreenshotContentType.OTHER,
+                ScreenshotContentType.SHOPPING,
+                ScreenshotContentType.ETC,
             ),
             overview.typeSummaries.map { it.contentType },
         )
@@ -254,21 +263,21 @@ class CollectionViewModelTest {
         cardsFlow.emit(
             listOf(
                 storedCard(
-                    imageId = "favorite-old",
+                    captureId = 1L,
                     title = "Old favorite",
                     isFavorite = true,
-                    createdAtMillis = 100L,
+                    organizedAt = Instant.ofEpochMilli(100L),
                 ),
                 storedCard(
-                    imageId = "favorite-new",
+                    captureId = 2L,
                     title = "New favorite",
                     isFavorite = true,
-                    createdAtMillis = 300L,
+                    organizedAt = Instant.ofEpochMilli(300L),
                 ),
                 storedCard(
-                    imageId = "regular",
+                    captureId = 3L,
                     title = "Regular",
-                    createdAtMillis = 200L,
+                    organizedAt = Instant.ofEpochMilli(200L),
                 ),
             ),
         )
@@ -279,7 +288,7 @@ class CollectionViewModelTest {
 
         val detail = viewModel.uiState.value.detail
         assertEquals(2, detail?.count)
-        assertEquals("favorite-new", detail?.cards?.first()?.imageId)
+        assertEquals(2L, detail?.cards?.first()?.captureId)
         assertEquals(
             com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode.CategoryChip,
             detail?.cardMetadataMode,
@@ -291,16 +300,16 @@ class CollectionViewModelTest {
         cardsFlow.emit(
             listOf(
                 storedCard(
-                    imageId = "other-1",
+                    captureId = 1L,
                     title = "기타",
-                    contentType = ScreenshotContentType.OTHER,
-                    createdAtMillis = 100L,
+                    contentType = ScreenshotContentType.ETC,
+                    organizedAt = Instant.ofEpochMilli(100L),
                 ),
             ),
         )
         advanceUntilIdle()
 
-        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.OTHER))
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.ETC))
         advanceUntilIdle()
 
         val detail = viewModel.uiState.value.detail
@@ -317,24 +326,27 @@ class CollectionViewModelTest {
 
     @Test
     fun `toggle favorite delegates to repository`() = runTest(testDispatcher) {
-        coEvery { repository.updateFavorite(any(), any()) } returns Unit
+        coEvery { cardRepository.updateFavorite(any(), any()) } returns Unit
         cardsFlow.emit(
             listOf(
                 storedCard(
-                    imageId = "card-1",
+                    captureId = 1L,
                     title = "Card",
+                    contentType = ScreenshotContentType.SHOPPING,
                     isFavorite = false,
-                    createdAtMillis = 100L,
+                    organizedAt = Instant.ofEpochMilli(100L),
                 ),
             ),
         )
         advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
 
-        viewModel.onAction(CollectionAction.ToggleFavorite("card-1"))
+        viewModel.onAction(CollectionAction.ToggleFavorite(1L))
         advanceUntilIdle()
 
         coVerify(exactly = 1) {
-            repository.updateFavorite(imageId = "card-1", isFavorite = true)
+            cardRepository.updateFavorite(captureId = 1L, isFavorite = true)
         }
     }
 
@@ -343,24 +355,27 @@ class CollectionViewModelTest {
         cardsFlow.emit(
             listOf(
                 storedCard(
-                    imageId = "card-1",
+                    captureId = 1L,
                     title = "Card",
-                    createdAtMillis = 100L,
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
                 ),
             ),
         )
         advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
 
         viewModel.onAction(CollectionAction.StartSelection)
-        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+        viewModel.onAction(CollectionAction.ToggleItemSelection(1L))
 
         assertTrue(viewModel.uiState.value.selection.isActive)
-        assertEquals(setOf("card-1"), viewModel.uiState.value.selection.selectedImageIds)
+        assertEquals(setOf(1L), viewModel.uiState.value.selection.selectedCaptureIds)
 
-        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
-        assertTrue(viewModel.uiState.value.selection.selectedImageIds.isEmpty())
+        viewModel.onAction(CollectionAction.ToggleItemSelection(1L))
+        assertTrue(viewModel.uiState.value.selection.selectedCaptureIds.isEmpty())
 
-        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+        viewModel.onAction(CollectionAction.ToggleItemSelection(1L))
         viewModel.onAction(CollectionAction.CancelSelection)
 
         assertEquals(CollectionSelectionUiState(), viewModel.uiState.value.selection)
@@ -370,52 +385,78 @@ class CollectionViewModelTest {
     fun `delete selected shows confirm dialog without deleting`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
-                storedCard(imageId = "card-1", title = "First", createdAtMillis = 100L),
+                storedCard(
+                    captureId = 1L,
+                    title = "First",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
             ),
         )
         advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
         viewModel.onAction(CollectionAction.StartSelection)
-        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+        viewModel.onAction(CollectionAction.ToggleItemSelection(1L))
 
         viewModel.onAction(CollectionAction.DeleteSelected)
 
         assertTrue(viewModel.uiState.value.selection.showDeleteConfirmDialog)
-        coVerify(exactly = 0) { repository.deleteCards(any()) }
+        coVerify(exactly = 0) { cardRepository.deleteCards(any()) }
     }
 
     @Test
     fun `dismiss delete confirm dialog keeps selection`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
-                storedCard(imageId = "card-1", title = "First", createdAtMillis = 100L),
+                storedCard(
+                    captureId = 1L,
+                    title = "First",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
             ),
         )
         advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
         viewModel.onAction(CollectionAction.StartSelection)
-        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+        viewModel.onAction(CollectionAction.ToggleItemSelection(1L))
         viewModel.onAction(CollectionAction.DeleteSelected)
 
         viewModel.onAction(CollectionAction.DismissDeleteConfirmDialog)
 
         assertFalse(viewModel.uiState.value.selection.showDeleteConfirmDialog)
         assertTrue(viewModel.uiState.value.selection.isActive)
-        assertEquals(setOf("card-1"), viewModel.uiState.value.selection.selectedImageIds)
+        assertEquals(setOf(1L), viewModel.uiState.value.selection.selectedCaptureIds)
     }
 
     @Test
     fun `delete selected removes Room cards then stored files and exits selection`() =
         runTest(testDispatcher) {
-            coEvery { repository.deleteCards(any()) } returns Unit
+            coEvery { cardRepository.deleteCards(any()) } returns Unit
             cardsFlow.emit(
                 listOf(
-                    storedCard(imageId = "card-1", title = "First", createdAtMillis = 200L),
-                    storedCard(imageId = "card-2", title = "Second", createdAtMillis = 100L),
+                    storedCard(
+                        captureId = 1L,
+                        title = "First",
+                        contentType = ScreenshotContentType.SHOPPING,
+                        organizedAt = Instant.ofEpochMilli(200L),
+                    ),
+                    storedCard(
+                        captureId = 2L,
+                        title = "Second",
+                        contentType = ScreenshotContentType.SHOPPING,
+                        organizedAt = Instant.ofEpochMilli(100L),
+                    ),
                 ),
             )
             advanceUntilIdle()
+            viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+            advanceUntilIdle()
             viewModel.onAction(CollectionAction.StartSelection)
-            viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
-            viewModel.onAction(CollectionAction.ToggleItemSelection("card-2"))
+            viewModel.onAction(CollectionAction.ToggleItemSelection(1L))
+            viewModel.onAction(CollectionAction.ToggleItemSelection(2L))
 
             viewModel.onAction(CollectionAction.DeleteSelected)
             val eventDeferred = async { viewModel.events.first() }
@@ -423,14 +464,14 @@ class CollectionViewModelTest {
             advanceUntilIdle()
 
             coVerify(exactly = 1) {
-                repository.deleteCards(setOf("card-1", "card-2"))
+                cardRepository.deleteCards(setOf(1L, 2L))
             }
             verify(exactly = 1) {
-                imageStorage.deleteStoredImages(setOf("card-1", "card-2"))
+                imageStorage.deleteStoredImages(setOf(1L, 2L))
             }
             coVerifyOrder {
-                repository.deleteCards(setOf("card-1", "card-2"))
-                imageStorage.deleteStoredImages(setOf("card-1", "card-2"))
+                cardRepository.deleteCards(setOf(1L, 2L))
+                imageStorage.deleteStoredImages(setOf(1L, 2L))
             }
             assertEquals(
                 CollectionEvent.ShowDeleteSuccessToast(deletedCount = 2),
@@ -441,61 +482,139 @@ class CollectionViewModelTest {
 
     @Test
     fun `delete selected failure keeps selection available for retry`() = runTest(testDispatcher) {
-        coEvery { repository.deleteCards(any()) } throws IllegalStateException("database failure")
+        coEvery { cardRepository.deleteCards(any()) } throws IllegalStateException("database failure")
         cardsFlow.emit(
             listOf(
-                storedCard(imageId = "card-1", title = "First", createdAtMillis = 100L),
+                storedCard(
+                    captureId = 1L,
+                    title = "First",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
             ),
         )
         advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
         viewModel.onAction(CollectionAction.StartSelection)
-        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+        viewModel.onAction(CollectionAction.ToggleItemSelection(1L))
 
         viewModel.onAction(CollectionAction.DeleteSelected)
+        val eventDeferred = async { viewModel.events.first() }
         viewModel.onAction(CollectionAction.ConfirmDeleteSelected)
         advanceUntilIdle()
 
         verify(exactly = 0) { imageStorage.deleteStoredImages(any()) }
+        assertEquals(CollectionEvent.ShowDeleteFailureToast, eventDeferred.await())
         assertTrue(viewModel.uiState.value.selection.isActive)
         assertFalse(viewModel.uiState.value.selection.isDeleting)
         assertFalse(viewModel.uiState.value.selection.showDeleteConfirmDialog)
-        assertEquals(setOf("card-1"), viewModel.uiState.value.selection.selectedImageIds)
+        assertEquals(setOf(1L), viewModel.uiState.value.selection.selectedCaptureIds)
+    }
+
+    @Test
+    fun `partial delete success keeps failed ids selected`() = runTest(testDispatcher) {
+        val captureMutationRepository = mockk<com.chalkak.recap.core.data.capture.CaptureMutationRepository>()
+        coEvery { captureMutationRepository.deleteCaptures(setOf(1L, 2L)) } returns Result.success(
+            CaptureDeleteResult(
+                deletedIds = setOf(1L),
+                failedIds = setOf(2L),
+            ),
+        )
+        viewModel = CollectionViewModel(
+            storageRepository = MockStorageRepository(cardRepository),
+            captureMutationRepository = captureMutationRepository,
+        )
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 1L,
+                    title = "First",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(200L),
+                ),
+                storedCard(
+                    captureId = 2L,
+                    title = "Second",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.StartSelection)
+        viewModel.onAction(CollectionAction.ToggleItemSelection(1L))
+        viewModel.onAction(CollectionAction.ToggleItemSelection(2L))
+
+        viewModel.onAction(CollectionAction.DeleteSelected)
+        val eventDeferred = async { viewModel.events.first() }
+        viewModel.onAction(CollectionAction.ConfirmDeleteSelected)
+        advanceUntilIdle()
+
+        assertEquals(
+            CollectionEvent.ShowDeletePartialFailureToast(deletedCount = 1, failedCount = 1),
+            eventDeferred.await(),
+        )
+        assertTrue(viewModel.uiState.value.selection.isActive)
+        assertFalse(viewModel.uiState.value.selection.isDeleting)
+        assertEquals(setOf(2L), viewModel.uiState.value.selection.selectedCaptureIds)
     }
 
     @Test
     fun `completed delete does not clear a newer selection generation`() = runTest(testDispatcher) {
         val deleteGate = CompletableDeferred<Unit>()
-        coEvery { repository.deleteCards(any()) } coAnswers { deleteGate.await() }
+        coEvery { cardRepository.deleteCards(any()) } coAnswers { deleteGate.await() }
         cardsFlow.emit(
             listOf(
-                storedCard(imageId = "card-1", title = "First", createdAtMillis = 200L),
-                storedCard(imageId = "card-2", title = "Second", createdAtMillis = 100L),
+                storedCard(
+                    captureId = 1L,
+                    title = "First",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(200L),
+                ),
+                storedCard(
+                    captureId = 2L,
+                    title = "Second",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
             ),
         )
         advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
         viewModel.onAction(CollectionAction.StartSelection)
-        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+        viewModel.onAction(CollectionAction.ToggleItemSelection(1L))
         viewModel.onAction(CollectionAction.DeleteSelected)
         viewModel.onAction(CollectionAction.ConfirmDeleteSelected)
         runCurrent()
 
         viewModel.onAction(CollectionAction.CancelSelection)
         viewModel.onAction(CollectionAction.StartSelection)
-        viewModel.onAction(CollectionAction.ToggleItemSelection("card-2"))
+        viewModel.onAction(CollectionAction.ToggleItemSelection(2L))
         deleteGate.complete(Unit)
         advanceUntilIdle()
 
         assertTrue(viewModel.uiState.value.selection.isActive)
-        assertEquals(setOf("card-2"), viewModel.uiState.value.selection.selectedImageIds)
+        assertEquals(setOf(2L), viewModel.uiState.value.selection.selectedCaptureIds)
     }
 
     @Test
     fun `delete selected with no items does not call repository`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
-                storedCard(imageId = "card-1", title = "First", createdAtMillis = 100L),
+                storedCard(
+                    captureId = 1L,
+                    title = "First",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
             ),
         )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
         advanceUntilIdle()
         viewModel.onAction(CollectionAction.StartSelection)
 
@@ -504,19 +623,26 @@ class CollectionViewModelTest {
         advanceUntilIdle()
 
         assertFalse(viewModel.uiState.value.selection.showDeleteConfirmDialog)
-        coVerify(exactly = 0) { repository.deleteCards(any()) }
+        coVerify(exactly = 0) { cardRepository.deleteCards(any()) }
     }
 
     @Test
     fun `updating search query clears selection`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
-                storedCard(imageId = "card-1", title = "First", createdAtMillis = 100L),
+                storedCard(
+                    captureId = 1L,
+                    title = "First",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
             ),
         )
         advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
         viewModel.onAction(CollectionAction.StartSelection)
-        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+        viewModel.onAction(CollectionAction.ToggleItemSelection(1L))
 
         viewModel.onAction(CollectionAction.UpdateSearchQuery("First"))
 
@@ -528,17 +654,18 @@ class CollectionViewModelTest {
         cardsFlow.emit(
             listOf(
                 storedCard(
-                    imageId = "card-1",
+                    captureId = 1L,
                     title = "First",
-                    contentType = ScreenshotContentType.SHOPPING_PRODUCT,
-                    createdAtMillis = 100L,
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
                 ),
             ),
         )
         advanceUntilIdle()
-        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING_PRODUCT))
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
         viewModel.onAction(CollectionAction.StartSelection)
-        viewModel.onAction(CollectionAction.ToggleItemSelection("card-1"))
+        viewModel.onAction(CollectionAction.ToggleItemSelection(1L))
 
         viewModel.onAction(CollectionAction.CloseDetail)
 
@@ -547,33 +674,26 @@ class CollectionViewModelTest {
     }
 
     private fun storedCard(
-        imageId: String,
-        title: String,
+        captureId: Long,
+        title: String = "title-$captureId",
         summary: String = "summary",
-        contentType: ScreenshotContentType = ScreenshotContentType.OTHER,
+        contentType: ScreenshotContentType = ScreenshotContentType.ETC,
         isFavorite: Boolean = false,
-        createdAtMillis: Long,
+        organizedAt: Instant,
     ): StoredScreenshotCard {
         return StoredScreenshotCard(
             analysisResult = ScreenshotAnalysisResult(
-                imageId = imageId,
+                captureId = captureId,
+                typeCode = contentType,
                 title = title,
                 summary = summary,
-                contentTypes = ScreenshotContentTypes(primaryContentType = contentType),
-                keyFields = listOf(
-                    ScreenshotKeyField(
-                        label = "label",
-                        value = "value",
-                        displayPriority = 1,
-                        isSensitive = false,
-                    ),
-                ),
-                confidence = ScreenshotAnalysisConfidence.HIGH,
+                body = "body-$captureId",
+                originalImageUrl = "mock://captures/$captureId",
                 isFavorite = isFavorite,
+                organizedAt = organizedAt,
             ),
-            imageRefs = ScreenshotCardImageRefs(sourceImageUri = "content://$imageId"),
-            createdAtMillis = createdAtMillis,
-            updatedAtMillis = createdAtMillis,
+            imageRefs = ScreenshotCardImageRefs(sourceImageUri = "content://$captureId"),
+            updatedAtMillis = organizedAt.toEpochMilli(),
         )
     }
 }

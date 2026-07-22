@@ -4,8 +4,10 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisInput
-import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisRepository
+import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisInput
+import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRepository
+import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRunState
+import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotOrganizeOutcome
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
@@ -16,7 +18,6 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -26,7 +27,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import javax.inject.Inject
-import kotlin.time.Duration.Companion.milliseconds
 
 data class ScreenshotAnalysisProgressUiState(
     val isRunning: Boolean = false,
@@ -42,6 +42,7 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
     private val screenshotAnalysisRepository: ScreenshotAnalysisRepository,
     private val screenshotCardRepository: ScreenshotCardRepository,
     private val screenshotImageStorage: ScreenshotImageStorage,
+    private val screenshotAnalysisRunState: ScreenshotAnalysisRunState,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ScreenshotAnalysisProgressUiState())
     val uiState: StateFlow<ScreenshotAnalysisProgressUiState> = _uiState.asStateFlow()
@@ -52,59 +53,95 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
     @VisibleForTesting
     internal var ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 
-    fun startMockAnalysis(images: List<LocalImage>) {
+    fun startAnalysis(images: List<LocalImage>) {
         analysisJob?.cancel()
         val totalCount = images.size
         analysisJob = viewModelScope.launch {
-            _uiState.value = ScreenshotAnalysisProgressUiState(
-                isRunning = true,
-                completedCount = 0,
-                totalCount = totalCount,
-                progress = if (totalCount == 0) 1f else 0f,
-            )
-
-            if (totalCount == 0) {
-                _uiState.value = _uiState.value.copy(isRunning = false, progress = 1f)
-                return@launch
-            }
-
-            val results = mutableListOf<ScreenshotAnalysisResult>()
-            images.forEachIndexed { _, image ->
-                delay(MOCK_ANALYSIS_DELAY_MILLIS.milliseconds)
-                ensureActive()
-
-                val result = screenshotAnalysisRepository.analyze(
-                    ScreenshotAnalysisInput(fileName = image.displayName),
+            screenshotAnalysisRunState.beginRun()
+            try {
+                _uiState.value = ScreenshotAnalysisProgressUiState(
+                    isRunning = true,
+                    completedCount = 0,
+                    totalCount = totalCount,
+                    progress = if (totalCount == 0) 1f else 0f,
                 )
-                val saved = persistAnalysisResult(image = image, result = result)
-                if (!saved) {
-                    if (!isActive) {
-                        return@launch
-                    }
-                    _uiState.value = _uiState.value.copy(errorMessage = SAVE_ERROR_MESSAGE)
-                    return@forEachIndexed
-                }
 
-                results.add(result)
-                val completedCount = results.size
-                if (!isActive) {
+                if (totalCount == 0) {
+                    _uiState.value = _uiState.value.copy(isRunning = false, progress = 1f)
                     return@launch
                 }
-                _uiState.value = _uiState.value.copy(
-                    completedCount = completedCount,
-                    progress = (completedCount.toFloat() / totalCount).coerceIn(0f, 1f),
-                    results = results.toList(),
-                )
-            }
 
-            if (!isActive) {
-                return@launch
+                val inputs = images.map { image ->
+                    ScreenshotAnalysisInput(
+                        fileName = image.displayName,
+                        uri = image.uri,
+                    )
+                }
+
+                val outcome = screenshotAnalysisRepository.organize(inputs) { completed, total ->
+                    if (!isActive) return@organize
+                    val safeTotal = total.coerceAtLeast(1)
+                    _uiState.value = _uiState.value.copy(
+                        completedCount = completed.coerceIn(0, safeTotal),
+                        totalCount = safeTotal,
+                        progress = (completed.toFloat() / safeTotal).coerceIn(0f, 1f),
+                    )
+                }
+
+                ensureActive()
+                when (outcome) {
+                    is ScreenshotOrganizeOutcome.LocalResults -> {
+                        val persisted = mutableListOf<ScreenshotAnalysisResult>()
+                        outcome.results.forEachIndexed { index, result ->
+                            ensureActive()
+                            val image = images[index]
+                            val saved = persistAnalysisResult(image = image, result = result)
+                            if (!saved) {
+                                if (!isActive) {
+                                    return@launch
+                                }
+                                _uiState.value = _uiState.value.copy(
+                                    isRunning = false,
+                                    errorMessage = SAVE_ERROR_MESSAGE,
+                                    results = persisted.toList(),
+                                )
+                                return@launch
+                            }
+                            persisted += result
+                        }
+                        if (!isActive) {
+                            return@launch
+                        }
+                        _uiState.value = _uiState.value.copy(
+                            isRunning = false,
+                            completedCount = persisted.size,
+                            progress = (persisted.size.toFloat() / totalCount).coerceIn(0f, 1f),
+                            results = persisted.toList(),
+                        )
+                    }
+
+                    is ScreenshotOrganizeOutcome.RemoteCompleted -> {
+                        val completed = outcome.successCount + outcome.failCount
+                        _uiState.value = _uiState.value.copy(
+                            isRunning = false,
+                            completedCount = completed.coerceIn(0, totalCount),
+                            totalCount = totalCount,
+                            progress = (completed.toFloat() / totalCount).coerceIn(0f, 1f),
+                            results = emptyList(),
+                        )
+                    }
+                }
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (throwable: Exception) {
+                Timber.e(throwable, "Screenshot analysis failed")
+                _uiState.value = _uiState.value.copy(
+                    isRunning = false,
+                    errorMessage = ANALYSIS_ERROR_MESSAGE,
+                )
+            } finally {
+                screenshotAnalysisRunState.endRun()
             }
-            val completedCount = results.size
-            _uiState.value = _uiState.value.copy(
-                isRunning = false,
-                progress = (completedCount.toFloat() / totalCount).coerceIn(0f, 1f),
-            )
         }
     }
 
@@ -126,7 +163,7 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
             } else {
                 try {
                     screenshotImageStorage.copyImageFromUri(
-                        imageId = result.imageId,
+                        captureId = result.captureId,
                         sourceUri = sourceUri,
                     )
                 } catch (cancellation: CancellationException) {
@@ -141,10 +178,10 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
             } else {
                 try {
                     if (copiedPath != null) {
-                        screenshotImageStorage.createThumbnailFromStoredImage(result.imageId)
+                        screenshotImageStorage.createThumbnailFromStoredImage(result.captureId)
                     } else {
                         screenshotImageStorage.createThumbnailFromUri(
-                            imageId = result.imageId,
+                            captureId = result.captureId,
                             sourceUri = sourceUri,
                         )
                     }
@@ -164,14 +201,14 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
 
             if (thumbnailPath != null) {
                 Timber.d(
-                    "Persisting screenshot with thumbnail imageId=%s path=%s",
-                    result.imageId,
+                    "Persisting screenshot with thumbnail captureId=%s path=%s",
+                    result.captureId,
                     thumbnailPath,
                 )
             } else {
                 Timber.d(
-                    "Persisting screenshot without thumbnail imageId=%s storedImagePath=%s",
-                    result.imageId,
+                    "Persisting screenshot without thumbnail captureId=%s storedImagePath=%s",
+                    result.captureId,
                     copiedPath,
                 )
             }
@@ -179,7 +216,7 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
             try {
                 screenshotCardRepository.saveAnalysisResults(
                     results = listOf(result),
-                    imageRefsByImageId = mapOf(result.imageId to imageRefs),
+                    imageRefsByCaptureId = mapOf(result.captureId to imageRefs),
                 )
                 true
             } catch (cancellation: CancellationException) {
@@ -191,7 +228,7 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
     }
 
     private companion object {
-        const val MOCK_ANALYSIS_DELAY_MILLIS = 500L
         const val SAVE_ERROR_MESSAGE = "Failed to save screenshot analysis result"
+        const val ANALYSIS_ERROR_MESSAGE = "Failed to analyze screenshot"
     }
 }

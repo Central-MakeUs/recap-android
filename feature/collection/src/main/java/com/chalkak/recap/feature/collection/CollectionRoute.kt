@@ -31,7 +31,7 @@ fun CollectionRoute(
     modifier: Modifier = Modifier,
     hazeState: HazeState,
     onNavigateToOrganize: () -> Unit,
-    onNavigateToScreenshot: (String) -> Unit = {},
+    onNavigateToScreenshot: (Long) -> Unit = {},
     onNavigateBack: () -> Unit = {},
     favoritesNavigationRequestId: Int = 0,
     onPredictiveBackProgress: (Float) -> Unit = {},
@@ -85,6 +85,24 @@ fun CollectionRoute(
                         type = RecapToastType.Success,
                     )
                 }
+
+                is CollectionEvent.ShowDeletePartialFailureToast -> {
+                    toastDispatcher.showToast(
+                        message = resources.getString(
+                            R.string.collection_delete_partial_failure_toast,
+                            event.deletedCount,
+                            event.failedCount,
+                        ),
+                        type = RecapToastType.Error,
+                    )
+                }
+
+                CollectionEvent.ShowDeleteFailureToast -> {
+                    toastDispatcher.showToast(
+                        message = resources.getString(R.string.collection_delete_failure_toast),
+                        type = RecapToastType.Error,
+                    )
+                }
             }
         }
     }
@@ -130,7 +148,7 @@ fun CollectionRoute(
             }
 
             is CollectionAction.OpenFavoriteItem -> {
-                onNavigateToScreenshot(action.imageId)
+                onNavigateToScreenshot(action.captureId)
             }
 
             else -> viewModel.onAction(action)

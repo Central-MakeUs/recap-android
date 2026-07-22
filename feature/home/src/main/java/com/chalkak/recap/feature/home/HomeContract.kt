@@ -16,14 +16,14 @@ data class HomeUiState(
 )
 
 data class HomeRecentScreenshotUiModel(
-    val id: String,
+    val id: Long,
     val thumbnailModel: Any?,
     val title: String,
     val categoryType: RecapCategoryType,
 )
 
 data class HomeFavoriteItemUiModel(
-    val id: String,
+    val id: Long,
     val thumbnailModel: Any?,
     val categoryType: RecapCategoryType,
     val title: String,
@@ -44,10 +44,10 @@ sealed interface HomeAction {
     data object OpenSettings : HomeAction
     data object OpenSearch : HomeAction
     data object OpenRecentScreenshots : HomeAction
-    data class SelectRecentScreenshot(val id: String) : HomeAction
+    data class SelectRecentScreenshot(val id: Long) : HomeAction
     data object OpenFavoriteCategories : HomeAction
-    data class SelectFavoriteItem(val id: String) : HomeAction
-    data class ToggleFavoriteItem(val id: String) : HomeAction
+    data class SelectFavoriteItem(val id: Long) : HomeAction
+    data class ToggleFavoriteItem(val id: Long) : HomeAction
     data object OpenFrequentSaveTypes : HomeAction
     data class SelectFrequentSaveType(val id: String) : HomeAction
 }
@@ -55,19 +55,19 @@ sealed interface HomeAction {
 internal val HomePreviewUiState = HomeUiState(
     recentScreenshots = listOf(
         HomeRecentScreenshotUiModel(
-            id = "return",
+            id = 1L,
             thumbnailModel = R.drawable.mock_home_screenshot_return,
             title = "택배 반품 절차 정리",
             categoryType = RecapCategoryType.ShoppingProduct,
         ),
         HomeRecentScreenshotUiModel(
-            id = "hotel",
+            id = 2L,
             thumbnailModel = R.drawable.mock_home_screenshot_hotel,
             title = "제주 숙소 예약 정보",
             categoryType = RecapCategoryType.ScheduleReservation,
         ),
         HomeRecentScreenshotUiModel(
-            id = "recipe",
+            id = 3L,
             thumbnailModel = R.drawable.mock_home_screenshot_recipe,
             title = "파스타 레시피 저장",
             categoryType = RecapCategoryType.InfoKnowledge,
@@ -75,7 +75,7 @@ internal val HomePreviewUiState = HomeUiState(
     ),
     favoriteItems = listOf(
         HomeFavoriteItemUiModel(
-            id = "tax",
+            id = 4L,
             thumbnailModel = R.drawable.mock_home_screenshot_tax,
             categoryType = RecapCategoryType.RecordCapture,
             title = "연말정산 서류 목록",
@@ -84,7 +84,7 @@ internal val HomePreviewUiState = HomeUiState(
             isFavorite = true,
         ),
         HomeFavoriteItemUiModel(
-            id = "bbq",
+            id = 5L,
             thumbnailModel = R.drawable.mock_home_screenshot_hotel,
             categoryType = RecapCategoryType.PlaceRestaurant,
             title = "서울 삼겹살 맛집 리스트",
@@ -93,7 +93,7 @@ internal val HomePreviewUiState = HomeUiState(
             isFavorite = true,
         ),
         HomeFavoriteItemUiModel(
-            id = "idea",
+            id = 6L,
             thumbnailModel = R.drawable.mock_home_screenshot_recipe,
             categoryType = RecapCategoryType.InfoKnowledge,
             title = "아이디어 메모 모음",
@@ -102,7 +102,7 @@ internal val HomePreviewUiState = HomeUiState(
             isFavorite = true,
         ),
         HomeFavoriteItemUiModel(
-            id = "book",
+            id = 7L,
             thumbnailModel = R.drawable.mock_home_screenshot_return,
             categoryType = RecapCategoryType.BookContent,
             title = "이번 달 읽을 책 목록",

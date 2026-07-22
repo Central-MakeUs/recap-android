@@ -3,11 +3,8 @@ package com.chalkak.recap.core.data.screenshot.persistence
 import android.content.Context
 import androidx.room.Room
 import com.chalkak.recap.core.data.RecapDatabase
-import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisConfidence
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
-import com.chalkak.recap.core.model.screenshot.ScreenshotContentTypes
-import com.chalkak.recap.core.model.screenshot.ScreenshotKeyField
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -22,6 +19,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import java.time.Instant
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30])
@@ -45,9 +43,9 @@ class ScreenshotCardDaoTest {
     }
 
     @Test
-    fun saveAnalysisResults_persistsCardsInCreatedAtMillisDescendingOrder() = runBlocking {
-        val firstResult = sampleResult(imageId = "first", title = "First")
-        val secondResult = sampleResult(imageId = "second", title = "Second")
+    fun saveAnalysisResults_persistsCardsInOrganizedAtMillisDescendingOrder() = runBlocking {
+        val firstResult = sampleResult(captureId = 1L, organizedAt = Instant.ofEpochMilli(1000L))
+        val secondResult = sampleResult(captureId = 2L, organizedAt = Instant.ofEpochMilli(2000L))
 
         dao.saveAnalysisResults(
             entries = listOf(
@@ -59,61 +57,61 @@ class ScreenshotCardDaoTest {
         val storedCards = dao.observeAllCards().first()
 
         assertEquals(2, storedCards.size)
-        assertEquals("second", storedCards[0].card.imageId)
-        assertEquals("first", storedCards[1].card.imageId)
+        assertEquals(2L, storedCards[0].captureId)
+        assertEquals(1L, storedCards[1].captureId)
     }
 
     @Test
-    fun saveAnalysisResults_replacesKeyFieldsOnReSave() = runBlocking {
-        val initialResult = sampleResult(
-            imageId = "card-1",
-            keyFields = listOf(
-                keyField(label = "old-label", value = "old-value", priority = 1),
-            ),
-        )
-        val updatedResult = sampleResult(
-            imageId = "card-1",
-            keyFields = listOf(
-                keyField(label = "new-label", value = "new-value", priority = 1),
-                keyField(label = "new-label-2", value = "new-value-2", priority = 2),
-            ),
+    fun saveAnalysisResults_roundTripsAllFields() = runBlocking {
+        val repository = DefaultScreenshotCardRepository(dao)
+        val result = sampleResult(
+            captureId = 100L,
+            title = "Round trip title",
+            summary = "Round trip summary",
+            body = "Round trip body",
+            typeCode = ScreenshotContentType.SCHEDULE,
+            originalImageUrl = "mock://captures/100",
+            organizedAt = Instant.ofEpochMilli(5000L),
         )
 
-        dao.saveAnalysisResults(listOf(ScreenshotCardSaveEntry(initialResult)))
-        dao.saveAnalysisResults(listOf(ScreenshotCardSaveEntry(updatedResult)))
+        repository.saveAnalysisResults(listOf(result))
 
-        val storedCard = dao.getCardByImageId("card-1")
+        val storedCard = repository.getCard(100L)
 
         assertNotNull(storedCard)
-        assertEquals(2, storedCard!!.keyFields.size)
-        assertEquals("new-label", storedCard.keyFields[0].label)
-        assertEquals("new-value", storedCard.keyFields[0].value)
-        assertEquals("new-label-2", storedCard.keyFields[1].label)
+        assertEquals(100L, storedCard!!.analysisResult.captureId)
+        assertEquals("Round trip title", storedCard.analysisResult.title)
+        assertEquals("Round trip summary", storedCard.analysisResult.summary)
+        assertEquals("Round trip body", storedCard.analysisResult.body)
+        assertEquals(ScreenshotContentType.SCHEDULE, storedCard.analysisResult.typeCode)
+        assertEquals("mock://captures/100", storedCard.analysisResult.originalImageUrl)
+        assertEquals(Instant.ofEpochMilli(5000L), storedCard.analysisResult.organizedAt)
+        assertFalse(storedCard.analysisResult.isFavorite)
     }
 
     @Test
     fun updateFavorite_changesOnlyFavoriteState() = runBlocking {
-        val result = sampleResult(imageId = "favorite-card", isFavorite = false)
+        val result = sampleResult(captureId = 1L)
         dao.saveAnalysisResults(listOf(ScreenshotCardSaveEntry(result)))
 
         dao.updateFavorite(
-            imageId = "favorite-card",
+            captureId = 1L,
             isFavorite = true,
             updatedAtMillis = 9_999L,
         )
 
-        val storedCard = dao.getCardByImageId("favorite-card")
+        val storedCard = dao.getCardByCaptureId(1L)
 
         assertNotNull(storedCard)
-        assertTrue(storedCard!!.card.isFavorite)
-        assertEquals("favorite-card", storedCard.card.imageId)
-        assertEquals(9_999L, storedCard.card.updatedAtMillis)
+        assertTrue(storedCard!!.isFavorite)
+        assertEquals(1L, storedCard.captureId)
+        assertEquals(9_999L, storedCard.updatedAtMillis)
     }
 
     @Test
-    fun deleteAllCards_removesAllCardsAndKeyFields() = runBlocking {
-        val firstResult = sampleResult(imageId = "first")
-        val secondResult = sampleResult(imageId = "second")
+    fun deleteAllCards_removesAllCards() = runBlocking {
+        val firstResult = sampleResult(captureId = 1L)
+        val secondResult = sampleResult(captureId = 2L)
         dao.saveAnalysisResults(
             listOf(
                 ScreenshotCardSaveEntry(firstResult),
@@ -124,15 +122,15 @@ class ScreenshotCardDaoTest {
         dao.deleteAllCards()
 
         assertTrue(dao.observeAllCards().first().isEmpty())
-        assertNull(dao.getCardByImageId("first"))
-        assertNull(dao.getCardByImageId("second"))
+        assertNull(dao.getCardByCaptureId(1L))
+        assertNull(dao.getCardByCaptureId(2L))
     }
 
     @Test
     fun repositoryDeleteAllCards_removesAllStoredCards() = runBlocking {
         val repository = DefaultScreenshotCardRepository(dao)
-        repository.saveAnalysisResults(listOf(sampleResult(imageId = "card-1")))
-        repository.saveAnalysisResults(listOf(sampleResult(imageId = "card-2")))
+        repository.saveAnalysisResults(listOf(sampleResult(captureId = 1L)))
+        repository.saveAnalysisResults(listOf(sampleResult(captureId = 2L)))
 
         repository.deleteAllCards()
 
@@ -140,98 +138,69 @@ class ScreenshotCardDaoTest {
     }
 
     @Test
-    fun deleteByImageId_removesCardAndKeyFields() = runBlocking {
-        val result = sampleResult(imageId = "delete-me")
+    fun deleteByCaptureId_removesCard() = runBlocking {
+        val result = sampleResult(captureId = 1L)
         dao.saveAnalysisResults(listOf(ScreenshotCardSaveEntry(result)))
 
-        dao.deleteByImageId("delete-me")
+        dao.deleteByCaptureId(1L)
 
-        assertNull(dao.getCardByImageId("delete-me"))
+        assertNull(dao.getCardByCaptureId(1L))
         assertTrue(dao.observeAllCards().first().isEmpty())
     }
 
     @Test
-    fun repositoryDeleteCards_removesOnlySelectedCardsAndKeyFields() = runBlocking {
+    fun repositoryDeleteCards_removesOnlySelectedCards() = runBlocking {
         val repository = DefaultScreenshotCardRepository(dao)
         repository.saveAnalysisResults(
             listOf(
-                sampleResult(imageId = "selected-1"),
-                sampleResult(imageId = "kept"),
-                sampleResult(imageId = "selected-2"),
+                sampleResult(captureId = 1L, title = "Selected-1"),
+                sampleResult(captureId = 2L, title = "Kept"),
+                sampleResult(captureId = 3L, title = "Selected-2"),
             ),
         )
 
-        repository.deleteCards(setOf("selected-1", "selected-2"))
+        repository.deleteCards(setOf(1L, 3L))
 
         val remainingCards = repository.observeStoredCards().first()
-        assertEquals(listOf("kept"), remainingCards.map { it.analysisResult.imageId })
-        assertNull(dao.getCardByImageId("selected-1"))
-        assertNull(dao.getCardByImageId("selected-2"))
-        assertNotNull(dao.getCardByImageId("kept"))
-        database.openHelper.readableDatabase.query(
-            "SELECT COUNT(*) FROM screenshot_key_fields WHERE imageId IN (?, ?)",
-            arrayOf<Any?>("selected-1", "selected-2"),
-        ).use { cursor ->
-            assertTrue(cursor.moveToFirst())
-            assertEquals(0, cursor.getInt(0))
-        }
+        assertEquals(listOf(2L), remainingCards.map { it.analysisResult.captureId })
+        assertNull(dao.getCardByCaptureId(1L))
+        assertNull(dao.getCardByCaptureId(3L))
+        assertNotNull(dao.getCardByCaptureId(2L))
     }
 
     @Test
     fun repositoryDeleteCards_chunksSelectionsAboveSqliteBindLimit() = runBlocking {
         val repository = DefaultScreenshotCardRepository(dao)
-        val imageIds = (0..900).mapTo(linkedSetOf()) { index -> "selected-$index" }
+        val captureIds = (1L..901L).toSet()
         repository.saveAnalysisResults(
-            imageIds.map { imageId ->
-                sampleResult(imageId = imageId, keyFields = emptyList())
-            },
+            captureIds.map { id -> sampleResult(captureId = id) },
         )
 
-        repository.deleteCards(imageIds)
+        repository.deleteCards(captureIds)
 
         assertTrue(repository.observeStoredCards().first().isEmpty())
-    }
-
-    @Test
-    fun repositorySaveAndObserve_roundTripPreservesAnalysisResult() = runBlocking {
-        val repository = DefaultScreenshotCardRepository(dao)
-        val result = sampleResult(
-            imageId = "round-trip",
-            title = "Round trip title",
-            summary = "Round trip summary",
-            body = "Round trip body",
-            isFavorite = false,
-        )
-
-        repository.saveAnalysisResults(listOf(result))
-
-        val storedCard = repository.getCard("round-trip")
-
-        assertNotNull(storedCard)
-        assertEquals(result.copy(), storedCard!!.analysisResult)
-        assertFalse(storedCard.analysisResult.isFavorite)
     }
 
     @Test
     fun observeCard_emitsSingleCardUpdates() = runBlocking {
         val repository = DefaultScreenshotCardRepository(dao)
         repository.saveAnalysisResults(
-            listOf(sampleResult(imageId = "observe-me", title = "Before")),
+            listOf(sampleResult(captureId = 1L, title = "Before")),
         )
 
-        val before = repository.observeCard("observe-me").first()
+        val before = repository.observeCard(1L).first()
         assertNotNull(before)
         assertEquals("Before", before!!.analysisResult.title)
 
         repository.updateCardContent(
-            imageId = "observe-me",
+            captureId = 1L,
             title = "After",
             summary = before.analysisResult.summary,
             body = before.analysisResult.body,
-            primaryContentType = before.analysisResult.contentTypes.primaryContentType,
+            typeCode = before.analysisResult.typeCode,
         )
 
-        val after = repository.observeCard("observe-me").first()
+        val after = repository.observeCard(1L).first()
         assertNotNull(after)
         assertEquals("After", after!!.analysisResult.title)
     }
@@ -245,86 +214,77 @@ class ScreenshotCardDaoTest {
             thumbnailPath = "/thumbs/edit-me",
         )
         val result = sampleResult(
-            imageId = "edit-me",
+            captureId = 1L,
             title = "Old title",
             summary = "Old summary",
             body = "Old body",
-            isFavorite = true,
-            keyFields = listOf(keyField(label = "keep", value = "field", priority = 1)),
-        )
+            typeCode = ScreenshotContentType.SHOPPING,
+        ).copy(isFavorite = true)
         repository.saveAnalysisResults(
             results = listOf(result),
-            imageRefsByImageId = mapOf("edit-me" to imageRefs),
+            imageRefsByCaptureId = mapOf(1L to imageRefs),
         )
-        val before = repository.getCard("edit-me")!!
+        val before = repository.getCard(1L)!!
 
         val updated = repository.updateCardContent(
-            imageId = "edit-me",
+            captureId = 1L,
             title = "New title",
             summary = "New summary",
             body = "New body",
-            primaryContentType = ScreenshotContentType.SCHEDULE_RESERVATION,
+            typeCode = ScreenshotContentType.SCHEDULE,
             updatedAtMillis = 12_345L,
         )
 
         assertTrue(updated)
-        val after = repository.getCard("edit-me")!!
+        val after = repository.getCard(1L)!!
         assertEquals("New title", after.analysisResult.title)
         assertEquals("New summary", after.analysisResult.summary)
         assertEquals("New body", after.analysisResult.body)
-        assertEquals(
-            ScreenshotContentType.SCHEDULE_RESERVATION,
-            after.analysisResult.contentTypes.primaryContentType,
-        )
+        assertEquals(ScreenshotContentType.SCHEDULE, after.analysisResult.typeCode)
         assertEquals(12_345L, after.updatedAtMillis)
-        assertEquals(before.createdAtMillis, after.createdAtMillis)
         assertTrue(after.analysisResult.isFavorite)
-        assertEquals(before.analysisResult.confidence, after.analysisResult.confidence)
-        assertEquals(before.analysisResult.keyFields, after.analysisResult.keyFields)
+        assertEquals(before.analysisResult.originalImageUrl, after.analysisResult.originalImageUrl)
+        assertEquals(before.analysisResult.organizedAt, after.analysisResult.organizedAt)
         assertEquals(before.imageRefs, after.imageRefs)
     }
 
     @Test
-    fun updateCardContent_returnsFalseForMissingImageId() = runBlocking {
+    fun updateCardContent_returnsFalseForMissingCaptureId() = runBlocking {
         val repository = DefaultScreenshotCardRepository(dao)
 
         val updated = repository.updateCardContent(
-            imageId = "missing",
+            captureId = 999L,
             title = "title",
             summary = "summary",
             body = "body",
-            primaryContentType = ScreenshotContentType.OTHER,
+            typeCode = ScreenshotContentType.ETC,
         )
 
         assertFalse(updated)
-        assertNull(repository.getCard("missing"))
+        assertNull(repository.getCard(999L))
     }
 
     @Test
-    fun saveAndObserve_roundTripsOtherContentType() = runBlocking {
+    fun saveAndObserve_roundTripsEtcContentType() = runBlocking {
         val repository = DefaultScreenshotCardRepository(dao)
         val result = sampleResult(
-            imageId = "other-card",
+            captureId = 1L,
             title = "기타 카드",
-            summary = "기타 요약",
-        ).copy(
-            contentTypes = ScreenshotContentTypes(
-                primaryContentType = ScreenshotContentType.OTHER,
-            ),
+            typeCode = ScreenshotContentType.ETC,
         )
 
         repository.saveAnalysisResults(
             results = listOf(result),
-            imageRefsByImageId = mapOf(
-                "other-card" to ScreenshotCardImageRefs(sourceImageUri = "content://other-card"),
+            imageRefsByCaptureId = mapOf(
+                1L to ScreenshotCardImageRefs(sourceImageUri = "content://etc-card"),
             ),
         )
 
         val observed = repository.observeStoredCards().first().single()
-        val loaded = repository.getCard("other-card")
+        val loaded = repository.getCard(1L)
 
-        assertEquals(ScreenshotContentType.OTHER, observed.analysisResult.contentTypes.primaryContentType)
-        assertEquals(ScreenshotContentType.OTHER, loaded?.analysisResult?.contentTypes?.primaryContentType)
+        assertEquals(ScreenshotContentType.ETC, observed.analysisResult.typeCode)
+        assertEquals(ScreenshotContentType.ETC, loaded?.analysisResult?.typeCode)
     }
 
     @Test
@@ -338,19 +298,19 @@ class ScreenshotCardDaoTest {
         repository.saveAnalysisResults(
             results = listOf(
                 sampleResult(
-                    imageId = "preserve-me",
+                    captureId = 1L,
                     title = "Original title",
                     summary = "Original summary",
                     body = "User edited body",
                 ),
             ),
-            imageRefsByImageId = mapOf("preserve-me" to imageRefs),
+            imageRefsByCaptureId = mapOf(1L to imageRefs),
         )
 
         repository.saveAnalysisResults(
             results = listOf(
                 sampleResult(
-                    imageId = "preserve-me",
+                    captureId = 1L,
                     title = "Reanalyzed title",
                     summary = "Reanalyzed summary",
                     body = "",
@@ -358,7 +318,7 @@ class ScreenshotCardDaoTest {
             ),
         )
 
-        val stored = repository.getCard("preserve-me")
+        val stored = repository.getCard(1L)
         assertNotNull(stored)
         assertEquals("Reanalyzed title", stored!!.analysisResult.title)
         assertEquals("Reanalyzed summary", stored.analysisResult.summary)
@@ -367,39 +327,23 @@ class ScreenshotCardDaoTest {
     }
 
     private fun sampleResult(
-        imageId: String,
-        title: String = "title-$imageId",
-        summary: String = "summary-$imageId",
-        body: String = "body-$imageId",
-        isFavorite: Boolean = false,
-        keyFields: List<ScreenshotKeyField> = listOf(
-            keyField(label = "label-1", value = "value-1", priority = 1),
-        ),
+        captureId: Long,
+        title: String = "title-$captureId",
+        summary: String = "summary-$captureId",
+        body: String = "body-$captureId",
+        typeCode: ScreenshotContentType = ScreenshotContentType.SHOPPING,
+        originalImageUrl: String = "mock://captures/$captureId",
+        organizedAt: Instant = Instant.ofEpochMilli(1000L),
     ): ScreenshotAnalysisResult {
         return ScreenshotAnalysisResult(
-            imageId = imageId,
+            captureId = captureId,
+            typeCode = typeCode,
             title = title,
             summary = summary,
-            contentTypes = ScreenshotContentTypes(
-                primaryContentType = ScreenshotContentType.SHOPPING_PRODUCT,
-            ),
-            keyFields = keyFields,
-            confidence = ScreenshotAnalysisConfidence.HIGH,
-            isFavorite = isFavorite,
             body = body,
-        )
-    }
-
-    private fun keyField(
-        label: String,
-        value: String,
-        priority: Int,
-    ): ScreenshotKeyField {
-        return ScreenshotKeyField(
-            label = label,
-            value = value,
-            displayPriority = priority,
-            isSensitive = false,
+            originalImageUrl = originalImageUrl,
+            isFavorite = false,
+            organizedAt = organizedAt,
         )
     }
 }

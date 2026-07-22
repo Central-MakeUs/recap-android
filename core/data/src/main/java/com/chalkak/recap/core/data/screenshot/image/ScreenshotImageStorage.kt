@@ -34,17 +34,17 @@ class ScreenshotImageStorage @Inject constructor(
         }
     }
 
-    fun buildImagePath(imageId: String): File {
-        return File(resolveImagesDirectory(), imageId)
+    fun buildImagePath(captureId: Long): File {
+        return File(resolveImagesDirectory(), captureId.toString())
     }
 
-    fun buildThumbnailPath(imageId: String): File {
-        return File(resolveThumbnailsDirectory(), "$imageId$THUMBNAIL_EXTENSION")
+    fun buildThumbnailPath(captureId: Long): File {
+        return File(resolveThumbnailsDirectory(), "${captureId}$THUMBNAIL_EXTENSION")
     }
 
-    fun copyImageFromUri(imageId: String, sourceUri: Uri): String? {
+    fun copyImageFromUri(captureId: Long, sourceUri: Uri): String? {
         return try {
-            val targetFile = buildImagePath(imageId)
+            val targetFile = buildImagePath(captureId)
             context.contentResolver.openInputStream(sourceUri)?.use { input ->
                 targetFile.outputStream().use { output ->
                     input.copyTo(output)
@@ -58,27 +58,27 @@ class ScreenshotImageStorage @Inject constructor(
         }
     }
 
-    fun createThumbnailFromUri(imageId: String, sourceUri: Uri): String? {
-        return createThumbnail(imageId) {
+    fun createThumbnailFromUri(captureId: Long, sourceUri: Uri): String? {
+        return createThumbnail(captureId) {
             context.contentResolver.openInputStream(sourceUri)
         }
     }
 
-    fun createThumbnailFromStoredImage(imageId: String): String? {
-        val storedImage = buildImagePath(imageId)
-        return createThumbnail(imageId) {
+    fun createThumbnailFromStoredImage(captureId: Long): String? {
+        val storedImage = buildImagePath(captureId)
+        return createThumbnail(captureId) {
             storedImage.inputStream()
         }
     }
 
     private fun createThumbnail(
-        imageId: String,
+        captureId: Long,
         openInputStream: () -> InputStream?,
     ): String? {
         var decodedBitmap: Bitmap? = null
         var jpegBitmap: Bitmap? = null
         var tempFile: File? = null
-        val targetFile = buildThumbnailPath(imageId)
+        val targetFile = buildThumbnailPath(captureId)
         return try {
             resolveThumbnailsDirectory()
             decodedBitmap = decodeHalfSizeBitmap(openInputStream)
@@ -115,8 +115,8 @@ class ScreenshotImageStorage @Inject constructor(
             }
             tempFile = null
             Timber.d(
-                "Created screenshot thumbnail imageId=%s path=%s size=%dx%d",
-                imageId,
+                "Created screenshot thumbnail captureId=%s path=%s size=%dx%d",
+                captureId,
                 targetFile.absolutePath,
                 jpegBitmap.width,
                 jpegBitmap.height,
@@ -145,13 +145,51 @@ class ScreenshotImageStorage @Inject constructor(
         clearDirectory(resolveThumbnailsDirectory())
     }
 
-    fun deleteStoredImages(imageIds: Set<String>) {
-        deleteFiles(resolveImagesDirectory(), imageIds) { imageId -> imageId }
-        deleteFiles(resolveThumbnailsDirectory(), imageIds) { imageId ->
-            "$imageId$THUMBNAIL_EXTENSION"
+    fun deleteStoredImages(captureIds: Set<Long>) {
+        deleteFiles(resolveImagesDirectory(), captureIds) { captureId -> captureId.toString() }
+        deleteFiles(resolveThumbnailsDirectory(), captureIds) { captureId ->
+            "${captureId}$THUMBNAIL_EXTENSION"
         }
     }
 
+    fun cacheThumbnailBytes(captureId: Long, bytes: ByteArray): String? {
+        if (bytes.isEmpty()) {
+            return null
+        }
+        var tempFile: File? = null
+        val targetFile = buildThumbnailPath(captureId)
+        return try {
+            resolveThumbnailsDirectory()
+            tempFile = File(
+                requireNotNull(targetFile.parentFile),
+                "${targetFile.name}$TEMP_SUFFIX",
+            )
+            if (tempFile.exists() && !tempFile.delete()) {
+                Timber.w("Failed to clear thumbnail temp file before remote cache write")
+                return null
+            }
+            tempFile.outputStream().use { output ->
+                output.write(bytes)
+            }
+            if (!publishThumbnail(tempFile = tempFile, targetFile = targetFile)) {
+                Timber.w("Failed to publish remote thumbnail cache")
+                return null
+            }
+            tempFile = null
+            targetFile.absolutePath
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (throwable: Exception) {
+            Timber.w(throwable, "Failed to save remote thumbnail cache")
+            null
+        } finally {
+            tempFile?.let { leftover ->
+                if (leftover.exists() && !leftover.delete()) {
+                    Timber.w("Failed to delete leftover remote thumbnail temp file")
+                }
+            }
+        }
+    }
     private fun decodeHalfSizeBitmap(openInputStream: () -> InputStream?): Bitmap {
         val orientation = readExifOrientation(openInputStream)
         val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
@@ -278,13 +316,13 @@ class ScreenshotImageStorage @Inject constructor(
 
     private fun deleteFiles(
         directory: File,
-        imageIds: Set<String>,
-        fileNameFor: (String) -> String,
+        captureIds: Set<Long>,
+        fileNameFor: (Long) -> String,
     ) {
         val canonicalDirectory = runCatching { directory.canonicalFile }.getOrNull() ?: return
-        imageIds.forEach { imageId ->
+        captureIds.forEach { captureId ->
             runCatching {
-                val candidate = File(canonicalDirectory, fileNameFor(imageId)).canonicalFile
+                val candidate = File(canonicalDirectory, fileNameFor(captureId)).canonicalFile
                 when {
                     candidate.parentFile != canonicalDirectory -> {
                         Timber.w("Skipped screenshot file deletion outside managed directory")

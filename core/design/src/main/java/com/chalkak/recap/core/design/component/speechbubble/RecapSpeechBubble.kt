@@ -46,6 +46,7 @@ import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapTypography
 import com.chalkak.recap.core.design.theme.White
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 
 enum class RecapSpeechBubbleArrowDirection {
@@ -349,7 +350,7 @@ private fun RecapSpeechBubbleArrowTogglePreview() {
         var text by remember { mutableStateOf(PreviewSpeechBubbleText) }
         LaunchedEffect(Unit) {
             while (true) {
-                delay(1_200)
+                delay(1_200.milliseconds)
                 direction = when (direction) {
                     RecapSpeechBubbleArrowDirection.Up -> RecapSpeechBubbleArrowDirection.Down
                     RecapSpeechBubbleArrowDirection.Down -> RecapSpeechBubbleArrowDirection.Up

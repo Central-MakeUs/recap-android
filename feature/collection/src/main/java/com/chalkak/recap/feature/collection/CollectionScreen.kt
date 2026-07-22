@@ -488,7 +488,7 @@ private fun previewOverviewUiState(
             favoriteSummary = CollectionFavoriteSummaryUiModel(count = favoriteCount),
             typeSummaries = listOf(
                 CollectionTypeSummaryUiModel(
-                    contentType = ScreenshotContentType.SHOPPING_PRODUCT,
+                    contentType = ScreenshotContentType.SHOPPING,
                     labelResId = R.string.home_category_shopping_product,
                     categoryType = RecapCategoryType.ShoppingProduct,
                     count = 20,
@@ -496,7 +496,7 @@ private fun previewOverviewUiState(
                     additionalExampleCount = 0,
                 ),
                 CollectionTypeSummaryUiModel(
-                    contentType = ScreenshotContentType.PLACE_RESTAURANT,
+                    contentType = ScreenshotContentType.PLACE,
                     labelResId = R.string.home_category_place_restaurant,
                     categoryType = RecapCategoryType.PlaceRestaurant,
                     count = 23,
@@ -504,7 +504,7 @@ private fun previewOverviewUiState(
                     additionalExampleCount = 0,
                 ),
                 CollectionTypeSummaryUiModel(
-                    contentType = ScreenshotContentType.OTHER,
+                    contentType = ScreenshotContentType.ETC,
                     labelResId = R.string.home_category_other,
                     categoryType = RecapCategoryType.Other,
                     count = 2,
