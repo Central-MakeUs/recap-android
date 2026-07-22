@@ -219,10 +219,12 @@
 
 다음 항목은 구현체는 존재하지만 아직 앱 flow에 완전히 연결되지 않았다.
 
-- Capture 상세의 Mock/Remote repository 전환은 아직 없다.
-- 실제 upload / organize / poll Remote 분석 파이프라인은 stub이다.
+- Capture 상세의 Mock/Remote repository 전환은 아직 없다. (즐겨찾기 토글은 `CaptureMutationRepository`로 연결됨)
 - 썸네일 생성 pipeline(원본→썸네일)은 Mock 경로에 제한적으로만 있다.
 - 이미지 bytes는 Room BLOB으로 저장하지 않는다.
+
+Remote 업로드/정리 파이프라인(`issueUploadUrls` → PUT → `organize` → status poll → ack)은
+`RemoteScreenshotAnalysisRepository`에서 `CaptureRepository`를 통해 연결된다.
 
 ## 테스트
 

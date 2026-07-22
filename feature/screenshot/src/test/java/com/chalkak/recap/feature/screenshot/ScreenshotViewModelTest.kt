@@ -1,6 +1,7 @@
 package com.chalkak.recap.feature.screenshot
 
 import app.cash.turbine.test
+import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
@@ -36,6 +37,7 @@ class ScreenshotViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val repository = mockk<ScreenshotCardRepository>()
     private val imageStorage = mockk<ScreenshotImageStorage>()
+    private val captureMutationRepository = mockk<CaptureMutationRepository>()
     private val cardFlow = MutableSharedFlow<StoredScreenshotCard?>(replay = 1)
     private lateinit var viewModel: ScreenshotViewModel
 
@@ -44,7 +46,11 @@ class ScreenshotViewModelTest {
         Dispatchers.setMain(testDispatcher)
         every { repository.observeCard(any()) } returns cardFlow
         every { imageStorage.deleteStoredImages(any()) } just Runs
-        viewModel = ScreenshotViewModel(repository, imageStorage).apply {
+        viewModel = ScreenshotViewModel(
+            screenshotCardRepository = repository,
+            screenshotImageStorage = imageStorage,
+            captureMutationRepository = captureMutationRepository,
+        ).apply {
             ioDispatcher = testDispatcher
         }
     }
@@ -130,7 +136,9 @@ class ScreenshotViewModelTest {
 
     @Test
     fun `toggle favorite updates repository`() = runTest(testDispatcher) {
-        coEvery { repository.updateFavorite(1L, true) } just Runs
+        coEvery {
+            captureMutationRepository.updateFavorite(1L, true)
+        } returns Result.success(Unit)
         viewModel.bind(1L)
         cardFlow.emit(storedCard(captureId = 1L, isFavorite = false))
         advanceUntilIdle()
@@ -143,12 +151,16 @@ class ScreenshotViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        coVerify(exactly = 1) { repository.updateFavorite(1L, true) }
+        coVerify(exactly = 1) { captureMutationRepository.updateFavorite(1L, true) }
+        val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertTrue(state.card.analysisResult.isFavorite)
     }
 
     @Test
     fun `toggle favorite off sends removed toast event`() = runTest(testDispatcher) {
-        coEvery { repository.updateFavorite(1L, false) } just Runs
+        coEvery {
+            captureMutationRepository.updateFavorite(1L, false)
+        } returns Result.success(Unit)
         viewModel.bind(1L)
         cardFlow.emit(storedCard(captureId = 1L, isFavorite = true))
         advanceUntilIdle()
@@ -161,7 +173,9 @@ class ScreenshotViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        coVerify(exactly = 1) { repository.updateFavorite(1L, false) }
+        coVerify(exactly = 1) { captureMutationRepository.updateFavorite(1L, false) }
+        val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertFalse(state.card.analysisResult.isFavorite)
     }
 
     @Test

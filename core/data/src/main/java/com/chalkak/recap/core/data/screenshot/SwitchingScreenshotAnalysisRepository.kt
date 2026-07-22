@@ -20,6 +20,13 @@ class SwitchingScreenshotAnalysisRepository @Inject constructor(
         return resolveDelegate().analyze(inputs)
     }
 
+    override suspend fun organize(
+        inputs: List<ScreenshotAnalysisInput>,
+        onProgress: (completed: Int, total: Int) -> Unit,
+    ): ScreenshotOrganizeOutcome {
+        return resolveDelegate().organize(inputs, onProgress)
+    }
+
     private suspend fun resolveDelegate(): ScreenshotAnalysisRepository {
         return when (screenshotBackendModeStore.currentMode()) {
             ScreenshotBackendMode.MOCK -> mockScreenshotAnalysisRepository

@@ -16,8 +16,7 @@
 
 포함하지 않음:
 - Splash에서 모드 hydrate 대기
-- Capture 상세의 Mock/Remote 연결
-- 실제 upload / organize / poll Remote API 구현
+- Capture 상세의 Mock/Remote 연결 (즐겨찾기 mutation은 CaptureMutationRepository로 연결됨)
 - instrumentation 테스트용 Hilt replacement 인프라
 - release 빌드의 Remote 강제 정책 **코드 반영** (목표 정책은 아래 "현재 vs 목표" 참고)
 

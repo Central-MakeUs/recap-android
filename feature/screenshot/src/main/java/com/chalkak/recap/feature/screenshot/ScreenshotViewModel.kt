@@ -2,6 +2,7 @@ package com.chalkak.recap.feature.screenshot
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.design.R
@@ -24,6 +25,7 @@ import kotlinx.coroutines.withContext
 class ScreenshotViewModel @Inject constructor(
     private val screenshotCardRepository: ScreenshotCardRepository,
     private val screenshotImageStorage: ScreenshotImageStorage,
+    private val captureMutationRepository: CaptureMutationRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<ScreenshotUiState>(ScreenshotUiState.Loading)
     val uiState: StateFlow<ScreenshotUiState> = _uiState.asStateFlow()
@@ -147,13 +149,13 @@ class ScreenshotViewModel @Inject constructor(
         favoriteJob?.cancel()
         favoriteJob = viewModelScope.launch {
             _uiState.updateContent { it.copy(isFavoriteUpdating = true, actionErrorMessageResId = null) }
-            try {
-                withContext(ioDispatcher) {
-                    screenshotCardRepository.updateFavorite(captureId, nextFavorite)
-                }
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (_: Exception) {
+            val result = withContext(ioDispatcher) {
+                captureMutationRepository.updateFavorite(
+                    captureId = captureId,
+                    isFavorite = nextFavorite,
+                )
+            }
+            if (result.isFailure) {
                 _uiState.updateContent {
                     it.copy(
                         isFavoriteUpdating = false,
@@ -162,7 +164,14 @@ class ScreenshotViewModel @Inject constructor(
                 }
                 return@launch
             }
-            _uiState.updateContent { it.copy(isFavoriteUpdating = false) }
+            _uiState.updateContent { current ->
+                current.copy(
+                    isFavoriteUpdating = false,
+                    card = current.card.copy(
+                        analysisResult = current.card.analysisResult.copy(isFavorite = nextFavorite),
+                    ),
+                )
+            }
             eventChannel.send(ScreenshotEvent.ShowFavoriteToast(isFavorite = nextFavorite))
         }
     }

@@ -5,8 +5,9 @@
 
 ## 목적
 
-실제 백엔드 organize/upload 경로가 연결되기 전까지, 호출자가 스크린샷 파일명만 전달해도
+MOCK 모드에서 호출자가 스크린샷 파일명만 전달해도
 `CaptureDetailResponse`와 동일한 분석 결과 형태의 mock 데이터를 받을 수 있게 한다.
+REMOTE 모드의 실제 upload/organize/poll은 `RemoteScreenshotAnalysisRepository` + `CaptureRepository`가 담당한다.
 
 mock repository는 이미지 바이트, 픽셀, URI 내용을 읽지 않는다.
 
@@ -168,7 +169,7 @@ core/data/src/test/java/com/chalkak/recap/core/data/screenshot/
 
 ## 범위 밖
 
-- Retrofit 실API, 인증, presigned upload, organize polling
 - `CaptureSummaryResponse` 목록 엔드포인트 소비
 - 실제 OCR / Firebase AI 스키마·프롬프트 계약
 - UI 리디자인 또는 카피 변경
+- Organize cancel / pending-result 앱 재시작 복구 / 완료 notification

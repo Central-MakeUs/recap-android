@@ -42,11 +42,11 @@ class SwitchingScreenshotAnalysisRepositoryTest {
         coEvery {
             screenshotBackendModeStore.currentMode()
         } returns ScreenshotBackendMode.REMOTE
-        coEvery { remoteRepository.analyze(input) } throws RemoteAnalysisNotWiredException()
+        coEvery { remoteRepository.analyze(input) } throws UnsupportedOperationException("remote")
 
         val result = runCatching { switchingRepository.analyze(input) }
 
-        assertTrue(result.exceptionOrNull() is RemoteAnalysisNotWiredException)
+        assertTrue(result.exceptionOrNull() is UnsupportedOperationException)
         coVerify(exactly = 1) { remoteRepository.analyze(input) }
         coVerify(exactly = 0) { mockRepository.analyze(any<ScreenshotAnalysisInput>()) }
     }
@@ -65,6 +65,21 @@ class SwitchingScreenshotAnalysisRepositoryTest {
 
         assertEquals(expected, results)
         coVerify(exactly = 1) { mockRepository.analyze(inputs) }
+        coVerify(exactly = 1) { screenshotBackendModeStore.currentMode() }
+    }
+
+    @Test
+    fun `organize delegates once to selected repository`() = runTest {
+        val inputs = listOf(ScreenshotAnalysisInput(fileName = "a.png", uri = "content://1"))
+        val expected = ScreenshotOrganizeOutcome.LocalResults(listOf(analysisResult(1L)))
+        coEvery { screenshotBackendModeStore.currentMode() } returns ScreenshotBackendMode.MOCK
+        coEvery { mockRepository.organize(inputs, any()) } returns expected
+
+        val outcome = switchingRepository.organize(inputs)
+
+        assertEquals(expected, outcome)
+        coVerify(exactly = 1) { mockRepository.organize(inputs, any()) }
+        coVerify(exactly = 0) { remoteRepository.organize(any(), any()) }
         coVerify(exactly = 1) { screenshotBackendModeStore.currentMode() }
     }
 

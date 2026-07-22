@@ -4,6 +4,8 @@ import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Singleton
 class MockScreenshotAnalysisRepository @Inject constructor(
@@ -15,6 +17,24 @@ class MockScreenshotAnalysisRepository @Inject constructor(
 
     override suspend fun analyze(inputs: List<ScreenshotAnalysisInput>): List<ScreenshotAnalysisResult> {
         return inputs.map(::buildResult)
+    }
+
+    override suspend fun organize(
+        inputs: List<ScreenshotAnalysisInput>,
+        onProgress: (completed: Int, total: Int) -> Unit,
+    ): ScreenshotOrganizeOutcome {
+        val total = inputs.size
+        if (total == 0) {
+            onProgress(0, 0)
+            return ScreenshotOrganizeOutcome.LocalResults(emptyList())
+        }
+        val results = ArrayList<ScreenshotAnalysisResult>(total)
+        inputs.forEachIndexed { index, input ->
+            delay(MOCK_ANALYSIS_DELAY_MILLIS.milliseconds)
+            results += buildResult(input)
+            onProgress(index + 1, total)
+        }
+        return ScreenshotOrganizeOutcome.LocalResults(results)
     }
 
     private fun buildResult(input: ScreenshotAnalysisInput): ScreenshotAnalysisResult {
@@ -38,6 +58,8 @@ class MockScreenshotAnalysisRepository @Inject constructor(
     }
 
     private companion object {
+        const val MOCK_ANALYSIS_DELAY_MILLIS = 500L
+
         fun mockOriginalImageUrl(captureId: Long): String = "mock://captures/$captureId"
     }
 }
