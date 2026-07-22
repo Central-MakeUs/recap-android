@@ -4,10 +4,10 @@ import androidx.annotation.VisibleForTesting
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisInput
-import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisRepository
-import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisRunState
-import com.chalkak.recap.core.data.screenshot.ScreenshotOrganizeOutcome
+import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisInput
+import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRepository
+import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRunState
+import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotOrganizeOutcome
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository

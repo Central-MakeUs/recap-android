@@ -75,11 +75,14 @@ com.chalkak.recap
 └── feature
     ├── collection         # 컬렉션 화면
     ├── developer          # 개발자 옵션 / component garden
-    ├── home               # 홈
-    ├── settings           # 설정 및 하위 안내/관리 화면
+    ├── home               # 홈 (search/, recent/ 하위 패키지)
+    ├── settings           # 설정 (account/, data/, notification/, guide/)
     ├── organize           # 정리/분류 관련 화면
     ├── onboarding         # 온보딩 플로우
     └── screenshot         # 스크린샷 상세/수정/전체화면
+
+core.data.screenshot 하위:
+    permission/ · analysis/ · backend/ · image/ · persistence/
 ```
 
 ## 목표 아키텍처

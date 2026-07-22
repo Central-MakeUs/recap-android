@@ -1,10 +1,10 @@
 package com.chalkak.recap.app
 
 import android.net.Uri
-import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisInput
-import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisRepository
-import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisRunState
-import com.chalkak.recap.core.data.screenshot.ScreenshotOrganizeOutcome
+import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisInput
+import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRepository
+import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRunState
+import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotOrganizeOutcome
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository

@@ -13,8 +13,9 @@
 ├── UserPreferencesModule.kt            # DataStore Hilt 제공
 ├── UserPreferencesRepository.kt        # 사용자 설정 repository
 └── screenshot/
-    ├── ImagePermissionRepository.kt    # 이미지 권한 인터페이스
-    ├── ImagePermissionModule.kt        # 권한 repository Hilt 바인딩
+    ├── permission/                     # 이미지 권한 인터페이스/모듈
+    ├── analysis/                       # 분석 repository (mock/remote/switching)
+    ├── backend/                        # Mock/Remote 백엔드 모드 전환
     ├── image/                          # 앱 private 이미지 경로 관리
     └── persistence/                    # 분석 카드 Room 저장
 ```

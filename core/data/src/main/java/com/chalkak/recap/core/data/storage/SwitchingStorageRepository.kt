@@ -1,7 +1,7 @@
 package com.chalkak.recap.core.data.storage
 
-import com.chalkak.recap.core.data.screenshot.ScreenshotBackendMode
-import com.chalkak.recap.core.data.screenshot.ScreenshotBackendModeStore
+import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendMode
+import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendModeStore
 import com.chalkak.recap.core.model.capture.CaptureList
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import com.chalkak.recap.core.model.storage.CaptureSort

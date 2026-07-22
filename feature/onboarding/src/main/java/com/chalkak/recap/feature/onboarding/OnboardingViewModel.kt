@@ -8,7 +8,7 @@ import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.auth.AuthException
 import com.chalkak.recap.core.data.auth.AuthRepository
 import com.chalkak.recap.core.data.network.SessionTokenStore
-import com.chalkak.recap.core.data.screenshot.ImagePermissionRepository
+import com.chalkak.recap.core.data.screenshot.permission.ImagePermissionRepository
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.auth.AuthError
 import dagger.hilt.android.lifecycle.HiltViewModel

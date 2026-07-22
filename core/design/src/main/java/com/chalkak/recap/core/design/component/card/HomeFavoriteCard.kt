@@ -27,10 +27,9 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray200
+import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray900
-import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption3
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.design.theme.White

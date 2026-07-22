@@ -1,7 +1,7 @@
 package com.chalkak.recap.core.data.capture
 
-import com.chalkak.recap.core.data.screenshot.ScreenshotBackendMode
-import com.chalkak.recap.core.data.screenshot.ScreenshotBackendModeStore
+import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendMode
+import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendModeStore
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
 import io.mockk.coEvery
 import io.mockk.coVerify

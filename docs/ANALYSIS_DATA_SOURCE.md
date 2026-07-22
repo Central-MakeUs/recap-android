@@ -124,12 +124,12 @@ Swagger는 `DELETE /api/v1/captures/{captureId}` 단건만 제공한다. Remote 
 ## 주요 파일
 
 ```text
-core/data/.../screenshot/ScreenshotBackendMode.kt
-core/data/.../screenshot/ScreenshotBackendModeStore.kt
-core/data/.../screenshot/DataStoreScreenshotBackendModeStore.kt
-core/data/.../screenshot/ScreenshotBackendSwitcher.kt
-core/data/.../screenshot/MockScreenshotDataResetter.kt
-core/data/.../screenshot/SwitchingScreenshotAnalysisRepository.kt
+core/data/.../screenshot/backend/ScreenshotBackendMode.kt
+core/data/.../screenshot/backend/ScreenshotBackendModeStore.kt
+core/data/.../screenshot/backend/DataStoreScreenshotBackendModeStore.kt
+core/data/.../screenshot/backend/ScreenshotBackendSwitcher.kt
+core/data/.../screenshot/backend/MockScreenshotDataResetter.kt
+core/data/.../screenshot/analysis/SwitchingScreenshotAnalysisRepository.kt
 core/data/.../home/SwitchingHomeRepository.kt
 core/data/.../storage/SwitchingStorageRepository.kt
 core/data/.../capture/SwitchingCaptureMutationRepository.kt

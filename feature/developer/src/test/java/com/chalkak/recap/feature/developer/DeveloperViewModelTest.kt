@@ -1,11 +1,11 @@
 package com.chalkak.recap.feature.developer
 
-import com.chalkak.recap.core.data.screenshot.MockScreenshotDataResetter
-import com.chalkak.recap.core.data.screenshot.ScreenshotAnalysisRunState
-import com.chalkak.recap.core.data.screenshot.ScreenshotBackendMode
-import com.chalkak.recap.core.data.screenshot.ScreenshotBackendModeStore
-import com.chalkak.recap.core.data.screenshot.ScreenshotBackendSwitchResult
-import com.chalkak.recap.core.data.screenshot.ScreenshotBackendSwitcher
+import com.chalkak.recap.core.data.screenshot.backend.MockScreenshotDataResetter
+import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRunState
+import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendMode
+import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendModeStore
+import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendSwitchResult
+import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendSwitcher
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every

@@ -9,7 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import androidx.core.content.ContextCompat
-import com.chalkak.recap.core.data.screenshot.ImagePermissionRepository
+import com.chalkak.recap.core.data.screenshot.permission.ImagePermissionRepository
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.LocalImage
 import dagger.hilt.android.qualifiers.ApplicationContext

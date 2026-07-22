@@ -116,11 +116,12 @@ core/model/src/main/java/com/chalkak/recap/core/model/screenshot/
 
 ```text
 core/data/src/main/java/com/chalkak/recap/core/data/screenshot/
-├── MockScreenshotAnalysisRepository.kt
-├── ScreenshotAnalysisInput.kt
-├── ScreenshotAnalysisModule.kt
-├── ScreenshotAnalysisRepository.kt
-├── ScreenshotMockRandomizer.kt
+├── analysis/
+│   ├── MockScreenshotAnalysisRepository.kt
+│   ├── ScreenshotAnalysisInput.kt
+│   ├── ScreenshotAnalysisModule.kt
+│   ├── ScreenshotAnalysisRepository.kt
+│   └── ScreenshotMockRandomizer.kt
 ├── image/
 │   └── ScreenshotImageStorage.kt
 └── persistence/
@@ -135,7 +136,8 @@ core/data/src/main/java/com/chalkak/recap/core/data/screenshot/
 
 ```text
 core/data/src/test/java/com/chalkak/recap/core/data/screenshot/
-├── MockScreenshotAnalysisRepositoryTest.kt
+├── analysis/
+│   └── MockScreenshotAnalysisRepositoryTest.kt
 ├── image/
 │   └── ScreenshotImageStorageTest.kt
 └── persistence/

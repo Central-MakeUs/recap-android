@@ -16,7 +16,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -31,8 +30,8 @@ import com.chalkak.recap.core.design.component.RecapLogo
 import com.chalkak.recap.core.design.component.RecapLogoAspectRatio
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.theme.RecapBlue300
-import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray300
+import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
