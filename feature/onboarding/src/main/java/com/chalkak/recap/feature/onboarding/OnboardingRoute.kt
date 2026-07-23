@@ -23,6 +23,8 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import androidx.navigationevent.NavigationEvent
+import com.chalkak.recap.core.design.animation.RecapNavigationMotion
 import com.chalkak.recap.feature.onboarding.screen.OnboardingAddToFavoriteGuideScreen
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -87,6 +89,15 @@ fun OnboardingRoute(
                 onboardingBackStack.removeLastOrNull()
             } else {
                 viewModel.onAction(OnboardingAction.Back)
+            }
+        },
+        transitionSpec = { RecapNavigationMotion.forward() },
+        popTransitionSpec = { RecapNavigationMotion.pop() },
+        predictivePopTransitionSpec = { swipeEdge ->
+            if (swipeEdge == NavigationEvent.EDGE_NONE) {
+                RecapNavigationMotion.none()
+            } else {
+                RecapNavigationMotion.predictivePop()
             }
         },
         entryProvider = { destination ->
