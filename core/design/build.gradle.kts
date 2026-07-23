@@ -33,6 +33,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.coil.compose)
+    implementation(libs.lottie.compose)
     implementation(libs.chrisbanes.haze)
     implementation(libs.chrisbanes.haze.blur)
     implementation(libs.chrisbanes.haze.blur.materials)
