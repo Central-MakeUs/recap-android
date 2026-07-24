@@ -187,7 +187,7 @@
     <string name="settings_usage_guide_select_title">직접 선택한 스크린샷을 정리해요</string>
     <string name="settings_usage_guide_select_description">앨범에서 스크린샷을 직접 선택한 경우에만 정리를 시작해요.</string>
     <string name="settings_usage_guide_share_title">공유하기 버튼으로 바로 공유해요</string>
-    <string name="settings_usage_guide_share_description">다른 앱이나 앨범에서 공유 버튼을 누르고 Recap을 선택하면 바로 정리할 수 있어요!</string>
+    <string name="settings_usage_guide_share_description">다른 앱이나 앨범에서 공유 버튼을 누르고 Recap을 선택하면 바로 공유할 수 있어요!</string>
     <string name="settings_usage_guide_no_auto_title">자동으로 가져가지 않아요</string>
     <string name="settings_usage_guide_no_auto_description">스크린샷을 자동 수집하거나 사진첩을 자동 분석하지 않아요.</string>
     <string name="settings_usage_guide_permission_title">권한은 이렇게 사용해요</string>
@@ -424,7 +424,7 @@
     <string name="unsaved_changes_exit_without_saving_button">저장하지 않고 나가기</string>
     <string name="logout_confirmation_icon_content_description">로그아웃</string>
     <string name="logout_confirmation_title">로그아웃할까요?</string>
-    <string name="logout_confirmation_description">정리된 캡처는 유지되며, 다시 로그인하면 확인할 수 있어요.</string>
+    <string name="logout_confirmation_description">정리된 스크린샷은 유지되며, 다시 로그인하면 확인할 수 있어요.</string>
     <string name="logout_confirmation_cancel_button">취소</string>
     <string name="logout_confirmation_logout_button">로그아웃</string>
     <string name="withdrawal_confirmation_icon_content_description">탈퇴 주의</string>
