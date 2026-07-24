@@ -1,5 +1,12 @@
 package com.chalkak.recap.feature.collection
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,7 +28,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -212,82 +218,107 @@ private fun CollectionUnifiedOverview(
     bottomContentPadding: Dp,
     modifier: Modifier = Modifier,
 ) {
-    when (viewMode) {
-        CollectionTypeViewMode.Grid -> {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(horizontal = CollectionScreenTokens.HorizontalPadding),
-                contentPadding = PaddingValues(bottom = bottomContentPadding),
-                horizontalArrangement = Arrangement.spacedBy(CollectionScreenTokens.TypeGridSpacing),
-                verticalArrangement = Arrangement.spacedBy(CollectionScreenTokens.TypeGridRowSpacing),
-            ) {
-                item(
-                    key = "favorites-entry",
-                    contentType = "favorites-entry",
-                    span = { GridItemSpan(maxLineSpan) },
-                ) {
-                    CollectionFavoritesEntryCard(
-                        count = favoriteCount,
-                        onClick = { onAction(CollectionAction.OpenFavoriteDetail) },
-                        modifier = Modifier.padding(bottom = CollectionScreenTokens.FavoriteCardBottomPadding),
-                    )
+    Column(modifier = modifier.fillMaxSize()) {
+        CollectionFavoritesEntryCard(
+            count = favoriteCount,
+            onClick = { onAction(CollectionAction.OpenFavoriteDetail) },
+            modifier = Modifier
+                .padding(horizontal = CollectionScreenTokens.HorizontalPadding)
+                .padding(bottom = CollectionScreenTokens.FavoriteCardBottomPadding),
+        )
+        AnimatedContent(
+            targetState = viewMode,
+            modifier = Modifier.fillMaxSize(),
+            transitionSpec = {
+                if (targetState.ordinal > initialState.ordinal) {
+                    collectionViewModeForwardTransition()
+                } else {
+                    collectionViewModeBackwardTransition()
                 }
-                items(
-                    items = typeSummaries,
-                    key = { summary -> summary.contentType.name },
-                    contentType = { "category-grid" },
-                ) { summary ->
-                    CollectionTypeGridItem(
-                        summary = summary,
-                        onClick = {
-                            onAction(CollectionAction.OpenTypeDetail(summary.contentType))
-                        },
-                    )
-                }
-            }
-        }
-
-        CollectionTypeViewMode.List -> {
-            LazyColumn(
-                modifier = modifier.fillMaxSize(),
-                contentPadding = PaddingValues(bottom = bottomContentPadding),
-            ) {
-                item(
-                    key = "favorites-entry",
-                    contentType = "favorites-entry",
-                ) {
-                    CollectionFavoritesEntryCard(
-                        count = favoriteCount,
-                        onClick = { onAction(CollectionAction.OpenFavoriteDetail) },
+            },
+            label = "collectionTypeViewMode",
+        ) { animatedViewMode ->
+            when (animatedViewMode) {
+                CollectionTypeViewMode.Grid -> {
+                    LazyVerticalGrid(
+                        columns = GridCells.Fixed(3),
                         modifier = Modifier
-                            .padding(horizontal = CollectionScreenTokens.HorizontalPadding)
-                            .padding(bottom = CollectionScreenTokens.FavoriteCardBottomPadding),
-                    )
+                            .fillMaxSize()
+                            .padding(horizontal = CollectionScreenTokens.HorizontalPadding),
+                        contentPadding = PaddingValues(bottom = bottomContentPadding),
+                        horizontalArrangement = Arrangement.spacedBy(CollectionScreenTokens.TypeGridSpacing),
+                        verticalArrangement = Arrangement.spacedBy(CollectionScreenTokens.TypeGridRowSpacing),
+                    ) {
+                        items(
+                            items = typeSummaries,
+                            key = { summary -> summary.contentType.name },
+                            contentType = { "category-grid" },
+                        ) { summary ->
+                            CollectionTypeGridItem(
+                                summary = summary,
+                                onClick = {
+                                    onAction(CollectionAction.OpenTypeDetail(summary.contentType))
+                                },
+                            )
+                        }
+                    }
                 }
-                itemsIndexed(
-                    items = typeSummaries,
-                    key = { _, summary -> summary.contentType.name },
-                    contentType = { _, _ -> "category-list" },
-                ) { index, summary ->
-                    CollectionTypeListItem(
-                        summary = summary,
-                        onClick = {
-                            onAction(CollectionAction.OpenTypeDetail(summary.contentType))
-                        },
-                    )
-                    if (index < typeSummaries.lastIndex) {
-                        HorizontalDivider(
-                            color = RecapGray100,
-                            thickness = 1.dp,
-                        )
+
+                CollectionTypeViewMode.List -> {
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(bottom = bottomContentPadding),
+                    ) {
+                        itemsIndexed(
+                            items = typeSummaries,
+                            key = { _, summary -> summary.contentType.name },
+                            contentType = { _, _ -> "category-list" },
+                        ) { index, summary ->
+                            CollectionTypeListItem(
+                                summary = summary,
+                                onClick = {
+                                    onAction(CollectionAction.OpenTypeDetail(summary.contentType))
+                                },
+                            )
+                            if (index < typeSummaries.lastIndex) {
+                                HorizontalDivider(
+                                    color = RecapGray100,
+                                    thickness = 1.dp,
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
     }
 }
+
+private fun collectionViewModeForwardTransition() =
+    slideInHorizontally(
+        animationSpec = tween(CollectionViewModeSlideDurationMillis),
+        initialOffsetX = { fullWidth -> fullWidth / CollectionViewModeSlideFraction },
+    ) + fadeIn(
+        animationSpec = tween(CollectionViewModeFadeDurationMillis),
+    ) togetherWith slideOutHorizontally(
+        animationSpec = tween(CollectionViewModeSlideDurationMillis),
+        targetOffsetX = { fullWidth -> -fullWidth / CollectionViewModeSlideFraction },
+    ) + fadeOut(
+        animationSpec = tween(CollectionViewModeFadeDurationMillis),
+    )
+
+private fun collectionViewModeBackwardTransition() =
+    slideInHorizontally(
+        animationSpec = tween(CollectionViewModeSlideDurationMillis),
+        initialOffsetX = { fullWidth -> -fullWidth / CollectionViewModeSlideFraction },
+    ) + fadeIn(
+        animationSpec = tween(CollectionViewModeFadeDurationMillis),
+    ) togetherWith slideOutHorizontally(
+        animationSpec = tween(CollectionViewModeSlideDurationMillis),
+        targetOffsetX = { fullWidth -> fullWidth / CollectionViewModeSlideFraction },
+    ) + fadeOut(
+        animationSpec = tween(CollectionViewModeFadeDurationMillis),
+    )
 
 @Composable
 private fun CollectionTypeGridItem(
@@ -400,6 +431,10 @@ private fun CollectionTypeListItem(
         }
     }
 }
+
+private const val CollectionViewModeSlideDurationMillis = 300
+private const val CollectionViewModeFadeDurationMillis = 250
+private const val CollectionViewModeSlideFraction = 6
 
 private object CollectionScreenTokens {
     val HorizontalPadding = 20.dp
