@@ -12,8 +12,8 @@ class RecapNavigationMotionOffsetsTest {
 
     @Test
     fun `previewPopFraction ease-out moves more than linear at half progress`() {
-        // Ease-out quadratic at 0.5: 1 - 0.25 = 0.75 → 0.40 * 0.75 = 0.30
-        assertEquals(0.30f, RecapNavigationMotionOffsets.previewPopFraction(0.5f), 1e-4f)
+        // Ease-out quadratic at 0.5: 1 - 0.25 = 0.75 → 0.35 * 0.75 = 0.2625
+        assertEquals(0.2625f, RecapNavigationMotionOffsets.previewPopFraction(0.5f), 1e-4f)
     }
 
     @Test

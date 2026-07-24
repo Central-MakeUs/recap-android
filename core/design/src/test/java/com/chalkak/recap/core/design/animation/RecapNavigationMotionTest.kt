@@ -24,8 +24,8 @@ class RecapNavigationMotionTest {
     }
 
     @Test
-    fun `predictive max fraction is forty percent`() {
-        assertEquals(0.40f, RecapNavigationMotion.PredictiveMaxFraction)
+    fun `predictive max fraction is thirty five percent`() {
+        assertEquals(0.35f, RecapNavigationMotion.PredictiveMaxFraction)
     }
 
     private fun ContentTransform.isNoneTransform(): Boolean =
