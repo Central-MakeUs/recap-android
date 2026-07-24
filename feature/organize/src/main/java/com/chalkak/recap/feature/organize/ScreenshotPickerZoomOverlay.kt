@@ -6,24 +6,14 @@ import android.content.ContextWrapper
 import android.view.View
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
@@ -35,8 +25,8 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
-import coil3.compose.AsyncImage
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.image.RecapPinchZoomAsyncImage
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray900
 
@@ -69,8 +59,6 @@ internal fun ScreenshotPickerZoomOverlayContent(
     onDismissRequest: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var scale by remember { mutableFloatStateOf(1f) }
-    var offset by remember { mutableStateOf(Offset.Zero) }
     val view = LocalView.current
     val density = LocalDensity.current
     val statusBarTopPadding = remember(view, density) {
@@ -90,49 +78,16 @@ internal fun ScreenshotPickerZoomOverlayContent(
             },
         contentAlignment = Alignment.Center,
     ) {
-        BoxWithConstraints(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(top = statusBarTopPadding),
-        ) {
-            val horizontalInset = maxWidth * ScreenshotPickerZoomTokens.EdgeInsetFraction
-            val verticalInset = maxHeight * ScreenshotPickerZoomTokens.EdgeInsetFraction
-
-            AsyncImage(
-                model = imageModel,
-                contentDescription = stringResource(
-                    R.string.organize_screenshot_item_content_description,
-                    1,
-                ),
-                contentScale = ContentScale.Fit,
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = horizontalInset, vertical = verticalInset)
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        translationX = offset.x
-                        translationY = offset.y
-                    }
-                    .pointerInput(Unit) {
-                        detectTapGestures(onTap = { onDismissRequest() })
-                    }
-                    .pointerInput(Unit) {
-                        detectTransformGestures { _, pan, zoom, _ ->
-                            val newScale = (scale * zoom).coerceIn(
-                                ScreenshotPickerZoomTokens.MinScale,
-                                ScreenshotPickerZoomTokens.MaxScale,
-                            )
-                            scale = newScale
-                            if (newScale > ScreenshotPickerZoomTokens.MinScale) {
-                                offset += pan
-                            } else {
-                                offset = Offset.Zero
-                            }
-                        }
-                    },
-            )
-        }
+        RecapPinchZoomAsyncImage(
+            model = imageModel,
+            contentDescription = stringResource(
+                R.string.organize_screenshot_item_content_description,
+                1,
+            ),
+            modifier = Modifier.fillMaxSize(),
+            contentPaddingTop = statusBarTopPadding,
+            onTap = onDismissRequest,
+        )
     }
 }
 
@@ -220,9 +175,6 @@ private fun Context.findActivity(): Activity? {
 
 private object ScreenshotPickerZoomTokens {
     const val ScrimAlpha = 0.72f
-    const val EdgeInsetFraction = 0.1f
-    const val MinScale = 1f
-    const val MaxScale = 4f
 }
 
 @Preview(
