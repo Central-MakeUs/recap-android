@@ -82,16 +82,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.net.toUri
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import coil3.compose.AsyncImage
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.button.RecapButton
+import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.popup.RecapPopupContent
 import com.chalkak.recap.core.design.component.toast.RecapToastDuration
@@ -260,32 +258,9 @@ fun ScreenshotPickerContent(
     // Partial에서 시트 content 하단은 화면 밖이라 Popup이 window 하단으로 clamp된다.
     // IntOffset 여백은 clamp에 먹히므로, bottom padding을 Popup content에 둔다.
     // hide() 중에만 sheet offset 증가분을 Popup translation으로 싱크한다.
-    // ModalBottomSheet가 insets를 consume하므로 root window insets로 nav 높이를 읽는다.
     var ctaHideSinkY by remember { mutableFloatStateOf(0f) }
     val confirmAppearProgress = remember { Animatable(0f) }
     var isConfirmButtonPresent by remember { mutableStateOf(false) }
-    val density = LocalDensity.current
-    val view = LocalView.current
-    var navigationBarsBottomPx by remember { mutableIntStateOf(0) }
-    DisposableEffect(view) {
-        fun updateNavigationBarsBottom() {
-            val rootInsets = view.rootWindowInsets ?: return
-            navigationBarsBottomPx = WindowInsetsCompat.toWindowInsetsCompat(rootInsets, view)
-                .getInsets(WindowInsetsCompat.Type.navigationBars())
-                .bottom
-        }
-        updateNavigationBarsBottom()
-        val listener = androidx.core.view.OnApplyWindowInsetsListener { _, insets ->
-            navigationBarsBottomPx =
-                insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
-            insets
-        }
-        ViewCompat.setOnApplyWindowInsetsListener(view, listener)
-        ViewCompat.requestApplyInsets(view)
-        onDispose { ViewCompat.setOnApplyWindowInsetsListener(view, null) }
-    }
-    val confirmButtonBottomPadding = ScreenshotPickerTokens.ConfirmButtonBottomPadding +
-        with(density) { navigationBarsBottomPx.toDp() }
     val itemBoundsInRoot = remember { mutableMapOf<String, Rect>() }
     val dragSelectBaseline = remember { mutableSetOf<String>() }
     val dragSelectLocalSelected = remember { mutableSetOf<String>() }
@@ -416,11 +391,14 @@ fun ScreenshotPickerContent(
         }
     }
 
-    Box(modifier = modifier.fillMaxSize()) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .navigationBarsPadding(),
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .navigationBarsPadding()
                 .hazeSource(state = toastHazeState)
                 .background(MaterialTheme.colorScheme.surface),
         ) {
@@ -532,7 +510,7 @@ fun ScreenshotPickerContent(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = ScreenshotPickerTokens.ConfirmButtonHorizontalPadding)
-                        .padding(bottom = confirmButtonBottomPadding)
+                        .padding(bottom = ScreenshotPickerTokens.ConfirmButtonBottomPadding)
                         .graphicsLayer {
                             val progress = confirmAppearProgress.value
                             alpha = progress
@@ -544,7 +522,9 @@ fun ScreenshotPickerContent(
         }
 
         val toastBottomPadding = if (uiState.canProceed) {
-            ScreenshotPickerTokens.ToastAboveConfirmButtonBottomPadding
+            ScreenshotPickerTokens.ConfirmButtonBottomPadding +
+                    RecapButtonSize.Large.height +
+                    ScreenshotPickerTokens.ToastAboveConfirmButtonSpacing
         } else {
             ScreenshotPickerTokens.ToastBottomPadding
         }
@@ -916,7 +896,7 @@ private object ScreenshotPickerTokens {
     val ConfirmButtonReservedHeight = 88.dp
     val ToastHorizontalPadding = 24.dp
     val ToastBottomPadding = 16.dp
-    val ToastAboveConfirmButtonBottomPadding = 104.dp
+    val ToastAboveConfirmButtonSpacing = 15.dp
 }
 
 @Preview(
