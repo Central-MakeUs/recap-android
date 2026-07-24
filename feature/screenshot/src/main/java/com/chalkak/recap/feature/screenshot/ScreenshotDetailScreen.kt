@@ -350,18 +350,29 @@ private fun ScreenshotDetailHero(
             }
         }
 
-        ScreenshotIconButton(
-            iconResId = R.drawable.ic_fullscreen_24,
-            contentDescription = stringResource(
-                R.string.screenshot_detail_fullscreen_content_description,
-            ),
-            onClick = onFullscreenClick,
-            tint = RecapGray500,
-            outlined = true,
+        Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(ScreenshotTokens.FullscreenButtonPadding),
-        )
+                .size(height = 53.dp, width = 69.dp)
+                .clickable(
+                    enabled = !showPlaceholder,
+                    onClick = onFullscreenClick,
+                    role = Role.Button,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            ScreenshotIconButton(
+                iconResId = R.drawable.ic_fullscreen_24,
+                contentDescription = stringResource(
+                    R.string.screenshot_detail_fullscreen_content_description,
+                ),
+                onClick = onFullscreenClick,
+                enabled = !showPlaceholder,
+                tint = RecapGray900,
+                outlined = true,
+                handleClick = false,
+            )
+        }
     }
 }
 
@@ -375,9 +386,12 @@ internal fun ScreenshotIconButton(
     checked: Boolean? = null,
     tint: Color = RecapGray500,
     outlined: Boolean = false,
+    handleClick: Boolean = true,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val clickModifier = if (checked != null) {
+    val clickModifier = if (!handleClick) {
+        Modifier
+    } else if (checked != null) {
         Modifier.toggleable(
             value = checked,
             enabled = enabled,
