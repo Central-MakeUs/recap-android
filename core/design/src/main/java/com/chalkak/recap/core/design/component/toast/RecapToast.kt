@@ -90,12 +90,12 @@ data class RecapToastColors(
 
 object RecapToastDefaults {
     val HorizontalPadding = 21.dp
-    val VerticalPadding = 18.dp
+    val VerticalPadding = 10.5.dp
     val IconSize = 24.dp
     val IconSpacing = 10.dp
     val Shape = RoundedCornerShape(percent = 50)
     val BlurRadius: Dp = 24.dp
-    const val NoiseFactor: Float = 0.12f
+    const val NoiseFactor: Float = 0.0f
 
     fun colors(): RecapToastColors = RecapToastColors(
         container = RecapToastBackground,
@@ -156,7 +156,7 @@ fun RecapToast(
         modifier = modifier
             .clip(RecapToastDefaults.Shape)
             .hazeEffect(state = hazeState) {
-                inputScale = HazeInputScale.Auto
+                inputScale = HazeInputScale.Fixed(0.5f)
                 blurEffect {
                     blurEnabled = true
                     blurRadius = RecapToastDefaults.BlurRadius

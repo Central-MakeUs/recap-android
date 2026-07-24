@@ -15,11 +15,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import coil3.compose.AsyncImage
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.image.RecapPinchZoomAsyncImage
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
 @Composable
@@ -49,12 +48,11 @@ fun ScreenshotFullscreenScreen(
                     )
                 }
             } else {
-                AsyncImage(
+                RecapPinchZoomAsyncImage(
                     model = imageModel,
                     contentDescription = stringResource(
                         R.string.screenshot_image_placeholder_content_description,
                     ),
-                    contentScale = ContentScale.Fit,
                     modifier = Modifier.fillMaxSize(),
                     onError = { imageLoadFailed = true },
                 )

@@ -53,6 +53,7 @@ import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapHazeFolderColor
 import com.chalkak.recap.core.design.theme.White
+import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.blurEffect
 import dev.chrisbanes.haze.blur.materials.CupertinoMaterials
@@ -137,6 +138,7 @@ fun RecapHazeFolderCard(
                     )
                     .clip(folderShape)
                     .hazeEffect(state = hazeState) {
+                        inputScale = HazeInputScale.Fixed(0.5f)
                         blurEffect {
                             blurEnabled = true
                             blurRadius = RecapHazeFolderCardTokens.BlurRadius
@@ -267,7 +269,7 @@ private object RecapHazeFolderCardTokens {
     val IconContainerSize = 30.dp
     val IconContainerCornerRadius = 10.dp
     val IconSize = 16.dp
-    const val NoiseFactor = 0.2f
+    const val NoiseFactor = 0.0f
 
     val GlassBorderColor = White.copy(alpha = 0.5f)
     const val GlassTintStartAlpha = 0.60f

@@ -21,8 +21,10 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.ui.NavDisplay
+import com.chalkak.recap.core.design.animation.RecapNavDisplay
+import com.chalkak.recap.core.design.animation.RecapNavigationMotion
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
+import com.chalkak.recap.core.design.component.systembar.RecapNavigationBarGradientScrim
 import com.chalkak.recap.core.design.component.toast.ProvideRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToastDuration
@@ -113,9 +115,11 @@ fun RecapApp(
                         .fillMaxSize()
                         .hazeSource(state = toastHazeState),
                 ) {
-                    NavDisplay(
+                    RecapNavDisplay(
                         backStack = rootBackStack,
                         onBack = { rootBackStack.removeLastOrNull() },
+                        transitionSpec = { RecapNavigationMotion.forward() },
+                        popTransitionSpec = { RecapNavigationMotion.pop() },
                         entryProvider = { route ->
                             when (route) {
                                 RecapRootRoute.Onboarding -> NavEntry(route) {
@@ -151,6 +155,10 @@ fun RecapApp(
                     )
                 }
 
+                RecapNavigationBarGradientScrim(
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+
                 RecapToastHost(
                     currentToast = currentToast,
                     hazeState = toastHazeState,
@@ -163,4 +171,3 @@ fun RecapApp(
         }
     }
 }
-

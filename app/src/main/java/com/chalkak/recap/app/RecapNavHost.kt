@@ -29,6 +29,8 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
+import com.chalkak.recap.core.design.animation.RecapNavDisplay
+import com.chalkak.recap.core.design.animation.RecapNavigationMotion
 import com.chalkak.recap.feature.collection.CollectionRoute
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
@@ -74,10 +76,12 @@ fun RecapNavHost(
         }
     }
 
-    NavDisplay(
+    RecapNavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
         modifier = modifier,
+        transitionSpec = { RecapNavigationMotion.forward() },
+        popTransitionSpec = { RecapNavigationMotion.pop() },
         entryProvider = { route ->
             when (route) {
                 AppRoute.MainTabs -> NavEntry(route) {
@@ -256,11 +260,13 @@ fun RecapMainTabNavHost(
     onNavigateToOrganize: () -> Unit,
     onNavigateToCollectionFavorites: () -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
-    collectionFavoritesNavigationRequestId: Int = 0,
+    openCollectionFavoritesOnEnter: Boolean = false,
+    onOpenCollectionFavoritesOnEnterConsumed: () -> Unit = {},
     showDeveloperLogoShortcut: Boolean = false,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
     onCollectionPredictiveBackProgress: (Float) -> Unit = {},
 ) {
+    // Home ↔ Collection keeps its short slide+fade and bottom-bar predictive progress.
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
@@ -293,7 +299,9 @@ fun RecapMainTabNavHost(
                         onNavigateToOrganize = onNavigateToOrganize,
                         onNavigateToScreenshot = onNavigateToScreenshot,
                         onNavigateBack = { backStack.removeLastOrNull() },
-                        favoritesNavigationRequestId = collectionFavoritesNavigationRequestId,
+                        openCollectionFavoritesOnEnter = openCollectionFavoritesOnEnter,
+                        onOpenCollectionFavoritesOnEnterConsumed =
+                            onOpenCollectionFavoritesOnEnterConsumed,
                         onPredictiveBackProgress = onCollectionPredictiveBackProgress,
                     )
                 }

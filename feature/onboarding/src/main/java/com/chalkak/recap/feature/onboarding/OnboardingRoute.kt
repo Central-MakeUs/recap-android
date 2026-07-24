@@ -22,7 +22,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.ui.NavDisplay
+import com.chalkak.recap.core.design.animation.RecapNavDisplay
+import com.chalkak.recap.core.design.animation.RecapNavigationMotion
 import com.chalkak.recap.feature.onboarding.screen.OnboardingAddToFavoriteGuideScreen
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -80,7 +81,7 @@ fun OnboardingRoute(
     }
     val onboardingBackStack = rememberNavBackStack(OnboardingDestination.Flow)
 
-    NavDisplay(
+    RecapNavDisplay(
         backStack = onboardingBackStack,
         onBack = {
             if (onboardingBackStack.size > 1) {
@@ -89,6 +90,8 @@ fun OnboardingRoute(
                 viewModel.onAction(OnboardingAction.Back)
             }
         },
+        transitionSpec = { RecapNavigationMotion.forward() },
+        popTransitionSpec = { RecapNavigationMotion.pop() },
         entryProvider = { destination ->
             when (destination) {
                 OnboardingDestination.Flow -> NavEntry(destination) {

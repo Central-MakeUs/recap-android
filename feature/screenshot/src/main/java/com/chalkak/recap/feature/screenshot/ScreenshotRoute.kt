@@ -15,8 +15,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.ui.NavDisplay
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.animation.RecapNavDisplay
+import com.chalkak.recap.core.design.animation.RecapNavigationMotion
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToastType
@@ -84,6 +85,9 @@ fun ScreenshotRoute(
     val tempType = runCatching {
         ScreenshotContentType.valueOf(tempTypeSelection)
     }.getOrDefault(ScreenshotContentType.ETC)
+    val isEditingWithUnsavedChanges =
+        backStack.lastOrNull() is ScreenshotDestination.Edit &&
+            contentState?.hasUnsavedEditChanges() == true
 
     fun leaveEditScreen() {
         // Prefer uiState over contentState snapshot (NavEntry content can be remembered).
@@ -105,7 +109,7 @@ fun ScreenshotRoute(
         }
     }
 
-    NavDisplay(
+    RecapNavDisplay(
         backStack = backStack,
         onBack = {
             when {
@@ -115,6 +119,9 @@ fun ScreenshotRoute(
             }
         },
         modifier = Modifier.fillMaxSize(),
+        predictivePopEnabled = !isEditingWithUnsavedChanges,
+        transitionSpec = { RecapNavigationMotion.forward() },
+        popTransitionSpec = { RecapNavigationMotion.pop() },
         entryProvider = { destination ->
             when (destination) {
                 ScreenshotDestination.Detail -> NavEntry(destination) {

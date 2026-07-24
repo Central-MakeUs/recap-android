@@ -8,7 +8,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.ui.NavDisplay
+import com.chalkak.recap.core.design.animation.RecapNavDisplay
+import com.chalkak.recap.core.design.animation.RecapNavigationMotion
 import kotlinx.serialization.Serializable
 
 @Composable
@@ -20,10 +21,12 @@ fun DeveloperRoute(
     val backStack = rememberNavBackStack(DeveloperDestination.Options)
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    NavDisplay(
+    RecapNavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
         modifier = modifier,
+        transitionSpec = { RecapNavigationMotion.forward() },
+        popTransitionSpec = { RecapNavigationMotion.pop() },
         entryProvider = { route ->
             when (route) {
                 DeveloperDestination.Options -> NavEntry(route) {

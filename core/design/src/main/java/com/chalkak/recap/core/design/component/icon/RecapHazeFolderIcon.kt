@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.White
+import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.blurEffect
 import dev.chrisbanes.haze.blur.materials.CupertinoMaterials
@@ -117,6 +118,7 @@ fun RecapHazeFolderIcon(
                     )
                     .clip(folderShape)
                     .hazeEffect(state = hazeState) {
+                        inputScale = HazeInputScale.Fixed(0.5f)
                         blurEffect {
                             blurEnabled = true
                             blurRadius = RecapHazeFolderIconTokens.BlurRadius
@@ -351,7 +353,7 @@ private object RecapHazeFolderIconTokens {
 
     val FrontBorderWidth = 0.3.dp
     val BlurRadius = 12.dp
-    const val NoiseFactor = 0.2f
+    const val NoiseFactor = 0.0f
 
     const val GlassTintStartAlpha = 0.1f
     const val GlassTintEndAlpha = 0.7f

@@ -1,5 +1,7 @@
 package com.chalkak.recap.core.design.component.topbar
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -21,9 +24,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -97,6 +103,22 @@ private fun CollectionViewModeToggle(
     onViewModeChange: (CollectionTypeViewMode) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val itemSpan = CollectionViewModeToggleItemSize + CollectionViewModeToggleItemSpacing
+    val selectionFraction = remember {
+        Animatable(viewMode.ordinal.toFloat())
+    }
+
+    LaunchedEffect(viewMode) {
+        selectionFraction.animateTo(
+            targetValue = viewMode.ordinal.toFloat(),
+            animationSpec = tween(CollectionViewModeHighlightDurationMillis),
+        )
+    }
+
+    val highlightShape = RoundedCornerShape(CollectionViewModeToggleHighlightCornerRadius)
+    val highlightOffset = itemSpan * selectionFraction.value
+    val gridSelectedStrength = (1f - selectionFraction.value).coerceIn(0f, 1f)
+    val listSelectedStrength = selectionFraction.value.coerceIn(0f, 1f)
     val nextViewMode = when (viewMode) {
         CollectionTypeViewMode.Grid -> CollectionTypeViewMode.List
         CollectionTypeViewMode.List -> CollectionTypeViewMode.Grid
@@ -107,7 +129,7 @@ private fun CollectionViewModeToggle(
             CollectionTypeViewMode.List -> R.string.collection_view_list_content_description
         },
     )
-    val interactionSource = remember { MutableInteractionSource() }
+    val toggleInteractionSource = remember { MutableInteractionSource() }
 
     Row(
         modifier = modifier,
@@ -119,64 +141,78 @@ private fun CollectionViewModeToggle(
             style = MaterialTheme.typography.labelMedium,
             color = RecapGray500,
         )
-        Row(
+        Box(
             modifier = Modifier
                 .background(
                     color = RecapGray100,
-                    shape = RoundedCornerShape(8.dp),
+                    shape = RoundedCornerShape(CollectionViewModeToggleContainerCornerRadius),
                 )
                 .clickable(
-                    interactionSource = interactionSource,
+                    interactionSource = toggleInteractionSource,
                     indication = null,
                     role = Role.Button,
                     onClickLabel = toggleContentDescription,
                     onClick = { onViewModeChange(nextViewMode) },
                 )
-                .padding(2.dp),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            verticalAlignment = Alignment.CenterVertically,
+                .padding(CollectionViewModeToggleContainerPadding),
         ) {
-            CollectionViewModeIcon(
-                selected = viewMode == CollectionTypeViewMode.Grid,
-                iconResId = R.drawable.ic_grid_24,
+            Box(
+                modifier = Modifier
+                    .offset(x = highlightOffset)
+                    .size(CollectionViewModeToggleItemSize)
+                    .clip(highlightShape)
+                    .background(MaterialTheme.colorScheme.background),
             )
-            CollectionViewModeIcon(
-                selected = viewMode == CollectionTypeViewMode.List,
-                iconResId = R.drawable.ic_list_24,
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(CollectionViewModeToggleItemSpacing),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                CollectionViewModeToggleIcon(
+                    iconResId = R.drawable.ic_grid_24,
+                    selectedStrength = gridSelectedStrength,
+                )
+                CollectionViewModeToggleIcon(
+                    iconResId = R.drawable.ic_list_24,
+                    selectedStrength = listSelectedStrength,
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun CollectionViewModeIcon(
-    selected: Boolean,
+private fun CollectionViewModeToggleIcon(
     iconResId: Int,
+    selectedStrength: Float,
     modifier: Modifier = Modifier,
 ) {
+    val iconTint = lerp(
+        RecapGray500,
+        RecapGray700,
+        selectedStrength.coerceIn(0f, 1f),
+    )
+
     Box(
-        modifier = modifier
-            .size(28.dp)
-            .background(
-                color = if (selected) {
-                    MaterialTheme.colorScheme.background
-                } else {
-                    RecapGray100
-                },
-                shape = RoundedCornerShape(6.dp),
-            ),
+        modifier = modifier.size(CollectionViewModeToggleItemSize),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             painter = painterResource(iconResId),
             contentDescription = null,
-            tint = if (selected) RecapGray700 else RecapGray500,
+            tint = iconTint,
             modifier = Modifier.size(16.dp),
         )
     }
 }
 
+private const val CollectionViewModeHighlightDurationMillis = 250
+
 private val CollectionTopBarHeight = 56.dp
+private val CollectionViewModeToggleItemSize = 28.dp
+private val CollectionViewModeToggleItemSpacing = 2.dp
+private val CollectionViewModeToggleContainerPadding = 2.dp
+private val CollectionViewModeToggleContainerCornerRadius = 8.dp
+private val CollectionViewModeToggleHighlightCornerRadius = 6.dp
 
 @Preview(name = "Collection Top Bar", showBackground = true, widthDp = 360)
 @Composable

@@ -10,10 +10,14 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -152,6 +156,9 @@ private fun ScreenshotDetailContent(
     val bodyText = analysis.body.ifBlank {
         stringResource(R.string.screenshot_body_empty)
     }
+    val navigationBarBottomPadding = WindowInsets.navigationBars
+        .asPaddingValues()
+        .calculateBottomPadding()
 
     Column(
         modifier = Modifier
@@ -174,7 +181,10 @@ private fun ScreenshotDetailContent(
                     start = ScreenshotTokens.HorizontalPadding,
                     top = ScreenshotTokens.ContentTopPadding,
                     end = ScreenshotTokens.HorizontalPadding,
-                    bottom = ScreenshotDetailTokens.ContentBottomPadding,
+                )
+                .padding(
+                    bottom = navigationBarBottomPadding +
+                        ScreenshotDetailTokens.ContentBottomPadding,
                 ),
         ) {
             Row(
@@ -340,18 +350,29 @@ private fun ScreenshotDetailHero(
             }
         }
 
-        ScreenshotIconButton(
-            iconResId = R.drawable.ic_fullscreen_24,
-            contentDescription = stringResource(
-                R.string.screenshot_detail_fullscreen_content_description,
-            ),
-            onClick = onFullscreenClick,
-            tint = RecapGray500,
-            outlined = true,
+        Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .padding(ScreenshotTokens.FullscreenButtonPadding),
-        )
+                .size(height = 53.dp, width = 69.dp)
+                .clickable(
+                    enabled = !showPlaceholder,
+                    onClick = onFullscreenClick,
+                    role = Role.Button,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            ScreenshotIconButton(
+                iconResId = R.drawable.ic_fullscreen_24,
+                contentDescription = stringResource(
+                    R.string.screenshot_detail_fullscreen_content_description,
+                ),
+                onClick = onFullscreenClick,
+                enabled = !showPlaceholder,
+                tint = RecapGray900,
+                outlined = true,
+                handleClick = false,
+            )
+        }
     }
 }
 
@@ -365,9 +386,12 @@ internal fun ScreenshotIconButton(
     checked: Boolean? = null,
     tint: Color = RecapGray500,
     outlined: Boolean = false,
+    handleClick: Boolean = true,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val clickModifier = if (checked != null) {
+    val clickModifier = if (!handleClick) {
+        Modifier
+    } else if (checked != null) {
         Modifier.toggleable(
             value = checked,
             enabled = enabled,
@@ -444,6 +468,7 @@ private fun ScreenshotDetailErrorState(
         modifier = Modifier
             .fillMaxSize()
             .statusBarsPadding()
+            .navigationBarsPadding()
             .padding(ScreenshotTokens.HorizontalPadding),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,

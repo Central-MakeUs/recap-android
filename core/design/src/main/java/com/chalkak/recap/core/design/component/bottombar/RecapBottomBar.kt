@@ -50,6 +50,7 @@ import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.White
+import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.blurEffect
@@ -152,6 +153,7 @@ private fun RecapBottomBarNavPill(
                 spotColor = RecapBottomBarDefaults.GlassShadowColor,
             )
             .hazeEffect(state = hazeState) {
+                inputScale = HazeInputScale.Fixed(0.5f)
                 blurEffect {
                     blurEnabled = true
                     blurRadius = RecapBottomBarDefaults.GlassBlurRadius
@@ -299,7 +301,7 @@ object RecapBottomBarDefaults {
     val GlassShadowElevation: Dp = 20.dp
     val GlassBlurRadius: Dp = 24.dp
     const val GlassTintAlpha: Float = 0.62f
-    const val GlassNoiseFactor: Float = 0.12f
+    const val GlassNoiseFactor: Float = 0.0f
 }
 
 private const val RecapBottomBarHighlightDurationMillis = 250
