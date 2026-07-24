@@ -1,5 +1,6 @@
 package com.chalkak.recap
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,12 +13,14 @@ import com.chalkak.recap.app.RecapApp
 import com.chalkak.recap.app.RecapStartupUiState
 import com.chalkak.recap.app.RecapStartupViewModel
 import com.chalkak.recap.app.RecapToastViewModel
+import com.chalkak.recap.app.share.ShareIntakeViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     private val startupViewModel: RecapStartupViewModel by viewModels()
     private val toastViewModel: RecapToastViewModel by viewModels()
+    private val shareIntakeViewModel: ShareIntakeViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen().setKeepOnScreenCondition {
@@ -34,11 +37,22 @@ class MainActivity : ComponentActivity() {
                 darkScrim = Color.TRANSPARENT,
             ),
         )
+        shareIntakeViewModel.submitShareIntent(intent)
         setContent {
             RecapApp(
                 startupViewModel = startupViewModel,
                 toastViewModel = toastViewModel,
+                shareIntakeViewModel = shareIntakeViewModel,
             )
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        shareIntakeViewModel.submitShareIntent(
+            intent = intent,
+            forceNewSession = true,
+        )
     }
 }

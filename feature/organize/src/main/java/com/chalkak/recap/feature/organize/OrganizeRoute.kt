@@ -27,16 +27,34 @@ import kotlinx.coroutines.launch
 fun OrganizeRoute(
     onNavigateBack: () -> Unit,
     onOrganizeComplete: (List<LocalImage>) -> Unit,
+    sharedImages: List<LocalImage>? = null,
+    shareSessionId: String? = null,
     viewModel: OrganizeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val startAtConfirmation = sharedImages != null && shareSessionId != null
 
-    LaunchedEffect(Unit) {
-        viewModel.refreshScreenshots()
+    LaunchedEffect(shareSessionId, sharedImages) {
+        if (sharedImages != null && shareSessionId != null) {
+            viewModel.seedSharedImages(
+                sessionId = shareSessionId,
+                images = sharedImages,
+            )
+        } else {
+            viewModel.refreshScreenshots()
+        }
     }
 
     val coroutineScope = rememberCoroutineScope()
-    var destination by rememberSaveable { mutableStateOf(OrganizeDestination.Selection) }
+    var destination by rememberSaveable {
+        mutableStateOf(
+            if (startAtConfirmation) {
+                OrganizeDestination.Confirmation
+            } else {
+                OrganizeDestination.Selection
+            },
+        )
+    }
     // Destination과 분리: Confirmation fade-in과 시트 hide를 동시에 진행한다.
     var showScreenshotPicker by remember {
         mutableStateOf(destination == OrganizeDestination.Selection)
@@ -46,11 +64,22 @@ fun OrganizeRoute(
     // Exiting 상태가 복원되면 취소된 hide coroutine을 재실행하지 않고 즉시 종료한다.
     var isAnimatedExitRunning by remember { mutableStateOf(false) }
     var showDiscardSelectionConfirm by remember { mutableStateOf(false) }
+    // 시드 직후 uiState 반영 전 empty로 오판해 닫히지 않도록, 한 번이라도 선택이 있은 뒤에만 종료한다.
+    var confirmationHadSelection by remember { mutableStateOf(false) }
     val sheetState = rememberScreenshotPickerSheetState(
         selectionCount = uiState.selectionCount,
         onAttemptDismissWithSelection = { showDiscardSelectionConfirm = true },
         allowHideWithoutConfirm = { suppressPickerDismiss },
     )
+
+    LaunchedEffect(destination, shareSessionId) {
+        if (
+            shareSessionId != null &&
+            destination == OrganizeDestination.Selection
+        ) {
+            viewModel.refreshScreenshotsMergingSelected()
+        }
+    }
 
     fun navigateBackToPicker() {
         destination = OrganizeDestination.Selection
@@ -93,10 +122,13 @@ fun OrganizeRoute(
     }
 
     LaunchedEffect(uiState.selectedUris, destination) {
-        if (
-            destination == OrganizeDestination.Confirmation &&
-            uiState.selectedUris.isEmpty()
-        ) {
+        if (destination != OrganizeDestination.Confirmation) {
+            confirmationHadSelection = false
+            return@LaunchedEffect
+        }
+        if (uiState.selectedUris.isNotEmpty()) {
+            confirmationHadSelection = true
+        } else if (confirmationHadSelection) {
             exitOrganizeImmediately()
         }
     }

@@ -110,10 +110,12 @@ fun ScreenshotConfirmationScreen(
                         },
                     )
                 }
-                item(span = { GridItemSpan(1) }) {
-                    ScreenshotConfirmationAddItem(
-                        onClick = onAddMoreClick,
-                    )
+                if (uiState.selectionCount < MAX_SELECTION_COUNT) {
+                    item(span = { GridItemSpan(1) }) {
+                        ScreenshotConfirmationAddItem(
+                            onClick = onAddMoreClick,
+                        )
+                    }
                 }
             }
             RecapButton(

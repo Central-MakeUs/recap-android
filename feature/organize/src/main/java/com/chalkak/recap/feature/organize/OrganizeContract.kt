@@ -28,4 +28,4 @@ sealed interface OrganizeAction {
 }
 
 internal const val MIN_SELECTION_COUNT = 1
-internal const val MAX_SELECTION_COUNT = 20
+const val MAX_SELECTION_COUNT = 20

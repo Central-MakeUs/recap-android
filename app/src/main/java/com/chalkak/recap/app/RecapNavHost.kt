@@ -31,6 +31,7 @@ import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 import com.chalkak.recap.core.design.animation.RecapNavDisplay
 import com.chalkak.recap.core.design.animation.RecapNavigationMotion
+import com.chalkak.recap.app.share.PendingShareIntake
 import com.chalkak.recap.feature.collection.CollectionRoute
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
@@ -61,6 +62,8 @@ fun RecapNavHost(
     onNavigateToDeveloper: () -> Unit,
     pendingOpenOrganize: Boolean = false,
     onPendingOpenOrganizeConsumed: () -> Unit = {},
+    pendingShareIntake: PendingShareIntake? = null,
+    onPendingShareIntakeFinished: (String) -> Unit = {},
 ) {
     val context = LocalContext.current
     val backStack = rememberNavBackStack(AppRoute.MainTabs)
@@ -117,6 +120,8 @@ fun RecapNavHost(
                                     onPendingOpenOrganizeConsumed()
                                 }
                             },
+                            pendingShareIntake = pendingShareIntake,
+                            onPendingShareIntakeFinished = onPendingShareIntakeFinished,
                             analysisProgressFlow = analysisProgressFlow,
                         )
                     }
