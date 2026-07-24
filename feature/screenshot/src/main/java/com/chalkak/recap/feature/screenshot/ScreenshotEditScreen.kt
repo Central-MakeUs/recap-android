@@ -9,11 +9,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -74,6 +76,10 @@ fun ScreenshotEditScreen(
         priority = ScreenshotImageResolvePriority.Preview,
     )
 
+    val navigationBarBottomPadding = WindowInsets.navigationBars
+        .asPaddingValues()
+        .calculateBottomPadding()
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = RecapBackground,
@@ -82,8 +88,7 @@ fun ScreenshotEditScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .statusBarsPadding()
-                .imePadding()
-                .navigationBarsPadding(),
+                .imePadding(),
         ) {
             ScreenshotEditTopBar(
                 canDone = canDone,
@@ -95,9 +100,11 @@ fun ScreenshotEditScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .verticalScroll(rememberScrollState())
+                    .padding(horizontal = ScreenshotTokens.HorizontalPadding)
+                    .padding(top = ScreenshotTokens.ContentTopPadding)
                     .padding(
-                        horizontal = ScreenshotTokens.HorizontalPadding,
-                        vertical = ScreenshotTokens.ContentTopPadding,
+                        bottom = navigationBarBottomPadding +
+                            ScreenshotEditTokens.ScrollBottomPadding,
                     ),
             ) {
                 Text(
@@ -370,4 +377,5 @@ private object ScreenshotEditTokens {
     val EditImagePreviewHeight = 180.dp
     val EditImagePreviewCornerRadius = 12.dp
     val TextActionMinSize = 46.dp
+    val ScrollBottomPadding = 16.dp
 }

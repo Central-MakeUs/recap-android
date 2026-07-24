@@ -25,6 +25,7 @@ import androidx.navigation3.ui.NavDisplay
 import androidx.navigationevent.NavigationEvent
 import com.chalkak.recap.core.design.animation.RecapNavigationMotion
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
+import com.chalkak.recap.core.design.component.systembar.RecapNavigationBarGradientScrim
 import com.chalkak.recap.core.design.component.toast.ProvideRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToastDuration
@@ -171,6 +172,10 @@ fun RecapApp(
                         },
                     )
                 }
+
+                RecapNavigationBarGradientScrim(
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
 
                 RecapToastHost(
                     currentToast = currentToast,
