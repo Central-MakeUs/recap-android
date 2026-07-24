@@ -6,15 +6,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapIllustrationPlaceholderGray
 import com.chalkak.recap.feature.onboarding.OnboardingIllustrationSignal
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
-
-private val IllustrationPlaceholderGray = Color(0xFFE0E0E0)
 
 internal enum class OnboardingIllustrationVariant {
     Landing,
@@ -34,7 +32,7 @@ internal fun OnboardingIllustration(
         Box(
             modifier = Modifier
                 .size(width = 220.dp, height = 210.dp)
-                .background(IllustrationPlaceholderGray),
+                .background(RecapIllustrationPlaceholderGray),
         )
     }
 }

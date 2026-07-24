@@ -55,6 +55,12 @@ import com.chalkak.recap.core.design.component.RecapLogoAspectRatio
 import com.chalkak.recap.core.design.component.icon.RecapHazeFolderIcon
 import com.chalkak.recap.core.design.component.speechbubble.RecapSpeechBubble
 import com.chalkak.recap.core.design.component.speechbubble.RecapSpeechBubbleArrowDirection
+import com.chalkak.recap.core.design.theme.Black
+import com.chalkak.recap.core.design.theme.RecapGray200
+import com.chalkak.recap.core.design.theme.RecapGray300
+import com.chalkak.recap.core.design.theme.RecapGray700
+import com.chalkak.recap.core.design.theme.RecapKakaoYellow
+import com.chalkak.recap.core.design.theme.RecapOnboardingBlue
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingIllustrationSignal
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
@@ -65,10 +71,6 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlin.math.roundToInt
 import kotlin.time.Duration.Companion.milliseconds
 
-private val OnboardingBlue = Color(0xFF5C74FF)
-private val OnboardingGray700 = Color(0xFF222B3C)
-private val OnboardingGray300 = Color(0xFF99A0B0)
-private val KakaoYellow = Color(0xFFFEE500)
 private const val LandingBackgroundIconAlpha = 0.45f
 private const val LandingTransitionMillis = 500
 private val LandingIllustrationSize = 190.dp
@@ -299,14 +301,14 @@ private fun BrandHeadline(
         )
         Text(
             text = buildAnnotatedString {
-                pushStyle(SpanStyle(color = OnboardingBlue))
+                pushStyle(SpanStyle(color = RecapOnboardingBlue))
                 append(stringResource(R.string.onboarding_splash_tagline_highlight))
                 pop()
                 append(" ")
                 append(stringResource(R.string.onboarding_splash_tagline_rest))
             },
             style = MaterialTheme.typography.headlineMedium,
-            color = OnboardingGray700,
+            color = RecapGray700,
             textAlign = TextAlign.Center,
         )
     }
@@ -340,21 +342,21 @@ private fun SocialLoginSection(
                 Text(
                     text = stringResource(R.string.onboarding_simple_login_label),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = OnboardingGray300,
+                    color = RecapGray300,
                 )
                 DividerLine()
             }
             SocialLoginButton(
                 onClick = onKakaoClick,
                 enabled = interactive && !isLoading,
-                containerColor = KakaoYellow,
+                containerColor = RecapKakaoYellow,
                 contentDescription = stringResource(R.string.onboarding_kakao_login_content_description),
                 modifier = Modifier.padding(top = 58.dp),
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = Color.Black,
+                        color = Black,
                         strokeWidth = 2.dp,
                     )
                 } else {
@@ -362,7 +364,7 @@ private fun SocialLoginSection(
                         painter = painterResource(R.drawable.kakao_96px),
                         contentDescription = null,
                         modifier = Modifier.size(29.dp),
-                        tint = Color.Black,
+                        tint = Black,
                     )
                 }
             }
@@ -375,7 +377,7 @@ private fun DividerLine() {
     Box(
         modifier = Modifier
             .size(width = 59.dp, height = 1.dp)
-            .background(Color(0xFFCED2DE)),
+            .background(RecapGray200),
     )
 }
 
