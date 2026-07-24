@@ -122,9 +122,10 @@
     <string name="organized_relative_time_days_ago">%1$d일 전</string>
     <string name="collection_title">보관함</string>
     <string name="collection_subtitle">즐겨찾기와 유형별로 정리된 캡처를 모아봐요</string>
-    <string name="collection_empty_title">아직 보관된 캡처가 없어요</string>
-    <string name="collection_empty_description">스크린샷을 정리하면 유형별로\n모아볼 수 있어요</string>
-    <string name="collection_empty_organize_button">스크린샷 정리하기</string>
+    <string name="collection_empty_title">아직 정리된 스크린샷이 없어요</string>
+    <string name="collection_empty_description">정리할 스크린샷을 불러오거나\n갤러리에서 공유해주세요</string>
+    <string name="collection_empty_organize_button">스크린샷 불러오기</string>
+    <string name="collection_empty_character_content_description">컬렉션 빈 상태 안내 캐릭터</string>
     <string name="collection_favorites_section_title">즐겨찾기</string>
     <string name="collection_favorites_entry_content_description">즐겨찾기, %1$d recaps</string>
     <string name="collection_types_section_title">유형별 보기</string>
