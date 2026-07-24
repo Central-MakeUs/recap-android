@@ -55,6 +55,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -109,7 +110,36 @@ import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun rememberScreenshotPickerSheetState(
+    selectionCount: Int,
+    onAttemptDismissWithSelection: () -> Unit,
+    skipPartiallyExpanded: Boolean = false,
+    allowHideWithoutConfirm: () -> Boolean = { false },
+): SheetState {
+    val currentSelectionCount by rememberUpdatedState(selectionCount)
+    val currentOnAttemptDismiss by rememberUpdatedState(onAttemptDismissWithSelection)
+    val currentAllowHideWithoutConfirm by rememberUpdatedState(allowHideWithoutConfirm)
+    return rememberModalBottomSheetState(
+        skipPartiallyExpanded = skipPartiallyExpanded,
+        confirmValueChange = { newValue ->
+            if (
+                newValue == SheetValue.Hidden &&
+                currentSelectionCount >= MIN_SELECTION_COUNT &&
+                !currentAllowHideWithoutConfirm()
+            ) {
+                currentOnAttemptDismiss()
+                false
+            } else {
+                true
+            }
+        },
+    )
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -120,46 +150,79 @@ fun ScreenshotPicker(
     onCloseClick: () -> Unit,
     onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier,
-    sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false),
+    sheetState: SheetState? = null,
+    discardSelectionConfirmVisible: Boolean? = null,
+    onDiscardSelectionConfirmVisibleChange: ((Boolean) -> Unit)? = null,
 ) {
     val screenHeight = with(LocalDensity.current) {
         LocalWindowInfo.current.containerSize.height.toDp()
     }
-    var showDiscardSelectionConfirm by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
+    var internalShowDiscardSelectionConfirm by remember { mutableStateOf(false) }
+    val showDiscardSelectionConfirm = discardSelectionConfirmVisible
+        ?: internalShowDiscardSelectionConfirm
+    val setShowDiscardSelectionConfirm: (Boolean) -> Unit =
+        onDiscardSelectionConfirmVisibleChange
+            ?: { internalShowDiscardSelectionConfirm = it }
+    val resolvedSheetState = sheetState ?: rememberScreenshotPickerSheetState(
+        selectionCount = uiState.selectionCount,
+        onAttemptDismissWithSelection = { setShowDiscardSelectionConfirm(true) },
+    )
     var zoomImageModel by remember { mutableStateOf<Any?>(null) }
     // 최초 Composition/측정은 shell만 두고, show()로 target이 non-hidden이 되는 순간
     // gallery를 활성화해 상승 애니메이션과 이미지 로딩이 겹치도록 한다.
     var showGalleryBody by remember { mutableStateOf(false) }
     // entrance 중 sheet offset이 매 프레임 바뀌며 onGloballyPositioned가 폭주하므로 settle 후에만 켠다.
     var trackItemBounds by remember { mutableStateOf(false) }
+
+    fun dismissDiscardConfirmAndRestoreSheet() {
+        setShowDiscardSelectionConfirm(false)
+        coroutineScope.launch {
+            if (resolvedSheetState.currentValue == SheetValue.Hidden) {
+                resolvedSheetState.show()
+            }
+        }
+    }
+
     val requestExit = {
         if (zoomImageModel != null) {
             zoomImageModel = null
         } else if (uiState.selectionCount >= MIN_SELECTION_COUNT) {
-            showDiscardSelectionConfirm = true
+            setShowDiscardSelectionConfirm(true)
         } else {
             onCloseClick()
         }
     }
 
-    LaunchedEffect(sheetState) {
+    LaunchedEffect(resolvedSheetState) {
         snapshotFlow {
-            sheetState.targetValue != SheetValue.Hidden
+            resolvedSheetState.targetValue != SheetValue.Hidden
         }.first { visibleTarget -> visibleTarget }
         showGalleryBody = true
     }
 
-    LaunchedEffect(sheetState) {
+    LaunchedEffect(resolvedSheetState) {
         snapshotFlow {
-            sheetState.targetValue != SheetValue.Hidden && !sheetState.isAnimationRunning
+            resolvedSheetState.targetValue != SheetValue.Hidden && !resolvedSheetState.isAnimationRunning
         }.first { settled -> settled }
         trackItemBounds = true
     }
 
     ModalBottomSheet(
-        onDismissRequest = onDismissRequest,
+        onDismissRequest = {
+            if (uiState.selectionCount >= MIN_SELECTION_COUNT) {
+                setShowDiscardSelectionConfirm(true)
+                coroutineScope.launch {
+                    if (resolvedSheetState.currentValue == SheetValue.Hidden) {
+                        resolvedSheetState.show()
+                    }
+                }
+            } else {
+                onDismissRequest()
+            }
+        },
         modifier = modifier,
-        sheetState = sheetState,
+        sheetState = resolvedSheetState,
         shape = RoundedCornerShape(
             topStart = ScreenshotPickerTokens.SheetTopCornerRadius,
             topEnd = ScreenshotPickerTokens.SheetTopCornerRadius,
@@ -179,7 +242,7 @@ fun ScreenshotPicker(
             onCloseClick = requestExit,
             onConfirmClick = onConfirmClick,
             onImageLongClick = { imageModel -> zoomImageModel = imageModel },
-            sheetState = sheetState,
+            sheetState = resolvedSheetState,
             showGalleryBody = showGalleryBody,
             trackItemBounds = trackItemBounds,
             modifier = Modifier
@@ -204,11 +267,11 @@ fun ScreenshotPicker(
                 R.string.organize_discard_selection_confirm_keep_organizing,
             ),
             onConfirmClick = {
-                showDiscardSelectionConfirm = false
+                setShowDiscardSelectionConfirm(false)
                 onCloseClick()
             },
-            onCancelClick = { showDiscardSelectionConfirm = false },
-            onDismissRequest = { showDiscardSelectionConfirm = false },
+            onCancelClick = ::dismissDiscardConfirmAndRestoreSheet,
+            onDismissRequest = ::dismissDiscardConfirmAndRestoreSheet,
             confirmButtonColor = RecapError,
         )
     }

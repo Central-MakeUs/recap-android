@@ -8,7 +8,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -36,7 +35,6 @@ fun OrganizeRoute(
         viewModel.refreshScreenshots()
     }
 
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val coroutineScope = rememberCoroutineScope()
     var destination by rememberSaveable { mutableStateOf(OrganizeDestination.Selection) }
     // Destination과 분리: Confirmation fade-in과 시트 hide를 동시에 진행한다.
@@ -47,6 +45,12 @@ fun OrganizeRoute(
     var suppressPickerDismiss by remember { mutableStateOf(false) }
     // Exiting 상태가 복원되면 취소된 hide coroutine을 재실행하지 않고 즉시 종료한다.
     var isAnimatedExitRunning by remember { mutableStateOf(false) }
+    var showDiscardSelectionConfirm by remember { mutableStateOf(false) }
+    val sheetState = rememberScreenshotPickerSheetState(
+        selectionCount = uiState.selectionCount,
+        onAttemptDismissWithSelection = { showDiscardSelectionConfirm = true },
+        allowHideWithoutConfirm = { suppressPickerDismiss },
+    )
 
     fun navigateBackToPicker() {
         destination = OrganizeDestination.Selection
@@ -139,6 +143,8 @@ fun OrganizeRoute(
                 onCloseClick = ::dismissScreenshotPickerAndExit,
                 onConfirmClick = ::navigateToConfirmation,
                 sheetState = sheetState,
+                discardSelectionConfirmVisible = showDiscardSelectionConfirm,
+                onDiscardSelectionConfirmVisibleChange = { showDiscardSelectionConfirm = it },
             )
         }
     }
