@@ -38,14 +38,20 @@ fun CollectionRoute(
     onNavigateToOrganize: () -> Unit,
     onNavigateToScreenshot: (Long) -> Unit = {},
     onNavigateBack: () -> Unit = {},
-    favoritesNavigationRequestId: Int = 0,
+    openCollectionFavoritesOnEnter: Boolean = false,
+    onOpenCollectionFavoritesOnEnterConsumed: () -> Unit = {},
     onPredictiveBackProgress: (Float) -> Unit = {},
     viewModel: CollectionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val resources = LocalResources.current
     val toastDispatcher = LocalRecapToastDispatcher.current
-    val backStack = rememberNavBackStack(CollectionDestination.Overview)
+    val initialDestination = if (openCollectionFavoritesOnEnter) {
+        CollectionDestination.FavoriteDetail
+    } else {
+        CollectionDestination.Overview
+    }
+    val backStack = rememberNavBackStack(initialDestination)
     val isAtRoot = backStack.size <= 1
     val canPredictivePopToHome = isAtRoot &&
         !uiState.selection.isActive &&
@@ -64,17 +70,9 @@ fun CollectionRoute(
         is NavigationEventTransitionState.Idle -> 0f
     }
 
-    LaunchedEffect(favoritesNavigationRequestId) {
-        if (favoritesNavigationRequestId > 0) {
-            while (backStack.size > 1) {
-                backStack.removeLastOrNull()
-            }
-            viewModel.onAction(CollectionAction.OpenFavoriteDetail)
-            val alreadyOnFavoriteDetail =
-                backStack.lastOrNull() == CollectionDestination.FavoriteDetail
-            if (!alreadyOnFavoriteDetail) {
-                backStack.add(CollectionDestination.FavoriteDetail)
-            }
+    LaunchedEffect(openCollectionFavoritesOnEnter) {
+        if (openCollectionFavoritesOnEnter) {
+            onOpenCollectionFavoritesOnEnterConsumed()
         }
     }
 
@@ -171,6 +169,10 @@ fun CollectionRoute(
             uiState.selection.isActive -> viewModel.onAction(CollectionAction.CancelSelection)
             uiState.isDetailSearchVisible -> viewModel.onAction(CollectionAction.HideDetailSearch)
             backStack.size > 1 -> navigateBackFromDetail()
+            backStack.lastOrNull() == CollectionDestination.FavoriteDetail -> {
+                navigateBackFromDetail()
+                backStack.add(CollectionDestination.Overview)
+            }
             else -> onNavigateBack()
         }
     }

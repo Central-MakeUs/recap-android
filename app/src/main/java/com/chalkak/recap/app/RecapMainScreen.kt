@@ -9,7 +9,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -44,7 +43,7 @@ fun RecapMainScreen(
     val backStack = rememberNavBackStack(MainTabRoute.Home)
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
     val hazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
-    var collectionFavoritesNavigationRequestId by remember { mutableIntStateOf(0) }
+    var openCollectionFavoritesOnNextEnter by remember { mutableStateOf(false) }
     var collectionPredictiveBackProgress by remember { mutableFloatStateOf(0f) }
     var showOrganize by rememberSaveable { mutableStateOf(false) }
 
@@ -62,6 +61,7 @@ fun RecapMainScreen(
                 backStack.clear()
                 backStack.add(MainTabRoute.Home)
             }
+
             MainTabRoute.Collection -> {
                 // Keep Home under Collection so system back returns to Home.
                 while (backStack.size > 1) {
@@ -77,8 +77,8 @@ fun RecapMainScreen(
     }
 
     fun navigateToCollectionFavorites() {
+        openCollectionFavoritesOnNextEnter = true
         navigateTo(MainTabRoute.Collection)
-        collectionFavoritesNavigationRequestId += 1
     }
 
     LaunchedEffect(homeNavigationRequestId) {
@@ -118,7 +118,10 @@ fun RecapMainScreen(
                 onNavigateToOrganize = { showOrganize = true },
                 onNavigateToCollectionFavorites = ::navigateToCollectionFavorites,
                 onNavigateToScreenshot = onNavigateToScreenshot,
-                collectionFavoritesNavigationRequestId = collectionFavoritesNavigationRequestId,
+                openCollectionFavoritesOnEnter = openCollectionFavoritesOnNextEnter,
+                onOpenCollectionFavoritesOnEnterConsumed = {
+                    openCollectionFavoritesOnNextEnter = false
+                },
                 showDeveloperLogoShortcut = BuildConfig.DEBUG,
                 analysisProgressFlow = analysisProgressFlow,
                 onCollectionPredictiveBackProgress = { progress ->

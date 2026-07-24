@@ -260,7 +260,8 @@ fun RecapMainTabNavHost(
     onNavigateToOrganize: () -> Unit,
     onNavigateToCollectionFavorites: () -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
-    collectionFavoritesNavigationRequestId: Int = 0,
+    openCollectionFavoritesOnEnter: Boolean = false,
+    onOpenCollectionFavoritesOnEnterConsumed: () -> Unit = {},
     showDeveloperLogoShortcut: Boolean = false,
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
     onCollectionPredictiveBackProgress: (Float) -> Unit = {},
@@ -298,7 +299,9 @@ fun RecapMainTabNavHost(
                         onNavigateToOrganize = onNavigateToOrganize,
                         onNavigateToScreenshot = onNavigateToScreenshot,
                         onNavigateBack = { backStack.removeLastOrNull() },
-                        favoritesNavigationRequestId = collectionFavoritesNavigationRequestId,
+                        openCollectionFavoritesOnEnter = openCollectionFavoritesOnEnter,
+                        onOpenCollectionFavoritesOnEnterConsumed =
+                            onOpenCollectionFavoritesOnEnterConsumed,
                         onPredictiveBackProgress = onCollectionPredictiveBackProgress,
                     )
                 }
