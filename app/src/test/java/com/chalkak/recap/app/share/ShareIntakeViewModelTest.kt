@@ -4,20 +4,25 @@ import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
+import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.model.LocalImage
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlinx.coroutines.test.resetMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -28,6 +33,8 @@ class ShareIntakeViewModelTest {
     private val context = mockk<Context> {
         every { contentResolver } returns this@ShareIntakeViewModelTest.contentResolver
     }
+    private val sessionTokenStore = mockk<SessionTokenStore>()
+    private val sharedAnalysisRequestStore = SharedAnalysisRequestStore()
 
     @BeforeEach
     fun setUp() {
@@ -102,12 +109,101 @@ class ShareIntakeViewModelTest {
         assertEquals(current, viewModel.pendingShareIntake.value)
     }
 
+    @Test
+    fun `logged out start emits login required without launch`() = runTest(testDispatcher) {
+        coEvery { sessionTokenStore.getRefreshToken() } returns null
+        val viewModel = createViewModel(
+            fingerprint = "share-fingerprint",
+            parseResult = ::sampleParseResult,
+        )
+        val images = sampleParseResult().accepted
+
+        viewModel.events.test {
+            viewModel.requestStartOrganize(images)
+            advanceUntilIdle()
+
+            assertEquals(ShareIntakeEvent.LoginRequired, awaitItem())
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `logged in start emits launch event once`() = runTest(testDispatcher) {
+        coEvery { sessionTokenStore.getRefreshToken() } returns "refresh-token"
+        val viewModel = createViewModel(
+            fingerprint = "share-fingerprint",
+            parseResult = ::sampleParseResult,
+        )
+        val images = sampleParseResult().accepted
+
+        viewModel.events.test {
+            viewModel.requestStartOrganize(images)
+            viewModel.requestStartOrganize(images)
+            advanceUntilIdle()
+
+            val event = awaitItem() as ShareIntakeEvent.LaunchMainAnalysis
+            assertEquals(images, event.images)
+            assertTrue(event.requestId.isNotBlank())
+            assertNotNull(sharedAnalysisRequestStore.peek(event.requestId))
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `launch event remains available after collector reconnect`() = runTest(testDispatcher) {
+        coEvery { sessionTokenStore.getRefreshToken() } returns "refresh-token"
+        val viewModel = createViewModel(
+            fingerprint = "share-fingerprint",
+            parseResult = ::sampleParseResult,
+        )
+        val images = sampleParseResult().accepted
+
+        viewModel.requestStartOrganize(images)
+        advanceUntilIdle()
+
+        viewModel.events.test {
+            val event = awaitItem() as ShareIntakeEvent.LaunchMainAnalysis
+            assertEquals(images, event.images)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `login required still allows retry after collector reconnect`() = runTest(testDispatcher) {
+        coEvery { sessionTokenStore.getRefreshToken() } returns null
+        val viewModel = createViewModel(
+            fingerprint = "share-fingerprint",
+            parseResult = ::sampleParseResult,
+        )
+        val images = sampleParseResult().accepted
+
+        viewModel.requestStartOrganize(images)
+        advanceUntilIdle()
+
+        viewModel.events.test {
+            assertEquals(ShareIntakeEvent.LoginRequired, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        viewModel.requestStartOrganize(images)
+        advanceUntilIdle()
+
+        viewModel.events.test {
+            assertEquals(ShareIntakeEvent.LoginRequired, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
     private fun createViewModel(
         fingerprint: String,
         parseResult: () -> ShareImageParseResult,
     ): ShareIntakeViewModel {
         return ShareIntakeViewModel(
             savedStateHandle = SavedStateHandle(),
+            sessionTokenStore = sessionTokenStore,
+            sharedAnalysisRequestStore = sharedAnalysisRequestStore,
             context = context,
         ).apply {
             ioDispatcher = testDispatcher

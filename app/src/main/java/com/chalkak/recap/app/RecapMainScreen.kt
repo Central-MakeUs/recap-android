@@ -15,20 +15,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.chalkak.recap.BuildConfig
-import com.chalkak.recap.app.share.PendingShareIntake
-import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBar
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDestination
-import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
-import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
-import com.chalkak.recap.feature.organize.MAX_SELECTION_COUNT
 import com.chalkak.recap.feature.organize.OrganizeRoute
-import com.chalkak.recap.feature.organize.UnsupportedShareScreen
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.flow.Flow
@@ -43,83 +36,23 @@ fun RecapMainScreen(
     onNavigateToRecentOrganizedScreenshots: () -> Unit = {},
     onOrganizeComplete: (List<LocalImage>) -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
-    homeNavigationRequestId: Int = 0,
+    pendingHomeNavigationRequestId: Int? = null,
+    onHomeNavigationComplete: (Int) -> Unit = {},
     pendingOpenOrganize: Boolean = false,
     onPendingOpenOrganizeConsumed: () -> Unit = {},
-    pendingShareIntake: PendingShareIntake? = null,
-    onPendingShareIntakeFinished: (String) -> Unit = {},
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
 ) {
     val backStack = rememberNavBackStack(MainTabRoute.Home)
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
     val hazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
-    val toastDispatcher = LocalRecapToastDispatcher.current
     var openCollectionFavoritesOnNextEnter by remember { mutableStateOf(false) }
     var collectionPredictiveBackProgress by remember { mutableFloatStateOf(0f) }
     var showOrganize by rememberSaveable { mutableStateOf(false) }
-    var activeShareSessionId by rememberSaveable { mutableStateOf<String?>(null) }
-    var presentedShareSessionId by rememberSaveable { mutableStateOf<String?>(null) }
-    var showUnsupportedShare by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(pendingOpenOrganize) {
         if (pendingOpenOrganize) {
-            activeShareSessionId = null
             showOrganize = true
             onPendingOpenOrganizeConsumed()
-        }
-    }
-
-    val shareConfirmation = pendingShareIntake as? PendingShareIntake.Confirmation
-    val isFirstSharePresentation = shareConfirmation != null &&
-        presentedShareSessionId != shareConfirmation.sessionId
-    val shareNonImageRemovedToastMessage =
-        if (isFirstSharePresentation && shareConfirmation.rejectedCount > 0) {
-            stringResource(
-                R.string.share_non_image_removed,
-                shareConfirmation.rejectedCount,
-            )
-        } else {
-            null
-        }
-    val shareMaxSelectionToastMessage =
-        if (isFirstSharePresentation && shareConfirmation.trimmedByMax) {
-            stringResource(
-                R.string.share_max_selection_message,
-                MAX_SELECTION_COUNT,
-            )
-        } else {
-            null
-        }
-
-    LaunchedEffect(pendingShareIntake) {
-        when (val pending = pendingShareIntake) {
-            is PendingShareIntake.Confirmation -> {
-                shareNonImageRemovedToastMessage?.let { message ->
-                    toastDispatcher.showToast(
-                        message = message,
-                        type = RecapToastType.Error,
-                    )
-                }
-                shareMaxSelectionToastMessage?.let { message ->
-                    toastDispatcher.showToast(
-                        message = message,
-                        type = RecapToastType.Error,
-                    )
-                }
-                presentedShareSessionId = pending.sessionId
-                activeShareSessionId = pending.sessionId
-                showUnsupportedShare = false
-                showOrganize = true
-            }
-
-            is PendingShareIntake.Unsupported -> {
-                presentedShareSessionId = pending.sessionId
-                activeShareSessionId = null
-                showOrganize = false
-                showUnsupportedShare = true
-            }
-
-            null -> Unit
         }
     }
 
@@ -150,9 +83,10 @@ fun RecapMainScreen(
         navigateTo(MainTabRoute.Collection)
     }
 
-    LaunchedEffect(homeNavigationRequestId) {
-        if (homeNavigationRequestId > 0) {
+    LaunchedEffect(pendingHomeNavigationRequestId) {
+        pendingHomeNavigationRequestId?.let { requestId ->
             navigateTo(MainTabRoute.Home)
+            onHomeNavigationComplete(requestId)
         }
     }
 
@@ -174,7 +108,6 @@ fun RecapMainScreen(
                         navigateTo(destination.toMainTabRoute())
                     },
                     onOrganizeClick = {
-                        activeShareSessionId = null
                         showOrganize = true
                     },
                 )
@@ -188,7 +121,6 @@ fun RecapMainScreen(
                 onNavigateToSearch = onNavigateToSearch,
                 onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
                 onNavigateToOrganize = {
-                    activeShareSessionId = null
                     showOrganize = true
                 },
                 onNavigateToCollectionFavorites = ::navigateToCollectionFavorites,
@@ -207,38 +139,17 @@ fun RecapMainScreen(
         }
 
         if (showOrganize) {
-            val activeShare = (pendingShareIntake as? PendingShareIntake.Confirmation)
-                ?.takeIf { pending -> pending.sessionId == activeShareSessionId }
-            key(activeShare?.sessionId ?: NORMAL_ORGANIZE_SESSION_KEY) {
+            key(NORMAL_ORGANIZE_SESSION_KEY) {
                 OrganizeRoute(
-                    sharedImages = activeShare?.images,
-                    shareSessionId = activeShare?.sessionId,
                     onNavigateBack = {
-                        val completedShareSessionId = activeShareSessionId
                         showOrganize = false
-                        activeShareSessionId = null
-                        completedShareSessionId?.let(onPendingShareIntakeFinished)
                     },
                     onOrganizeComplete = { selectedScreenshots ->
-                        val completedShareSessionId = activeShareSessionId
                         showOrganize = false
-                        activeShareSessionId = null
-                        completedShareSessionId?.let(onPendingShareIntakeFinished)
                         onOrganizeComplete(selectedScreenshots)
                     },
                 )
             }
-        }
-
-        if (showUnsupportedShare) {
-            UnsupportedShareScreen(
-                onCloseClick = {
-                    val unsupportedSessionId =
-                        (pendingShareIntake as? PendingShareIntake.Unsupported)?.sessionId
-                    showUnsupportedShare = false
-                    unsupportedSessionId?.let(onPendingShareIntakeFinished)
-                },
-            )
         }
     }
 }

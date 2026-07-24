@@ -14,14 +14,13 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -31,7 +30,6 @@ import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 import com.chalkak.recap.core.design.animation.RecapNavDisplay
 import com.chalkak.recap.core.design.animation.RecapNavigationMotion
-import com.chalkak.recap.app.share.PendingShareIntake
 import com.chalkak.recap.feature.collection.CollectionRoute
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
@@ -62,13 +60,13 @@ fun RecapNavHost(
     onNavigateToDeveloper: () -> Unit,
     pendingOpenOrganize: Boolean = false,
     onPendingOpenOrganizeConsumed: () -> Unit = {},
-    pendingShareIntake: PendingShareIntake? = null,
-    onPendingShareIntakeFinished: (String) -> Unit = {},
+    analysisProgressViewModel: ScreenshotAnalysisProgressViewModel,
+    pendingHomeNavigationRequestId: Int?,
+    onRequestNavigateHome: () -> Unit,
+    onHomeNavigationComplete: (Int) -> Unit,
 ) {
     val context = LocalContext.current
     val backStack = rememberNavBackStack(AppRoute.MainTabs)
-    val analysisProgressViewModel: ScreenshotAnalysisProgressViewModel = hiltViewModel()
-    var homeNavigationRequestId by remember { mutableIntStateOf(0) }
     var requestOpenOrganize by remember { mutableStateOf(false) }
     val analysisProgressFlow = remember(analysisProgressViewModel) {
         analysisProgressViewModel.uiState.map { state ->
@@ -76,6 +74,18 @@ fun RecapNavHost(
                 isRunning = state.isRunning,
                 progress = state.progress,
             )
+        }
+    }
+
+    LaunchedEffect(pendingHomeNavigationRequestId) {
+        if (pendingHomeNavigationRequestId != null) {
+            while (backStack.size > 1) {
+                backStack.removeLastOrNull()
+            }
+            if (backStack.lastOrNull() != AppRoute.MainTabs) {
+                backStack.clear()
+                backStack.add(AppRoute.MainTabs)
+            }
         }
     }
 
@@ -104,14 +114,18 @@ fun RecapNavHost(
                             },
                             onOrganizeComplete = { selectedScreenshots ->
                                 analysisProgressViewModel.startAnalysis(selectedScreenshots)
-                                homeNavigationRequestId += 1
+                                onRequestNavigateHome()
                             },
                             onNavigateToScreenshot = { captureId ->
                                 if (captureId > 0) {
                                     backStack.add(AppRoute.Screenshot(captureId))
                                 }
                             },
-                            homeNavigationRequestId = homeNavigationRequestId,
+                            pendingHomeNavigationRequestId =
+                                pendingHomeNavigationRequestId.takeIf {
+                                    backStack.lastOrNull() == AppRoute.MainTabs
+                                },
+                            onHomeNavigationComplete = onHomeNavigationComplete,
                             pendingOpenOrganize = pendingOpenOrganize || requestOpenOrganize,
                             onPendingOpenOrganizeConsumed = {
                                 if (requestOpenOrganize) {
@@ -120,8 +134,6 @@ fun RecapNavHost(
                                     onPendingOpenOrganizeConsumed()
                                 }
                             },
-                            pendingShareIntake = pendingShareIntake,
-                            onPendingShareIntakeFinished = onPendingShareIntakeFinished,
                             analysisProgressFlow = analysisProgressFlow,
                         )
                     }

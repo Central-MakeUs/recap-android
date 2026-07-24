@@ -29,6 +29,7 @@ fun OrganizeRoute(
     onOrganizeComplete: (List<LocalImage>) -> Unit,
     sharedImages: List<LocalImage>? = null,
     shareSessionId: String? = null,
+    clearSelectionOnComplete: Boolean = true,
     viewModel: OrganizeViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -155,8 +156,10 @@ fun OrganizeRoute(
                             .sortedBy { screenshot ->
                                 uiState.selectedUris.indexOf(screenshot.uri)
                             }
-                        viewModel.onAction(OrganizeAction.ClearSelection)
                         onOrganizeComplete(selectedScreenshots)
+                        if (clearSelectionOnComplete) {
+                            viewModel.onAction(OrganizeAction.ClearSelection)
+                        }
                     }
                 },
             )

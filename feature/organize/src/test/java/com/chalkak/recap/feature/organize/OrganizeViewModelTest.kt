@@ -183,6 +183,36 @@ class OrganizeViewModelTest {
     }
 
     @Test
+    fun `refresh after clear keeps empty selection for in-app reentry`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots
+        val viewModel = createViewModel(dataSource)
+
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[1].uri))
+        viewModel.onAction(OrganizeAction.ClearSelection)
+        viewModel.refreshScreenshots()
+        advanceUntilIdle()
+
+        assertEquals(emptyList<String>(), viewModel.uiState.value.selectedUris)
+        assertEquals(screenshots, viewModel.uiState.value.availableScreenshots)
+        assertFalse(viewModel.uiState.value.canProceed)
+    }
+
+    @Test
+    fun `refresh without clear preserves previous selection`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots
+        val viewModel = createViewModel(dataSource)
+
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.refreshScreenshots()
+        advanceUntilIdle()
+
+        assertEquals(listOf(screenshots[0].uri), viewModel.uiState.value.selectedUris)
+    }
+
+    @Test
     fun seedSharedImages_setsAvailableAndSelected() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         val shared = screenshots.take(3)

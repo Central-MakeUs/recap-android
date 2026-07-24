@@ -34,7 +34,6 @@ import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.feature.developer.DeveloperRoute
 import com.chalkak.recap.feature.onboarding.OnboardingRoute
-import com.chalkak.recap.app.share.ShareIntakeViewModel
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -43,7 +42,10 @@ import dev.chrisbanes.haze.rememberHazeState
 fun RecapApp(
     startupViewModel: RecapStartupViewModel,
     toastViewModel: RecapToastViewModel,
-    shareIntakeViewModel: ShareIntakeViewModel,
+    analysisProgressViewModel: ScreenshotAnalysisProgressViewModel,
+    pendingHomeNavigationRequestId: Int?,
+    onRequestNavigateHome: () -> Unit,
+    onHomeNavigationComplete: (Int) -> Unit,
 ) {
     RECAPTheme {
         val uiState by startupViewModel.uiState.collectAsStateWithLifecycle()
@@ -55,7 +57,6 @@ fun RecapApp(
 
         val readyState = uiState as RecapStartupUiState.Ready
         val pendingOpenOrganize by startupViewModel.pendingOpenOrganize.collectAsStateWithLifecycle()
-        val pendingShareIntake by shareIntakeViewModel.pendingShareIntake.collectAsStateWithLifecycle()
         val initialRoute = if (readyState.onboardingCompleted) {
             RecapRootRoute.Main
         } else {
@@ -94,12 +95,6 @@ fun RecapApp(
             8.dp
         val toastBottomPadding = maxOf(defaultToastBottomPadding, imeBottomPadding + 8.dp)
 
-        LaunchedEffect(readyState.onboardingCompleted, pendingShareIntake) {
-            if (!readyState.onboardingCompleted && pendingShareIntake != null) {
-                shareIntakeViewModel.discardPendingShareIntake()
-            }
-        }
-
         LaunchedEffect(readyState.onboardingCompleted) {
             val targetRoute = if (readyState.onboardingCompleted) {
                 RecapRootRoute.Main
@@ -114,6 +109,15 @@ fun RecapApp(
             if (rootBackStack.lastOrNull() != targetRoute) {
                 rootBackStack.clear()
                 rootBackStack.add(targetRoute)
+            }
+        }
+
+        LaunchedEffect(pendingHomeNavigationRequestId, readyState.onboardingCompleted) {
+            if (pendingHomeNavigationRequestId != null && readyState.onboardingCompleted) {
+                if (rootBackStack.lastOrNull() != RecapRootRoute.Main) {
+                    rootBackStack.clear()
+                    rootBackStack.add(RecapRootRoute.Main)
+                }
             }
         }
 
@@ -146,9 +150,13 @@ fun RecapApp(
                                         pendingOpenOrganize = pendingOpenOrganize,
                                         onPendingOpenOrganizeConsumed =
                                             startupViewModel::consumePendingOpenOrganize,
-                                        pendingShareIntake = pendingShareIntake,
-                                        onPendingShareIntakeFinished =
-                                            shareIntakeViewModel::completePendingShareIntake,
+                                        analysisProgressViewModel = analysisProgressViewModel,
+                                        pendingHomeNavigationRequestId =
+                                            pendingHomeNavigationRequestId.takeIf {
+                                                rootBackStack.lastOrNull() == RecapRootRoute.Main
+                                            },
+                                        onRequestNavigateHome = onRequestNavigateHome,
+                                        onHomeNavigationComplete = onHomeNavigationComplete,
                                     )
                                 }
 
