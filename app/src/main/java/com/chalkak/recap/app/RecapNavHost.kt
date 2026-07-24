@@ -27,9 +27,9 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
-import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
+import com.chalkak.recap.core.design.animation.RecapNavDisplay
 import com.chalkak.recap.core.design.animation.RecapNavigationMotion
 import com.chalkak.recap.feature.collection.CollectionRoute
 import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
@@ -76,19 +76,12 @@ fun RecapNavHost(
         }
     }
 
-    NavDisplay(
+    RecapNavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
         modifier = modifier,
         transitionSpec = { RecapNavigationMotion.forward() },
         popTransitionSpec = { RecapNavigationMotion.pop() },
-        predictivePopTransitionSpec = { swipeEdge ->
-            if (swipeEdge == NavigationEvent.EDGE_NONE) {
-                RecapNavigationMotion.none()
-            } else {
-                RecapNavigationMotion.predictivePop()
-            }
-        },
         entryProvider = { route ->
             when (route) {
                 AppRoute.MainTabs -> NavEntry(route) {

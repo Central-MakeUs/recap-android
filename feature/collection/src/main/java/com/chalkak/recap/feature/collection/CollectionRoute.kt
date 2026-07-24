@@ -17,13 +17,12 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.ui.NavDisplay
-import androidx.navigationevent.NavigationEvent
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.NavigationEventTransitionState
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.animation.RecapNavDisplay
 import com.chalkak.recap.core.design.animation.RecapNavigationMotion
 import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToastType
@@ -195,19 +194,12 @@ fun CollectionRoute(
             .fillMaxSize()
             .hazeSource(state = hazeState),
     ) {
-        NavDisplay(
+        RecapNavDisplay(
             backStack = backStack,
             onBack = ::handleBack,
             modifier = Modifier.fillMaxSize(),
             transitionSpec = { RecapNavigationMotion.forward() },
             popTransitionSpec = { RecapNavigationMotion.pop() },
-            predictivePopTransitionSpec = { swipeEdge ->
-                if (swipeEdge == NavigationEvent.EDGE_NONE) {
-                    RecapNavigationMotion.none()
-                } else {
-                    RecapNavigationMotion.predictivePop()
-                }
-            },
             entryProvider = { route ->
                 when (route) {
                     CollectionDestination.Overview -> NavEntry(route) {

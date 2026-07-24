@@ -21,8 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.ui.NavDisplay
-import androidx.navigationevent.NavigationEvent
+import com.chalkak.recap.core.design.animation.RecapNavDisplay
 import com.chalkak.recap.core.design.animation.RecapNavigationMotion
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.systembar.RecapNavigationBarGradientScrim
@@ -116,38 +115,21 @@ fun RecapApp(
                         .fillMaxSize()
                         .hazeSource(state = toastHazeState),
                 ) {
-                    NavDisplay(
+                    RecapNavDisplay(
                         backStack = rootBackStack,
                         onBack = { rootBackStack.removeLastOrNull() },
                         transitionSpec = { RecapNavigationMotion.forward() },
                         popTransitionSpec = { RecapNavigationMotion.pop() },
-                        predictivePopTransitionSpec = { swipeEdge ->
-                            if (swipeEdge == NavigationEvent.EDGE_NONE) {
-                                RecapNavigationMotion.none()
-                            } else {
-                                RecapNavigationMotion.predictivePop()
-                            }
-                        },
                         entryProvider = { route ->
                             when (route) {
-                                RecapRootRoute.Onboarding -> NavEntry(
-                                    key = route,
-                                    metadata = NavDisplay.transitionSpec {
-                                        RecapNavigationMotion.none()
-                                    },
-                                ) {
+                                RecapRootRoute.Onboarding -> NavEntry(route) {
                                     OnboardingRoute(
                                         onOnboardingComplete = startupViewModel::completeOnboarding,
                                         viewModelKey = "onboarding-$onboardingSessionKey",
                                     )
                                 }
 
-                                RecapRootRoute.Main -> NavEntry(
-                                    key = route,
-                                    metadata = NavDisplay.transitionSpec {
-                                        RecapNavigationMotion.none()
-                                    },
-                                ) {
+                                RecapRootRoute.Main -> NavEntry(route) {
                                     RecapNavHost(
                                         onNavigateToDeveloper = {
                                             rootBackStack.add(RecapRootRoute.Developer)

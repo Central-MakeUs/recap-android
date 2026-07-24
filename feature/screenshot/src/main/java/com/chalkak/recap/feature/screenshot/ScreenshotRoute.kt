@@ -15,9 +15,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
-import androidx.navigation3.ui.NavDisplay
-import androidx.navigationevent.NavigationEvent
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.animation.RecapNavDisplay
 import com.chalkak.recap.core.design.animation.RecapNavigationMotion
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
@@ -110,7 +109,7 @@ fun ScreenshotRoute(
         }
     }
 
-    NavDisplay(
+    RecapNavDisplay(
         backStack = backStack,
         onBack = {
             when {
@@ -120,18 +119,9 @@ fun ScreenshotRoute(
             }
         },
         modifier = Modifier.fillMaxSize(),
+        predictivePopEnabled = !isEditingWithUnsavedChanges,
         transitionSpec = { RecapNavigationMotion.forward() },
         popTransitionSpec = { RecapNavigationMotion.pop() },
-        predictivePopTransitionSpec = { swipeEdge ->
-            if (
-                isEditingWithUnsavedChanges ||
-                swipeEdge == NavigationEvent.EDGE_NONE
-            ) {
-                RecapNavigationMotion.none()
-            } else {
-                RecapNavigationMotion.predictivePop()
-            }
-        },
         entryProvider = { destination ->
             when (destination) {
                 ScreenshotDestination.Detail -> NavEntry(destination) {
