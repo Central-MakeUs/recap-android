@@ -1,6 +1,7 @@
 package com.chalkak.recap.app
 
 import android.net.Uri
+import com.chalkak.recap.app.notification.OrganizeProgressTracker
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisInput
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRepository
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRunState
@@ -50,6 +51,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             screenshotCardRepository = screenshotCardRepository,
             screenshotImageStorage = screenshotImageStorage,
             screenshotAnalysisRunState = screenshotAnalysisRunState,
+            organizeProgressTracker = OrganizeProgressTracker(),
         ).apply {
             ioDispatcher = testDispatcher
         }

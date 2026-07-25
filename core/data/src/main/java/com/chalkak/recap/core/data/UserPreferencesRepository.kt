@@ -40,8 +40,20 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
+    val organizeCompleteEnabled: Flow<Boolean> =
+        dataStore.data.map { preferences ->
+            preferences[ORGANIZE_COMPLETE_ENABLED] ?: true
+        }
+
+    suspend fun setOrganizeCompleteEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[ORGANIZE_COMPLETE_ENABLED] = enabled
+        }
+    }
+
     private companion object {
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val ONBOARDING_STEP = stringPreferencesKey("onboarding_step")
+        val ORGANIZE_COMPLETE_ENABLED = booleanPreferencesKey("organize_complete_enabled")
     }
 }
