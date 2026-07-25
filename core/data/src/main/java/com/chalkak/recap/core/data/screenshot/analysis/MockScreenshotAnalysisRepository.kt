@@ -58,7 +58,7 @@ class MockScreenshotAnalysisRepository @Inject constructor(
     }
 
     private companion object {
-        const val MOCK_ANALYSIS_DELAY_MILLIS = 200L
+        const val MOCK_ANALYSIS_DELAY_MILLIS = 500L
 
         fun mockOriginalImageUrl(captureId: Long): String = "mock://captures/$captureId"
     }
