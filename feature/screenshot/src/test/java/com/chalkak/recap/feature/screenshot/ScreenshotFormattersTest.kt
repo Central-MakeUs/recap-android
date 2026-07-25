@@ -70,6 +70,33 @@ class ScreenshotFormattersTest {
     }
 
     @Test
+    fun `fullscreen priority prefers local thumbnail over remote http source`() {
+        assertEquals(
+            "/data/user/0/com.chalkak.recap/files/recap/thumbnails/6.jpg",
+            resolveScreenshotImageModel(
+                storedImagePath = null,
+                sourceImageUri =
+                    "https://recap-capture-images-bucket.s3.ap-northeast-2.amazonaws.com/captures/1/img.jpg?X-Amz-Expires=60",
+                thumbnailPath = "/data/user/0/com.chalkak.recap/files/recap/thumbnails/6.jpg",
+                priority = ScreenshotImageResolvePriority.Fullscreen,
+            ),
+        )
+    }
+
+    @Test
+    fun `fullscreen priority falls back to remote http source when no local model exists`() {
+        assertEquals(
+            "https://cdn.example/image.jpg",
+            resolveScreenshotImageModel(
+                storedImagePath = null,
+                sourceImageUri = "https://cdn.example/image.jpg",
+                thumbnailPath = null,
+                priority = ScreenshotImageResolvePriority.Fullscreen,
+            ),
+        )
+    }
+
+    @Test
     fun `blank and null candidates resolve to null`() {
         assertNull(
             resolveScreenshotImageModel(
