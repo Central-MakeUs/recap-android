@@ -59,9 +59,9 @@ class SearchRepositoryTest {
                         captureId = 42L,
                         typeCode = CardTypeDto.KNOWLEDGE,
                         thumbnailUrl = "https://example.com/t.png",
-                        titleHighlighted = "<em>카드</em>",
+                        titleHighlighted = "<mark>카드</mark>",
                         summaryHighlighted = "요약",
-                        ocrExcerptHighlighted = "OCR <em>카드</em>",
+                        ocrExcerptHighlighted = "OCR <mark>카드</mark>",
                         isFavorite = true,
                         organizedAt = "2026-07-19T00:00:00Z",
                     ),
@@ -84,9 +84,9 @@ class SearchRepositoryTest {
         assertEquals(42L, item.captureId)
         assertEquals(ScreenshotContentType.KNOWLEDGE, item.typeCode)
         assertEquals("https://example.com/t.png", item.thumbnailUrl)
-        assertEquals("<em>카드</em>", item.titleHighlighted)
+        assertEquals("<mark>카드</mark>", item.titleHighlighted)
         assertEquals("요약", item.summaryHighlighted)
-        assertEquals("OCR <em>카드</em>", item.ocrExcerptHighlighted)
+        assertEquals("OCR <mark>카드</mark>", item.ocrExcerptHighlighted)
         assertTrue(item.isFavorite)
         assertEquals("2026-07-19T00:00:00Z", item.organizedAt)
         coVerify(exactly = 1) {

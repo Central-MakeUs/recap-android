@@ -41,7 +41,7 @@ class MockSearchRepository @Inject constructor(
             SearchPage(
                 count = filtered.size.toLong(),
                 hasNext = toIndex < filtered.size,
-                items = pageItems.map { it.toSearchResult() },
+                items = pageItems.map { it.toSearchResult(query) },
             ),
         )
     }
@@ -64,14 +64,27 @@ private fun List<CaptureSummary>.filterByScope(
         }
     }
 
-private fun CaptureSummary.toSearchResult(): SearchResult =
+private fun CaptureSummary.toSearchResult(query: String): SearchResult =
     SearchResult(
         captureId = captureId,
         typeCode = typeCode,
         thumbnailUrl = thumbnailUrl,
-        titleHighlighted = title,
-        summaryHighlighted = summary,
+        titleHighlighted = title.withFirstMark(query),
+        summaryHighlighted = summary.withFirstMark(query),
         ocrExcerptHighlighted = null,
         isFavorite = isFavorite,
         organizedAt = organizedAt,
     )
+
+private fun String.withFirstMark(query: String): String {
+    val needle = query.trim()
+    if (needle.isEmpty()) {
+        return this
+    }
+    val index = indexOf(needle, ignoreCase = true)
+    if (index < 0) {
+        return this
+    }
+    val end = index + needle.length
+    return substring(0, index) + "<mark>" + substring(index, end) + "</mark>" + substring(end)
+}

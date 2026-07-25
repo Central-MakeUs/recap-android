@@ -265,6 +265,8 @@ internal fun CollectionSelectableCaptureItem(
                     metadataMode = metadataMode,
                     title = item.title,
                     description = item.summary,
+                    titleHighlightRange = item.titleHighlightRange,
+                    descriptionHighlightRange = item.descriptionHighlightRange,
                     isFavorite = item.isFavorite,
                     onClick = onOpenClick,
                     onFavoriteClick = onFavoriteClick,

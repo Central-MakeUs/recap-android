@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -19,33 +20,47 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsTopHeight
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.category.RecapCategoryType
+import com.chalkak.recap.core.design.component.button.RecapButton
+import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
+import com.chalkak.recap.core.design.component.button.RecapButtonSize
+import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
-
+import com.chalkak.recap.core.design.theme.RecapGray500
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 @Composable
 fun SearchScreen(
     modifier: Modifier = Modifier,
@@ -60,21 +75,28 @@ fun SearchScreen(
             SearchTopBar(
                 query = uiState.query,
                 onQueryChange = { onAction(SearchAction.UpdateQuery(it)) },
+                onSearch = { onAction(SearchAction.SubmitSearch) },
                 onBackClick = { onAction(SearchAction.NavigateBack) },
             )
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = SearchScreenTokens.HorizontalPadding)
-                    .padding(top = 24.dp, bottom = 32.dp),
-                verticalArrangement = Arrangement.spacedBy(32.dp),
-            ) {
-                SearchableInfoSection()
-                RecentSearchesSection(
+            when (uiState.phase) {
+                SearchContentPhase.Idle -> SearchIdleContent(
                     recentSearches = uiState.recentSearches,
-                    onClearAllClick = { onAction(SearchAction.ClearAllRecentSearches) },
-                    onRecentSearchClick = { onAction(SearchAction.SelectRecentSearch(it)) },
+                    onAction = onAction,
+                )
+
+                SearchContentPhase.Loading -> SearchLoadingContent()
+
+                SearchContentPhase.Results -> SearchResultsContent(
+                    results = uiState.results,
+                    hasNext = uiState.hasNext,
+                    isLoadingMore = uiState.isLoadingMore,
+                    onAction = onAction,
+                )
+
+                SearchContentPhase.Empty -> SearchEmptyContent()
+
+                SearchContentPhase.Error -> SearchErrorContent(
+                    onRetry = { onAction(SearchAction.RetrySearch) },
                 )
             }
         }
@@ -85,6 +107,7 @@ fun SearchScreen(
 private fun SearchTopBar(
     query: String,
     onQueryChange: (String) -> Unit,
+    onSearch: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -106,8 +129,8 @@ private fun SearchTopBar(
             RecapSearchBar(
                 value = query,
                 onValueChange = onQueryChange,
-                modifier = Modifier
-                    .weight(1f),
+                onSearch = onSearch,
+                modifier = Modifier.weight(1f),
                 placeholder = stringResource(R.string.search_screen_placeholder),
             )
         }
@@ -136,7 +159,162 @@ private fun SearchBackButton(
             imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
             contentDescription = stringResource(R.string.search_screen_back_content_description),
             tint = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.size(24.dp)
+            modifier = Modifier.size(24.dp),
+        )
+    }
+}
+
+@Composable
+private fun SearchIdleContent(
+    recentSearches: List<String>,
+    onAction: (SearchAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = SearchScreenTokens.HorizontalPadding)
+            .padding(top = 24.dp, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(32.dp),
+    ) {
+        SearchableInfoSection()
+        RecentSearchesSection(
+            recentSearches = recentSearches,
+            onClearAllClick = { onAction(SearchAction.ClearAllRecentSearches) },
+            onRecentSearchClick = { onAction(SearchAction.SelectRecentSearch(it)) },
+        )
+    }
+}
+
+@Composable
+private fun SearchLoadingContent(
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator(color = RecapBlue500)
+    }
+}
+
+@Composable
+private fun SearchResultsContent(
+    results: List<SearchResultItemUiModel>,
+    hasNext: Boolean,
+    isLoadingMore: Boolean,
+    onAction: (SearchAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val listState = rememberLazyListState()
+
+    LaunchedEffect(listState, results.size, hasNext, isLoadingMore) {
+        snapshotFlow {
+            val secondLastIndex = results.lastIndex - 1
+            secondLastIndex >= 0 &&
+                listState.layoutInfo.visibleItemsInfo.any { item -> item.index == secondLastIndex }
+        }
+            .distinctUntilChanged()
+            .filter { isSecondLastVisible -> isSecondLastVisible }
+            .collect {
+                if (hasNext && !isLoadingMore) {
+                    onAction(SearchAction.LoadMore)
+                }
+            }
+    }
+
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        state = listState,
+        contentPadding = PaddingValues(
+            top = 8.dp,
+            bottom = 32.dp,
+        ),
+    ) {
+        itemsIndexed(
+            items = results,
+            key = { _, item -> item.captureId },
+        ) { index, item ->
+            ScreenshotCard(
+                thumbnailModel = item.thumbnailModel,
+                categoryType = item.categoryType,
+                title = item.title,
+                description = item.description,
+                titleHighlightRange = item.titleHighlightRange,
+                descriptionHighlightRange = item.descriptionHighlightRange,
+                isFavorite = item.isFavorite,
+                onClick = { onAction(SearchAction.SelectResult(item.captureId)) },
+                onFavoriteClick = { onAction(SearchAction.ToggleFavorite(item.captureId)) },
+                horizontalContentPadding = 0.dp,
+                showBottomDivider = index < results.lastIndex,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = SearchScreenTokens.HorizontalPadding),
+            )
+        }
+        if (isLoadingMore) {
+            item(key = "search_loading_more") {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = RecapBlue500,
+                        strokeWidth = 2.dp,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchEmptyContent(
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = SearchScreenTokens.HorizontalPadding),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = stringResource(R.string.search_screen_empty_results),
+            style = MaterialTheme.typography.bodyMedium,
+            color = RecapGray500,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+@Composable
+private fun SearchErrorContent(
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = SearchScreenTokens.HorizontalPadding),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = stringResource(R.string.search_screen_error),
+            style = MaterialTheme.typography.bodyMedium,
+            color = RecapGray500,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        RecapButton(
+            text = stringResource(R.string.search_screen_retry),
+            onClick = onRetry,
+            size = RecapButtonSize.Medium,
+            colors = RecapButtonDefaults.primaryColors(),
         )
     }
 }
@@ -267,13 +445,53 @@ private object SearchScreenTokens {
     val TopBarHeight = 56.dp
 }
 
-@Preview(name = "Search Screen", showBackground = true, widthDp = 360, heightDp = 720)
+@Preview(name = "Search Screen Idle", showBackground = true, widthDp = 360, heightDp = 720)
 @Composable
-private fun SearchScreenPreview() {
+private fun SearchScreenIdlePreview() {
     RECAPTheme {
         SearchScreen(
             uiState = SearchUiState(
                 recentSearches = listOf("숙소 예약", "반품 절차", "파스타"),
+            ),
+        )
+    }
+}
+
+@Preview(name = "Search Screen Results", showBackground = true, widthDp = 360, heightDp = 720)
+@Composable
+private fun SearchScreenResultsPreview() {
+    RECAPTheme {
+        SearchScreen(
+            uiState = SearchUiState(
+                query = "파스타",
+                phase = SearchContentPhase.Results,
+                resultCount = 1L,
+                results = listOf(
+                    SearchResultItemUiModel(
+                        captureId = 1L,
+                        thumbnailModel = R.drawable.mock_home_screenshot_recipe,
+                        categoryType = RecapCategoryType.InfoKnowledge,
+                        title = "파스타 레시피 저장",
+                        description = "한 줄 요약에 파스타가 포함됩니다",
+                        titleHighlightRange = 0..2,
+                        descriptionHighlightRange = 7..9,
+                        organizedAtMillis = 0L,
+                        isFavorite = false,
+                    ),
+                ),
+            ),
+        )
+    }
+}
+
+@Preview(name = "Search Screen Empty", showBackground = true, widthDp = 360, heightDp = 720)
+@Composable
+private fun SearchScreenEmptyPreview() {
+    RECAPTheme {
+        SearchScreen(
+            uiState = SearchUiState(
+                query = "없는검색어",
+                phase = SearchContentPhase.Empty,
             ),
         )
     }

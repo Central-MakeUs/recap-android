@@ -43,6 +43,7 @@ class CollectionViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val cardRepository = mockk<ScreenshotCardRepository>()
     private val imageStorage = mockk<ScreenshotImageStorage>()
+    private val searchRepository = mockk<com.chalkak.recap.core.data.search.SearchRepository>(relaxed = true)
     private val cardsFlow = MutableSharedFlow<List<StoredScreenshotCard>>(replay = 1)
     private lateinit var captureMutations: MockCaptureMutationRepository
     private lateinit var viewModel: CollectionViewModel
@@ -60,6 +61,7 @@ class CollectionViewModelTest {
         }
         viewModel = CollectionViewModel(
             storageRepository = MockStorageRepository(cardRepository),
+            searchRepository = searchRepository,
             captureMutationRepository = captureMutations,
         )
     }
@@ -217,7 +219,7 @@ class CollectionViewModelTest {
     }
 
     @Test
-    fun `search filters favorite and category counts together`() = runTest(testDispatcher) {
+    fun `overview search query does not filter overview counts`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
                 storedCard(
@@ -248,10 +250,11 @@ class CollectionViewModelTest {
         advanceUntilIdle()
 
         val overview = viewModel.uiState.value.overview
-        assertEquals(1, overview.favoriteSummary.count)
+        assertEquals(2, overview.favoriteSummary.count)
         assertEquals(
             listOf(
                 ScreenshotContentType.SHOPPING,
+                ScreenshotContentType.PLACE,
                 ScreenshotContentType.ETC,
             ),
             overview.typeSummaries.map { it.contentType },
@@ -523,6 +526,7 @@ class CollectionViewModelTest {
         )
         viewModel = CollectionViewModel(
             storageRepository = MockStorageRepository(cardRepository),
+            searchRepository = searchRepository,
             captureMutationRepository = captureMutationRepository,
         )
         cardsFlow.emit(
@@ -644,9 +648,72 @@ class CollectionViewModelTest {
         viewModel.onAction(CollectionAction.StartSelection)
         viewModel.onAction(CollectionAction.ToggleItemSelection(1L))
 
-        viewModel.onAction(CollectionAction.UpdateSearchQuery("First"))
+        viewModel.onAction(CollectionAction.UpdateDetailSearchQuery("First"))
 
         assertEquals(CollectionSelectionUiState(), viewModel.uiState.value.selection)
+    }
+
+    @Test
+    fun `detail search submits favorite scope and clear restores browse cards`() = runTest(testDispatcher) {
+        coEvery {
+            searchRepository.search(
+                query = "숙소",
+                scope = com.chalkak.recap.core.model.search.SearchScope.FAVORITE,
+                typeCode = null,
+                page = 0,
+                size = 20,
+            )
+        } returns Result.success(
+            com.chalkak.recap.core.model.search.SearchPage(
+                count = 1L,
+                hasNext = false,
+                items = listOf(
+                    com.chalkak.recap.core.model.search.SearchResult(
+                        captureId = 99L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "제주 <mark>숙소</mark>",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = true,
+                        organizedAt = "2026-07-19T00:00:00Z",
+                    ),
+                ),
+            ),
+        )
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 1L,
+                    title = "Old favorite",
+                    isFavorite = true,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+                storedCard(
+                    captureId = 2L,
+                    title = "New favorite",
+                    isFavorite = true,
+                    organizedAt = Instant.ofEpochMilli(300L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenFavoriteDetail)
+        advanceUntilIdle()
+        assertEquals(2, viewModel.uiState.value.detail?.cards?.size)
+
+        viewModel.onAction(CollectionAction.ShowDetailSearch)
+        viewModel.onAction(CollectionAction.UpdateDetailSearchQuery("숙소"))
+        viewModel.onAction(CollectionAction.SubmitDetailSearch)
+        advanceUntilIdle()
+
+        assertEquals(listOf(99L), viewModel.uiState.value.detail?.cards?.map { it.captureId })
+        assertEquals(3..4, viewModel.uiState.value.detail?.cards?.single()?.titleHighlightRange)
+
+        viewModel.onAction(CollectionAction.UpdateDetailSearchQuery(""))
+        advanceUntilIdle()
+
+        assertEquals(listOf(2L, 1L), viewModel.uiState.value.detail?.cards?.map { it.captureId })
     }
 
     @Test

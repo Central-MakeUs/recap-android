@@ -230,6 +230,11 @@ fun RecapNavHost(
                 AppRoute.Search -> NavEntry(route) {
                     SearchRoute(
                         onNavigateBack = { backStack.removeLastOrNull() },
+                        onNavigateToScreenshot = { captureId ->
+                            if (captureId > 0) {
+                                backStack.add(AppRoute.Screenshot(captureId))
+                            }
+                        },
                     )
                 }
 

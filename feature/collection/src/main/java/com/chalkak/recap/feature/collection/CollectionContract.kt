@@ -4,10 +4,13 @@ import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.category.toLabelResId
 import com.chalkak.recap.core.design.category.toRecapCategoryType
 import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
+import com.chalkak.recap.core.design.component.text.findFirstHighlightRange
+import com.chalkak.recap.core.design.component.text.toPlainSearchText
 import com.chalkak.recap.core.design.component.topbar.CollectionTypeViewMode
 import com.chalkak.recap.core.model.capture.CaptureList
 import com.chalkak.recap.core.model.capture.CaptureSummary
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
+import com.chalkak.recap.core.model.search.SearchResult
 import com.chalkak.recap.core.model.storage.StorageOverview
 import java.time.Instant
 import timber.log.Timber
@@ -26,6 +29,8 @@ data class CollectionCardItemUiModel(
     val organizedAtMillis: Long,
     val isFavorite: Boolean,
     val thumbnailModel: Any?,
+    val titleHighlightRange: IntRange? = null,
+    val descriptionHighlightRange: IntRange? = null,
 )
 
 data class CollectionTypeSummaryUiModel(
@@ -54,6 +59,8 @@ data class CollectionDetailUiModel(
     val emptyMessageResId: Int,
     val categoryType: RecapCategoryType? = null,
     val cardMetadataMode: ScreenshotCardMetadataMode = ScreenshotCardMetadataMode.OrganizedDate,
+    val hasNext: Boolean = false,
+    val isLoadingMore: Boolean = false,
 )
 
 data class CollectionSelectionUiState(
@@ -83,6 +90,8 @@ sealed interface CollectionAction {
     data object ShowDetailSearch : CollectionAction
     data object HideDetailSearch : CollectionAction
     data class UpdateDetailSearchQuery(val query: String) : CollectionAction
+    data object SubmitDetailSearch : CollectionAction
+    data object LoadMoreDetailSearch : CollectionAction
     data class SetTypeViewMode(val viewMode: CollectionTypeViewMode) : CollectionAction
     data object OpenFavoriteDetail : CollectionAction
     data class OpenFavoriteItem(val captureId: Long) : CollectionAction
@@ -125,23 +134,11 @@ internal fun StorageOverview.toOverviewUiModel(): CollectionOverviewUiModel {
     )
 }
 
-internal fun CaptureSummary.toCardItemUiModel(): CollectionCardItemUiModel {
-    val contentType = typeCode
-    return CollectionCardItemUiModel(
-        captureId = captureId,
-        title = title,
-        summary = summary,
-        contentTypeLabelResId = contentType.toLabelResId(),
-        categoryType = contentType.toRecapCategoryType(),
-        organizedAtMillis = organizedAtMillis(),
-        isFavorite = isFavorite,
-        thumbnailModel = thumbnailModel(),
-    )
-}
-
 internal fun CaptureList.toDetailUiModel(
     filter: CollectionDetailFilter,
     sort: CollectionListSort,
+    hasNext: Boolean = false,
+    isLoadingMore: Boolean = false,
 ): CollectionDetailUiModel {
     items.logThumbnailSummary()
     val titleResId = when (filter) {
@@ -164,10 +161,26 @@ internal fun CaptureList.toDetailUiModel(
         titleResId = titleResId,
         count = count,
         sort = sort,
-        cards = items.map(CaptureSummary::toCardItemUiModel),
+        cards = items.map { summary -> summary.toCardItemUiModel() },
         emptyMessageResId = emptyMessageResId,
         categoryType = categoryType,
         cardMetadataMode = cardMetadataMode,
+        hasNext = hasNext,
+        isLoadingMore = isLoadingMore,
+    )
+}
+
+internal fun CaptureSummary.toCardItemUiModel(): CollectionCardItemUiModel {
+    val contentType = typeCode
+    return CollectionCardItemUiModel(
+        captureId = captureId,
+        title = title,
+        summary = summary,
+        contentTypeLabelResId = contentType.toLabelResId(),
+        categoryType = contentType.toRecapCategoryType(),
+        organizedAtMillis = organizedAtMillis(),
+        isFavorite = isFavorite,
+        thumbnailModel = thumbnailModel(),
     )
 }
 
@@ -175,6 +188,21 @@ internal fun CaptureSummary.thumbnailModel(): Any? = thumbnailUrl?.takeIf { it.i
 
 internal fun CaptureSummary.organizedAtMillis(): Long {
     return runCatching { Instant.parse(organizedAt).toEpochMilli() }.getOrDefault(0L)
+}
+
+internal fun SearchResult.toCardItemUiModel(): CollectionCardItemUiModel {
+    return CollectionCardItemUiModel(
+        captureId = captureId,
+        title = titleHighlighted.toPlainSearchText(),
+        summary = summaryHighlighted.toPlainSearchText(),
+        contentTypeLabelResId = typeCode.toLabelResId(),
+        categoryType = typeCode.toRecapCategoryType(),
+        organizedAtMillis = runCatching { Instant.parse(organizedAt).toEpochMilli() }.getOrDefault(0L),
+        isFavorite = isFavorite,
+        thumbnailModel = thumbnailUrl?.takeIf { it.isNotBlank() },
+        titleHighlightRange = findFirstHighlightRange(titleHighlighted),
+        descriptionHighlightRange = findFirstHighlightRange(summaryHighlighted),
+    )
 }
 
 private fun List<CaptureSummary>.logThumbnailSummary() {

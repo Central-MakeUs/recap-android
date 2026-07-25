@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -30,6 +31,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -59,7 +61,8 @@ import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading4
-
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 @Composable
 fun CollectionDetailScreen(
     detail: CollectionDetailUiModel,
@@ -94,6 +97,7 @@ fun CollectionDetailScreen(
                     onQueryChange = { query ->
                         onAction(CollectionAction.UpdateDetailSearchQuery(query))
                     },
+                    onSearch = { onAction(CollectionAction.SubmitDetailSearch) },
                     onBackClick = { onAction(CollectionAction.HideDetailSearch) },
                 )
             } else {
@@ -156,6 +160,39 @@ fun CollectionDetailScreen(
                             showBottomDivider = index < detail.cards.lastIndex,
                         )
                     }
+                    if (detail.isLoadingMore) {
+                        item(key = "collection_detail_loading_more") {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(24.dp),
+                                    color = RecapBlue500,
+                                    strokeWidth = 2.dp,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                LaunchedEffect(listState, detail.cards.size, detail.hasNext, detail.isLoadingMore) {
+                    snapshotFlow {
+                        val secondLastIndex = detail.cards.lastIndex - 1
+                        secondLastIndex >= 0 &&
+                            listState.layoutInfo.visibleItemsInfo.any { item ->
+                                item.index == secondLastIndex
+                            }
+                    }
+                        .distinctUntilChanged()
+                        .filter { isSecondLastVisible -> isSecondLastVisible }
+                        .collect {
+                            if (detail.hasNext && !detail.isLoadingMore) {
+                                onAction(CollectionAction.LoadMoreDetailSearch)
+                            }
+                        }
                 }
             }
         }
@@ -182,6 +219,7 @@ fun CollectionDetailScreen(
 private fun CollectionDetailSearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
+    onSearch: () -> Unit,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -224,6 +262,7 @@ private fun CollectionDetailSearchBar(
             RecapSearchBar(
                 value = query,
                 onValueChange = onQueryChange,
+                onSearch = onSearch,
                 modifier = Modifier.weight(1f),
             )
         }

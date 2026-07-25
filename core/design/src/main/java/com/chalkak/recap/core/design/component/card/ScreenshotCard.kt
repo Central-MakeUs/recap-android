@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
@@ -47,8 +48,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -91,6 +95,8 @@ fun ScreenshotCard(
     showFavoriteButton: Boolean = true,
     showBottomDivider: Boolean = true,
     containerClickEnabled: Boolean = true,
+    titleHighlightRange: IntRange? = null,
+    descriptionHighlightRange: IntRange? = null,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -153,7 +159,11 @@ fun ScreenshotCard(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                     Text(
-                        text = title,
+                        text = rememberHighlightedText(
+                            text = title,
+                            highlightRange = titleHighlightRange,
+                            defaultColor = RecapGray900,
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.Bold,
                         color = RecapGray900,
@@ -162,7 +172,11 @@ fun ScreenshotCard(
                     )
                     Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = description,
+                        text = rememberHighlightedText(
+                            text = description,
+                            highlightRange = descriptionHighlightRange,
+                            defaultColor = RecapGray500,
+                        ),
                         style = MaterialTheme.typography.labelLarge,
                         color = RecapGray500,
                         maxLines = ScreenshotCardTokens.DescriptionMaxLines,
@@ -443,6 +457,40 @@ private fun <T> favoriteButtonExitTween() = tween<T>(
     easing = FastOutLinearInEasing,
 )
 
+@Composable
+private fun rememberHighlightedText(
+    text: String,
+    highlightRange: IntRange?,
+    defaultColor: Color,
+) = remember(text, highlightRange, defaultColor) {
+    buildAnnotatedString {
+        val validRange = highlightRange?.takeIf { range ->
+            range.first >= 0 &&
+                range.last < text.length &&
+                range.first <= range.last
+        }
+        if (validRange == null) {
+            withStyle(SpanStyle(color = defaultColor)) {
+                append(text)
+            }
+            return@buildAnnotatedString
+        }
+        if (validRange.first > 0) {
+            withStyle(SpanStyle(color = defaultColor)) {
+                append(text.substring(0, validRange.first))
+            }
+        }
+        withStyle(SpanStyle(color = RecapBlue500)) {
+            append(text.substring(validRange.first, validRange.last + 1))
+        }
+        if (validRange.last + 1 < text.length) {
+            withStyle(SpanStyle(color = defaultColor)) {
+                append(text.substring(validRange.last + 1))
+            }
+        }
+    }
+}
+
 @Preview(name = "Screenshot Card", showBackground = true, widthDp = 360)
 @Composable
 private fun ScreenshotCardPreview() {
@@ -509,6 +557,25 @@ private fun ScreenshotCardSelectionPreview() {
             onClick = {},
             onFavoriteClick = {},
             showFavoriteButton = false,
+            modifier = Modifier.padding(24.dp),
+        )
+    }
+}
+
+@Preview(name = "Screenshot Card search highlight", showBackground = true, widthDp = 360)
+@Composable
+private fun ScreenshotCardSearchHighlightPreview() {
+    RECAPTheme(dynamicColor = false) {
+        ScreenshotCard(
+            thumbnailModel = R.drawable.bid_landscape_24px,
+            categoryType = RecapCategoryType.InfoKnowledge,
+            title = "파스타 레시피 저장",
+            description = "한 줄 요약에 파스타가 포함됩니다",
+            titleHighlightRange = 0..2,
+            descriptionHighlightRange = 8..10,
+            isFavorite = false,
+            onClick = {},
+            onFavoriteClick = {},
             modifier = Modifier.padding(24.dp),
         )
     }

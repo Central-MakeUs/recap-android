@@ -1,31 +1,29 @@
 package com.chalkak.recap.feature.home.search
 
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 @Composable
 fun SearchRoute(
     onNavigateBack: () -> Unit,
+    onNavigateToScreenshot: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+    viewModel: SearchViewModel = hiltViewModel(),
 ) {
-    var query by rememberSaveable { mutableStateOf("") }
-    var recentSearches by rememberSaveable {
-        mutableStateOf(listOf("숙소 예약", "반품 절차", "파스타"))
-    }
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     SearchScreen(
-        uiState = SearchUiState(
-            query = query,
-            recentSearches = recentSearches,
-        ),
+        modifier = modifier.fillMaxSize(),
+        uiState = uiState,
         onAction = { action ->
             when (action) {
                 SearchAction.NavigateBack -> onNavigateBack()
-                is SearchAction.UpdateQuery -> query = action.query
-                is SearchAction.SelectRecentSearch -> query = action.term
-                SearchAction.ClearAllRecentSearches -> recentSearches = emptyList()
+                is SearchAction.SelectResult -> onNavigateToScreenshot(action.captureId)
+                else -> viewModel.onAction(action)
             }
         },
     )
