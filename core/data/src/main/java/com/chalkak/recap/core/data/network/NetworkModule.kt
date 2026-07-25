@@ -4,6 +4,7 @@ import com.chalkak.recap.core.data.BuildConfig
 import com.chalkak.recap.core.data.auth.remote.AuthApi
 import com.chalkak.recap.core.data.capture.remote.CaptureApi
 import com.chalkak.recap.core.data.home.remote.HomeApi
+import com.chalkak.recap.core.data.search.remote.SearchApi
 import com.chalkak.recap.core.data.storage.remote.StorageApi
 import dagger.Module
 import dagger.Provides
@@ -84,4 +85,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideStorageApi(retrofit: Retrofit): StorageApi = retrofit.create(StorageApi::class.java)
+
+    @Provides
+    @Singleton
+    fun provideSearchApi(retrofit: Retrofit): SearchApi = retrofit.create(SearchApi::class.java)
 }
