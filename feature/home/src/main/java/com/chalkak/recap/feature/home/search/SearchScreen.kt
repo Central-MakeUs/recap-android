@@ -41,6 +41,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -59,8 +60,12 @@ import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
+import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading4
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+
 @Composable
 fun SearchScreen(
     modifier: Modifier = Modifier,
@@ -88,6 +93,7 @@ fun SearchScreen(
 
                 SearchContentPhase.Results -> SearchResultsContent(
                     results = uiState.results,
+                    resultCount = uiState.resultCount,
                     hasNext = uiState.hasNext,
                     isLoadingMore = uiState.isLoadingMore,
                     onAction = onAction,
@@ -202,12 +208,14 @@ private fun SearchLoadingContent(
 @Composable
 private fun SearchResultsContent(
     results: List<SearchResultItemUiModel>,
+    resultCount: Long,
     hasNext: Boolean,
     isLoadingMore: Boolean,
     onAction: (SearchAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val listState = rememberLazyListState()
+    val displayCount = resultCount.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
 
     LaunchedEffect(listState, results.size, hasNext, isLoadingMore) {
         snapshotFlow {
@@ -224,48 +232,73 @@ private fun SearchResultsContent(
             }
     }
 
-    LazyColumn(
-        modifier = modifier.fillMaxSize(),
-        state = listState,
-        contentPadding = PaddingValues(
-            top = 8.dp,
-            bottom = 32.dp,
-        ),
-    ) {
-        itemsIndexed(
-            items = results,
-            key = { _, item -> item.captureId },
-        ) { index, item ->
-            ScreenshotCard(
-                thumbnailModel = item.thumbnailModel,
-                categoryType = item.categoryType,
-                title = item.title,
-                description = item.description,
-                titleHighlightRange = item.titleHighlightRange,
-                descriptionHighlightRange = item.descriptionHighlightRange,
-                isFavorite = item.isFavorite,
-                onClick = { onAction(SearchAction.SelectResult(item.captureId)) },
-                onFavoriteClick = { onAction(SearchAction.ToggleFavorite(item.captureId)) },
-                horizontalContentPadding = 0.dp,
-                showBottomDivider = index < results.lastIndex,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = SearchScreenTokens.HorizontalPadding),
+    Column(modifier = modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier
+                .padding(
+                    horizontal = SearchScreenTokens.HorizontalPadding,
+                    vertical = SearchScreenTokens.CountVerticalPadding,
+                )
+                .align(Alignment.Start),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = displayCount.toString(),
+                style = RecapHeading4,
+                color = RecapGray900,
+                maxLines = 1,
+            )
+            Text(
+                text = pluralStringResource(
+                    R.plurals.recap_haze_folder_card_recap_label,
+                    displayCount,
+                ),
+                style = RecapBody2,
+                color = RecapGray500,
+                maxLines = 1,
             )
         }
-        if (isLoadingMore) {
-            item(key = "search_loading_more") {
-                Box(
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            state = listState,
+            contentPadding = PaddingValues(bottom = 32.dp),
+        ) {
+            itemsIndexed(
+                items = results,
+                key = { _, item -> item.captureId },
+            ) { index, item ->
+                ScreenshotCard(
+                    thumbnailModel = item.thumbnailModel,
+                    categoryType = item.categoryType,
+                    title = item.title,
+                    description = item.description,
+                    titleHighlightRange = item.titleHighlightRange,
+                    descriptionHighlightRange = item.descriptionHighlightRange,
+                    isFavorite = item.isFavorite,
+                    onClick = { onAction(SearchAction.SelectResult(item.captureId)) },
+                    onFavoriteClick = { onAction(SearchAction.ToggleFavorite(item.captureId)) },
+                    horizontalContentPadding = 0.dp,
+                    showBottomDivider = index < results.lastIndex,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = RecapBlue500,
-                        strokeWidth = 2.dp,
-                    )
+                        .padding(horizontal = SearchScreenTokens.HorizontalPadding),
+                )
+            }
+            if (isLoadingMore) {
+                item(key = "search_loading_more") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = RecapBlue500,
+                            strokeWidth = 2.dp,
+                        )
+                    }
                 }
             }
         }
@@ -443,6 +476,7 @@ private fun RecentSearchChip(
 private object SearchScreenTokens {
     val HorizontalPadding = 16.dp
     val TopBarHeight = 56.dp
+    val CountVerticalPadding = 8.dp
 }
 
 @Preview(name = "Search Screen Idle", showBackground = true, widthDp = 360, heightDp = 720)
