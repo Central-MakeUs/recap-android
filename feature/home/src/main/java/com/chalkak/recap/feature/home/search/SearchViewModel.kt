@@ -38,7 +38,24 @@ class SearchViewModel @Inject constructor(
     fun onAction(action: SearchAction) {
         when (action) {
             is SearchAction.UpdateQuery -> {
-                _uiState.update { state -> state.copy(query = action.query) }
+                if (action.query.isEmpty()) {
+                    searchJob?.cancel()
+                    loadMoreJob?.cancel()
+                    _uiState.update { state ->
+                        state.copy(
+                            query = "",
+                            submittedQuery = "",
+                            phase = SearchContentPhase.Idle,
+                            results = emptyList(),
+                            resultCount = 0L,
+                            hasNext = false,
+                            nextPage = 0,
+                            isLoadingMore = false,
+                        )
+                    }
+                } else {
+                    _uiState.update { state -> state.copy(query = action.query) }
+                }
             }
 
             SearchAction.SubmitSearch,

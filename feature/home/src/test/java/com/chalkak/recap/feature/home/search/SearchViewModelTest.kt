@@ -220,7 +220,7 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `clearing query keeps existing results`() = runTest {
+    fun `clearing query returns to Idle and clears results`() = runTest {
         coEvery {
             searchRepository.search(any(), any(), any(), any(), any())
         } returns Result.success(
@@ -249,8 +249,10 @@ class SearchViewModelTest {
         advanceUntilIdle()
 
         assertEquals("", viewModel.uiState.value.query)
-        assertEquals(SearchContentPhase.Results, viewModel.uiState.value.phase)
-        assertEquals(1, viewModel.uiState.value.results.size)
+        assertEquals("", viewModel.uiState.value.submittedQuery)
+        assertEquals(SearchContentPhase.Idle, viewModel.uiState.value.phase)
+        assertTrue(viewModel.uiState.value.results.isEmpty())
+        assertEquals(0L, viewModel.uiState.value.resultCount)
     }
 
     @Test
