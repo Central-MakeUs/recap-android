@@ -15,6 +15,11 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 
 ## Open
 
+- [ ] 2026-07-25 - Remote 목록 썸네일 캐싱이 검색/목록 응답을 직렬 차단하지 않도록 개선
+  - Context: `RemoteCaptureThumbnailCache.resolveThumbnailSources`가 `associate`로 uncached download를 순차 await함. `RemoteSearchRepository`(및 Home/Storage remote 목록)가 이 호출을 응답 enrichment에 두어, 캐시 미스 시 페이지 전체 썸네일 다운로드가 끝날 때까지 결과 전달이 지연됨. UI는 Coil로 remote URL 비동기 로드가 가능함
+  - Next (차선): 결과 전달을 막지 않는 범위에서 `async` + semaphore 등 bounded parallel caching으로 다운로드 대기 시간을 줄이거나, 로컬 hit만 동기 resolve하고 miss는 remote URL을 즉시 반환한 뒤 백그라운드 캐시. Search만이 아니라 공유 cache API/`withCachedThumbnails` 호출부 일괄 검토
+  - Handoff: not started
+
 - [ ] 2026-07-25 - Remote 스크린샷 상세 content 편집 API 연결
   - Context: Remote 상세 로드(`ScreenshotDetailRepository` + `CaptureRepository.getDetail`)와 삭제/즐겨찾기는 연결됐지만 `CaptureApi`에 title/summary/body/type PATCH가 없어 편집 저장은 Room `updateCardContent`만 호출한다. Remote에서는 저장이 실패(save error)한다.
   - Next: 서버 content update API 확정 후 `CaptureMutationRepository`에 updateContent를 추가하고 `ScreenshotViewModel.saveEdit`을 Switching mutation으로 위임
