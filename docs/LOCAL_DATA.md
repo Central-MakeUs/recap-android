@@ -196,7 +196,7 @@
 
 역할:
 - 전역 스크린샷 backend 모드(`MOCK` / `REMOTE`)를 관찰·저장한다.
-- Debug에서만 저장값을 사용하고, non-debug 현재 단계는 항상 `MOCK`이다.
+- Debug에서만 저장값을 사용하고, non-debug(release)는 항상 `REMOTE`이다.
 
 저장 key:
 - `screenshot_backend_mode` (신규, 우선)

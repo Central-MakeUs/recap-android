@@ -18,36 +18,28 @@
 - Splash에서 모드 hydrate 대기
 - Capture 상세 content 편집(Remote PATCH) — 로드/삭제/즐겨찾기는 연결됨
 - instrumentation 테스트용 Hilt replacement 인프라
-- release 빌드의 Remote 강제 정책 **코드 반영** (목표 정책은 아래 "현재 vs 목표" 참고)
 
-## 빌드별 effective mode: 현재 vs 목표
+## 빌드별 effective mode
 
-| 빌드 | 목표 정책 (서버 연동 후) | 현재 구현 |
-|------|--------------------------|-----------|
-| **Debug** | 개발자 옵션으로 Mock/Remote 전환 | 동일 |
-| **Release (non-debug)** | 스크린샷 도메인은 **항상 Remote** | Remote 미완성이라 **항상 Mock** |
+| 빌드 | 정책 |
+|------|------|
+| **Debug** | 개발자 옵션으로 Mock/Remote 전환 |
+| **Release (non-debug)** | 스크린샷 도메인은 **항상 Remote** |
 
-### 현재 구현 (코드 기준)
+### 구현 (코드 기준)
 
 `DataStoreScreenshotBackendModeStore`:
 
-- 저장값 없음 / 알 수 없는 값 → `MOCK`
+- 저장값 없음 / 알 수 없는 값 → Debug에서는 `MOCK`
 - **Debug** (`BuildConfig.DEBUG == true`): DataStore에 저장된 모드를 그대로 사용
 - **Release (non-debug)**:
-  - **읽기**: DataStore에 `REMOTE`가 남아 있어도 effective mode는 **항상 `MOCK`**
-  - **쓰기**: `setMode(REMOTE)` 호출은 **no-op**
+  - **읽기**: DataStore에 `MOCK`이 남아 있어도 effective mode는 **항상 `REMOTE`**
+  - **쓰기**: `setMode` 호출은 **no-op**
 
 preference key:
 - 신규: `screenshot_backend_mode` (우선)
 - legacy fallback: `analysis_data_source_mode`
 - `setMode` 성공 시 신규 key를 기록하고 legacy key를 제거
-
-### 목표 정책 (서버 출시 시)
-
-- **Release**: effective mode를 **항상 `REMOTE`**로 고정
-- **Debug**: 개발자 옵션 Mock/Remote 전환 유지
-
-구현 시 변경 예상 지점: `DataStoreScreenshotBackendModeStore.resolveEffectiveMode()`의 non-debug 분기를 `REMOTE` 반환으로 교체.
 
 ## 런타임 구조
 
