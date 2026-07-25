@@ -3,8 +3,8 @@ package com.chalkak.recap.feature.screenshot
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
-import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
+import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotDetailRepository
 import com.chalkak.recap.core.design.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -23,8 +23,8 @@ import kotlinx.coroutines.withContext
 
 @HiltViewModel
 class ScreenshotViewModel @Inject constructor(
+    private val screenshotDetailRepository: ScreenshotDetailRepository,
     private val screenshotCardRepository: ScreenshotCardRepository,
-    private val screenshotImageStorage: ScreenshotImageStorage,
     private val captureMutationRepository: CaptureMutationRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<ScreenshotUiState>(ScreenshotUiState.Loading)
@@ -110,7 +110,7 @@ class ScreenshotViewModel @Inject constructor(
         _uiState.value = ScreenshotUiState.Loading
         observeJob = viewModelScope.launch {
             try {
-                screenshotCardRepository.observeCard(captureId).collect { card ->
+                screenshotDetailRepository.observeCard(captureId).collect { card ->
                     if (card == null) {
                         val current = _uiState.value
                         if (current is ScreenshotUiState.Content && current.isDeleting) {
@@ -277,7 +277,12 @@ class ScreenshotViewModel @Inject constructor(
                 return@launch
             }
             if (!updated) {
-                _uiState.value = ScreenshotUiState.NotFound()
+                _uiState.updateContent {
+                    it.copy(
+                        isSaving = false,
+                        actionErrorMessageResId = R.string.screenshot_edit_save_error,
+                    )
+                }
                 return@launch
             }
             _uiState.updateContent { it.copy(isSaving = false) }
@@ -298,9 +303,9 @@ class ScreenshotViewModel @Inject constructor(
                     actionErrorMessageResId = null,
                 )
             }
-            try {
+            val result = try {
                 withContext(ioDispatcher) {
-                    screenshotCardRepository.deleteCard(captureId)
+                    captureMutationRepository.deleteCaptures(setOf(captureId))
                 }
             } catch (cancellation: CancellationException) {
                 throw cancellation
@@ -313,12 +318,18 @@ class ScreenshotViewModel @Inject constructor(
                 }
                 return@launch
             }
-            try {
-                withContext(ioDispatcher) {
-                    screenshotImageStorage.deleteStoredImages(setOf(captureId))
+            val deleteResult = result.getOrNull()
+            if (result.isFailure ||
+                deleteResult == null ||
+                !deleteResult.deletedIds.contains(captureId)
+            ) {
+                _uiState.updateContent {
+                    it.copy(
+                        isDeleting = false,
+                        actionErrorMessageResId = R.string.screenshot_detail_delete_error,
+                    )
                 }
-            } catch (_: Exception) {
-                // Best-effort private file cleanup; DB delete already succeeded.
+                return@launch
             }
             eventChannel.send(ScreenshotEvent.DeleteSucceeded)
         }

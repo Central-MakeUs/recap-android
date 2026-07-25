@@ -10,13 +10,13 @@
 
 포함:
 - Debug에서 개발자 옵션으로 `MOCK` / `REMOTE` 선택
-- Home / Storage / Capture command / 최근 정리 / 분석 Switching repository의 동일 모드 위임
+- Home / Storage / Capture command / Capture 상세 / 최근 정리 / 분석 Switching repository에 동일 모드 위임
 - 분석 중 모드 전환 거부
 - 전환 시 Mock 스크린샷 데이터 초기화 후 모드 저장
 
 포함하지 않음:
 - Splash에서 모드 hydrate 대기
-- Capture 상세의 Mock/Remote 연결 (즐겨찾기 mutation은 CaptureMutationRepository로 연결됨)
+- Capture 상세 content 편집(Remote PATCH) — 로드/삭제/즐겨찾기는 연결됨
 - instrumentation 테스트용 Hilt replacement 인프라
 - release 빌드의 Remote 강제 정책 **코드 반영** (목표 정책은 아래 "현재 vs 목표" 참고)
 

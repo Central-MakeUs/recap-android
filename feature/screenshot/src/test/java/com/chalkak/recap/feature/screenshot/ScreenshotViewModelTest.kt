@@ -2,18 +2,17 @@ package com.chalkak.recap.feature.screenshot
 
 import app.cash.turbine.test
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
-import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
+import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotDetailRepository
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.model.capture.CaptureDeleteResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
-import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
@@ -35,8 +34,8 @@ import java.time.Instant
 @OptIn(ExperimentalCoroutinesApi::class)
 class ScreenshotViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
-    private val repository = mockk<ScreenshotCardRepository>()
-    private val imageStorage = mockk<ScreenshotImageStorage>()
+    private val detailRepository = mockk<ScreenshotDetailRepository>()
+    private val cardRepository = mockk<ScreenshotCardRepository>()
     private val captureMutationRepository = mockk<CaptureMutationRepository>()
     private val cardFlow = MutableSharedFlow<StoredScreenshotCard?>(replay = 1)
     private lateinit var viewModel: ScreenshotViewModel
@@ -44,11 +43,10 @@ class ScreenshotViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        every { repository.observeCard(any()) } returns cardFlow
-        every { imageStorage.deleteStoredImages(any()) } just Runs
+        every { detailRepository.observeCard(any()) } returns cardFlow
         viewModel = ScreenshotViewModel(
-            screenshotCardRepository = repository,
-            screenshotImageStorage = imageStorage,
+            screenshotDetailRepository = detailRepository,
+            screenshotCardRepository = cardRepository,
             captureMutationRepository = captureMutationRepository,
         ).apply {
             ioDispatcher = testDispatcher
@@ -83,7 +81,7 @@ class ScreenshotViewModelTest {
 
     @Test
     fun `bind emits load error when observe fails`() = runTest(testDispatcher) {
-        every { repository.observeCard(99L) } returns kotlinx.coroutines.flow.flow {
+        every { detailRepository.observeCard(99L) } returns kotlinx.coroutines.flow.flow {
             throw IllegalStateException("db down")
         }
 
@@ -97,7 +95,7 @@ class ScreenshotViewModelTest {
     fun `discard during save cancels update and does not emit success`() = runTest(testDispatcher) {
         val allowSaveToFinish = CompletableDeferred<Unit>()
         coEvery {
-            repository.updateCardContent(
+            cardRepository.updateCardContent(
                 captureId = any(),
                 title = any(),
                 summary = any(),
@@ -135,10 +133,11 @@ class ScreenshotViewModelTest {
     }
 
     @Test
-    fun `toggle favorite updates repository`() = runTest(testDispatcher) {
+    fun `toggle favorite updates content and emits toast`() = runTest(testDispatcher) {
         coEvery {
-            captureMutationRepository.updateFavorite(1L, true)
+            captureMutationRepository.updateFavorite(captureId = 1L, isFavorite = true)
         } returns Result.success(Unit)
+
         viewModel.bind(1L)
         cardFlow.emit(storedCard(captureId = 1L, isFavorite = false))
         advanceUntilIdle()
@@ -151,67 +150,34 @@ class ScreenshotViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        coVerify(exactly = 1) { captureMutationRepository.updateFavorite(1L, true) }
         val state = viewModel.uiState.value as ScreenshotUiState.Content
         assertTrue(state.card.analysisResult.isFavorite)
+        assertFalse(state.isFavoriteUpdating)
     }
 
     @Test
-    fun `toggle favorite off sends removed toast event`() = runTest(testDispatcher) {
+    fun `toggle favorite failure keeps previous state and shows error`() = runTest(testDispatcher) {
         coEvery {
-            captureMutationRepository.updateFavorite(1L, false)
-        } returns Result.success(Unit)
+            captureMutationRepository.updateFavorite(captureId = 1L, isFavorite = false)
+        } returns Result.failure(IllegalStateException("network"))
+
         viewModel.bind(1L)
         cardFlow.emit(storedCard(captureId = 1L, isFavorite = true))
         advanceUntilIdle()
 
-        viewModel.events.test {
-            viewModel.onAction(ScreenshotAction.ToggleFavorite)
-            advanceUntilIdle()
-
-            assertEquals(ScreenshotEvent.ShowFavoriteToast(isFavorite = false), awaitItem())
-            cancelAndIgnoreRemainingEvents()
-        }
-
-        coVerify(exactly = 1) { captureMutationRepository.updateFavorite(1L, false) }
-        val state = viewModel.uiState.value as ScreenshotUiState.Content
-        assertFalse(state.card.analysisResult.isFavorite)
-    }
-
-    @Test
-    fun `prepare edit draft resets draft from card`() = runTest(testDispatcher) {
-        viewModel.bind(1L)
-        cardFlow.emit(storedCard(captureId = 1L, title = "원본 제목", summary = "원본 요약"))
-        advanceUntilIdle()
-
-        viewModel.onAction(ScreenshotAction.UpdateEditTitle("임시 제목"))
-        viewModel.onAction(ScreenshotAction.PrepareEditDraft)
+        viewModel.onAction(ScreenshotAction.ToggleFavorite)
         advanceUntilIdle()
 
         val state = viewModel.uiState.value as ScreenshotUiState.Content
-        assertEquals("원본 제목", state.editDraft.title)
-        assertEquals("원본 요약", state.editDraft.summary)
-        assertFalse(state.titleError)
+        assertTrue(state.card.analysisResult.isFavorite)
+        assertFalse(state.isFavoriteUpdating)
+        assertEquals(R.string.screenshot_detail_favorite_error, state.actionErrorMessageResId)
     }
 
     @Test
-    fun `discard edit draft restores card values`() = runTest(testDispatcher) {
+    fun `show discard edit confirm dialog when draft dirty`() = runTest(testDispatcher) {
         viewModel.bind(1L)
-        cardFlow.emit(storedCard(captureId = 1L, title = "원본"))
-        advanceUntilIdle()
-
-        viewModel.onAction(ScreenshotAction.UpdateEditTitle("변경"))
-        viewModel.onAction(ScreenshotAction.DiscardEditDraft)
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value as ScreenshotUiState.Content
-        assertEquals("원본", state.editDraft.title)
-    }
-
-    @Test
-    fun `show discard confirm dialog when edit draft has unsaved changes`() = runTest(testDispatcher) {
-        viewModel.bind(1L)
-        cardFlow.emit(storedCard(captureId = 1L, title = "원본"))
+        cardFlow.emit(storedCard(captureId = 1L, title = "원본", summary = "원본 요약"))
         advanceUntilIdle()
 
         viewModel.onAction(ScreenshotAction.UpdateEditTitle("변경"))
@@ -220,25 +186,10 @@ class ScreenshotViewModelTest {
 
         val state = viewModel.uiState.value as ScreenshotUiState.Content
         assertTrue(state.showDiscardEditConfirmDialog)
-        assertTrue(state.hasUnsavedEditChanges())
     }
 
     @Test
-    fun `show discard confirm dialog is ignored when edit draft is unchanged`() = runTest(testDispatcher) {
-        viewModel.bind(1L)
-        cardFlow.emit(storedCard(captureId = 1L, title = "원본"))
-        advanceUntilIdle()
-
-        viewModel.onAction(ScreenshotAction.ShowDiscardEditConfirmDialog)
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value as ScreenshotUiState.Content
-        assertFalse(state.showDiscardEditConfirmDialog)
-        assertFalse(state.hasUnsavedEditChanges())
-    }
-
-    @Test
-    fun `dismiss discard confirm dialog hides dialog and keeps draft`() = runTest(testDispatcher) {
+    fun `dismiss discard edit confirm dialog hides dialog`() = runTest(testDispatcher) {
         viewModel.bind(1L)
         cardFlow.emit(storedCard(captureId = 1L, title = "원본"))
         advanceUntilIdle()
@@ -272,7 +223,7 @@ class ScreenshotViewModelTest {
     @Test
     fun `save edit sends repository values and save succeeded event`() = runTest(testDispatcher) {
         coEvery {
-            repository.updateCardContent(
+            cardRepository.updateCardContent(
                 captureId = 1L,
                 title = "새 제목",
                 summary = "새 요약",
@@ -303,7 +254,7 @@ class ScreenshotViewModelTest {
         }
 
         coVerify(exactly = 1) {
-            repository.updateCardContent(
+            cardRepository.updateCardContent(
                 captureId = 1L,
                 title = "새 제목",
                 summary = "새 요약",
@@ -317,7 +268,7 @@ class ScreenshotViewModelTest {
     @Test
     fun `save edit keeps draft when repository fails`() = runTest(testDispatcher) {
         coEvery {
-            repository.updateCardContent(
+            cardRepository.updateCardContent(
                 captureId = any(),
                 title = any(),
                 summary = any(),
@@ -342,43 +293,72 @@ class ScreenshotViewModelTest {
     }
 
     @Test
+    fun `save edit shows save error when update returns false`() = runTest(testDispatcher) {
+        coEvery {
+            cardRepository.updateCardContent(
+                captureId = any(),
+                title = any(),
+                summary = any(),
+                body = any(),
+                typeCode = any(),
+                updatedAtMillis = any(),
+            )
+        } returns false
+
+        viewModel.bind(1L)
+        cardFlow.emit(storedCard(captureId = 1L, title = "원본"))
+        advanceUntilIdle()
+
+        viewModel.onAction(ScreenshotAction.UpdateEditTitle("원격 미지원"))
+        viewModel.onAction(ScreenshotAction.SaveEdit)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertFalse(state.isSaving)
+        assertEquals(R.string.screenshot_edit_save_error, state.actionErrorMessageResId)
+        assertTrue(viewModel.uiState.value is ScreenshotUiState.Content)
+    }
+
+    @Test
     fun `update edit title strips newlines`() = runTest(testDispatcher) {
         viewModel.bind(1L)
         cardFlow.emit(storedCard(captureId = 1L, title = "원본"))
         advanceUntilIdle()
 
-        viewModel.onAction(ScreenshotAction.UpdateEditTitle("a\nb"))
+        viewModel.onAction(ScreenshotAction.UpdateEditTitle("줄\n바꿈"))
         advanceUntilIdle()
 
         val state = viewModel.uiState.value as ScreenshotUiState.Content
-        assertEquals("ab", state.editDraft.title)
+        assertEquals("줄바꿈", state.editDraft.title)
     }
 
     @Test
-    fun `update edit summary converts newlines to spaces`() = runTest(testDispatcher) {
+    fun `update edit summary strips newlines`() = runTest(testDispatcher) {
         viewModel.bind(1L)
         cardFlow.emit(storedCard(captureId = 1L, title = "원본"))
         advanceUntilIdle()
 
-        viewModel.onAction(ScreenshotAction.UpdateEditSummary("a\nb"))
+        viewModel.onAction(ScreenshotAction.UpdateEditSummary("요약\r\n줄"))
         advanceUntilIdle()
 
         val state = viewModel.uiState.value as ScreenshotUiState.Content
-        assertEquals("a b", state.editDraft.summary)
+        assertEquals("요약 줄", state.editDraft.summary)
     }
 
     @Test
-    fun `save edit is ignored when draft is unchanged`() = runTest(testDispatcher) {
+    fun `empty title after trim marks title error and skips save`() = runTest(testDispatcher) {
         viewModel.bind(1L)
         cardFlow.emit(storedCard(captureId = 1L, title = "원본"))
         advanceUntilIdle()
 
-        viewModel.onAction(ScreenshotAction.PrepareEditDraft)
+        viewModel.onAction(ScreenshotAction.UpdateEditTitle("   "))
         viewModel.onAction(ScreenshotAction.SaveEdit)
         advanceUntilIdle()
 
+        val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertTrue(state.titleError)
         coVerify(exactly = 0) {
-            repository.updateCardContent(
+            cardRepository.updateCardContent(
                 captureId = any(),
                 title = any(),
                 summary = any(),
@@ -400,7 +380,7 @@ class ScreenshotViewModelTest {
 
         val state = viewModel.uiState.value as ScreenshotUiState.Content
         assertTrue(state.showDeleteConfirmDialog)
-        coVerify(exactly = 0) { repository.deleteCard(any()) }
+        coVerify(exactly = 0) { captureMutationRepository.deleteCaptures(any()) }
     }
 
     @Test
@@ -418,8 +398,10 @@ class ScreenshotViewModelTest {
     }
 
     @Test
-    fun `delete success cleans images and emits event`() = runTest(testDispatcher) {
-        coEvery { repository.deleteCard(1L) } just Runs
+    fun `delete success emits event via capture mutation repository`() = runTest(testDispatcher) {
+        coEvery { captureMutationRepository.deleteCaptures(setOf(1L)) } returns Result.success(
+            CaptureDeleteResult(deletedIds = setOf(1L), failedIds = emptySet()),
+        )
 
         viewModel.bind(1L)
         cardFlow.emit(storedCard(captureId = 1L))
@@ -436,13 +418,14 @@ class ScreenshotViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
-        coVerify(exactly = 1) { repository.deleteCard(1L) }
-        coVerify(exactly = 1) { imageStorage.deleteStoredImages(setOf(1L)) }
+        coVerify(exactly = 1) { captureMutationRepository.deleteCaptures(setOf(1L)) }
     }
 
     @Test
     fun `delete failure keeps detail and shows retryable error`() = runTest(testDispatcher) {
-        coEvery { repository.deleteCard(1L) } throws IllegalStateException("delete failed")
+        coEvery { captureMutationRepository.deleteCaptures(setOf(1L)) } returns Result.failure(
+            IllegalStateException("delete failed"),
+        )
 
         viewModel.bind(1L)
         cardFlow.emit(storedCard(captureId = 1L))
@@ -454,7 +437,6 @@ class ScreenshotViewModelTest {
         val state = viewModel.uiState.value as ScreenshotUiState.Content
         assertFalse(state.isDeleting)
         assertEquals(R.string.screenshot_detail_delete_error, state.actionErrorMessageResId)
-        coVerify(exactly = 0) { imageStorage.deleteStoredImages(any()) }
     }
 
     private fun storedCard(

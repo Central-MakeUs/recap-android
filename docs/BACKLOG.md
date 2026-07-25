@@ -15,6 +15,11 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 
 ## Open
 
+- [ ] 2026-07-25 - Remote 스크린샷 상세 content 편집 API 연결
+  - Context: Remote 상세 로드(`ScreenshotDetailRepository` + `CaptureRepository.getDetail`)와 삭제/즐겨찾기는 연결됐지만 `CaptureApi`에 title/summary/body/type PATCH가 없어 편집 저장은 Room `updateCardContent`만 호출한다. Remote에서는 저장이 실패(save error)한다.
+  - Next: 서버 content update API 확정 후 `CaptureMutationRepository`에 updateContent를 추가하고 `ScreenshotViewModel.saveEdit`을 Switching mutation으로 위임
+  - Handoff: not started
+
 - [ ] 2026-07-22 - Remote 정리 진행률 모델 분리 및 역행 버그 수정
   - Context: `RemoteScreenshotAnalysisRepository.organize()`가 업로드(`index + 1 / total`)와 서버 분석 poll(`successCount + failCount / total`)을 동일 `onProgress` 콜백으로 방출함. 마지막 업로드 직후 100%였다가 첫 PROCESSING poll에서 0%로 역행함. Home 상단 progress bar는 mock 분석 흐름용 디버그 UI이며, 사용자용 진행률은 추후 별도 인터페이스로 제공 예정. 현재 백엔드에서 실제 분석을 돌리기 어려워 E2E 검증·UX 확정이 보류됨
   - Next: repository/ViewModel에 업로드·분석 단계를 구분한 progress 모델 도입 또는 단조 증가 overall progress로 환산. Home은 디버그용 최소 표시(단계 텍스트 등) 유지, 사용자 UI는 별도 설계 후 동일 progress 소스 소비
