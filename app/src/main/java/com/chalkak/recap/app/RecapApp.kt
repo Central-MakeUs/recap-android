@@ -42,6 +42,10 @@ import dev.chrisbanes.haze.rememberHazeState
 fun RecapApp(
     startupViewModel: RecapStartupViewModel,
     toastViewModel: RecapToastViewModel,
+    analysisProgressViewModel: ScreenshotAnalysisProgressViewModel,
+    pendingHomeNavigationRequestId: Int?,
+    onRequestNavigateHome: () -> Unit,
+    onHomeNavigationComplete: (Int) -> Unit,
 ) {
     RECAPTheme {
         val uiState by startupViewModel.uiState.collectAsStateWithLifecycle()
@@ -108,6 +112,15 @@ fun RecapApp(
             }
         }
 
+        LaunchedEffect(pendingHomeNavigationRequestId, readyState.onboardingCompleted) {
+            if (pendingHomeNavigationRequestId != null && readyState.onboardingCompleted) {
+                if (rootBackStack.lastOrNull() != RecapRootRoute.Main) {
+                    rootBackStack.clear()
+                    rootBackStack.add(RecapRootRoute.Main)
+                }
+            }
+        }
+
         ProvideRecapToastDispatcher(dispatcher = toastDispatcher) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Box(
@@ -137,6 +150,13 @@ fun RecapApp(
                                         pendingOpenOrganize = pendingOpenOrganize,
                                         onPendingOpenOrganizeConsumed =
                                             startupViewModel::consumePendingOpenOrganize,
+                                        analysisProgressViewModel = analysisProgressViewModel,
+                                        pendingHomeNavigationRequestId =
+                                            pendingHomeNavigationRequestId.takeIf {
+                                                rootBackStack.lastOrNull() == RecapRootRoute.Main
+                                            },
+                                        onRequestNavigateHome = onRequestNavigateHome,
+                                        onHomeNavigationComplete = onHomeNavigationComplete,
                                     )
                                 }
 

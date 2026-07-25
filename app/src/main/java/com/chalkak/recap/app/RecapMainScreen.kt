@@ -8,6 +8,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -35,7 +36,8 @@ fun RecapMainScreen(
     onNavigateToRecentOrganizedScreenshots: () -> Unit = {},
     onOrganizeComplete: (List<LocalImage>) -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
-    homeNavigationRequestId: Int = 0,
+    pendingHomeNavigationRequestId: Int? = null,
+    onHomeNavigationComplete: (Int) -> Unit = {},
     pendingOpenOrganize: Boolean = false,
     onPendingOpenOrganizeConsumed: () -> Unit = {},
     analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
@@ -81,9 +83,10 @@ fun RecapMainScreen(
         navigateTo(MainTabRoute.Collection)
     }
 
-    LaunchedEffect(homeNavigationRequestId) {
-        if (homeNavigationRequestId > 0) {
+    LaunchedEffect(pendingHomeNavigationRequestId) {
+        pendingHomeNavigationRequestId?.let { requestId ->
             navigateTo(MainTabRoute.Home)
+            onHomeNavigationComplete(requestId)
         }
     }
 
@@ -104,7 +107,9 @@ fun RecapMainScreen(
                     onDestinationClick = { destination ->
                         navigateTo(destination.toMainTabRoute())
                     },
-                    onOrganizeClick = { showOrganize = true },
+                    onOrganizeClick = {
+                        showOrganize = true
+                    },
                 )
             },
         ) { _ ->
@@ -115,7 +120,9 @@ fun RecapMainScreen(
                 onNavigateToSettings = onNavigateToSettings,
                 onNavigateToSearch = onNavigateToSearch,
                 onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
-                onNavigateToOrganize = { showOrganize = true },
+                onNavigateToOrganize = {
+                    showOrganize = true
+                },
                 onNavigateToCollectionFavorites = ::navigateToCollectionFavorites,
                 onNavigateToScreenshot = onNavigateToScreenshot,
                 openCollectionFavoritesOnEnter = openCollectionFavoritesOnNextEnter,
@@ -132,13 +139,17 @@ fun RecapMainScreen(
         }
 
         if (showOrganize) {
-            OrganizeRoute(
-                onNavigateBack = { showOrganize = false },
-                onOrganizeComplete = { selectedScreenshots ->
-                    showOrganize = false
-                    onOrganizeComplete(selectedScreenshots)
-                },
-            )
+            key(NORMAL_ORGANIZE_SESSION_KEY) {
+                OrganizeRoute(
+                    onNavigateBack = {
+                        showOrganize = false
+                    },
+                    onOrganizeComplete = { selectedScreenshots ->
+                        showOrganize = false
+                        onOrganizeComplete(selectedScreenshots)
+                    },
+                )
+            }
         }
     }
 }
@@ -152,3 +163,5 @@ private fun RecapBottomBarDestination.toMainTabRoute(): MainTabRoute = when (thi
     RecapBottomBarDestination.Home -> MainTabRoute.Home
     RecapBottomBarDestination.Collection -> MainTabRoute.Collection
 }
+
+private const val NORMAL_ORGANIZE_SESSION_KEY = "normal-organize"
