@@ -35,6 +35,7 @@ dependencies {
     implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
     implementation(libs.lottie.compose)
     implementation(libs.chrisbanes.haze)
     implementation(libs.chrisbanes.haze.blur)

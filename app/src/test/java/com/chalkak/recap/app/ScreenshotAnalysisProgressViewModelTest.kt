@@ -1,6 +1,8 @@
 package com.chalkak.recap.app
 
 import android.net.Uri
+import com.chalkak.recap.app.notification.OrganizeProgressTracker
+import com.chalkak.recap.app.notification.OrganizeTerminalResult
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisInput
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRepository
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRunState
@@ -12,6 +14,7 @@ import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.core.model.capture.OrganizeStatus
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
+import com.chalkak.recap.feature.organize.OrganizeAnalysisStatusUiState
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -28,6 +31,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -50,6 +54,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             screenshotCardRepository = screenshotCardRepository,
             screenshotImageStorage = screenshotImageStorage,
             screenshotAnalysisRunState = screenshotAnalysisRunState,
+            organizeProgressTracker = OrganizeProgressTracker(),
         ).apply {
             ioDispatcher = testDispatcher
         }
@@ -69,6 +74,8 @@ class ScreenshotAnalysisProgressViewModelTest {
         assertEquals(0, state.totalCount)
         assertEquals(0f, state.progress)
         assertTrue(state.results.isEmpty())
+        assertNull(state.terminalResult)
+        assertFalse(state.isStatusVisible)
         assertFalse(screenshotAnalysisRunState.isRunning.value)
     }
 
@@ -110,6 +117,8 @@ class ScreenshotAnalysisProgressViewModelTest {
         assertEquals(1f, state.progress)
         assertFalse(state.isRunning)
         assertEquals(listOf(first, second), state.results)
+        assertEquals(OrganizeTerminalResult.AllSuccess(successCount = 2), state.terminalResult)
+        assertTrue(state.isStatusVisible)
         assertFalse(screenshotAnalysisRunState.isRunning.value)
     }
 
@@ -165,6 +174,10 @@ class ScreenshotAnalysisProgressViewModelTest {
         runCurrent()
 
         assertFalse(viewModel.uiState.value.isRunning)
+        assertEquals(
+            OrganizeTerminalResult.AllSuccess(successCount = 0),
+            viewModel.uiState.value.terminalResult,
+        )
         assertFalse(screenshotAnalysisRunState.isRunning.value)
         coVerify(exactly = 0) { repository.organize(any(), any()) }
     }
@@ -178,8 +191,70 @@ class ScreenshotAnalysisProgressViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals("Failed to analyze screenshot", state.errorMessage)
+        assertEquals(OrganizeTerminalResult.AllFailed, state.terminalResult)
         assertFalse(state.isRunning)
+        assertTrue(state.isStatusVisible)
         assertFalse(screenshotAnalysisRunState.isRunning.value)
+    }
+
+    @Test
+    fun `cancelAnalysis clears running state without terminal result`() = runTest(testDispatcher) {
+        coEvery { repository.organize(any(), any()) } coAnswers {
+            kotlinx.coroutines.awaitCancellation()
+        }
+
+        viewModel.startAnalysis(sampleImages(count = 2))
+        runCurrent()
+        assertTrue(viewModel.uiState.value.isRunning)
+
+        viewModel.cancelAnalysis()
+        runCurrent()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isRunning)
+        assertNull(state.terminalResult)
+        assertFalse(state.isStatusVisible)
+        assertFalse(screenshotAnalysisRunState.isRunning.value)
+    }
+
+    @Test
+    fun `dismissResult clears terminal success state`() = runTest(testDispatcher) {
+        coEvery { repository.organize(any(), any()) } returns ScreenshotOrganizeOutcome.LocalResults(
+            listOf(analysisResult(1L)),
+        )
+
+        viewModel.startAnalysis(sampleImages(count = 1))
+        runCurrent()
+        assertEquals(
+            OrganizeTerminalResult.AllSuccess(successCount = 1),
+            viewModel.uiState.value.terminalResult,
+        )
+
+        viewModel.dismissResult()
+
+        assertNull(viewModel.uiState.value.terminalResult)
+        assertFalse(viewModel.uiState.value.isStatusVisible)
+    }
+
+    @Test
+    fun `remote partial failed exposes partial terminal result`() = runTest(testDispatcher) {
+        coEvery { repository.organize(any(), any()) } returns ScreenshotOrganizeOutcome.RemoteCompleted(
+            successCount = 2,
+            failCount = 1,
+            status = OrganizeStatus.PARTIAL_FAILED,
+        )
+
+        viewModel.startAnalysis(sampleImages(count = 3))
+        runCurrent()
+
+        assertEquals(
+            OrganizeTerminalResult.PartialSuccess(successCount = 2, failCount = 1),
+            viewModel.uiState.value.terminalResult,
+        )
+        assertEquals(
+            OrganizeAnalysisStatusUiState.PartialFailed(successCount = 2),
+            viewModel.uiState.value.toOrganizeAnalysisStatusUiState(),
+        )
     }
 
     @Test
@@ -296,6 +371,7 @@ class ScreenshotAnalysisProgressViewModelTest {
         assertEquals("Failed to save screenshot analysis result", state.errorMessage)
         assertTrue(state.results.isEmpty())
         assertFalse(state.isRunning)
+        assertEquals(OrganizeTerminalResult.AllFailed, state.terminalResult)
         coVerify(exactly = 0) {
             screenshotCardRepository.saveAnalysisResults(
                 results = listOf(secondResult),

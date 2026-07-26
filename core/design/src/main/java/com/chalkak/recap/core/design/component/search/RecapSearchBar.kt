@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -21,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -43,7 +45,14 @@ fun RecapSearchBar(
     placeholder: String = stringResource(R.string.recap_search_bar_placeholder_collection),
     enabled: Boolean = true,
     imeAction: ImeAction = ImeAction.Search,
+    onSearch: (() -> Unit)? = null,
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val submitSearch: () -> Unit = {
+        onSearch?.invoke()
+        keyboardController?.hide()
+    }
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RecapSearchBarTokens.Shape,
@@ -57,10 +66,26 @@ fun RecapSearchBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(RecapSearchBarTokens.IconTextSpacing),
         ) {
+            val searchIconModifier = if (onSearch != null && enabled) {
+                Modifier
+                    .size(RecapSearchBarTokens.IconSize)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        role = Role.Button,
+                        onClick = submitSearch,
+                    )
+            } else {
+                Modifier.size(RecapSearchBarTokens.IconSize)
+            }
             Icon(
                 painter = painterResource(R.drawable.ic_search_24),
-                contentDescription = null,
-                modifier = Modifier.size(RecapSearchBarTokens.IconSize),
+                contentDescription = if (onSearch != null) {
+                    stringResource(R.string.recap_search_bar_search_content_description)
+                } else {
+                    null
+                },
+                modifier = searchIconModifier,
                 tint = RecapGray300,
             )
             BasicTextField(
@@ -74,6 +99,12 @@ fun RecapSearchBar(
                 ),
                 cursorBrush = SolidColor(RecapBlue500),
                 keyboardOptions = KeyboardOptions(imeAction = imeAction),
+                keyboardActions = KeyboardActions(
+                    onSearch = { if (onSearch != null) submitSearch() },
+                    onDone = { if (onSearch != null) submitSearch() },
+                    onGo = { if (onSearch != null) submitSearch() },
+                    onSend = { if (onSearch != null) submitSearch() },
+                ),
                 decorationBox = { innerTextField ->
                     Box(contentAlignment = Alignment.CenterStart) {
                         if (value.isEmpty()) {
@@ -158,6 +189,7 @@ private fun RecapSearchBarFilledPreview() {
         RecapSearchBar(
             value = "맛집",
             onValueChange = {},
+            onSearch = {},
             modifier = Modifier.padding(16.dp),
         )
     }

@@ -4,11 +4,6 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import java.util.concurrent.TimeUnit
 
-data class HomeAnalysisProgressUiModel(
-    val isRunning: Boolean = false,
-    val progress: Float = 0f,
-)
-
 data class HomeUiState(
     val recentScreenshots: List<HomeRecentScreenshotUiModel> = emptyList(),
     val favoriteItems: List<HomeFavoriteItemUiModel> = emptyList(),

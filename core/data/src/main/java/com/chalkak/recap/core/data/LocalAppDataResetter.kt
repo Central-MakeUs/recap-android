@@ -2,6 +2,7 @@ package com.chalkak.recap.core.data
 
 import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
+import com.chalkak.recap.core.data.search.RecentSearchStore
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.Dispatchers
@@ -13,6 +14,7 @@ class LocalAppDataResetter @Inject constructor(
     private val screenshotImageStorage: ScreenshotImageStorage,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val sessionTokenStore: SessionTokenStore,
+    private val recentSearchStore: RecentSearchStore,
 ) {
     /**
      * 로그아웃/계정 초기화: 로컬 스크린샷 DB·이미지·세션·온보딩 진행 상태를 모두 지운다.
@@ -24,6 +26,7 @@ class LocalAppDataResetter @Inject constructor(
             screenshotImageStorage.clearStoredImages()
         }
         sessionTokenStore.clear()
+        recentSearchStore.clearAll()
         userPreferencesRepository.clearOnboardingStep()
         userPreferencesRepository.setOnboardingCompleted(false)
     }

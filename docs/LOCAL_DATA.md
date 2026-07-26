@@ -196,7 +196,7 @@
 
 역할:
 - 전역 스크린샷 backend 모드(`MOCK` / `REMOTE`)를 관찰·저장한다.
-- Debug에서만 저장값을 사용하고, non-debug 현재 단계는 항상 `MOCK`이다.
+- Debug에서만 저장값을 사용하고, non-debug(release)는 항상 `REMOTE`이다.
 
 저장 key:
 - `screenshot_backend_mode` (신규, 우선)
@@ -212,7 +212,7 @@
 | 원본 이미지 | 앱 private `ScreenshotImageStorage` | 서버 URL (기기 원본 캐시 없음) |
 | 썸네일 | 앱 private 썸네일 파일 | `RemoteCaptureThumbnailCache` (capture ID 기반 로컬 캐시) |
 | Mock 구현 | `MockHomeRepository`, `MockStorageRepository`, `MockCaptureMutationRepository` 등 | — |
-| Remote 구현 | — | `RemoteHomeRepository`, `RemoteStorageRepository`, `RemoteCaptureMutationRepository` 등 |
+| Remote 구현 | — | `RemoteHomeRepository`, `RemoteStorageRepository`, `RemoteCaptureMutationRepository`, `RemoteScreenshotDetailRepository` 등 |
 
 모드 전환 시 `MockScreenshotDataResetter`가 Mock Room 카드와 private 원본/썸네일만 삭제한다. session token·onboarding·일반 사용자 설정은 유지한다.
 
@@ -220,7 +220,7 @@
 
 다음 항목은 구현체는 존재하지만 아직 앱 flow에 완전히 연결되지 않았다.
 
-- Capture 상세의 Mock/Remote repository 전환은 아직 없다. (즐겨찾기 토글은 `CaptureMutationRepository`로 연결됨)
+- Capture 상세 content 편집(Remote PATCH)은 아직 없다. (상세 로드는 `ScreenshotDetailRepository`, 즐겨찾기/삭제는 `CaptureMutationRepository`)
 - 썸네일 생성 pipeline(원본→썸네일)은 Mock 경로에 제한적으로만 있다.
 - 이미지 bytes는 Room BLOB으로 저장하지 않는다.
 

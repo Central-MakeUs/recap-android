@@ -1,20 +1,30 @@
 package com.chalkak.recap.feature.settings.notification
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.chalkak.recap.core.data.UserPreferencesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 @HiltViewModel
 class NotificationSettingsViewModel @Inject constructor(
-    private val savedStateHandle: SavedStateHandle,
+    private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(savedStateHandle.restoreNotificationSettingsUiState())
-    val uiState: StateFlow<NotificationSettingsUiState> = _uiState.asStateFlow()
+    val uiState: StateFlow<NotificationSettingsUiState> =
+        userPreferencesRepository.organizeCompleteEnabled
+            .map { enabled ->
+                NotificationSettingsUiState(organizeCompleteEnabled = enabled)
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = NotificationSettingsUiState(),
+            )
 
     fun onAction(action: NotificationSettingsAction) {
         when (action) {
@@ -23,25 +33,10 @@ class NotificationSettingsViewModel @Inject constructor(
             -> Unit
 
             is NotificationSettingsAction.OrganizeCompleteEnabledChanged -> {
-                updateOrganizeCompleteEnabled(action.enabled)
+                viewModelScope.launch {
+                    userPreferencesRepository.setOrganizeCompleteEnabled(action.enabled)
+                }
             }
         }
     }
-
-    private fun updateOrganizeCompleteEnabled(enabled: Boolean) {
-        savedStateHandle[SETTINGS_NOTIFICATION_ORGANIZE_COMPLETE_ENABLED_KEY] = enabled
-        _uiState.update { current ->
-            current.copy(organizeCompleteEnabled = enabled)
-        }
-    }
 }
-
-internal const val SETTINGS_NOTIFICATION_ORGANIZE_COMPLETE_ENABLED_KEY =
-    "settings_notification_organize_complete_enabled"
-
-private fun SavedStateHandle.restoreNotificationSettingsUiState(): NotificationSettingsUiState =
-    NotificationSettingsUiState(
-        organizeCompleteEnabled = get<Boolean>(
-            SETTINGS_NOTIFICATION_ORGANIZE_COMPLETE_ENABLED_KEY,
-        ) ?: true,
-    )

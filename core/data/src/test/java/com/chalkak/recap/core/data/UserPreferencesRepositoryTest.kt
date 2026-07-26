@@ -48,4 +48,16 @@ class UserPreferencesRepositoryTest {
         assertEquals(null, repository.getOnboardingStep())
         assertEquals(null, dataStore.current()[stringPreferencesKey("onboarding_step")])
     }
+
+    @Test
+    fun `organizeCompleteEnabled defaults to true`() = runTest {
+        assertTrue(repository.organizeCompleteEnabled.first())
+    }
+
+    @Test
+    fun `setOrganizeCompleteEnabled updates organizeCompleteEnabled flow`() = runTest {
+        repository.setOrganizeCompleteEnabled(false)
+
+        assertFalse(repository.organizeCompleteEnabled.first())
+    }
 }

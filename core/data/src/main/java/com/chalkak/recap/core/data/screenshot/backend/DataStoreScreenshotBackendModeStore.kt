@@ -30,7 +30,7 @@ class DataStoreScreenshotBackendModeStore @Inject constructor(
     }
 
     override suspend fun setMode(mode: ScreenshotBackendMode) {
-        if (!isDebugBuild && mode == ScreenshotBackendMode.REMOTE) {
+        if (!isDebugBuild) {
             return
         }
         dataStore.edit { preferences ->
@@ -46,7 +46,7 @@ class DataStoreScreenshotBackendModeStore @Inject constructor(
 
     private fun resolveEffectiveMode(storedValue: String?): ScreenshotBackendMode {
         if (!isDebugBuild) {
-            return ScreenshotBackendMode.MOCK
+            return ScreenshotBackendMode.REMOTE
         }
         return ScreenshotBackendMode.fromStoredValue(storedValue)
     }

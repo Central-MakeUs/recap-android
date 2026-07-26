@@ -3,14 +3,18 @@ package com.chalkak.recap.feature.collection
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
+import com.chalkak.recap.core.data.search.SearchRepository
 import com.chalkak.recap.core.data.storage.StorageRepository
 import com.chalkak.recap.core.design.component.topbar.CollectionTypeViewMode
 import com.chalkak.recap.core.model.capture.CaptureList
+import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
+import com.chalkak.recap.core.model.search.SearchScope
 import com.chalkak.recap.core.model.storage.CaptureSort
 import com.chalkak.recap.core.model.storage.StorageOverview
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -27,6 +31,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class CollectionViewModel @Inject constructor(
     private val storageRepository: StorageRepository,
+    private val searchRepository: SearchRepository,
     private val captureMutationRepository: CaptureMutationRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CollectionUiState())
@@ -54,41 +59,49 @@ class CollectionViewModel @Inject constructor(
     private var favoriteStates: Map<Long, Boolean> = emptyMap()
     private var hasReceivedFirstOverview = false
 
+    private var isDetailSearchMode = false
+    private var detailSubmittedQuery = ""
+    private var detailSearchCards: List<CollectionCardItemUiModel> = emptyList()
+    private var detailSearchCount = 0
+    private var detailSearchHasNext = false
+    private var detailSearchNextPage = 0
+    private var detailSearchLoadingMore = false
+    private var detailSearchJob: Job? = null
+    private var detailLoadMoreJob: Job? = null
+
     init {
         viewModelScope.launch {
-            searchQuery
-                .flatMapLatest { query -> storageRepository.observeOverview(query) }
-                .collect { overview ->
-                    hasReceivedFirstOverview = true
-                    latestOverview = overview
-                    publishState()
-                }
+            // Overview search is intentionally non-functional; always observe unfiltered.
+            storageRepository.observeOverview(searchQuery = "").collect { overview ->
+                hasReceivedFirstOverview = true
+                latestOverview = overview
+                publishState()
+            }
         }
 
         viewModelScope.launch {
-            combine(detailFilter, detailSort, detailSearchQuery) { filter, sort, query ->
-                Triple(filter, sort, query)
-            }.flatMapLatest { (filter, sort, query) ->
-                if (filter == null) {
-                    flowOf(null)
-                } else {
-                    observeDetail(filter = filter, sort = sort, searchQuery = query)
+            combine(detailFilter, detailSort) { filter, sort -> filter to sort }
+                .flatMapLatest { (filter, sort) ->
+                    if (filter == null) {
+                        flowOf(null)
+                    } else {
+                        observeDetail(filter = filter, sort = sort)
+                    }
+                }.collect { detail ->
+                    latestDetailCards = detail
+                    if (!isDetailSearchMode) {
+                        detailCaptureIds = detail?.items?.map { it.captureId }?.toSet().orEmpty()
+                        favoriteStates = detail?.items?.associate { it.captureId to it.isFavorite }.orEmpty()
+                    }
+                    publishState()
                 }
-            }.collect { detail ->
-                latestDetailCards = detail
-                detailCaptureIds = detail?.items?.map { it.captureId }?.toSet().orEmpty()
-                favoriteStates = detail?.items?.associate { it.captureId to it.isFavorite }.orEmpty()
-                publishState()
-            }
         }
     }
 
     fun onAction(action: CollectionAction) {
         when (action) {
             is CollectionAction.UpdateSearchQuery -> {
-                if (searchQuery.value != action.query) {
-                    clearSelection()
-                }
+                // Overview search bar is visual-only.
                 searchQuery.value = action.query
                 publishState()
             }
@@ -108,8 +121,15 @@ class CollectionViewModel @Inject constructor(
                     clearSelection()
                 }
                 detailSearchQuery.value = action.query
+                if (action.query.isEmpty()) {
+                    exitDetailSearchMode()
+                }
                 publishState()
             }
+
+            CollectionAction.SubmitDetailSearch -> submitDetailSearch()
+
+            CollectionAction.LoadMoreDetailSearch -> loadMoreDetailSearch()
 
             is CollectionAction.SetTypeViewMode -> {
                 typeViewMode.value = action.viewMode
@@ -149,11 +169,36 @@ class CollectionViewModel @Inject constructor(
 
             is CollectionAction.ToggleFavorite -> {
                 val currentFavorite = favoriteStates[action.captureId] ?: return
+                val nextFavorite = !currentFavorite
+                favoriteStates = favoriteStates + (action.captureId to nextFavorite)
+                if (isDetailSearchMode) {
+                    detailSearchCards = detailSearchCards.map { card ->
+                        if (card.captureId == action.captureId) {
+                            card.copy(isFavorite = nextFavorite)
+                        } else {
+                            card
+                        }
+                    }
+                }
+                publishState()
                 viewModelScope.launch {
-                    captureMutationRepository.updateFavorite(
+                    val mutation = captureMutationRepository.updateFavorite(
                         captureId = action.captureId,
-                        isFavorite = !currentFavorite,
+                        isFavorite = nextFavorite,
                     )
+                    if (mutation.isFailure) {
+                        favoriteStates = favoriteStates + (action.captureId to currentFavorite)
+                        if (isDetailSearchMode) {
+                            detailSearchCards = detailSearchCards.map { card ->
+                                if (card.captureId == action.captureId) {
+                                    card.copy(isFavorite = currentFavorite)
+                                } else {
+                                    card
+                                }
+                            }
+                        }
+                        publishState()
+                    }
                 }
             }
 
@@ -194,19 +239,130 @@ class CollectionViewModel @Inject constructor(
     private fun observeDetail(
         filter: CollectionDetailFilter,
         sort: CollectionListSort,
-        searchQuery: String,
     ) = when (filter) {
         CollectionDetailFilter.Favorites ->
             storageRepository.observeFavoriteCaptures(
                 sort = sort.toCaptureSort(),
-                searchQuery = searchQuery,
+                searchQuery = "",
             )
         is CollectionDetailFilter.ByType ->
             storageRepository.observeCapturesByType(
                 typeCode = filter.contentType,
                 sort = sort.toCaptureSort(),
-                searchQuery = searchQuery,
+                searchQuery = "",
             )
+    }
+
+    private fun submitDetailSearch() {
+        val filter = detailFilter.value ?: return
+        val query = detailSearchQuery.value.trim()
+        if (query.isEmpty()) {
+            return
+        }
+
+        detailSearchJob?.cancel()
+        detailLoadMoreJob?.cancel()
+        detailSearchJob = viewModelScope.launch {
+            detailSearchQuery.value = query
+            isDetailSearchMode = true
+            detailSubmittedQuery = query
+            detailSearchLoadingMore = false
+            publishState()
+
+            val result = searchRepository.search(
+                query = query,
+                scope = filter.toSearchScope(),
+                typeCode = filter.toTypeCode(),
+                page = 0,
+            )
+
+            result.fold(
+                onSuccess = { page ->
+                    detailSearchCards = page.items.map { item ->
+                        item.toCardItemUiModel()
+                    }
+                    detailSearchCount = page.count.toInt()
+                    detailSearchHasNext = page.hasNext
+                    detailSearchNextPage = 1
+                    detailCaptureIds = detailSearchCards.map { it.captureId }.toSet()
+                    favoriteStates = detailSearchCards.associate { it.captureId to it.isFavorite }
+                    publishState()
+                },
+                onFailure = {
+                    detailSearchCards = emptyList()
+                    detailSearchCount = 0
+                    detailSearchHasNext = false
+                    detailSearchNextPage = 0
+                    detailCaptureIds = emptySet()
+                    favoriteStates = emptyMap()
+                    publishState()
+                },
+            )
+        }
+    }
+
+    private fun loadMoreDetailSearch() {
+        val filter = detailFilter.value ?: return
+        if (
+            !isDetailSearchMode ||
+            !detailSearchHasNext ||
+            detailSearchLoadingMore ||
+            detailSubmittedQuery.isBlank()
+        ) {
+            return
+        }
+        if (detailLoadMoreJob?.isActive == true) {
+            return
+        }
+
+        val pageToLoad = detailSearchNextPage
+        val query = detailSubmittedQuery
+        detailLoadMoreJob = viewModelScope.launch {
+            detailSearchLoadingMore = true
+            publishState()
+
+            val result = searchRepository.search(
+                query = query,
+                scope = filter.toSearchScope(),
+                typeCode = filter.toTypeCode(),
+                page = pageToLoad,
+            )
+
+            result.fold(
+                onSuccess = { page ->
+                    val newCards = page.items.map { item -> item.toCardItemUiModel() }
+                    detailSearchCards = (detailSearchCards + newCards)
+                        .distinctBy { card -> card.captureId }
+                    detailSearchCount = page.count.toInt()
+                    detailSearchHasNext = page.hasNext
+                    detailSearchNextPage = pageToLoad + 1
+                    detailCaptureIds = detailSearchCards.map { it.captureId }.toSet()
+                    favoriteStates = detailSearchCards.associate { it.captureId to it.isFavorite }
+                    detailSearchLoadingMore = false
+                    publishState()
+                },
+                onFailure = {
+                    detailSearchLoadingMore = false
+                    publishState()
+                },
+            )
+        }
+    }
+
+    private fun exitDetailSearchMode() {
+        detailSearchJob?.cancel()
+        detailLoadMoreJob?.cancel()
+        isDetailSearchMode = false
+        detailSubmittedQuery = ""
+        detailSearchCards = emptyList()
+        detailSearchCount = 0
+        detailSearchHasNext = false
+        detailSearchNextPage = 0
+        detailSearchLoadingMore = false
+        latestDetailCards?.let { detail ->
+            detailCaptureIds = detail.items.map { it.captureId }.toSet()
+            favoriteStates = detail.items.associate { it.captureId to it.isFavorite }
+        }
     }
 
     private fun showDeleteConfirmDialog() {
@@ -281,6 +437,14 @@ class CollectionViewModel @Inject constructor(
                 }
 
                 else -> {
+                    if (isDetailSearchMode) {
+                        detailSearchCards = detailSearchCards.filterNot {
+                            it.captureId in deleteResult.deletedIds
+                        }
+                        detailSearchCount = detailSearchCards.size
+                        detailCaptureIds = detailSearchCards.map { it.captureId }.toSet()
+                        favoriteStates = detailSearchCards.associate { it.captureId to it.isFavorite }
+                    }
                     _events.emit(
                         CollectionEvent.ShowDeleteSuccessToast(
                             deletedCount = deleteResult.deletedIds.size,
@@ -301,6 +465,7 @@ class CollectionViewModel @Inject constructor(
     private fun clearDetailSearch() {
         detailSearchQuery.value = ""
         isDetailSearchVisible.value = false
+        exitDetailSearchMode()
     }
 
     private fun publishState() {
@@ -314,11 +479,22 @@ class CollectionViewModel @Inject constructor(
 
         val filter = detailFilter.value
         val detail = filter?.let { activeFilter ->
-            (latestDetailCards ?: CaptureList(count = 0, items = emptyList()))
-                .toDetailUiModel(
-                    filter = activeFilter,
-                    sort = detailSort.value,
-                )
+            if (isDetailSearchMode) {
+                CaptureList(count = detailSearchCount, items = emptyList())
+                    .toDetailUiModel(
+                        filter = activeFilter,
+                        sort = detailSort.value,
+                        hasNext = detailSearchHasNext,
+                        isLoadingMore = detailSearchLoadingMore,
+                    )
+                    .copy(cards = detailSearchCards, count = detailSearchCount)
+            } else {
+                (latestDetailCards ?: CaptureList(count = 0, items = emptyList()))
+                    .toDetailUiModel(
+                        filter = activeFilter,
+                        sort = detailSort.value,
+                    )
+            }
         }
 
         _uiState.update {
@@ -340,5 +516,17 @@ class CollectionViewModel @Inject constructor(
         when (this) {
             CollectionListSort.Latest -> CaptureSort.Latest
             CollectionListSort.Oldest -> CaptureSort.Oldest
+        }
+
+    private fun CollectionDetailFilter.toSearchScope(): SearchScope =
+        when (this) {
+            CollectionDetailFilter.Favorites -> SearchScope.FAVORITE
+            is CollectionDetailFilter.ByType -> SearchScope.TYPE
+        }
+
+    private fun CollectionDetailFilter.toTypeCode(): ScreenshotContentType? =
+        when (this) {
+            CollectionDetailFilter.Favorites -> null
+            is CollectionDetailFilter.ByType -> contentType
         }
 }

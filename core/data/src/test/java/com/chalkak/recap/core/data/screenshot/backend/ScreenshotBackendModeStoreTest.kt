@@ -49,20 +49,21 @@ class ScreenshotBackendModeStoreTest {
     }
 
     @Test
-    fun `non debug effective mode stays MOCK even when REMOTE is stored`() = runTest {
-        store.setMode(ScreenshotBackendMode.REMOTE)
+    fun `non debug effective mode stays REMOTE even when MOCK is stored`() = runTest {
+        store.setMode(ScreenshotBackendMode.MOCK)
         store.isDebugBuild = false
 
-        assertEquals(ScreenshotBackendMode.MOCK, store.currentMode())
+        assertEquals(ScreenshotBackendMode.REMOTE, store.currentMode())
     }
 
     @Test
-    fun `non debug rejects REMOTE mode writes`() = runTest {
-        store.isDebugBuild = false
+    fun `non debug rejects mode writes`() = runTest {
         store.setMode(ScreenshotBackendMode.REMOTE)
+        store.isDebugBuild = false
+        store.setMode(ScreenshotBackendMode.MOCK)
 
         store.isDebugBuild = true
-        assertEquals(ScreenshotBackendMode.MOCK, store.currentMode())
+        assertEquals(ScreenshotBackendMode.REMOTE, store.currentMode())
     }
 
     @Test
