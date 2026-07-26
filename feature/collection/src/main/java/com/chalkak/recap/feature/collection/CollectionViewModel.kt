@@ -521,12 +521,18 @@ class CollectionViewModel @Inject constructor(
     private fun CollectionDetailFilter.toSearchScope(): SearchScope =
         when (this) {
             CollectionDetailFilter.Favorites -> SearchScope.FAVORITE
-            is CollectionDetailFilter.ByType -> SearchScope.TYPE
+            is CollectionDetailFilter.ByType ->
+                if (contentType == ScreenshotContentType.ETC) {
+                    SearchScope.ETC
+                } else {
+                    SearchScope.TYPE
+                }
         }
 
     private fun CollectionDetailFilter.toTypeCode(): ScreenshotContentType? =
         when (this) {
             CollectionDetailFilter.Favorites -> null
-            is CollectionDetailFilter.ByType -> contentType
+            is CollectionDetailFilter.ByType ->
+                contentType.takeUnless { it == ScreenshotContentType.ETC }
         }
 }

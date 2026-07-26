@@ -717,6 +717,65 @@ class CollectionViewModelTest {
     }
 
     @Test
+    fun `detail search for etc type uses ETC scope without typeCode`() = runTest(testDispatcher) {
+        coEvery {
+            searchRepository.search(
+                query = "메모",
+                scope = com.chalkak.recap.core.model.search.SearchScope.ETC,
+                typeCode = null,
+                page = 0,
+                size = 20,
+            )
+        } returns Result.success(
+            com.chalkak.recap.core.model.search.SearchPage(
+                count = 1L,
+                hasNext = false,
+                items = listOf(
+                    com.chalkak.recap.core.model.search.SearchResult(
+                        captureId = 77L,
+                        typeCode = ScreenshotContentType.ETC,
+                        thumbnailUrl = null,
+                        titleHighlighted = "<mark>메모</mark>",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-19T00:00:00Z",
+                    ),
+                ),
+            ),
+        )
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 1L,
+                    title = "기타 카드",
+                    contentType = ScreenshotContentType.ETC,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.ETC))
+        advanceUntilIdle()
+
+        viewModel.onAction(CollectionAction.ShowDetailSearch)
+        viewModel.onAction(CollectionAction.UpdateDetailSearchQuery("메모"))
+        viewModel.onAction(CollectionAction.SubmitDetailSearch)
+        advanceUntilIdle()
+
+        assertEquals(listOf(77L), viewModel.uiState.value.detail?.cards?.map { it.captureId })
+        coVerify(exactly = 1) {
+            searchRepository.search(
+                query = "메모",
+                scope = com.chalkak.recap.core.model.search.SearchScope.ETC,
+                typeCode = null,
+                page = 0,
+                size = 20,
+            )
+        }
+    }
+
+    @Test
     fun `closing detail clears selection`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
