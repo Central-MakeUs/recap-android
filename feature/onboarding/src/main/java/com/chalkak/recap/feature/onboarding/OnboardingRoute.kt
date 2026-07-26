@@ -16,6 +16,9 @@ import androidx.compose.ui.res.stringResource
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToastType
+import com.chalkak.recap.core.data.screenshot.permission.ImagePermissionRequestDestination
+import com.chalkak.recap.core.data.screenshot.permission.imagePermissionRequestDestination
+import com.chalkak.recap.core.data.screenshot.permission.markImagePermissionRequested
 import com.chalkak.recap.core.model.ImageAccessLevel
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -106,8 +109,30 @@ fun OnboardingRoute(
                                 }
 
                                 OnboardingAction.GrantPermission -> {
-                                    permissionLauncher.launch(viewModel.imagePermissionRequest())
                                     viewModel.onAction(action)
+                                    when (context.imagePermissionRequestDestination()) {
+                                        ImagePermissionRequestDestination.PermissionDialog -> {
+                                            context.markImagePermissionRequested(
+                                                uiState.imageAccessLevel
+                                            )
+                                            permissionLauncher.launch(
+                                                viewModel.imagePermissionRequest()
+                                            )
+                                        }
+
+                                        ImagePermissionRequestDestination.ApplicationSettings -> {
+                                            appSettingsLauncher.launch(
+                                                Intent(
+                                                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                                    Uri.fromParts(
+                                                        "package",
+                                                        context.packageName,
+                                                        null,
+                                                    ),
+                                                )
+                                            )
+                                        }
+                                    }
                                 }
 
                                 OnboardingAction.OpenPhotoPermissionSettings -> {

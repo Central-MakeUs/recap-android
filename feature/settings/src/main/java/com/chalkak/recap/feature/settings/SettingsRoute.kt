@@ -1,9 +1,11 @@
 package com.chalkak.recap.feature.settings
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -11,8 +13,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.chalkak.recap.core.data.screenshot.permission.ImagePermissionRequestDestination
+import com.chalkak.recap.core.data.screenshot.permission.currentImageAccessLevel
+import com.chalkak.recap.core.data.screenshot.permission.imagePermissionRequest
+import com.chalkak.recap.core.data.screenshot.permission.imagePermissionRequestDestination
+import com.chalkak.recap.core.data.screenshot.permission.markImagePermissionRequested
 import com.chalkak.recap.core.model.ImageAccessLevel
 
 @Composable
@@ -30,30 +36,55 @@ fun SettingsRoute(
         onPauseOrDispose { }
     }
 
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+    ) {
+        photoAccessLevel = context.currentImageAccessLevel()
+    }
+
     SettingsScreen(
         modifier = modifier,
         uiState = SettingsUiState(photoAccessLevel = photoAccessLevel),
-        onAction = onAction,
+        onAction = { action ->
+            when (action) {
+                SettingsAction.OpenPhotoAccessPermission -> {
+                    openPhotoAccessPermission(
+                        context = context,
+                        photoAccessLevel = photoAccessLevel,
+                        onRequestPermissions = { permissions ->
+                            permissionLauncher.launch(permissions)
+                        },
+                    )
+                }
+
+                else -> onAction(action)
+            }
+        },
     )
 }
 
-private fun Context.currentImageAccessLevel(): ImageAccessLevel {
-    return when {
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-            hasPermission(Manifest.permission.READ_MEDIA_IMAGES) -> ImageAccessLevel.Full
-
-        Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-            hasPermission(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) -> {
-            ImageAccessLevel.Selected
+private fun openPhotoAccessPermission(
+    context: Context,
+    photoAccessLevel: ImageAccessLevel,
+    onRequestPermissions: (Array<String>) -> Unit,
+) {
+    when (context.imagePermissionRequestDestination()) {
+        ImagePermissionRequestDestination.PermissionDialog -> {
+            context.markImagePermissionRequested(photoAccessLevel)
+            onRequestPermissions(imagePermissionRequest(photoAccessLevel))
         }
 
-        Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU &&
-            hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE) -> ImageAccessLevel.Full
-
-        else -> ImageAccessLevel.Denied
+        ImagePermissionRequestDestination.ApplicationSettings -> {
+            context.openApplicationDetailsSettings()
+        }
     }
 }
 
-private fun Context.hasPermission(permission: String): Boolean {
-    return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+private fun Context.openApplicationDetailsSettings() {
+    startActivity(
+        Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", packageName, null),
+        ),
+    )
 }
