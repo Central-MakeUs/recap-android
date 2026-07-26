@@ -38,7 +38,11 @@ data class ScreenshotAnalysisProgressUiState(
     val progress: Float = 0f,
     val results: List<ScreenshotAnalysisResult> = emptyList(),
     val errorMessage: String? = null,
-)
+    val terminalResult: OrganizeTerminalResult? = null,
+) {
+    val isStatusVisible: Boolean
+        get() = isRunning || terminalResult != null
+}
 
 @HiltViewModel
 class ScreenshotAnalysisProgressViewModel @Inject constructor(
@@ -72,10 +76,15 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                 )
 
                 if (totalCount == 0) {
-                    _uiState.value = _uiState.value.copy(isRunning = false, progress = 1f)
+                    val emptySuccess = OrganizeTerminalResult.AllSuccess(successCount = 0)
+                    _uiState.value = _uiState.value.copy(
+                        isRunning = false,
+                        progress = 1f,
+                        terminalResult = emptySuccess,
+                    )
                     organizeProgressTracker.onTerminal(
                         runId = runId,
-                        result = OrganizeTerminalResult.AllSuccess(successCount = 0),
+                        result = emptySuccess,
                     )
                     return@launch
                 }
@@ -111,18 +120,20 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                                     organizeProgressTracker.onCancelled(runId)
                                     return@launch
                                 }
+                                val terminal = OrganizeTerminalResultMapper.fromLocalPersisted(
+                                    persistedCount = persisted.size,
+                                    totalCount = totalCount,
+                                    saveFailed = true,
+                                )
                                 _uiState.value = _uiState.value.copy(
                                     isRunning = false,
                                     errorMessage = SAVE_ERROR_MESSAGE,
                                     results = persisted.toList(),
+                                    terminalResult = terminal,
                                 )
                                 organizeProgressTracker.onTerminal(
                                     runId = runId,
-                                    result = OrganizeTerminalResultMapper.fromLocalPersisted(
-                                        persistedCount = persisted.size,
-                                        totalCount = totalCount,
-                                        saveFailed = true,
-                                    ),
+                                    result = terminal,
                                 )
                                 return@launch
                             }
@@ -132,34 +143,38 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                             organizeProgressTracker.onCancelled(runId)
                             return@launch
                         }
+                        val terminal = OrganizeTerminalResultMapper.fromLocalPersisted(
+                            persistedCount = persisted.size,
+                            totalCount = totalCount,
+                            saveFailed = false,
+                        )
                         _uiState.value = _uiState.value.copy(
                             isRunning = false,
                             completedCount = persisted.size,
                             progress = (persisted.size.toFloat() / totalCount).coerceIn(0f, 1f),
                             results = persisted.toList(),
+                            terminalResult = terminal,
                         )
                         organizeProgressTracker.onTerminal(
                             runId = runId,
-                            result = OrganizeTerminalResultMapper.fromLocalPersisted(
-                                persistedCount = persisted.size,
-                                totalCount = totalCount,
-                                saveFailed = false,
-                            ),
+                            result = terminal,
                         )
                     }
 
                     is ScreenshotOrganizeOutcome.RemoteCompleted -> {
                         val completed = outcome.successCount + outcome.failCount
+                        val terminal = OrganizeTerminalResultMapper.fromRemote(outcome)
                         _uiState.value = _uiState.value.copy(
                             isRunning = false,
                             completedCount = completed.coerceIn(0, totalCount),
                             totalCount = totalCount,
                             progress = (completed.toFloat() / totalCount).coerceIn(0f, 1f),
                             results = emptyList(),
+                            terminalResult = terminal,
                         )
                         organizeProgressTracker.onTerminal(
                             runId = runId,
-                            result = OrganizeTerminalResultMapper.fromRemote(outcome),
+                            result = terminal,
                         )
                     }
                 }
@@ -171,6 +186,7 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(
                     isRunning = false,
                     errorMessage = ANALYSIS_ERROR_MESSAGE,
+                    terminalResult = OrganizeTerminalResult.AllFailed,
                 )
                 organizeProgressTracker.onTerminal(
                     runId = runId,
@@ -180,6 +196,17 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                 screenshotAnalysisRunState.endRun()
             }
         }
+    }
+
+    fun cancelAnalysis() {
+        analysisJob?.cancel()
+        analysisJob = null
+        _uiState.value = ScreenshotAnalysisProgressUiState()
+    }
+
+    fun dismissResult() {
+        if (_uiState.value.isRunning) return
+        _uiState.value = ScreenshotAnalysisProgressUiState()
     }
 
     private suspend fun persistAnalysisResult(

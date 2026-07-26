@@ -20,12 +20,9 @@ import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBar
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDestination
 import com.chalkak.recap.core.model.LocalImage
-import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.organize.OrganizeRoute
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.rememberHazeState
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
@@ -40,7 +37,6 @@ fun RecapMainScreen(
     onHomeNavigationComplete: (Int) -> Unit = {},
     pendingOpenOrganize: Boolean = false,
     onPendingOpenOrganizeConsumed: () -> Unit = {},
-    analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
 ) {
     val backStack = rememberNavBackStack(MainTabRoute.Home)
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
@@ -130,7 +126,6 @@ fun RecapMainScreen(
                     openCollectionFavoritesOnNextEnter = false
                 },
                 showDeveloperLogoShortcut = BuildConfig.DEBUG,
-                analysisProgressFlow = analysisProgressFlow,
                 onCollectionPredictiveBackProgress = { progress ->
                     collectionPredictiveBackProgress = progress
                 },

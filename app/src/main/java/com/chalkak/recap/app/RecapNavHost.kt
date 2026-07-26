@@ -21,6 +21,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -31,10 +32,11 @@ import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 import com.chalkak.recap.core.design.animation.RecapNavDisplay
 import com.chalkak.recap.core.design.animation.RecapNavigationMotion
 import com.chalkak.recap.feature.collection.CollectionRoute
-import com.chalkak.recap.feature.home.HomeAnalysisProgressUiModel
 import com.chalkak.recap.feature.home.HomeRoute
 import com.chalkak.recap.feature.home.recent.RecentOrganizedScreenshotsRoute
 import com.chalkak.recap.feature.home.search.SearchRoute
+import com.chalkak.recap.feature.organize.OrganizeAnalysisStatusRoute
+import com.chalkak.recap.feature.organize.OrganizeAnalysisStatusUiState
 import com.chalkak.recap.feature.settings.account.AccountManagementRoute
 import com.chalkak.recap.feature.settings.data.DataManagementRoute
 import com.chalkak.recap.feature.settings.notification.NotificationSettingsRoute
@@ -46,8 +48,6 @@ import com.chalkak.recap.feature.settings.guide.UsageGuideScreen
 import com.chalkak.recap.feature.screenshot.ScreenshotRoute
 import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 import dev.chrisbanes.haze.HazeState
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 
 private const val MainTabSlideDurationMillis = 300
@@ -68,30 +68,77 @@ fun RecapNavHost(
     val context = LocalContext.current
     val backStack = rememberNavBackStack(AppRoute.MainTabs)
     var requestOpenOrganize by remember { mutableStateOf(false) }
-    val analysisProgressFlow = remember(analysisProgressViewModel) {
+    val analysisStatusFlow = remember(analysisProgressViewModel) {
         analysisProgressViewModel.uiState.map { state ->
-            HomeAnalysisProgressUiModel(
-                isRunning = state.isRunning,
-                progress = state.progress,
-            )
+            state.toOrganizeAnalysisStatusUiState()
+        }
+    }
+    val analysisStatus by analysisStatusFlow.collectAsStateWithLifecycle(
+        initialValue = OrganizeAnalysisStatusUiState.Hidden,
+    )
+
+    fun exitOrganizeAnalysisStatus() {
+        val wasRunning = analysisProgressViewModel.uiState.value.isRunning
+        if (backStack.lastOrNull() == AppRoute.OrganizeAnalysisStatus) {
+            backStack.removeLastOrNull()
+        }
+        if (wasRunning) {
+            analysisProgressViewModel.cancelAnalysis()
+        } else {
+            analysisProgressViewModel.dismissResult()
+        }
+    }
+
+    fun openOrganizeAnalysisStatusIfNeeded() {
+        if (analysisProgressViewModel.uiState.value.isStatusVisible &&
+            backStack.none { it == AppRoute.OrganizeAnalysisStatus }
+        ) {
+            backStack.add(AppRoute.OrganizeAnalysisStatus)
+        }
+    }
+
+    fun isOrganizeAnalysisStatusTargetStack(showStatus: Boolean): Boolean {
+        if (backStack.firstOrNull() != AppRoute.MainTabs) return false
+        return if (showStatus) {
+            backStack.size == 2 && backStack.lastOrNull() == AppRoute.OrganizeAnalysisStatus
+        } else {
+            backStack.size == 1
         }
     }
 
     LaunchedEffect(pendingHomeNavigationRequestId) {
         if (pendingHomeNavigationRequestId != null) {
-            while (backStack.size > 1) {
-                backStack.removeLastOrNull()
+            val showStatus = analysisProgressViewModel.uiState.value.isStatusVisible
+            if (!isOrganizeAnalysisStatusTargetStack(showStatus)) {
+                while (backStack.size > 1) {
+                    backStack.removeLastOrNull()
+                }
+                if (backStack.lastOrNull() != AppRoute.MainTabs) {
+                    backStack.clear()
+                    backStack.add(AppRoute.MainTabs)
+                }
+                if (showStatus) {
+                    openOrganizeAnalysisStatusIfNeeded()
+                }
             }
-            if (backStack.lastOrNull() != AppRoute.MainTabs) {
-                backStack.clear()
-                backStack.add(AppRoute.MainTabs)
-            }
+        }
+    }
+
+    LaunchedEffect(analysisStatus) {
+        if (analysisStatus !is OrganizeAnalysisStatusUiState.Hidden) {
+            openOrganizeAnalysisStatusIfNeeded()
         }
     }
 
     RecapNavDisplay(
         backStack = backStack,
-        onBack = { backStack.removeLastOrNull() },
+        onBack = {
+            if (backStack.lastOrNull() == AppRoute.OrganizeAnalysisStatus) {
+                exitOrganizeAnalysisStatus()
+            } else {
+                backStack.removeLastOrNull()
+            }
+        },
         modifier = modifier,
         transitionSpec = { RecapNavigationMotion.forward() },
         popTransitionSpec = { RecapNavigationMotion.pop() },
@@ -134,7 +181,6 @@ fun RecapNavHost(
                                     onPendingOpenOrganizeConsumed()
                                 }
                             },
-                            analysisProgressFlow = analysisProgressFlow,
                         )
                     }
                 }
@@ -264,6 +310,14 @@ fun RecapNavHost(
                     )
                 }
 
+                AppRoute.OrganizeAnalysisStatus -> NavEntry(route) {
+                    OrganizeAnalysisStatusRoute(
+                        uiState = analysisStatus,
+                        onCancelClick = ::exitOrganizeAnalysisStatus,
+                        onDismissClick = ::exitOrganizeAnalysisStatus,
+                    )
+                }
+
                 else -> error("Unknown app route: $route")
             }
         },
@@ -285,7 +339,6 @@ fun RecapMainTabNavHost(
     openCollectionFavoritesOnEnter: Boolean = false,
     onOpenCollectionFavoritesOnEnterConsumed: () -> Unit = {},
     showDeveloperLogoShortcut: Boolean = false,
-    analysisProgressFlow: Flow<HomeAnalysisProgressUiModel> = flowOf(HomeAnalysisProgressUiModel()),
     onCollectionPredictiveBackProgress: (Float) -> Unit = {},
 ) {
     // Home ↔ Collection keeps its short slide+fade and bottom-bar predictive progress.
@@ -311,7 +364,6 @@ fun RecapMainTabNavHost(
                         onNavigateToOrganize = onNavigateToOrganize,
                         onNavigateToScreenshot = onNavigateToScreenshot,
                         showDeveloperLogoShortcut = showDeveloperLogoShortcut,
-                        analysisProgressFlow = analysisProgressFlow,
                     )
                 }
 
