@@ -43,7 +43,6 @@ fun OnboardingScreen(
     onAction: (OnboardingAction) -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState? = null,
-    showLandingLoginImmediately: Boolean = false,
     illustrationSignalFlow: Flow<OnboardingIllustrationSignal> = emptyFlow(),
 ) {
     val resolvedSnackbarHostState = snackbarHostState ?: remember { SnackbarHostState() }
@@ -66,7 +65,6 @@ fun OnboardingScreen(
                 OnboardingStep.Landing -> OnboardingLandingScreen(
                     onAction = onAction,
                     modifier = screenModifier,
-                    showLoginImmediately = showLandingLoginImmediately,
                     isLoading = uiState.isLoading,
                     illustrationSignalFlow = illustrationSignalFlow,
                 )
@@ -188,7 +186,6 @@ private fun OnboardingScreenLandingPreview() {
         OnboardingScreen(
             uiState = OnboardingUiState(step = OnboardingStep.Landing),
             onAction = {},
-            showLandingLoginImmediately = true,
         )
     }
 }

@@ -93,6 +93,7 @@ dependencies {
     implementation(libs.chrisbanes.haze)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.hilt.android)
+    implementation(libs.lottie.compose)
     implementation(libs.kakao.user)
     implementation(libs.play.services.oss.licenses)
     implementation(libs.timber)

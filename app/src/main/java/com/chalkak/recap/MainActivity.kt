@@ -13,7 +13,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import com.chalkak.recap.app.MainActivityEntryViewModel
 import com.chalkak.recap.app.RecapApp
-import com.chalkak.recap.app.RecapStartupUiState
 import com.chalkak.recap.app.RecapStartupViewModel
 import com.chalkak.recap.app.RecapToastViewModel
 import com.chalkak.recap.app.ScreenshotAnalysisProgressViewModel
@@ -27,9 +26,7 @@ class MainActivity : ComponentActivity() {
     private val entryViewModel: MainActivityEntryViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen().setKeepOnScreenCondition {
-            startupViewModel.uiState.value is RecapStartupUiState.Loading
-        }
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge( // 라이트모드 강제
             statusBarStyle = SystemBarStyle.light(

@@ -1,8 +1,5 @@
 package com.chalkak.recap.feature.onboarding.screen
 
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -23,12 +20,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,11 +42,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.lerp
+import kotlin.math.roundToInt
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.RecapLogo
 import com.chalkak.recap.core.design.component.RecapLogoAspectRatio
-import com.chalkak.recap.core.design.component.icon.RecapHazeFolderIcon
 import com.chalkak.recap.core.design.component.speechbubble.RecapSpeechBubble
 import com.chalkak.recap.core.design.component.speechbubble.RecapSpeechBubbleArrowDirection
 import com.chalkak.recap.core.design.theme.Black
@@ -65,38 +58,21 @@ import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingIllustrationSignal
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
 import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
-import kotlin.math.roundToInt
-import kotlin.time.Duration.Companion.milliseconds
 
 private const val LandingBackgroundIconAlpha = 0.45f
-private const val LandingTransitionMillis = 500
-private val LandingIllustrationSize = 190.dp
-private val LandingBubbleIllustrationGap = 24.dp
+private val LandingHeadlineTopPadding = 120.dp
 private val LandingBubbleLoginGap = 17.dp
 
 @Composable
 fun OnboardingLandingScreen(
     onAction: (OnboardingAction) -> Unit,
     modifier: Modifier = Modifier,
-    showLoginImmediately: Boolean = false,
     isLoading: Boolean = false,
     illustrationSignalFlow: Flow<OnboardingIllustrationSignal> = emptyFlow(),
 ) {
-    var showLogin by rememberSaveable { mutableStateOf(showLoginImmediately) }
-    LaunchedEffect(showLoginImmediately) {
-        if (showLoginImmediately) {
-            showLogin = true
-        } else {
-            delay(900.milliseconds)
-            showLogin = true
-        }
-    }
-
     var rootTopY by remember { mutableFloatStateOf(0f) }
-    var illustrationBottomY by remember { mutableFloatStateOf(0f) }
     var loginLabelTopY by remember { mutableFloatStateOf(0f) }
     var bubbleHeight by remember { mutableFloatStateOf(0f) }
 
@@ -110,42 +86,19 @@ fun OnboardingLandingScreen(
     ) {
         val density = LocalDensity.current
         val contentWidth = minOf(maxWidth, 375.dp)
-        val topSpace by animateDpAsState(
-            targetValue = if (showLogin) 120.dp else 60.dp,
-            animationSpec = tween(durationMillis = LandingTransitionMillis),
-            label = "onboarding_landing_top_space",
-        )
-        val loginProgress by animateFloatAsState(
-            targetValue = if (showLogin) 1f else 0f,
-            animationSpec = tween(durationMillis = LandingTransitionMillis),
-            label = "onboarding_landing_login_progress",
-        )
-
-        val bubbleIllustrationGapPx = with(density) { LandingBubbleIllustrationGap.toPx() }
         val bubbleLoginGapPx = with(density) { LandingBubbleLoginGap.toPx() }
-        val fallbackIllustrationBottomY = with(density) {
-            rootTopY + (maxHeight / 2 + LandingIllustrationSize / 2).toPx()
-        }
         val fallbackLoginLabelTopY = with(density) {
             rootTopY + (maxHeight - 72.dp - 125.dp).toPx()
         }
-        val resolvedIllustrationBottomY =
-            if (illustrationBottomY > 0f) illustrationBottomY else fallbackIllustrationBottomY
         val resolvedLoginLabelTopY =
             if (loginLabelTopY > 0f) loginLabelTopY else fallbackLoginLabelTopY
-
-        // 일러스트 아래(top 앵커) ↔ 로그인 라벨 위(bottom 앵커)를 loginProgress로 동시에 lerp.
-        // 로그인 쪽은 bottom 고정이라 말풍선 높이 애니메이션과 위치가 서로 기다리지 않는다.
-        val illustrationBubbleTopY =
-            resolvedIllustrationBottomY + bubbleIllustrationGapPx - rootTopY
         val resolvedBubbleHeight = if (bubbleHeight > 0f) {
             bubbleHeight
         } else {
             with(density) { 48.dp.toPx() }
         }
-        val loginBubbleTopY =
+        val bubbleTopY =
             resolvedLoginLabelTopY - bubbleLoginGapPx - resolvedBubbleHeight - rootTopY
-        val bubbleTopY = lerp(illustrationBubbleTopY, loginBubbleTopY, loginProgress)
 
         LandingBackgroundIcons(
             screenHeight = maxHeight,
@@ -156,48 +109,28 @@ fun OnboardingLandingScreen(
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .width(contentWidth)
-                .padding(top = topSpace),
+                .padding(top = LandingHeadlineTopPadding),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             BrandHeadline()
         }
 
-        LandingIllustration(
-            loginProgress = loginProgress,
-            modifier = Modifier
-                .align(Alignment.Center)
-                .onGloballyPositioned { coordinates ->
-                    illustrationBottomY =
-                        coordinates.positionInRoot().y + coordinates.size.height
-                },
-        )
-
         SocialLoginSection(
             onKakaoClick = { onAction(OnboardingAction.LoginWithKakao) },
             isLoading = isLoading,
-            interactive = showLogin,
             onLoginLabelPositioned = { topInRoot ->
                 loginLabelTopY = topInRoot
             },
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .width(contentWidth)
-                .padding(bottom = 72.dp)
-                .graphicsLayer { alpha = loginProgress },
+                .padding(bottom = 72.dp),
         )
 
         RecapSpeechBubble(
-            text = if (showLogin) {
-                stringResource(R.string.onboarding_landing_start_chip)
-            } else {
-                stringResource(R.string.onboarding_landing_speech_bubble)
-            },
-            arrowDirection = if (showLogin) {
-                RecapSpeechBubbleArrowDirection.Down
-            } else {
-                RecapSpeechBubbleArrowDirection.Up
-            },
-            animationDurationMillis = LandingTransitionMillis,
+            text = stringResource(R.string.onboarding_landing_start_chip),
+            arrowDirection = RecapSpeechBubbleArrowDirection.Down,
+            animationDurationMillis = 0,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .onGloballyPositioned { coordinates ->
@@ -206,23 +139,6 @@ fun OnboardingLandingScreen(
                 .offset { IntOffset(0, bubbleTopY.roundToInt()) },
         )
     }
-}
-
-@Composable
-private fun LandingIllustration(
-    loginProgress: Float,
-    modifier: Modifier = Modifier,
-) {
-    RecapHazeFolderIcon(
-        size = LandingIllustrationSize,
-        contentDescription = stringResource(R.string.app_name),
-        modifier = modifier.graphicsLayer {
-            val shrink = 1f - (0.4f * loginProgress)
-            scaleX = shrink
-            scaleY = shrink
-            alpha = 1f - loginProgress
-        },
-    )
 }
 
 /**
@@ -318,7 +234,6 @@ private fun BrandHeadline(
 private fun SocialLoginSection(
     onKakaoClick: () -> Unit,
     isLoading: Boolean,
-    interactive: Boolean,
     onLoginLabelPositioned: (topInRoot: Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -348,7 +263,7 @@ private fun SocialLoginSection(
             }
             SocialLoginButton(
                 onClick = onKakaoClick,
-                enabled = interactive && !isLoading,
+                enabled = !isLoading,
                 containerColor = RecapKakaoYellow,
                 contentDescription = stringResource(R.string.onboarding_kakao_login_content_description),
                 modifier = Modifier.padding(top = 58.dp),
@@ -420,17 +335,6 @@ private fun OnboardingLandingScreenPreview() {
     OnboardingPreviewContainer {
         OnboardingLandingScreen(
             onAction = {},
-        )
-    }
-}
-
-@OnboardingScreenPreview
-@Composable
-private fun OnboardingLandingScreenLoginPreview() {
-    OnboardingPreviewContainer {
-        OnboardingLandingScreen(
-            onAction = {},
-            showLoginImmediately = true,
         )
     }
 }
