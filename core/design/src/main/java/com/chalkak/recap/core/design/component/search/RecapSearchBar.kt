@@ -33,9 +33,10 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
-import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
+import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 
 @Composable
 fun RecapSearchBar(
@@ -56,7 +57,7 @@ fun RecapSearchBar(
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RecapSearchBarTokens.Shape,
-        color = RecapGray100,
+        color = RecapGray50,
         contentColor = RecapGray900,
     ) {
         Row(
@@ -110,7 +111,7 @@ fun RecapSearchBar(
                         if (value.isEmpty()) {
                             Text(
                                 text = placeholder,
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = RecapCaption1,
                                 color = RecapGray300,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
