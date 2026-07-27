@@ -332,6 +332,10 @@
     <string name="onboarding_add_to_favorite_image_content_description">공유 시트에 Recap을 즐겨찾기로 추가하는 예시</string>
     <string name="onboarding_add_to_favorite_guide_title">공유 즐겨찾기 등록하기</string>
     <string name="onboarding_add_to_favorite_guide_body">한 번만 설정하면\n스크린샷을 갤러리에서 바로 공유 할 수있어요!</string>
+    <string name="onboarding_add_to_favorite_guide_step_1">공유 시트가 열리면 앱 목록을 왼쪽으로 넘겨 더보기를 눌러주세요.</string>
+    <string name="onboarding_add_to_favorite_guide_step_2">목록이 열리면 우측 상단 편집을 눌러주세요.</string>
+    <string name="onboarding_add_to_favorite_guide_step_3">목록에서 Recap을 찾아, 체크를 눌러주세요.</string>
+    <string name="onboarding_add_to_favorite_guide_step_4">즐겨찾기에 Recap이 추가되면 완료!\n≡ 을 드래그 해 상단으로 끌어올수록, 즐겨찾기 앞쪽에 배치돼요.</string>
     <string name="onboarding_add_to_favorite_guide_page_indicator">%1$d / %2$d</string>
     <string name="onboarding_add_to_favorite_guide_step_image_content_description">공유 즐겨찾기 등록 방법 %1$d단계</string>
     <string name="onboarding_add_to_favorite_guide_previous_content_description">이전 등록 방법 보기</string>

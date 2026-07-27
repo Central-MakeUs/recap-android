@@ -22,7 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.feature.onboarding.component.OnboardingLayoutDefaults
-import com.chalkak.recap.feature.onboarding.component.OnboardingTopBar
+import com.chalkak.recap.core.design.component.progress.RecapStepProgressIndicator
 import com.chalkak.recap.feature.onboarding.screen.OnboardingAddToFavoriteScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingLandingScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingPermissionGuideScreen
@@ -117,7 +117,7 @@ private fun OnboardingStepTransition(
     Column(
         modifier = modifier.fillMaxSize(),
     ) {
-        OnboardingTopBar(
+        RecapStepProgressIndicator(
             progress = topBarProgress,
             stepCount = OnboardingProgressSteps.size,
             modifier = Modifier
