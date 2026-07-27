@@ -1,8 +1,6 @@
 package com.chalkak.recap.app
 
 import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -194,14 +192,7 @@ fun RecapNavHost(
                                     backStack.add(AppRoute.NotificationSettings)
                                 }
 
-                                SettingsAction.OpenPhotoAccessPermission -> {
-                                    context.startActivity(
-                                        Intent(
-                                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                            Uri.fromParts("package", context.packageName, null),
-                                        ),
-                                    )
-                                }
+                                SettingsAction.OpenPhotoAccessPermission -> Unit
 
                                 SettingsAction.OpenUsageGuide -> {
                                     backStack.add(AppRoute.UsageGuide)

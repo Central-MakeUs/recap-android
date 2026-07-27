@@ -161,20 +161,14 @@ fun OnboardingAddToFavoriteScreen(
             } else {
                 stringResource(R.string.photo_access_permission_notice)
             },
-            primaryButtonText = if (isSelectedPhotoAccess) {
-                stringResource(R.string.onboarding_full_access_permission_settings_button)
-            } else {
-                stringResource(R.string.photo_access_permission_request_permission)
-            },
+            primaryButtonText = stringResource(
+                R.string.photo_access_permission_request_permission
+            ),
             secondaryButtonText = stringResource(R.string.photo_access_permission_later_button),
             onDismissRequest = { showPhotoAccessPermissionBottomSheet = false },
             onPrimaryClick = {
                 showPhotoAccessPermissionBottomSheet = false
-                if (isSelectedPhotoAccess) {
-                    onAction(OnboardingAction.OpenPhotoPermissionSettings)
-                } else {
-                    onAction(OnboardingAction.GrantPermission)
-                }
+                onAction(OnboardingAction.GrantPermission)
             },
             onSecondaryClick = {
                 showPhotoAccessPermissionBottomSheet = false

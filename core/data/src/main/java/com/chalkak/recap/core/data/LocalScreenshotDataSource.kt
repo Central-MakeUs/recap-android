@@ -1,15 +1,13 @@
 package com.chalkak.recap.core.data
 
-import android.Manifest
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.Context
-import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
-import androidx.core.content.ContextCompat
 import com.chalkak.recap.core.data.screenshot.permission.ImagePermissionRepository
+import com.chalkak.recap.core.data.screenshot.permission.currentImageAccessLevel
+import com.chalkak.recap.core.data.screenshot.permission.imagePermissionRequest as platformImagePermissionRequest
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.LocalImage
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -22,37 +20,11 @@ import javax.inject.Singleton
 class LocalScreenshotDataSource @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) : ImagePermissionRepository {
-    override fun imagePermissionRequest(): Array<String> {
-        return when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE -> arrayOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
-                Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED,
-            )
+    override fun imagePermissionRequest(): Array<String> = platformImagePermissionRequest(
+        accessLevel = context.currentImageAccessLevel(),
+    )
 
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU -> arrayOf(
-                Manifest.permission.READ_MEDIA_IMAGES,
-            )
-
-            else -> arrayOf(
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-            )
-        }
-    }
-
-    override fun currentImageAccessLevel(): ImageAccessLevel {
-        return when {
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                    context.hasPermission(Manifest.permission.READ_MEDIA_IMAGES) -> ImageAccessLevel.Full
-
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-                    context.hasPermission(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED) -> ImageAccessLevel.Selected
-
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU &&
-                    context.hasPermission(Manifest.permission.READ_EXTERNAL_STORAGE) -> ImageAccessLevel.Full
-
-            else -> ImageAccessLevel.Denied
-        }
-    }
+    override fun currentImageAccessLevel(): ImageAccessLevel = context.currentImageAccessLevel()
 
     suspend fun queryRecentScreenshots(limit: Int): List<LocalImage> = withContext(Dispatchers.IO) {
         queryScreenshotImages(limit = limit)
@@ -115,10 +87,6 @@ class LocalScreenshotDataSource @Inject constructor(
                 }
             }.orEmpty()
         }.getOrDefault(emptyList())
-    }
-
-    private fun Context.hasPermission(permission: String): Boolean {
-        return ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
     }
 
     private companion object {

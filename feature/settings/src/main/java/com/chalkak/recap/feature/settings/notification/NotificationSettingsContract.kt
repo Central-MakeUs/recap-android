@@ -7,7 +7,7 @@ data class NotificationSettingsUiState(
 
 sealed interface NotificationSettingsAction {
     data object NavigateBack : NotificationSettingsAction
-    data object OpenDeviceNotificationSettings : NotificationSettingsAction
+    data object RequestDeviceNotificationPermission : NotificationSettingsAction
     data class OrganizeCompleteEnabledChanged(
         val enabled: Boolean,
     ) : NotificationSettingsAction
