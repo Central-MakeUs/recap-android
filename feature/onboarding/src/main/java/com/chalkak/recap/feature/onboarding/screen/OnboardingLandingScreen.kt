@@ -2,13 +2,16 @@ package com.chalkak.recap.feature.onboarding.screen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -19,6 +22,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -34,15 +38,15 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import kotlin.math.roundToInt
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.RecapLogo
 import com.chalkak.recap.core.design.component.RecapLogoAspectRatio
@@ -51,19 +55,28 @@ import com.chalkak.recap.core.design.component.speechbubble.RecapSpeechBubbleArr
 import com.chalkak.recap.core.design.theme.Black
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
+import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapKakaoYellow
 import com.chalkak.recap.core.design.theme.RecapOnboardingBlue
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingIllustrationSignal
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
 import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
+import com.chalkak.recap.feature.onboarding.component.OnboardingLayoutDefaults
+import kotlin.math.roundToInt
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
 private const val LandingBackgroundIconAlpha = 0.45f
 private val LandingHeadlineTopPadding = 120.dp
 private val LandingBubbleLoginGap = 17.dp
+private val LandingBottomPadding = 30.dp
+private val LandingLoginLegalGap = 28.dp
+private val LandingLegalNoticeEstimatedHeight = 40.dp
+private val LandingSocialSectionEstimatedHeight = 125.dp
 
 @Composable
 fun OnboardingLandingScreen(
@@ -88,7 +101,13 @@ fun OnboardingLandingScreen(
         val contentWidth = minOf(maxWidth, 375.dp)
         val bubbleLoginGapPx = with(density) { LandingBubbleLoginGap.toPx() }
         val fallbackLoginLabelTopY = with(density) {
-            rootTopY + (maxHeight - 72.dp - 125.dp).toPx()
+            rootTopY + (
+                    maxHeight -
+                            LandingBottomPadding -
+                            LandingLegalNoticeEstimatedHeight -
+                            LandingLoginLegalGap -
+                            LandingSocialSectionEstimatedHeight
+                    ).toPx()
         }
         val resolvedLoginLabelTopY =
             if (loginLabelTopY > 0f) loginLabelTopY else fallbackLoginLabelTopY
@@ -115,17 +134,26 @@ fun OnboardingLandingScreen(
             BrandHeadline()
         }
 
-        SocialLoginSection(
-            onKakaoClick = { onAction(OnboardingAction.LoginWithKakao) },
-            isLoading = isLoading,
-            onLoginLabelPositioned = { topInRoot ->
-                loginLabelTopY = topInRoot
-            },
+        Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .width(contentWidth)
-                .padding(bottom = 72.dp),
-        )
+                .padding(bottom = LandingBottomPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            SocialLoginSection(
+                onKakaoClick = { onAction(OnboardingAction.LoginWithKakao) },
+                isLoading = isLoading,
+                onLoginLabelPositioned = { topInRoot ->
+                    loginLabelTopY = topInRoot
+                },
+            )
+            Spacer(modifier = Modifier.height(LandingLoginLegalGap))
+            LandingLegalNotice(
+                onTermsClick = {},
+                onPrivacyClick = {},
+            )
+        }
 
         RecapSpeechBubble(
             text = stringResource(R.string.onboarding_landing_start_chip),
@@ -256,8 +284,8 @@ private fun SocialLoginSection(
                 DividerLine()
                 Text(
                     text = stringResource(R.string.onboarding_simple_login_label),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = RecapGray300,
+                    style = RecapCaption1,
+                    color = RecapGray500,
                 )
                 DividerLine()
             }
@@ -291,9 +319,56 @@ private fun SocialLoginSection(
 private fun DividerLine() {
     Box(
         modifier = Modifier
-            .size(width = 59.dp, height = 1.dp)
+            .size(width = 68.dp, height = 1.dp)
             .background(RecapGray200),
     )
+}
+
+@Composable
+private fun LandingLegalNotice(
+    onTermsClick: () -> Unit,
+    onPrivacyClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(9.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(11.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.onboarding_landing_terms),
+                style = RecapCaption1,
+                color = RecapGray500,
+                modifier = Modifier.clickable(
+                    role = Role.Button,
+                    onClick = onTermsClick,
+                ),
+            )
+            VerticalDivider(
+                modifier = Modifier.height(14.dp),
+                thickness = 1.dp,
+                color = RecapGray200,
+            )
+            Text(
+                text = stringResource(R.string.onboarding_landing_privacy),
+                style = RecapCaption1,
+                color = RecapGray500,
+                modifier = Modifier.clickable(
+                    role = Role.Button,
+                    onClick = onPrivacyClick,
+                ),
+            )
+        }
+        Text(
+            text = stringResource(R.string.onboarding_landing_legal_agreement_notice),
+            style = RecapCaption2,
+            color = RecapGray300,
+            textAlign = TextAlign.Center,
+        )
+    }
 }
 
 @Composable
@@ -332,7 +407,9 @@ private fun SocialLoginButton(
 @OnboardingScreenPreview
 @Composable
 private fun OnboardingLandingScreenPreview() {
-    OnboardingPreviewContainer {
+    OnboardingPreviewContainer(
+        contentPadding = OnboardingLayoutDefaults.LandingScreenPadding,
+    ) {
         OnboardingLandingScreen(
             onAction = {},
         )

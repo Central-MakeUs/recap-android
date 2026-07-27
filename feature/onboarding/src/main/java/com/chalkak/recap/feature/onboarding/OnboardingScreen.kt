@@ -57,14 +57,12 @@ fun OnboardingScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .safeDrawingPadding(),
         ) {
-            val screenModifier = Modifier
-                .fillMaxSize()
-                .padding(OnboardingLayoutDefaults.ScreenPadding)
-
             when (uiState.step) {
                 OnboardingStep.Landing -> OnboardingLandingScreen(
                     onAction = onAction,
-                    modifier = screenModifier,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(OnboardingLayoutDefaults.LandingScreenPadding),
                     isLoading = uiState.isLoading,
                     illustrationSignalFlow = illustrationSignalFlow,
                 )
