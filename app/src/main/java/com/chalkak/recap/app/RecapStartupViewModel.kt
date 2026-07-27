@@ -48,7 +48,6 @@ class RecapStartupViewModel @Inject constructor(
         viewModelScope.launch {
             _pendingOpenOrganize.value = false
             sessionTokenStore.clear()
-            userPreferencesRepository.clearOnboardingStep()
             userPreferencesRepository.setOnboardingCompleted(false)
         }
     }

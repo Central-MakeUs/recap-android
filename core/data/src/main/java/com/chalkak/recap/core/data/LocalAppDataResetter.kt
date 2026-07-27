@@ -27,7 +27,6 @@ class LocalAppDataResetter @Inject constructor(
         }
         sessionTokenStore.clear()
         recentSearchStore.clearAll()
-        userPreferencesRepository.clearOnboardingStep()
         userPreferencesRepository.setOnboardingCompleted(false)
     }
 }

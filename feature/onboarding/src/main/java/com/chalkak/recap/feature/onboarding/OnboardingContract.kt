@@ -22,6 +22,7 @@ sealed interface OnboardingAction {
     data object OpenScreenshotPicker : OnboardingAction
     data object SkipStartFirstAnalyze : OnboardingAction
     data object ConfirmUploadMethodGuide : OnboardingAction
+    data class SelectStep(val step: OnboardingStep) : OnboardingAction
 }
 
 sealed interface OnboardingEvent {
