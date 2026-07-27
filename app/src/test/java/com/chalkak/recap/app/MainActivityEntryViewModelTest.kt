@@ -1,11 +1,18 @@
 package com.chalkak.recap.app
 
+import android.content.Intent
 import androidx.lifecycle.SavedStateHandle
+import com.chalkak.recap.app.share.OnboardingSampleShareIntentContract
+import com.chalkak.recap.app.share.OnboardingSampleShareSuccessStore
 import com.chalkak.recap.app.share.SharedAnalysisRequest
 import com.chalkak.recap.app.share.SharedAnalysisRequestStore
 import com.chalkak.recap.core.model.LocalImage
+import io.mockk.every
+import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class MainActivityEntryViewModelTest {
@@ -104,6 +111,34 @@ class MainActivityEntryViewModelTest {
         viewModel.completeHomeNavigation(firstRequestId)
 
         assertEquals(secondRequestId, viewModel.pendingHomeNavigationRequestId.value)
+    }
+
+    @Test
+    fun `onboarding sample share success event is consumed only once`() {
+        val viewModel = MainActivityEntryViewModel(SavedStateHandle(), store)
+        val eventId = OnboardingSampleShareSuccessStore.issueEventId()
+        val intent = mockk<Intent> {
+            every { action } returns OnboardingSampleShareIntentContract.ACTION
+            every {
+                getStringExtra(OnboardingSampleShareIntentContract.EXTRA_EVENT_ID)
+            } returns eventId
+        }
+
+        assertTrue(viewModel.consumeOnboardingSampleShareSuccess(intent))
+        assertFalse(viewModel.consumeOnboardingSampleShareSuccess(intent))
+    }
+
+    @Test
+    fun `unregistered onboarding sample share success event is rejected`() {
+        val viewModel = MainActivityEntryViewModel(SavedStateHandle(), store)
+        val intent = mockk<Intent> {
+            every { action } returns OnboardingSampleShareIntentContract.ACTION
+            every {
+                getStringExtra(OnboardingSampleShareIntentContract.EXTRA_EVENT_ID)
+            } returns "forged-event"
+        }
+
+        assertFalse(viewModel.consumeOnboardingSampleShareSuccess(intent))
     }
 
     private fun sampleRequest(requestId: String): SharedAnalysisRequest {

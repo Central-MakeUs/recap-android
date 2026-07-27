@@ -5,13 +5,16 @@ import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.model.LocalImage
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -32,13 +35,18 @@ class ShareIntakeViewModelTest {
     private val contentResolver = mockk<ContentResolver>()
     private val context = mockk<Context> {
         every { contentResolver } returns this@ShareIntakeViewModelTest.contentResolver
+        every { packageName } returns "com.chalkak.recap"
     }
     private val sessionTokenStore = mockk<SessionTokenStore>()
+    private val userPreferencesRepository = mockk<UserPreferencesRepository>()
     private val sharedAnalysisRequestStore = SharedAnalysisRequestStore()
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        coEvery { sessionTokenStore.getRefreshToken() } returns "refresh-token"
+        coEvery { userPreferencesRepository.setOnboardingCompleted(any()) } returns Unit
+        every { userPreferencesRepository.onboardingCompleted } returns flowOf(true)
     }
 
     @AfterEach
@@ -110,27 +118,51 @@ class ShareIntakeViewModelTest {
     }
 
     @Test
-    fun `logged out start emits login required without launch`() = runTest(testDispatcher) {
+    fun `logged out share entry emits login required without confirmation`() = runTest(testDispatcher) {
         coEvery { sessionTokenStore.getRefreshToken() } returns null
+        val intent = mockk<Intent>()
         val viewModel = createViewModel(
             fingerprint = "share-fingerprint",
             parseResult = ::sampleParseResult,
         )
-        val images = sampleParseResult().accepted
 
         viewModel.events.test {
-            viewModel.requestStartOrganize(images)
+            viewModel.submitShareIntent(intent)
             advanceUntilIdle()
 
             assertEquals(ShareIntakeEvent.LoginRequired, awaitItem())
+            assertNull(viewModel.pendingShareIntake.value)
+            coVerify(exactly = 1) {
+                userPreferencesRepository.setOnboardingCompleted(false)
+            }
             expectNoEvents()
             cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
+    fun `incomplete onboarding share entry emits onboarding required without confirmation`() =
+        runTest(testDispatcher) {
+            every { userPreferencesRepository.onboardingCompleted } returns flowOf(false)
+            val intent = mockk<Intent>()
+            val viewModel = createViewModel(
+                fingerprint = "share-fingerprint",
+                parseResult = ::sampleParseResult,
+            )
+
+            viewModel.events.test {
+                viewModel.submitShareIntent(intent)
+                advanceUntilIdle()
+
+                assertEquals(ShareIntakeEvent.OnboardingRequired, awaitItem())
+                assertNull(viewModel.pendingShareIntake.value)
+                expectNoEvents()
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
     fun `logged in start emits launch event once`() = runTest(testDispatcher) {
-        coEvery { sessionTokenStore.getRefreshToken() } returns "refresh-token"
         val viewModel = createViewModel(
             fingerprint = "share-fingerprint",
             parseResult = ::sampleParseResult,
@@ -152,8 +184,54 @@ class ShareIntakeViewModelTest {
     }
 
     @Test
+    fun `logged out completion emits login required without launch`() = runTest(testDispatcher) {
+        val intent = mockk<Intent>()
+        val viewModel = createViewModel(
+            fingerprint = "share-fingerprint",
+            parseResult = ::sampleParseResult,
+        )
+
+        viewModel.submitShareIntent(intent)
+        advanceUntilIdle()
+        coEvery { sessionTokenStore.getRefreshToken() } returns null
+
+        viewModel.events.test {
+            viewModel.requestStartOrganize(sampleParseResult().accepted)
+            advanceUntilIdle()
+
+            assertEquals(ShareIntakeEvent.LoginRequired, awaitItem())
+            assertNull(viewModel.pendingShareIntake.value)
+            expectNoEvents()
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `incomplete onboarding completion emits onboarding required without launch`() =
+        runTest(testDispatcher) {
+            val intent = mockk<Intent>()
+            val viewModel = createViewModel(
+                fingerprint = "share-fingerprint",
+                parseResult = ::sampleParseResult,
+            )
+
+            viewModel.submitShareIntent(intent)
+            advanceUntilIdle()
+            every { userPreferencesRepository.onboardingCompleted } returns flowOf(false)
+
+            viewModel.events.test {
+                viewModel.requestStartOrganize(sampleParseResult().accepted)
+                advanceUntilIdle()
+
+                assertEquals(ShareIntakeEvent.OnboardingRequired, awaitItem())
+                assertNull(viewModel.pendingShareIntake.value)
+                expectNoEvents()
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
     fun `launch event remains available after collector reconnect`() = runTest(testDispatcher) {
-        coEvery { sessionTokenStore.getRefreshToken() } returns "refresh-token"
         val viewModel = createViewModel(
             fingerprint = "share-fingerprint",
             parseResult = ::sampleParseResult,
@@ -171,27 +249,22 @@ class ShareIntakeViewModelTest {
     }
 
     @Test
-    fun `login required still allows retry after collector reconnect`() = runTest(testDispatcher) {
+    fun `onboarding sample share emits return event without confirmation`() = runTest(testDispatcher) {
         coEvery { sessionTokenStore.getRefreshToken() } returns null
+        every { userPreferencesRepository.onboardingCompleted } returns flowOf(false)
+        val intent = mockk<Intent>()
         val viewModel = createViewModel(
-            fingerprint = "share-fingerprint",
-            parseResult = ::sampleParseResult,
+            fingerprint = "onboarding-sample-fingerprint",
+            parseResult = ::onboardingSampleParseResult,
         )
-        val images = sampleParseResult().accepted
-
-        viewModel.requestStartOrganize(images)
-        advanceUntilIdle()
 
         viewModel.events.test {
-            assertEquals(ShareIntakeEvent.LoginRequired, awaitItem())
-            cancelAndIgnoreRemainingEvents()
-        }
+            viewModel.submitShareIntent(intent)
+            advanceUntilIdle()
 
-        viewModel.requestStartOrganize(images)
-        advanceUntilIdle()
-
-        viewModel.events.test {
-            assertEquals(ShareIntakeEvent.LoginRequired, awaitItem())
+            assertEquals(ShareIntakeEvent.ReturnAfterOnboardingSampleShare, awaitItem())
+            assertNull(viewModel.pendingShareIntake.value)
+            expectNoEvents()
             cancelAndIgnoreRemainingEvents()
         }
     }
@@ -203,6 +276,7 @@ class ShareIntakeViewModelTest {
         return ShareIntakeViewModel(
             savedStateHandle = SavedStateHandle(),
             sessionTokenStore = sessionTokenStore,
+            userPreferencesRepository = userPreferencesRepository,
             sharedAnalysisRequestStore = sharedAnalysisRequestStore,
             context = context,
         ).apply {
@@ -219,6 +293,19 @@ class ShareIntakeViewModelTest {
                 LocalImage(
                     uri = "content://share/image.jpg",
                     displayName = "image.jpg",
+                    dateAddedMillis = 1L,
+                ),
+            ),
+            rejectedCount = 0,
+        )
+    }
+
+    private fun onboardingSampleParseResult(): ShareImageParseResult {
+        return ShareImageParseResult(
+            accepted = listOf(
+                LocalImage(
+                    uri = "content://com.chalkak.recap.fileprovider/onboarding_share/onboarding_add_to_favorite_share.png",
+                    displayName = "onboarding_add_to_favorite_share.png",
                     dateAddedMillis = 1L,
                 ),
             ),

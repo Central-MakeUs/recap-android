@@ -445,7 +445,9 @@
     <string name="share_unsupported_description">스크린샷이나 사진처럼\n이미지 파일만 정리할 수 있어요</string>
     <string name="share_unsupported_close">닫기</string>
     <string name="share_unsupported_icon_content_description">지원하지 않는 파일</string>
-    <string name="share_login_required">로그인을 해주세요.</string>
+    <string name="share_login_required">사용하기에 앞서 먼저 로그인해 주세요.</string>
+    <string name="share_onboarding_required">사용하기 앞서 초기 설정을 진행해 주세요.</string>
+    <string name="share_onboarding_sample_success">공유 성공! 이렇게 스크린샷을 보낼 수 있어요.</string>
     <string name="organize_remove_selection_content_description">선택 해제</string>
     <string name="organize_screenshot_item_content_description">스크린샷 %1$d</string>
     <string name="organize_selected_screenshot_item_content_description">선택된 스크린샷 %1$d</string>

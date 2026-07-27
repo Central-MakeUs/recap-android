@@ -16,6 +16,7 @@ import com.chalkak.recap.app.RecapToastViewModel
 import com.chalkak.recap.app.share.ShareIntakeEvent
 import com.chalkak.recap.app.share.ShareIntakeViewModel
 import com.chalkak.recap.app.share.ShareReceiverRoute
+import com.chalkak.recap.app.share.OnboardingSampleShareIntentContract
 import com.chalkak.recap.app.share.SharedAnalysisIntentContract
 import com.chalkak.recap.core.design.R
 import dagger.hilt.android.AndroidEntryPoint
@@ -69,6 +70,25 @@ class ShareReceiverActivity : ComponentActivity() {
                                 getString(R.string.share_login_required),
                                 Toast.LENGTH_SHORT,
                             ).show()
+                            startMainActivityAndFinish()
+                        }
+
+                        ShareIntakeEvent.OnboardingRequired -> {
+                            Toast.makeText(
+                                this@ShareReceiverActivity,
+                                getString(R.string.share_onboarding_required),
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                            startMainActivityAndFinish()
+                        }
+
+                        ShareIntakeEvent.ReturnAfterOnboardingSampleShare -> {
+                            startActivity(
+                                OnboardingSampleShareIntentContract.createIntent(
+                                    this@ShareReceiverActivity,
+                                ),
+                            )
+                            finish()
                         }
 
                         is ShareIntakeEvent.LaunchMainAnalysis -> {
@@ -85,5 +105,14 @@ class ShareReceiverActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun startMainActivityAndFinish() {
+        startActivity(
+            Intent(this, MainActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            },
+        )
+        finish()
     }
 }

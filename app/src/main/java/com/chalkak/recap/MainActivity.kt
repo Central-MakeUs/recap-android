@@ -16,6 +16,11 @@ import com.chalkak.recap.app.RecapApp
 import com.chalkak.recap.app.RecapStartupViewModel
 import com.chalkak.recap.app.RecapToastViewModel
 import com.chalkak.recap.app.ScreenshotAnalysisProgressViewModel
+import com.chalkak.recap.app.resolveEffectiveToastDurationMillis
+import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.toast.RecapToastDuration
+import com.chalkak.recap.core.design.component.toast.RecapToastRequest
+import com.chalkak.recap.core.design.component.toast.RecapToastType
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -39,6 +44,7 @@ class MainActivity : ComponentActivity() {
             ),
         )
         consumeSharedAnalysisIntent(intent)
+        consumeOnboardingSampleShareIntent(intent)
         setContent {
             val pendingHomeNavigationRequestId by
                 entryViewModel.pendingHomeNavigationRequestId.collectAsStateWithLifecycle()
@@ -57,10 +63,27 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         consumeSharedAnalysisIntent(intent)
+        consumeOnboardingSampleShareIntent(intent)
     }
 
     private fun consumeSharedAnalysisIntent(intent: Intent) {
         val images = entryViewModel.consumeSharedAnalysisIntent(intent) ?: return
         analysisProgressViewModel.startAnalysis(images)
+    }
+
+    private fun consumeOnboardingSampleShareIntent(intent: Intent) {
+        if (!entryViewModel.consumeOnboardingSampleShareSuccess(intent)) {
+            return
+        }
+        toastViewModel.enqueue(
+            RecapToastRequest(
+                message = getString(R.string.share_onboarding_sample_success),
+                type = RecapToastType.Success,
+                durationMillis = resolveEffectiveToastDurationMillis(
+                    context = this,
+                    duration = RecapToastDuration.Short,
+                ),
+            ),
+        )
     }
 }
