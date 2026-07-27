@@ -72,11 +72,12 @@ import kotlinx.coroutines.flow.emptyFlow
 
 private const val LandingBackgroundIconAlpha = 0.45f
 private val LandingHeadlineTopPadding = 120.dp
-private val LandingBubbleLoginGap = 17.dp
+private val LandingBubbleKakaoGap = 90.dp
 private val LandingBottomPadding = 30.dp
 private val LandingLoginLegalGap = 28.dp
 private val LandingLegalNoticeEstimatedHeight = 40.dp
-private val LandingSocialSectionEstimatedHeight = 125.dp
+private val LandingKakaoButtonSize = 67.dp
+private val LandingKakaoButtonTopPadding = 58.dp
 
 @Composable
 fun OnboardingLandingScreen(
@@ -86,7 +87,7 @@ fun OnboardingLandingScreen(
     illustrationSignalFlow: Flow<OnboardingIllustrationSignal> = emptyFlow(),
 ) {
     var rootTopY by remember { mutableFloatStateOf(0f) }
-    var loginLabelTopY by remember { mutableFloatStateOf(0f) }
+    var kakaoButtonTopY by remember { mutableFloatStateOf(0f) }
     var bubbleHeight by remember { mutableFloatStateOf(0f) }
 
     BoxWithConstraints(
@@ -99,25 +100,25 @@ fun OnboardingLandingScreen(
     ) {
         val density = LocalDensity.current
         val contentWidth = minOf(maxWidth, 375.dp)
-        val bubbleLoginGapPx = with(density) { LandingBubbleLoginGap.toPx() }
-        val fallbackLoginLabelTopY = with(density) {
+        val bubbleKakaoGapPx = with(density) { LandingBubbleKakaoGap.toPx() }
+        val fallbackKakaoButtonTopY = with(density) {
             rootTopY + (
                     maxHeight -
                             LandingBottomPadding -
                             LandingLegalNoticeEstimatedHeight -
                             LandingLoginLegalGap -
-                            LandingSocialSectionEstimatedHeight
+                            LandingKakaoButtonSize
                     ).toPx()
         }
-        val resolvedLoginLabelTopY =
-            if (loginLabelTopY > 0f) loginLabelTopY else fallbackLoginLabelTopY
+        val resolvedKakaoButtonTopY =
+            if (kakaoButtonTopY > 0f) kakaoButtonTopY else fallbackKakaoButtonTopY
         val resolvedBubbleHeight = if (bubbleHeight > 0f) {
             bubbleHeight
         } else {
             with(density) { 48.dp.toPx() }
         }
         val bubbleTopY =
-            resolvedLoginLabelTopY - bubbleLoginGapPx - resolvedBubbleHeight - rootTopY
+            resolvedKakaoButtonTopY - bubbleKakaoGapPx - resolvedBubbleHeight - rootTopY
 
         LandingBackgroundIcons(
             screenHeight = maxHeight,
@@ -144,8 +145,8 @@ fun OnboardingLandingScreen(
             SocialLoginSection(
                 onKakaoClick = { onAction(OnboardingAction.LoginWithKakao) },
                 isLoading = isLoading,
-                onLoginLabelPositioned = { topInRoot ->
-                    loginLabelTopY = topInRoot
+                onKakaoButtonPositioned = { topInRoot ->
+                    kakaoButtonTopY = topInRoot
                 },
             )
             Spacer(modifier = Modifier.height(LandingLoginLegalGap))
@@ -158,7 +159,6 @@ fun OnboardingLandingScreen(
         RecapSpeechBubble(
             text = stringResource(R.string.onboarding_landing_start_chip),
             arrowDirection = RecapSpeechBubbleArrowDirection.Down,
-            animationDurationMillis = 0,
             modifier = Modifier
                 .align(Alignment.TopCenter)
                 .onGloballyPositioned { coordinates ->
@@ -262,7 +262,7 @@ private fun BrandHeadline(
 private fun SocialLoginSection(
     onKakaoClick: () -> Unit,
     isLoading: Boolean,
-    onLoginLabelPositioned: (topInRoot: Float) -> Unit,
+    onKakaoButtonPositioned: (topInRoot: Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -273,11 +273,7 @@ private fun SocialLoginSection(
             contentAlignment = Alignment.TopCenter,
         ) {
             Row(
-                modifier = Modifier
-                    .padding(top = 10.dp)
-                    .onGloballyPositioned { coordinates ->
-                        onLoginLabelPositioned(coordinates.positionInRoot().y)
-                    },
+                modifier = Modifier.padding(top = 10.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -294,7 +290,11 @@ private fun SocialLoginSection(
                 enabled = !isLoading,
                 containerColor = RecapKakaoYellow,
                 contentDescription = stringResource(R.string.onboarding_kakao_login_content_description),
-                modifier = Modifier.padding(top = 58.dp),
+                modifier = Modifier
+                    .padding(top = LandingKakaoButtonTopPadding)
+                    .onGloballyPositioned { coordinates ->
+                        onKakaoButtonPositioned(coordinates.positionInRoot().y)
+                    },
             ) {
                 if (isLoading) {
                     CircularProgressIndicator(
@@ -384,7 +384,7 @@ private fun SocialLoginButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier
-            .size(67.dp)
+            .size(LandingKakaoButtonSize)
             .semantics { this.contentDescription = contentDescription },
         shape = CircleShape,
         color = containerColor,
