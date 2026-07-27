@@ -11,6 +11,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.tooling.preview.Preview
 import com.airbnb.lottie.compose.LottieAnimation
@@ -19,7 +20,6 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.chalkak.recap.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.core.design.theme.White
 
 @Composable
 fun RecapLottieSplashScreen(
@@ -35,6 +35,7 @@ fun RecapLottieSplashScreen(
         isPlaying = !skipAnimation && composition != null,
     )
     var completionReported by remember { mutableStateOf(false) }
+    val splashBackground = colorResource(R.color.splash_background)
 
     LaunchedEffect(compositionResult.isFailure) {
         if (compositionResult.isFailure && !completionReported) {
@@ -56,7 +57,7 @@ fun RecapLottieSplashScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .drawBehind { drawRect(White) }
+            .drawBehind { drawRect(splashBackground) }
             .clearAndSetSemantics { },
     ) {
         if (composition != null) {
