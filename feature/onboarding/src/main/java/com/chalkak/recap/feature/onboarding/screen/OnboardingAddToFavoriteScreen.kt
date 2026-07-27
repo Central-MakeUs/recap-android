@@ -26,7 +26,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
@@ -47,7 +46,7 @@ import com.chalkak.recap.feature.onboarding.component.OnboardingBottomActions
 import com.chalkak.recap.feature.onboarding.component.StepHeader
 
 private val AddToFavoriteIllustrationSize = 238.dp
-private val AddToFavoriteSpeechBubbleOffsetY = 22.dp
+private val AddToFavoriteSpeechBubbleOffsetY = 4.dp
 private val AddToFavoriteGuideLinkTopPadding = 16.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -118,7 +117,6 @@ fun OnboardingAddToFavoriteScreen(
                         },
                     style = RecapBody1,
                     color = RecapGray700,
-                    fontWeight = FontWeight.Bold,
                     textDecoration = TextDecoration.Underline,
                 )
             }
