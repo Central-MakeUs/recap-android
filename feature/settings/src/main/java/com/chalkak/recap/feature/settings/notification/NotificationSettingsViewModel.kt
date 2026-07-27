@@ -29,7 +29,7 @@ class NotificationSettingsViewModel @Inject constructor(
     fun onAction(action: NotificationSettingsAction) {
         when (action) {
             NotificationSettingsAction.NavigateBack,
-            NotificationSettingsAction.OpenDeviceNotificationSettings,
+            NotificationSettingsAction.RequestDeviceNotificationPermission,
             -> Unit
 
             is NotificationSettingsAction.OrganizeCompleteEnabledChanged -> {

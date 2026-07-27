@@ -33,8 +33,8 @@ fun NotificationSettingsScreen(
     onAction: (NotificationSettingsAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val switchEnabled = uiState.deviceNotificationsEnabled
-    val switchChecked = switchEnabled && uiState.organizeCompleteEnabled
+    val switchChecked =
+        uiState.deviceNotificationsEnabled && uiState.organizeCompleteEnabled
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -63,7 +63,9 @@ fun NotificationSettingsScreen(
                         message = stringResource(R.string.settings_notification_device_off_message),
                         actionLabel = stringResource(R.string.settings_notification_device_off_action),
                         onActionClick = {
-                            onAction(NotificationSettingsAction.OpenDeviceNotificationSettings)
+                            onAction(
+                                NotificationSettingsAction.RequestDeviceNotificationPermission
+                            )
                         },
                         iconContentDescription = stringResource(
                             R.string.notification_disabled_icon_content_description,
@@ -72,7 +74,6 @@ fun NotificationSettingsScreen(
                 }
                 OrganizeNotificationToggleRow(
                     checked = switchChecked,
-                    enabled = switchEnabled,
                     onCheckedChange = {
                         onAction(NotificationSettingsAction.OrganizeCompleteEnabledChanged(it))
                     },
@@ -85,7 +86,6 @@ fun NotificationSettingsScreen(
 @Composable
 private fun OrganizeNotificationToggleRow(
     checked: Boolean,
-    enabled: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -114,7 +114,6 @@ private fun OrganizeNotificationToggleRow(
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
-            enabled = enabled,
         )
     }
 }
