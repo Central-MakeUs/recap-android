@@ -31,6 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -53,6 +54,7 @@ import com.chalkak.recap.core.design.component.RecapLogoAspectRatio
 import com.chalkak.recap.core.design.component.speechbubble.RecapSpeechBubble
 import com.chalkak.recap.core.design.component.speechbubble.RecapSpeechBubbleArrowDirection
 import com.chalkak.recap.core.design.theme.Black
+import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
@@ -184,6 +186,7 @@ private fun LandingBackgroundIcons(
             painter = painterResource(R.drawable.onboarding_background_1),
             contentDescription = null,
             contentScale = ContentScale.Fit,
+            colorFilter = ColorFilter.tint(RecapBlue50),
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .offset(x = 20.dp, y = screenHeight * 0.10f)
@@ -195,6 +198,7 @@ private fun LandingBackgroundIcons(
             painter = painterResource(R.drawable.onboarding_background_2),
             contentDescription = null,
             contentScale = ContentScale.Fit,
+            colorFilter = ColorFilter.tint(RecapBlue50),
             modifier = Modifier
                 .align(Alignment.TopStart)
                 .offset(x = (-50).dp, y = screenHeight * 0.34f)
@@ -206,6 +210,7 @@ private fun LandingBackgroundIcons(
             painter = painterResource(R.drawable.onboarding_background_3),
             contentDescription = null,
             contentScale = ContentScale.Fit,
+            colorFilter = ColorFilter.tint(RecapBlue50),
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .offset(x = 30.dp, y = screenHeight * 0.52f)
@@ -219,6 +224,7 @@ private fun LandingBackgroundIcons(
             painter = painterResource(R.drawable.onboarding_background_4),
             contentDescription = null,
             contentScale = ContentScale.Fit,
+            colorFilter = ColorFilter.tint(RecapBlue50),
             modifier = Modifier
                 .align(Alignment.BottomStart)
                 .offset(x = 10.dp, y = (-screenHeight * 0.14f))
