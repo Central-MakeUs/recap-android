@@ -59,9 +59,13 @@ class RemoteCaptureMutationRepository @Inject constructor(
         }
         return try {
             val deleteResult = runRemoteCatchingSuspend {
-                captureApi.bulkDelete(
-                    BulkDeleteRequestDto(captureIds = captureIds.toList()),
-                )
+                if (captureIds.size == 1) {
+                    captureApi.delete(captureIds.first())
+                } else {
+                    captureApi.bulkDelete(
+                        BulkDeleteRequestDto(captureIds = captureIds.toList()),
+                    )
+                }
             }
             if (deleteResult.isSuccess) {
                 thumbnailCache.deleteCachedThumbnails(captureIds)
