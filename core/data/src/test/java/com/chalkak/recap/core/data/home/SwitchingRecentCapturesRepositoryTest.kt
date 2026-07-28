@@ -2,13 +2,11 @@ package com.chalkak.recap.core.data.home
 
 import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendMode
 import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendModeStore
+import com.chalkak.recap.core.model.capture.CapturePage
 import com.chalkak.recap.core.model.capture.CaptureSummary
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
-import io.mockk.every
+import io.mockk.coEvery
 import io.mockk.mockk
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -17,14 +15,15 @@ class SwitchingRecentCapturesRepositoryTest {
     @Test
     fun `remote mode uses remote recent captures`() = runTest {
         val modeStore = mockk<ScreenshotBackendModeStore>()
-        every { modeStore.mode } returns MutableStateFlow(ScreenshotBackendMode.REMOTE)
+        coEvery { modeStore.currentMode() } returns ScreenshotBackendMode.REMOTE
         val mock = mockk<MockRecentCapturesRepository>()
-        every { mock.observeRecentCaptures() } returns flowOf(
-            listOf(summary(captureId = 99L)),
+        val remotePage = CapturePage(
+            count = 1,
+            hasNext = false,
+            items = listOf(summary(captureId = 1L)),
         )
-        val remoteItems = listOf(summary(captureId = 1L))
         val remote = mockk<RemoteRecentCapturesRepository>()
-        every { remote.observeRecentCaptures() } returns flowOf(remoteItems)
+        coEvery { remote.getRecentCaptures(page = 0, size = 20) } returns Result.success(remotePage)
 
         val repository = SwitchingRecentCapturesRepository(
             screenshotBackendModeStore = modeStore,
@@ -32,16 +31,20 @@ class SwitchingRecentCapturesRepositoryTest {
             remoteRecentCapturesRepository = remote,
         )
 
-        assertEquals(remoteItems, repository.observeRecentCaptures().first())
+        assertEquals(remotePage, repository.getRecentCaptures(page = 0, size = 20).getOrThrow())
     }
 
     @Test
     fun `mock mode uses mock recent captures`() = runTest {
         val modeStore = mockk<ScreenshotBackendModeStore>()
-        every { modeStore.mode } returns MutableStateFlow(ScreenshotBackendMode.MOCK)
-        val localItems = listOf(summary(captureId = 1L))
+        coEvery { modeStore.currentMode() } returns ScreenshotBackendMode.MOCK
+        val mockPage = CapturePage(
+            count = 1,
+            hasNext = false,
+            items = listOf(summary(captureId = 1L)),
+        )
         val mock = mockk<MockRecentCapturesRepository>()
-        every { mock.observeRecentCaptures() } returns flowOf(localItems)
+        coEvery { mock.getRecentCaptures(page = 0, size = 20) } returns Result.success(mockPage)
         val remote = mockk<RemoteRecentCapturesRepository>()
 
         val repository = SwitchingRecentCapturesRepository(
@@ -50,7 +53,7 @@ class SwitchingRecentCapturesRepositoryTest {
             remoteRecentCapturesRepository = remote,
         )
 
-        assertEquals(localItems, repository.observeRecentCaptures().first())
+        assertEquals(mockPage, repository.getRecentCaptures(page = 0, size = 20).getOrThrow())
     }
 
     private fun summary(captureId: Long) =

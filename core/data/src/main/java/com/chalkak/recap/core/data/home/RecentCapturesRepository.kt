@@ -1,8 +1,10 @@
 package com.chalkak.recap.core.data.home
 
-import com.chalkak.recap.core.model.capture.CaptureSummary
-import kotlinx.coroutines.flow.Flow
+import com.chalkak.recap.core.model.capture.CapturePage
 
 interface RecentCapturesRepository {
-    fun observeRecentCaptures(): Flow<List<CaptureSummary>>
+    suspend fun getRecentCaptures(
+        page: Int = 0,
+        size: Int = 20,
+    ): Result<CapturePage>
 }

@@ -2,21 +2,21 @@ package com.chalkak.recap.feature.home.recent
 
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.home.RecentCapturesRepository
+import com.chalkak.recap.core.model.capture.CapturePage
 import com.chalkak.recap.core.model.capture.CaptureSummary
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -27,17 +27,10 @@ class RecentOrganizedScreenshotsViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val recentCapturesRepository = mockk<RecentCapturesRepository>()
     private val captureMutationRepository = mockk<CaptureMutationRepository>()
-    private val capturesFlow = MutableSharedFlow<List<CaptureSummary>>(replay = 1)
-    private lateinit var viewModel: RecentOrganizedScreenshotsViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        every { recentCapturesRepository.observeRecentCaptures() } returns capturesFlow
-        viewModel = RecentOrganizedScreenshotsViewModel(
-            recentCapturesRepository = recentCapturesRepository,
-            captureMutationRepository = captureMutationRepository,
-        )
     }
 
     @After
@@ -46,12 +39,121 @@ class RecentOrganizedScreenshotsViewModelTest {
     }
 
     @Test
+    fun `init loads first page`() = runTest(testDispatcher) {
+        coEvery {
+            recentCapturesRepository.getRecentCaptures(page = 0)
+        } returns Result.success(
+            CapturePage(
+                count = 2,
+                hasNext = true,
+                items = listOf(
+                    captureSummary(captureId = 1L, isFavorite = false),
+                    captureSummary(captureId = 2L, isFavorite = false),
+                ),
+            ),
+        )
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(RecentOrganizedScreenshotsPhase.Content, state.phase)
+        assertEquals(listOf(1L, 2L), state.items.map { it.id })
+        assertEquals(2L, state.resultCount)
+        assertTrue(state.hasNext)
+        assertEquals(1, state.nextPage)
+        assertFalse(state.isLoadingMore)
+    }
+
+    @Test
+    fun `load more appends next page items`() = runTest(testDispatcher) {
+        coEvery {
+            recentCapturesRepository.getRecentCaptures(page = 0)
+        } returns Result.success(
+            CapturePage(
+                count = 3,
+                hasNext = true,
+                items = listOf(
+                    captureSummary(captureId = 1L, isFavorite = false),
+                    captureSummary(captureId = 2L, isFavorite = false),
+                ),
+            ),
+        )
+        coEvery {
+            recentCapturesRepository.getRecentCaptures(page = 1)
+        } returns Result.success(
+            CapturePage(
+                count = 3,
+                hasNext = false,
+                items = listOf(captureSummary(captureId = 3L, isFavorite = false)),
+            ),
+        )
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onAction(RecentOrganizedScreenshotsAction.LoadMore)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(listOf(1L, 2L, 3L), state.items.map { it.id })
+        assertEquals(3L, state.resultCount)
+        assertFalse(state.hasNext)
+        assertEquals(2, state.nextPage)
+        assertFalse(state.isLoadingMore)
+    }
+
+    @Test
+    fun `load more is ignored when hasNext is false`() = runTest(testDispatcher) {
+        coEvery {
+            recentCapturesRepository.getRecentCaptures(page = 0)
+        } returns Result.success(
+            CapturePage(
+                count = 1,
+                hasNext = false,
+                items = listOf(captureSummary(captureId = 1L, isFavorite = false)),
+            ),
+        )
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onAction(RecentOrganizedScreenshotsAction.LoadMore)
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) {
+            recentCapturesRepository.getRecentCaptures(page = 1)
+        }
+    }
+
+    @Test
+    fun `init failure sets error phase`() = runTest(testDispatcher) {
+        coEvery {
+            recentCapturesRepository.getRecentCaptures(page = 0)
+        } returns Result.failure(IllegalStateException("offline"))
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertEquals(RecentOrganizedScreenshotsPhase.Error, viewModel.uiState.value.phase)
+    }
+
+    @Test
     fun `toggle favorite updates local state immediately and calls mutation`() = runTest(testDispatcher) {
+        coEvery {
+            recentCapturesRepository.getRecentCaptures(page = 0)
+        } returns Result.success(
+            CapturePage(
+                count = 1,
+                hasNext = false,
+                items = listOf(captureSummary(captureId = 7L, isFavorite = false)),
+            ),
+        )
         coEvery {
             captureMutationRepository.updateFavorite(captureId = 7L, isFavorite = true)
         } returns Result.success(Unit)
 
-        capturesFlow.emit(listOf(captureSummary(captureId = 7L, isFavorite = false)))
+        val viewModel = createViewModel()
         advanceUntilIdle()
 
         viewModel.onAction(RecentOrganizedScreenshotsAction.ToggleFavorite(7L))
@@ -69,10 +171,19 @@ class RecentOrganizedScreenshotsViewModelTest {
     @Test
     fun `toggle favorite failure rolls back local state`() = runTest(testDispatcher) {
         coEvery {
+            recentCapturesRepository.getRecentCaptures(page = 0)
+        } returns Result.success(
+            CapturePage(
+                count = 1,
+                hasNext = false,
+                items = listOf(captureSummary(captureId = 7L, isFavorite = false)),
+            ),
+        )
+        coEvery {
             captureMutationRepository.updateFavorite(captureId = 7L, isFavorite = true)
         } returns Result.failure(IllegalStateException("network"))
 
-        capturesFlow.emit(listOf(captureSummary(captureId = 7L, isFavorite = false)))
+        val viewModel = createViewModel()
         advanceUntilIdle()
 
         viewModel.onAction(RecentOrganizedScreenshotsAction.ToggleFavorite(7L))
@@ -82,6 +193,12 @@ class RecentOrganizedScreenshotsViewModelTest {
 
         assertFalse(viewModel.uiState.value.items.single().isFavorite)
     }
+
+    private fun createViewModel(): RecentOrganizedScreenshotsViewModel =
+        RecentOrganizedScreenshotsViewModel(
+            recentCapturesRepository = recentCapturesRepository,
+            captureMutationRepository = captureMutationRepository,
+        )
 
     private fun captureSummary(
         captureId: Long,

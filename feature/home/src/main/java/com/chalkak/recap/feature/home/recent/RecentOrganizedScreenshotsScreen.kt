@@ -2,6 +2,7 @@ package com.chalkak.recap.feature.home.recent
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
@@ -17,11 +18,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -35,6 +40,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.button.RecapButton
@@ -44,12 +50,15 @@ import com.chalkak.recap.core.design.component.card.OrganizedRelativeTimeFormatt
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.topbar.RecentOrganizedScreenshotsTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.filter
 
 @Composable
 fun RecentOrganizedScreenshotsScreen(
@@ -60,15 +69,6 @@ fun RecentOrganizedScreenshotsScreen(
     val navigationBarBottomPadding = WindowInsets.navigationBars
         .asPaddingValues()
         .calculateBottomPadding()
-    val nowMillis = remember { System.currentTimeMillis() }
-    val visibleItems = remember(uiState.items, nowMillis) {
-        uiState.items.filter { item ->
-            OrganizedRelativeTimeFormatter.isVisible(
-                organizedAtMillis = item.organizedAtMillis,
-                nowMillis = nowMillis,
-            )
-        }
-    }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -80,68 +80,162 @@ fun RecentOrganizedScreenshotsScreen(
                 onBackClick = { onAction(RecentOrganizedScreenshotsAction.NavigateBack) },
                 onSearchClick = { onAction(RecentOrganizedScreenshotsAction.OpenSearch) },
             )
-            if (visibleItems.isNotEmpty()) {
-                Text(
-                    text = buildAnnotatedString {
-                        withStyle(SpanStyle(color = RecapGray700)) {
-                            append(visibleItems.size.toString())
-                        }
-                        append(" ")
-                        withStyle(SpanStyle(color = RecapGray500)) {
-                            append(
-                                pluralStringResource(
-                                    R.plurals.recap_haze_folder_card_recap_label,
-                                    visibleItems.size,
-                                ),
+            when (uiState.phase) {
+                RecentOrganizedScreenshotsPhase.Loading -> {
+                    RecentOrganizedScreenshotsLoadingContent()
+                }
+
+                RecentOrganizedScreenshotsPhase.Empty -> {
+                    RecentOrganizedScreenshotsEmptyContent(
+                        onImportClick = {
+                            onAction(RecentOrganizedScreenshotsAction.StartImport)
+                        },
+                    )
+                }
+
+                RecentOrganizedScreenshotsPhase.Error -> {
+                    RecentOrganizedScreenshotsErrorContent(
+                        onRetry = { onAction(RecentOrganizedScreenshotsAction.Retry) },
+                    )
+                }
+
+                RecentOrganizedScreenshotsPhase.Content -> {
+                    RecentOrganizedScreenshotsContent(
+                        uiState = uiState,
+                        navigationBarBottomPadding = navigationBarBottomPadding,
+                        onAction = onAction,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecentOrganizedScreenshotsContent(
+    uiState: RecentOrganizedScreenshotsUiState,
+    navigationBarBottomPadding: Dp,
+    onAction: (RecentOrganizedScreenshotsAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val nowMillis = remember { System.currentTimeMillis() }
+    val visibleItems = remember(uiState.items, nowMillis) {
+        uiState.items.filter { item ->
+            OrganizedRelativeTimeFormatter.isVisible(
+                organizedAtMillis = item.organizedAtMillis,
+                nowMillis = nowMillis,
+            )
+        }
+    }
+    val listState = rememberLazyListState()
+    val displayCount = uiState.resultCount.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+
+    LaunchedEffect(listState, visibleItems.size, uiState.hasNext, uiState.isLoadingMore) {
+        snapshotFlow {
+            val secondLastIndex = visibleItems.lastIndex - 1
+            secondLastIndex >= 0 &&
+                listState.layoutInfo.visibleItemsInfo.any { item -> item.index == secondLastIndex }
+        }
+            .distinctUntilChanged()
+            .filter { isSecondLastVisible -> isSecondLastVisible }
+            .collect {
+                if (uiState.hasNext && !uiState.isLoadingMore) {
+                    onAction(RecentOrganizedScreenshotsAction.LoadMore)
+                }
+            }
+    }
+
+    Column(modifier = modifier.fillMaxSize()) {
+        if (displayCount > 0) {
+            Text(
+                text = buildAnnotatedString {
+                    withStyle(SpanStyle(color = RecapGray700)) {
+                        append(displayCount.toString())
+                    }
+                    append(" ")
+                    withStyle(SpanStyle(color = RecapGray500)) {
+                        append(
+                            pluralStringResource(
+                                R.plurals.recap_haze_folder_card_recap_label,
+                                displayCount,
+                            ),
+                        )
+                    }
+                },
+                modifier = Modifier
+                    .padding(
+                        horizontal = RecentOrganizedScreenshotsTokens.HorizontalPadding,
+                        vertical = RecentOrganizedScreenshotsTokens.CountVerticalPadding,
+                    )
+                    .align(alignment = Alignment.End),
+                style = RecapCaption1,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (visibleItems.isEmpty()) {
+            RecentOrganizedScreenshotsEmptyContent(
+                onImportClick = {
+                    onAction(RecentOrganizedScreenshotsAction.StartImport)
+                },
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = listState,
+                contentPadding = PaddingValues(
+                    bottom = RecentOrganizedScreenshotsTokens.ListVerticalPadding +
+                        navigationBarBottomPadding,
+                ),
+            ) {
+                items(
+                    items = visibleItems,
+                    key = { item -> item.id },
+                ) { item ->
+                    ScreenshotCard(
+                        thumbnailModel = item.thumbnailModel,
+                        categoryType = item.categoryType,
+                        title = item.title,
+                        description = item.description,
+                        isFavorite = item.isFavorite,
+                        onClick = { onAction(RecentOrganizedScreenshotsAction.SelectItem(item.id)) },
+                        onFavoriteClick = {
+                            onAction(RecentOrganizedScreenshotsAction.ToggleFavorite(item.id))
+                        },
+                        horizontalContentPadding = RecentOrganizedScreenshotsTokens.HorizontalPadding,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                if (uiState.isLoadingMore) {
+                    item(key = "recent_loading_more") {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = RecapBlue500,
+                                strokeWidth = 2.dp,
                             )
                         }
-                    },
-                    modifier = Modifier
-                        .padding(
-                            horizontal = RecentOrganizedScreenshotsTokens.HorizontalPadding,
-                            vertical = RecentOrganizedScreenshotsTokens.CountVerticalPadding,
-                        )
-                        .align(alignment = Alignment.End),
-                    style = RecapCaption1,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (visibleItems.isEmpty()) {
-                RecentOrganizedScreenshotsEmptyContent(
-                    onImportClick = {
-                        onAction(RecentOrganizedScreenshotsAction.StartImport)
-                    },
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(
-                        bottom = RecentOrganizedScreenshotsTokens.ListVerticalPadding +
-                                navigationBarBottomPadding,
-                    ),
-                ) {
-                    items(
-                        items = visibleItems,
-                        key = { item -> item.id },
-                    ) { item ->
-                        ScreenshotCard(
-                            thumbnailModel = item.thumbnailModel,
-                            categoryType = item.categoryType,
-                            title = item.title,
-                            description = item.description,
-                            isFavorite = item.isFavorite,
-                            onClick = { onAction(RecentOrganizedScreenshotsAction.SelectItem(item.id)) },
-                            onFavoriteClick = {
-                                onAction(RecentOrganizedScreenshotsAction.ToggleFavorite(item.id))
-                            },
-                            horizontalContentPadding = RecentOrganizedScreenshotsTokens.HorizontalPadding,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RecentOrganizedScreenshotsLoadingContent(
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center,
+    ) {
+        CircularProgressIndicator(color = RecapBlue500)
     }
 }
 
@@ -195,6 +289,54 @@ private fun RecentOrganizedScreenshotsEmptyContent(
     }
 }
 
+@Composable
+private fun RecentOrganizedScreenshotsErrorContent(
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = RecentOrganizedScreenshotsTokens.HorizontalPadding),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.ic_error_circle_60),
+            contentDescription = stringResource(
+                R.string.home_recent_organized_screenshots_error_character_content_description,
+            ),
+            modifier = Modifier.size(RecentOrganizedScreenshotsTokens.ErrorIconSize),
+            contentScale = ContentScale.Fit,
+        )
+        Spacer(modifier = Modifier.height(RecentOrganizedScreenshotsTokens.EmptyCharacterSpacing))
+        Text(
+            text = stringResource(R.string.home_recent_organized_screenshots_error),
+            style = RecapHeading3,
+            color = RecapGray300,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(RecentOrganizedScreenshotsTokens.EmptyTitleSpacing))
+        Text(
+            text = stringResource(R.string.home_recent_organized_screenshots_error_description),
+            style = RecapBody2,
+            color = RecapGray300,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(RecentOrganizedScreenshotsTokens.ErrorDescriptionSpacing))
+        RecapButton(
+            text = stringResource(R.string.home_recent_organized_screenshots_retry),
+            onClick = onRetry,
+            size = RecapButtonSize.Large,
+            colors = RecapButtonDefaults.secondaryColors(),
+            contentPadding = PaddingValues(
+                horizontal = RecentOrganizedScreenshotsTokens.ErrorRetryHorizontalPadding,
+                vertical = RecentOrganizedScreenshotsTokens.ErrorRetryVerticalPadding,
+            ),
+        )
+    }
+}
+
 private object RecentOrganizedScreenshotsTokens {
     val HorizontalPadding = 16.dp
     val CountVerticalPadding = 8.dp
@@ -206,13 +348,17 @@ private object RecentOrganizedScreenshotsTokens {
     val EmptyTitleSpacing = 13.dp
     val EmptyDescriptionSpacing = 23.dp
     val EmptyImportButtonMinWidth = 200.dp
+    val ErrorIconSize = 60.dp
+    val ErrorDescriptionSpacing = 23.dp
+    val ErrorRetryHorizontalPadding = 52.dp
+    val ErrorRetryVerticalPadding = 12.5.dp
 }
 
 @Preview(
     name = "Recent Organized Screenshots",
     showBackground = true,
     widthDp = 360,
-    heightDp = 800
+    heightDp = 800,
 )
 @Composable
 private fun RecentOrganizedScreenshotsScreenPreview() {
@@ -228,13 +374,51 @@ private fun RecentOrganizedScreenshotsScreenPreview() {
     name = "Recent Organized Screenshots Empty",
     showBackground = true,
     widthDp = 360,
-    heightDp = 800
+    heightDp = 800,
 )
 @Composable
 private fun RecentOrganizedScreenshotsScreenEmptyPreview() {
     RECAPTheme(dynamicColor = false) {
         RecentOrganizedScreenshotsScreen(
-            uiState = RecentOrganizedScreenshotsUiState(),
+            uiState = RecentOrganizedScreenshotsUiState(
+                phase = RecentOrganizedScreenshotsPhase.Empty,
+            ),
+            onAction = {},
+        )
+    }
+}
+
+@Preview(
+    name = "Recent Organized Screenshots Loading",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 800,
+)
+@Composable
+private fun RecentOrganizedScreenshotsScreenLoadingPreview() {
+    RECAPTheme(dynamicColor = false) {
+        RecentOrganizedScreenshotsScreen(
+            uiState = RecentOrganizedScreenshotsUiState(
+                phase = RecentOrganizedScreenshotsPhase.Loading,
+            ),
+            onAction = {},
+        )
+    }
+}
+
+@Preview(
+    name = "Recent Organized Screenshots Error",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 800,
+)
+@Composable
+private fun RecentOrganizedScreenshotsScreenErrorPreview() {
+    RECAPTheme(dynamicColor = false) {
+        RecentOrganizedScreenshotsScreen(
+            uiState = RecentOrganizedScreenshotsUiState(
+                phase = RecentOrganizedScreenshotsPhase.Error,
+            ),
             onAction = {},
         )
     }
