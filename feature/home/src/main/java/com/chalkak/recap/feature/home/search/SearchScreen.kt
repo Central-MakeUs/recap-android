@@ -73,6 +73,7 @@ fun SearchScreen(
         Column(modifier = Modifier.fillMaxSize()) {
             SearchTopBar(
                 query = uiState.query,
+                autoFocus = uiState.autoFocus,
                 onQueryChange = { onAction(SearchAction.UpdateQuery(it)) },
                 onSearch = { onAction(SearchAction.SubmitSearch) },
                 onCloseClick = { onAction(SearchAction.NavigateBack) },
@@ -106,6 +107,7 @@ fun SearchScreen(
 @Composable
 private fun SearchTopBar(
     query: String,
+    autoFocus: Boolean,
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     onCloseClick: () -> Unit,
@@ -129,7 +131,7 @@ private fun SearchTopBar(
                 value = query,
                 onValueChange = onQueryChange,
                 onSearch = onSearch,
-                autoFocus = true,
+                autoFocus = autoFocus,
                 modifier = Modifier.weight(1f),
                 placeholder = stringResource(R.string.search_screen_placeholder),
             )

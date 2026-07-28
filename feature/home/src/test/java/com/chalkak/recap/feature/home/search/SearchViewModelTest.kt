@@ -385,4 +385,124 @@ class SearchViewModelTest {
         assertEquals(emptyList<String>(), viewModel.uiState.value.recentSearches)
         coVerify(exactly = 1) { recentSearchStore.clearAll() }
     }
+
+    @Test
+    fun `select result disables autoFocus and leave composition preserves session`() = runTest {
+        coEvery {
+            searchRepository.search(any(), any(), any(), any(), any())
+        } returns Result.success(
+            SearchPage(
+                count = 1L,
+                hasNext = false,
+                items = listOf(
+                    SearchResult(
+                        captureId = 7L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "숙소",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-19T00:00:00Z",
+                    ),
+                ),
+            ),
+        )
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        viewModel.onAction(SearchAction.SelectResult(7L))
+        viewModel.onAction(SearchAction.LeaveComposition)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.autoFocus)
+        assertEquals("숙소", state.query)
+        assertEquals("숙소", state.submittedQuery)
+        assertEquals(SearchContentPhase.Results, state.phase)
+        assertEquals(1, state.results.size)
+        assertEquals(7L, state.results.single().captureId)
+    }
+
+    @Test
+    fun `leave composition without detail navigation clears session and restores autoFocus`() = runTest {
+        coEvery {
+            searchRepository.search(any(), any(), any(), any(), any())
+        } returns Result.success(
+            SearchPage(
+                count = 1L,
+                hasNext = false,
+                items = listOf(
+                    SearchResult(
+                        captureId = 7L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "숙소",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-19T00:00:00Z",
+                    ),
+                ),
+            ),
+        )
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        viewModel.onAction(SearchAction.SelectResult(7L))
+        assertFalse(viewModel.uiState.value.autoFocus)
+
+        viewModel.onAction(SearchAction.LeaveComposition)
+        advanceUntilIdle()
+        // Second leave without SelectResult (e.g. back to Home) clears session.
+        viewModel.onAction(SearchAction.LeaveComposition)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.autoFocus)
+        assertEquals("", state.query)
+        assertEquals("", state.submittedQuery)
+        assertEquals(SearchContentPhase.Idle, state.phase)
+        assertTrue(state.results.isEmpty())
+    }
+
+    @Test
+    fun `navigate back clears session and restores autoFocus`() = runTest {
+        coEvery {
+            searchRepository.search(any(), any(), any(), any(), any())
+        } returns Result.success(
+            SearchPage(
+                count = 1L,
+                hasNext = false,
+                items = listOf(
+                    SearchResult(
+                        captureId = 7L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "숙소",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-19T00:00:00Z",
+                    ),
+                ),
+            ),
+        )
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        viewModel.onAction(SearchAction.SelectResult(7L))
+        viewModel.onAction(SearchAction.NavigateBack)
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state.autoFocus)
+        assertEquals("", state.query)
+        assertEquals("", state.submittedQuery)
+        assertEquals(SearchContentPhase.Idle, state.phase)
+        assertTrue(state.results.isEmpty())
+    }
 }

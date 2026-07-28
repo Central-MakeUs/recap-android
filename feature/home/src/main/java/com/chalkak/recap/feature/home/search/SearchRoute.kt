@@ -18,9 +18,8 @@ fun SearchRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     DisposableEffect(viewModel) {
-        viewModel.onAction(SearchAction.Reset)
         onDispose {
-            viewModel.onAction(SearchAction.Reset)
+            viewModel.onAction(SearchAction.LeaveComposition)
         }
     }
 
@@ -29,8 +28,14 @@ fun SearchRoute(
         uiState = uiState,
         onAction = { action ->
             when (action) {
-                SearchAction.NavigateBack -> onNavigateBack()
-                is SearchAction.SelectResult -> onNavigateToScreenshot(action.captureId)
+                SearchAction.NavigateBack -> {
+                    viewModel.onAction(action)
+                    onNavigateBack()
+                }
+                is SearchAction.SelectResult -> {
+                    viewModel.onAction(action)
+                    onNavigateToScreenshot(action.captureId)
+                }
                 else -> viewModel.onAction(action)
             }
         },

@@ -26,6 +26,7 @@ class SearchViewModel @Inject constructor(
 
     private var searchJob: Job? = null
     private var loadMoreJob: Job? = null
+    private var preserveSessionOnNextDispose = false
 
     init {
         viewModelScope.launch {
@@ -37,7 +38,11 @@ class SearchViewModel @Inject constructor(
 
     fun onAction(action: SearchAction) {
         when (action) {
-            SearchAction.Reset -> clearSearchSession()
+            SearchAction.Reset,
+            SearchAction.NavigateBack,
+            -> endSearchSession()
+
+            SearchAction.LeaveComposition -> leaveComposition()
 
             is SearchAction.UpdateQuery -> {
                 if (action.query.isEmpty()) {
@@ -72,10 +77,26 @@ class SearchViewModel @Inject constructor(
 
             is SearchAction.ToggleFavorite -> toggleFavorite(action.captureId)
 
-            SearchAction.NavigateBack,
-            is SearchAction.SelectResult,
-            -> Unit
+            is SearchAction.SelectResult -> prepareNavigateToDetail()
         }
+    }
+
+    private fun prepareNavigateToDetail() {
+        preserveSessionOnNextDispose = true
+        _uiState.update { state -> state.copy(autoFocus = false) }
+    }
+
+    private fun leaveComposition() {
+        if (preserveSessionOnNextDispose) {
+            preserveSessionOnNextDispose = false
+            return
+        }
+        endSearchSession()
+    }
+
+    private fun endSearchSession() {
+        clearSearchSession()
+        _uiState.update { state -> state.copy(autoFocus = true) }
     }
 
     private fun clearSearchSession() {
