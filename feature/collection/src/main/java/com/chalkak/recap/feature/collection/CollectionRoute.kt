@@ -54,9 +54,10 @@ fun CollectionRoute(
     }
     val backStack = rememberNavBackStack(initialDestination)
     val isAtRoot = backStack.size <= 1
+    val canPredictivePopWithinCollection =
+        !uiState.selection.isActive && !uiState.isDetailSearchVisible
     val canPredictivePopToHome = isAtRoot &&
-        !uiState.selection.isActive &&
-        !uiState.isDetailSearchVisible
+        canPredictivePopWithinCollection
     val navigationEventState = rememberNavigationEventState(
         currentInfo = NavigationEventInfo.None,
     )
@@ -203,6 +204,7 @@ fun CollectionRoute(
             backStack = backStack,
             onBack = ::handleBack,
             modifier = Modifier.fillMaxSize(),
+            predictivePopEnabled = canPredictivePopWithinCollection,
             transitionSpec = { RecapNavigationMotion.forward() },
             popTransitionSpec = { RecapNavigationMotion.pop() },
             entryProvider = { route ->
