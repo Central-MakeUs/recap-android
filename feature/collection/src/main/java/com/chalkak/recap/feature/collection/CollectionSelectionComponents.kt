@@ -184,7 +184,7 @@ internal fun CollectionSelectableCaptureItem(
     metadataMode: ScreenshotCardMetadataMode = ScreenshotCardMetadataMode.CategoryChip,
 ) {
     val isSelected = item.captureId in selection.selectedCaptureIds
-    val selectionContentDescription = stringResource(
+    val itemContentDescription = stringResource(
         R.string.collection_selection_item_content_description,
         item.title,
         item.summary,
@@ -212,15 +212,19 @@ internal fun CollectionSelectableCaptureItem(
                 onValueChange = { onSelectionToggle() },
             )
             .semantics {
-                contentDescription = selectionContentDescription
+                contentDescription = itemContentDescription
             }
     } else {
-        Modifier.clickable(
-            interactionSource = interactionSource,
-            indication = null,
-            role = Role.Button,
-            onClick = onOpenClick,
-        )
+        Modifier
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onOpenClick,
+            )
+            .semantics {
+                contentDescription = itemContentDescription
+            }
     }
 
     ScreenshotCard(
