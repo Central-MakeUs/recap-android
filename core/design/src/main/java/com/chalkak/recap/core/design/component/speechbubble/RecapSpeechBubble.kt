@@ -1,13 +1,5 @@
 package com.chalkak.recap.core.design.component.speechbubble
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -19,11 +11,6 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -38,15 +25,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
-import com.chalkak.recap.core.design.theme.RecapTypography
 import com.chalkak.recap.core.design.theme.White
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 
 
 enum class RecapSpeechBubbleArrowDirection {
@@ -62,15 +46,13 @@ data class RecapSpeechBubbleColors(
 )
 
 object RecapSpeechBubbleDefaults {
-    val HorizontalPadding = 20.dp
-    val VerticalPadding = 8.dp
+    val HorizontalPadding = 25.dp
+    val VerticalPadding = 10.dp
     val ArrowWidth = 14.dp
     val ArrowHeight = 8.dp
     val BorderWidth = 1.5.dp
-    val Elevation = 6.dp
-    val TextStyle: TextStyle = RecapTypography.RecapCaption1
-    const val ArrowAnimationDurationMillis = 360
-    const val TextChangeAnimationDurationMillis = 360
+    val Elevation = 1.dp
+    val TextStyle: TextStyle = RecapCaption1
 
     fun colors(
         container: Color = White,
@@ -90,41 +72,27 @@ fun RecapSpeechBubble(
     modifier: Modifier = Modifier,
     colors: RecapSpeechBubbleColors = RecapSpeechBubbleDefaults.colors(),
     textStyle: TextStyle = RecapSpeechBubbleDefaults.TextStyle,
-    animationDurationMillis: Int = RecapSpeechBubbleDefaults.TextChangeAnimationDurationMillis,
 ) {
-    val targetProgress = when (arrowDirection) {
-        RecapSpeechBubbleArrowDirection.Up -> 0f
-        RecapSpeechBubbleArrowDirection.Down -> 1f
-    }
-    val progress by animateFloatAsState(
-        targetValue = targetProgress,
-        animationSpec = tween(
-            durationMillis = animationDurationMillis,
-            easing = FastOutSlowInEasing,
-        ),
-        label = "recapSpeechBubbleArrowProgress",
-    )
-    val (upFactor, downFactor) = arrowFactors(progress)
     val density = LocalDensity.current
     val shape = with(density) {
-        val maxArrowHeightPx = RecapSpeechBubbleDefaults.ArrowHeight.toPx()
+        val arrowHeightPx = RecapSpeechBubbleDefaults.ArrowHeight.toPx()
         SpeechBubbleShape(
             arrowWidthPx = RecapSpeechBubbleDefaults.ArrowWidth.toPx(),
-            upArrowHeightPx = maxArrowHeightPx * upFactor,
-            downArrowHeightPx = maxArrowHeightPx * downFactor,
-            reservedArrowHeightPx = maxArrowHeightPx,
+            upArrowHeightPx = if (arrowDirection == RecapSpeechBubbleArrowDirection.Up) {
+                arrowHeightPx
+            } else {
+                0f
+            },
+            downArrowHeightPx = if (arrowDirection == RecapSpeechBubbleArrowDirection.Down) {
+                arrowHeightPx
+            } else {
+                0f
+            },
+            reservedArrowHeightPx = arrowHeightPx,
         )
     }
-    // 꼬리 방향 애니메이션과 무관하게 상·하 패딩을 동일하게 유지해 레이아웃 크기를 고정한다.
+    // 꼬리 방향과 무관하게 상·하 패딩을 동일하게 유지해 레이아웃 크기를 고정한다.
     val contentPadding = speechBubbleContentPadding()
-    val textChangeSpec = tween<Float>(
-        durationMillis = animationDurationMillis,
-        easing = FastOutSlowInEasing,
-    )
-    val textSizeChangeSpec = tween<IntSize>(
-        durationMillis = animationDurationMillis,
-        easing = FastOutSlowInEasing,
-    )
 
     Box(
         modifier = modifier
@@ -143,30 +111,13 @@ fun RecapSpeechBubble(
             .padding(contentPadding),
         contentAlignment = Alignment.Center,
     ) {
-        AnimatedContent(
-            targetState = text,
-            transitionSpec = {
-                fadeIn(animationSpec = textChangeSpec) togetherWith
-                    fadeOut(animationSpec = textChangeSpec) using
-                    SizeTransform(clip = false) { _, _ -> textSizeChangeSpec }
-            },
-            label = "recapSpeechBubbleText",
-        ) { targetText ->
-            Text(
-                text = targetText,
-                style = textStyle,
-                color = colors.content,
-                textAlign = TextAlign.Center,
-            )
-        }
+        Text(
+            text = text,
+            style = textStyle,
+            color = colors.content,
+            textAlign = TextAlign.Center,
+        )
     }
-}
-
-internal fun arrowFactors(progress: Float): Pair<Float, Float> {
-    val p = progress.coerceIn(0f, 1f)
-    val upFactor = (1f - 1.5f * p).coerceIn(0f, 1f)
-    val downFactor = (1.5f * p - 0.5f).coerceIn(0f, 1f)
-    return upFactor to downFactor
 }
 
 private fun speechBubbleContentPadding(): PaddingValues {
@@ -342,40 +293,5 @@ private fun RecapSpeechBubbleVariantsPreview() {
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFF4F5F8)
-@Composable
-private fun RecapSpeechBubbleArrowTogglePreview() {
-    RECAPTheme {
-        var direction by remember { mutableStateOf(RecapSpeechBubbleArrowDirection.Up) }
-        var text by remember { mutableStateOf(PreviewSpeechBubbleText) }
-        LaunchedEffect(Unit) {
-            while (true) {
-                delay(1_200.milliseconds)
-                direction = when (direction) {
-                    RecapSpeechBubbleArrowDirection.Up -> RecapSpeechBubbleArrowDirection.Down
-                    RecapSpeechBubbleArrowDirection.Down -> RecapSpeechBubbleArrowDirection.Up
-                }
-                text = if (text == PreviewSpeechBubbleText) {
-                    PreviewSpeechBubbleShortText
-                } else {
-                    PreviewSpeechBubbleText
-                }
-            }
-        }
-        Box(
-            modifier = Modifier.padding(24.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            RecapSpeechBubble(
-                text = text,
-                arrowDirection = direction,
-            )
-        }
-    }
-}
-
 private const val PreviewSpeechBubbleText =
-    "이제 앨범에서 헤맬 필요 없이,\n바로 찾을 수 있어요!"
-
-private const val PreviewSpeechBubbleShortText =
-    "카카오로 시작해 보세요"
+    "5초만에 시작하기"

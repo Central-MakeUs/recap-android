@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -53,6 +52,7 @@ import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapHazeFolderColor
 import com.chalkak.recap.core.design.theme.White
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.blurEffect
@@ -335,7 +335,7 @@ private fun RecapHazeFolderCardsAllPreview() {
                     )
                     Text(
                         text = stringResource(item.category.labelResId),
-                        style = MaterialTheme.typography.titleSmall,
+                        style = RecapHeading3,
                         color = RecapGray900,
                         textAlign = TextAlign.Center,
                     )

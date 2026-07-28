@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.model.LocalImage
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -20,12 +21,17 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 sealed interface ShareIntakeEvent {
     data object LoginRequired : ShareIntakeEvent
+
+    data object OnboardingRequired : ShareIntakeEvent
+
+    data object ReturnAfterOnboardingSampleShare : ShareIntakeEvent
 
     data class LaunchMainAnalysis(
         val requestId: String,
@@ -37,10 +43,12 @@ sealed interface ShareIntakeEvent {
 class ShareIntakeViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val sessionTokenStore: SessionTokenStore,
+    private val userPreferencesRepository: UserPreferencesRepository,
     private val sharedAnalysisRequestStore: SharedAnalysisRequestStore,
     @ApplicationContext context: Context,
 ) : ViewModel() {
     private val intentParser = ShareImageIntentParser(context.contentResolver)
+    private val packageName = context.packageName
     private val restoredPending = restorePendingShareIntake()
     private val _pendingShareIntake = MutableStateFlow(restoredPending)
     val pendingShareIntake: StateFlow<PendingShareIntake?> = _pendingShareIntake.asStateFlow()
@@ -94,16 +102,47 @@ class ShareIntakeViewModel @Inject constructor(
             } catch (_: RuntimeException) {
                 ShareImageParseResult(accepted = emptyList(), rejectedCount = 0)
             }
+            var keepLoadingForRedirect = false
             if (result != null) {
                 savedStateHandle[LAST_PROCESSED_SHARE_FINGERPRINT_KEY] = fingerprint
-                updatePendingShareIntake(
-                    result.toPendingShareIntake(sessionId = UUID.randomUUID().toString()),
-                )
+                if (OnboardingSampleShareDetector.isOnboardingSampleShare(
+                        images = result.accepted,
+                        packageName = packageName,
+                    )
+                ) {
+                    updatePendingShareIntake(null)
+                    eventChannel.send(ShareIntakeEvent.ReturnAfterOnboardingSampleShare)
+                    keepLoadingForRedirect = true
+                } else {
+                    when (val gate = resolveShareEntryGate()) {
+                        ShareEntryGate.LoginRequired -> {
+                            updatePendingShareIntake(null)
+                            eventChannel.send(ShareIntakeEvent.LoginRequired)
+                            keepLoadingForRedirect = true
+                        }
+
+                        ShareEntryGate.OnboardingRequired -> {
+                            updatePendingShareIntake(null)
+                            eventChannel.send(ShareIntakeEvent.OnboardingRequired)
+                            keepLoadingForRedirect = true
+                        }
+
+                        ShareEntryGate.Allowed -> {
+                            updatePendingShareIntake(
+                                result.toPendingShareIntake(
+                                    sessionId = UUID.randomUUID().toString(),
+                                ),
+                            )
+                        }
+                    }
+                }
             }
             if (inFlightFingerprint == fingerprint) {
                 inFlightFingerprint = null
             }
-            _isLoading.value = false
+            if (!keepLoadingForRedirect) {
+                _isLoading.value = false
+            }
         }
     }
 
@@ -123,18 +162,22 @@ class ShareIntakeViewModel @Inject constructor(
         }
         isSubmittingStart = true
         viewModelScope.launch {
-            val refreshToken = try {
-                sessionTokenStore.getRefreshToken()
-            } catch (cancellation: CancellationException) {
-                isSubmittingStart = false
-                throw cancellation
-            } catch (_: Exception) {
-                null
-            }
-            if (refreshToken.isNullOrBlank()) {
-                isSubmittingStart = false
-                eventChannel.send(ShareIntakeEvent.LoginRequired)
-                return@launch
+            when (resolveShareEntryGate()) {
+                ShareEntryGate.LoginRequired -> {
+                    updatePendingShareIntake(null)
+                    isSubmittingStart = false
+                    eventChannel.send(ShareIntakeEvent.LoginRequired)
+                    return@launch
+                }
+
+                ShareEntryGate.OnboardingRequired -> {
+                    updatePendingShareIntake(null)
+                    isSubmittingStart = false
+                    eventChannel.send(ShareIntakeEvent.OnboardingRequired)
+                    return@launch
+                }
+
+                ShareEntryGate.Allowed -> Unit
             }
             val requestId = UUID.randomUUID().toString()
             sharedAnalysisRequestStore.register(requestId = requestId, images = images)
@@ -153,6 +196,32 @@ class ShareIntakeViewModel @Inject constructor(
         }
     }
 
+    private suspend fun resolveShareEntryGate(): ShareEntryGate {
+        val refreshToken = try {
+            sessionTokenStore.getRefreshToken()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Exception) {
+            null
+        }
+        if (refreshToken.isNullOrBlank()) {
+            userPreferencesRepository.setOnboardingCompleted(false)
+            return ShareEntryGate.LoginRequired
+        }
+        val onboardingCompleted = try {
+            userPreferencesRepository.onboardingCompleted.first()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Exception) {
+            false
+        }
+        return if (onboardingCompleted) {
+            ShareEntryGate.Allowed
+        } else {
+            ShareEntryGate.OnboardingRequired
+        }
+    }
+
     private fun restorePendingShareIntake(): PendingShareIntake? {
         val encoded = savedStateHandle.get<String>(SHARE_INTAKE_SAVED_STATE_KEY) ?: return null
         return decodePendingShareIntakeFromSavedState(encoded)
@@ -166,6 +235,12 @@ class ShareIntakeViewModel @Inject constructor(
             savedStateHandle[SHARE_INTAKE_SAVED_STATE_KEY] = pending.encodeForSavedState()
         }
     }
+}
+
+private enum class ShareEntryGate {
+    Allowed,
+    LoginRequired,
+    OnboardingRequired,
 }
 
 private const val LAST_PROCESSED_SHARE_FINGERPRINT_KEY = "last_processed_share_fingerprint"

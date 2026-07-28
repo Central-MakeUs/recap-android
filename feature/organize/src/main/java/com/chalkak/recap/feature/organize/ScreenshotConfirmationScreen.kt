@@ -56,6 +56,8 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.model.LocalImage
 
 @Composable
@@ -77,9 +79,11 @@ fun ScreenshotConfirmationScreen(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .navigationBarsPadding()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+        ) {
             ScreenshotConfirmationTopBar(
                 selectionCount = uiState.selectionCount,
                 onBackClick = onBackClick,
@@ -176,14 +180,14 @@ private fun ScreenshotConfirmationTopBar(
             }
             Text(
                 text = stringResource(R.string.organize_confirm_title),
-                style = MaterialTheme.typography.titleSmall,
+                style = RecapHeading3,
                 fontWeight = FontWeight.Bold,
                 color = RecapGray900,
             )
             Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = stringResource(R.string.organize_confirm_count, selectionCount),
-                style = MaterialTheme.typography.bodyMedium,
+                style = RecapBody2,
                 color = RecapGray300,
                 modifier = Modifier.padding(end = 12.dp),
             )
@@ -259,7 +263,7 @@ private fun ScreenshotConfirmationAddItem(
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val borderColor = MaterialTheme.colorScheme.primary
+    val borderColor = RecapGray300
     val shape = RoundedCornerShape(ScreenshotConfirmationTokens.ItemCornerRadius)
 
     Box(
@@ -297,8 +301,8 @@ private fun ScreenshotConfirmationAddItem(
         Icon(
             painter = painterResource(R.drawable.ic_plus_32),
             contentDescription = stringResource(R.string.organize_add_more_content_description),
-            modifier = Modifier.size(28.dp),
-            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp),
+            tint = RecapGray300,
         )
     }
 }
@@ -310,7 +314,7 @@ private object ScreenshotConfirmationTokens {
     val BottomPadding = 20.dp
     val GridVerticalPadding = 12.dp
     val GridSpacing = 4.dp
-    val ItemCornerRadius = 8.dp
+    val ItemCornerRadius = 10.dp
     val RemoveButtonSize = 16.dp
     val RemoveButtonPadding = 6.dp
     val RemoveButtonCornerRadius = 50

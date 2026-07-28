@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -23,6 +24,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
@@ -33,6 +35,17 @@ import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption3
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.design.theme.White
+
+object HomeFavoriteCardDefaults {
+    /** RecapHeading3 lineHeight (16sp * 1.4). */
+    private val TitleLineHeight = 22.4.dp
+
+    val Height: Dp =
+        HomeFavoriteCardTokens.Padding * 2 +
+            HomeFavoriteCardTokens.IconContainerSize +
+            HomeFavoriteCardTokens.SectionSpacing +
+            TitleLineHeight
+}
 
 @Composable
 fun HomeFavoriteCard(
@@ -51,6 +64,7 @@ fun HomeFavoriteCard(
         onClick = onClick,
         modifier = modifier
             .fillMaxWidth()
+            .height(HomeFavoriteCardDefaults.Height)
             .semantics {
                 role = Role.Button
                 this.contentDescription = contentDescription

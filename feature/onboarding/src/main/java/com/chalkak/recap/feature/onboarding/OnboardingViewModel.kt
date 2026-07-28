@@ -1,10 +1,8 @@
 package com.chalkak.recap.feature.onboarding
 
 import android.content.Context
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.auth.AuthException
 import com.chalkak.recap.core.data.auth.AuthRepository
 import com.chalkak.recap.core.data.network.SessionTokenStore
@@ -24,11 +22,9 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
-    private val savedStateHandle: SavedStateHandle,
     private val imagePermissionRepository: ImagePermissionRepository,
     private val authRepository: AuthRepository,
     private val sessionTokenStore: SessionTokenStore,
-    private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
@@ -52,6 +48,8 @@ class OnboardingViewModel @Inject constructor(
     fun broadcastIllustrationSignal(signal: OnboardingIllustrationSignal) {
         _illustrationSignals.tryEmit(signal)
     }
+
+    fun refreshImagePermission(): ImageAccessLevel = refreshImagePermissionLevel()
 
     fun refreshImagePermissionAndMove(): ImageAccessLevel {
         val accessLevel = refreshImagePermissionLevel()
@@ -125,6 +123,7 @@ class OnboardingViewModel @Inject constructor(
             OnboardingAction.SkipStartFirstAnalyze -> Unit
 
             OnboardingAction.ConfirmUploadMethodGuide -> moveTo(OnboardingStep.AddToFavorite)
+            is OnboardingAction.SelectStep -> moveTo(action.step)
         }
     }
 
@@ -146,13 +145,10 @@ class OnboardingViewModel @Inject constructor(
 
     private fun moveTo(step: OnboardingStep) {
         applyStep(step)
-        viewModelScope.launch {
-            userPreferencesRepository.setOnboardingStep(step.name)
-        }
     }
 
     private fun applyStep(step: OnboardingStep) {
-        savedStateHandle[ONBOARDING_STEP_SAVED_STATE_KEY] = step.name
+        if (_uiState.value.step == step) return
         _uiState.update { current ->
             current.copy(step = step, errorMessage = null)
         }
@@ -165,7 +161,6 @@ class OnboardingViewModel @Inject constructor(
     private suspend fun resolveInitialStep(): OnboardingStep {
         val refreshToken = sessionTokenStore.getRefreshToken()
         if (refreshToken == null) {
-            userPreferencesRepository.clearOnboardingStep()
             return OnboardingStep.Landing
         }
 
@@ -175,16 +170,10 @@ class OnboardingViewModel @Inject constructor(
             refreshError.code in INVALID_REFRESH_TOKEN_CODES
         ) {
             sessionTokenStore.clear()
-            userPreferencesRepository.clearOnboardingStep()
             return OnboardingStep.Landing
         }
 
-        val storedStep = userPreferencesRepository.getOnboardingStep()
-            ?.let { name -> runCatching { OnboardingStep.valueOf(name) }.getOrNull() }
-        return when (storedStep) {
-            null, OnboardingStep.Landing -> OnboardingStep.PermissionGuide
-            else -> storedStep
-        }
+        return OnboardingStep.PermissionGuide
     }
 
     private companion object {
@@ -203,5 +192,3 @@ private fun OnboardingStep.previousStep(): OnboardingStep =
         OnboardingStep.AddToFavorite -> OnboardingStep.UploadMethodGuide
         OnboardingStep.StartFirstAnalyze -> OnboardingStep.AddToFavorite
     }
-
-internal const val ONBOARDING_STEP_SAVED_STATE_KEY = "onboarding_step"

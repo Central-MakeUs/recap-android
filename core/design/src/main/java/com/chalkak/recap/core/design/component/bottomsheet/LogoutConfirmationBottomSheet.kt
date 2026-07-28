@@ -35,6 +35,8 @@ import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapSheetHandle
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading1
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,13 +113,13 @@ fun LogoutConfirmationBottomSheetContent(
             Text(
                 text = stringResource(R.string.logout_confirmation_title),
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge,
+                style = RecapHeading1,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 text = stringResource(R.string.logout_confirmation_description),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyLarge,
+                style = RecapBody1,
             )
         }
 

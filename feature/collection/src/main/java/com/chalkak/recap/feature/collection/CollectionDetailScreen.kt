@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -46,8 +46,7 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
-import com.chalkak.recap.core.design.component.chip.RecapFilterTag
-import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
+import com.chalkak.recap.core.design.component.chip.RecapSortToggle
 import com.chalkak.recap.core.design.component.divider.RecapSectionDivider
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
@@ -81,8 +80,7 @@ fun CollectionDetailScreen(
             navigationBarBottomPadding
     val categoryType = detail.categoryType
     val listState = rememberLazyListState()
-
-    LaunchedEffect(detail.sort) {
+    LaunchedEffect(detail.sort, detail.cards.firstOrNull()?.captureId) {
         listState.scrollToItem(0)
     }
 
@@ -113,6 +111,7 @@ fun CollectionDetailScreen(
                 selectedSort = detail.sort,
                 selection = selection,
                 canStartSelection = detail.cards.isNotEmpty(),
+                showSelectionActions = detail.categoryType != null,
                 onAction = onAction,
                 modifier = Modifier.padding(
                     horizontal = CollectionDetailTokens.HorizontalPadding,
@@ -142,10 +141,10 @@ fun CollectionDetailScreen(
                         bottom = CollectionDetailTokens.ListVerticalPadding + bottomContentPadding,
                     ),
                 ) {
-                    itemsIndexed(
+                    items(
                         items = detail.cards,
-                        key = { _, card -> card.captureId },
-                    ) { index, card ->
+                        key = { card -> card.captureId },
+                    ) { card ->
                         CollectionSelectableCaptureItem(
                             item = card,
                             selection = selection,
@@ -157,7 +156,6 @@ fun CollectionDetailScreen(
                             onSelectionToggle = {
                                 onAction(CollectionAction.ToggleItemSelection(card.captureId))
                             },
-                            showBottomDivider = index < detail.cards.lastIndex,
                         )
                     }
                     if (detail.isLoadingMore) {
@@ -335,18 +333,15 @@ private fun CollectionDetailToolbar(
     selectedSort: CollectionListSort,
     selection: CollectionSelectionUiState,
     canStartSelection: Boolean,
+    showSelectionActions: Boolean,
     onAction: (CollectionAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val sortOptions = listOf(
-        RecapFilterTagOption(
-            id = CollectionListSort.Latest.name,
-            label = stringResource(R.string.collection_sort_latest),
-        ),
-        RecapFilterTagOption(
-            id = CollectionListSort.Oldest.name,
-            label = stringResource(R.string.collection_sort_oldest),
-        ),
+    val sortLabel = stringResource(
+        when (selectedSort) {
+            CollectionListSort.Latest -> R.string.collection_sort_latest
+            CollectionListSort.Oldest -> R.string.collection_sort_oldest
+        },
     )
 
     Row(
@@ -354,22 +349,25 @@ private fun CollectionDetailToolbar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RecapFilterTag(
-            options = sortOptions,
-            selectedOptionId = selectedSort.name,
-            onOptionSelected = { option ->
-                val sort = CollectionListSort.entries.firstOrNull { it.name == option.id }
-                    ?: return@RecapFilterTag
-                onAction(CollectionAction.SetDetailSort(sort))
+        RecapSortToggle(
+            label = sortLabel,
+            onClick = {
+                val nextSort = when (selectedSort) {
+                    CollectionListSort.Latest -> CollectionListSort.Oldest
+                    CollectionListSort.Oldest -> CollectionListSort.Latest
+                }
+                onAction(CollectionAction.SetDetailSort(nextSort))
             },
         )
-        CollectionSelectionActions(
-            selection = selection,
-            onStartSelection = { onAction(CollectionAction.StartSelection) },
-            onCancelSelection = { onAction(CollectionAction.CancelSelection) },
-            onDeleteSelected = { onAction(CollectionAction.DeleteSelected) },
-            canStartSelection = canStartSelection,
-        )
+        if (showSelectionActions) {
+            CollectionSelectionActions(
+                selection = selection,
+                onStartSelection = { onAction(CollectionAction.StartSelection) },
+                onCancelSelection = { onAction(CollectionAction.CancelSelection) },
+                onDeleteSelected = { onAction(CollectionAction.DeleteSelected) },
+                canStartSelection = canStartSelection,
+            )
+        }
     }
 }
 

@@ -1,5 +1,6 @@
 package com.chalkak.recap.feature.onboarding
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
@@ -10,25 +11,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
-import com.chalkak.recap.core.design.component.toast.RecapToastType
-import com.chalkak.recap.core.data.screenshot.permission.ImagePermissionRequestDestination
-import com.chalkak.recap.core.data.screenshot.permission.imagePermissionRequestDestination
-import com.chalkak.recap.core.data.screenshot.permission.markImagePermissionRequested
-import com.chalkak.recap.core.model.ImageAccessLevel
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
+import com.chalkak.recap.core.data.screenshot.permission.ImagePermissionRequestDestination
+import com.chalkak.recap.core.data.screenshot.permission.imagePermissionRequest
+import com.chalkak.recap.core.data.screenshot.permission.imagePermissionRequestDestination
+import com.chalkak.recap.core.data.screenshot.permission.markImagePermissionRequested
+import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.animation.RecapNavDisplay
 import com.chalkak.recap.core.design.animation.RecapNavigationMotion
+import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
+import com.chalkak.recap.core.design.component.toast.RecapToastType
+import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.feature.onboarding.screen.OnboardingAddToFavoriteGuideScreen
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 
 @Composable
@@ -41,10 +42,6 @@ fun OnboardingRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     val toastDispatcher = LocalRecapToastDispatcher.current
-    val coroutineScope = rememberCoroutineScope()
-    val permissionRequiredMessage = stringResource(
-        R.string.onboarding_full_access_permission_snackbar
-    )
     val loginFailedMessage = stringResource(
         R.string.onboarding_login_failed_message
     )
@@ -67,20 +64,16 @@ fun OnboardingRoute(
             }
         }
     }
+
+    LifecycleResumeEffect(Unit) {
+        viewModel.refreshImagePermission()
+        onPauseOrDispose { }
+    }
+
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestMultiplePermissions(),
     ) {
-        val accessLevel = viewModel.refreshImagePermissionAndMoveToFirstOrganize()
-        if (accessLevel != ImageAccessLevel.Full) {
-            coroutineScope.launch {
-                snackbarHostState.showSnackbar(permissionRequiredMessage)
-            }
-        }
-    }
-    val appSettingsLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult(),
-    ) {
-        viewModel.refreshImagePermissionAndMoveToFirstOrganize()
+        viewModel.refreshImagePermission()
     }
     val onboardingBackStack = rememberNavBackStack(OnboardingDestination.Flow)
 
@@ -110,39 +103,18 @@ fun OnboardingRoute(
 
                                 OnboardingAction.GrantPermission -> {
                                     viewModel.onAction(action)
-                                    when (context.imagePermissionRequestDestination()) {
-                                        ImagePermissionRequestDestination.PermissionDialog -> {
-                                            context.markImagePermissionRequested(
-                                                uiState.imageAccessLevel
-                                            )
-                                            permissionLauncher.launch(
-                                                viewModel.imagePermissionRequest()
-                                            )
-                                        }
-
-                                        ImagePermissionRequestDestination.ApplicationSettings -> {
-                                            appSettingsLauncher.launch(
-                                                Intent(
-                                                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                                    Uri.fromParts(
-                                                        "package",
-                                                        context.packageName,
-                                                        null,
-                                                    ),
-                                                )
-                                            )
-                                        }
-                                    }
+                                    openPhotoAccessPermission(
+                                        context = context,
+                                        photoAccessLevel = uiState.imageAccessLevel,
+                                        onRequestPermissions = { permissions ->
+                                            permissionLauncher.launch(permissions)
+                                        },
+                                    )
                                 }
 
                                 OnboardingAction.OpenPhotoPermissionSettings -> {
                                     viewModel.onAction(action)
-                                    appSettingsLauncher.launch(
-                                        Intent(
-                                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                            Uri.fromParts("package", context.packageName, null),
-                                        )
-                                    )
+                                    context.openApplicationDetailsSettings()
                                 }
 
                                 OnboardingAction.OpenScreenshotPicker -> {
@@ -179,6 +151,32 @@ fun OnboardingRoute(
                 else -> error("Unknown onboarding destination: $destination")
             }
         },
+    )
+}
+
+private fun openPhotoAccessPermission(
+    context: Context,
+    photoAccessLevel: ImageAccessLevel,
+    onRequestPermissions: (Array<String>) -> Unit,
+) {
+    when (context.imagePermissionRequestDestination()) {
+        ImagePermissionRequestDestination.PermissionDialog -> {
+            context.markImagePermissionRequested(photoAccessLevel)
+            onRequestPermissions(imagePermissionRequest(photoAccessLevel))
+        }
+
+        ImagePermissionRequestDestination.ApplicationSettings -> {
+            context.openApplicationDetailsSettings()
+        }
+    }
+}
+
+private fun Context.openApplicationDetailsSettings() {
+    startActivity(
+        Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", packageName, null),
+        ),
     )
 }
 

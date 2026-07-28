@@ -1,8 +1,6 @@
 package com.chalkak.recap.feature.onboarding
 
 import android.content.Context
-import androidx.lifecycle.SavedStateHandle
-import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.auth.AuthException
 import com.chalkak.recap.core.data.auth.AuthRepository
 import com.chalkak.recap.core.data.network.SessionTokenStore
@@ -43,30 +41,19 @@ class OnboardingViewModelTest {
     }
 
     @Test
-    fun onAction_savesMovedStepToSavedStateHandle() = runTest(testDispatcher) {
-        val savedStateHandle = SavedStateHandle()
-        val userPreferencesRepository = mockk<UserPreferencesRepository>(relaxed = true)
-        val viewModel = createViewModel(
-            savedStateHandle = savedStateHandle,
-            userPreferencesRepository = userPreferencesRepository,
-        )
+    fun onAction_movesToStartFirstAnalyzeOnSkipFirstOrganize() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
         advanceUntilIdle()
 
         viewModel.onAction(OnboardingAction.SkipFirstOrganize)
         advanceUntilIdle()
 
         assertEquals(OnboardingStep.StartFirstAnalyze, viewModel.uiState.value.step)
-        assertEquals(
-            OnboardingStep.StartFirstAnalyze.name,
-            savedStateHandle.get<String>(ONBOARDING_STEP_SAVED_STATE_KEY),
-        )
-        coVerify { userPreferencesRepository.setOnboardingStep(OnboardingStep.StartFirstAnalyze.name) }
     }
 
     @Test
-    fun onAction_savesBackStepToSavedStateHandle() = runTest(testDispatcher) {
-        val savedStateHandle = SavedStateHandle()
-        val viewModel = createViewModel(savedStateHandle = savedStateHandle)
+    fun onAction_movesBackToPreviousStep() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
         advanceUntilIdle()
 
         viewModel.onAction(OnboardingAction.SkipFirstOrganize)
@@ -74,31 +61,35 @@ class OnboardingViewModelTest {
         advanceUntilIdle()
 
         assertEquals(OnboardingStep.AddToFavorite, viewModel.uiState.value.step)
-        assertEquals(
-            OnboardingStep.AddToFavorite.name,
-            savedStateHandle.get<String>(ONBOARDING_STEP_SAVED_STATE_KEY),
-        )
+    }
+
+    @Test
+    fun onAction_selectStepMovesToRequestedStep() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onAction(OnboardingAction.SelectStep(OnboardingStep.UploadMethodGuide))
+        advanceUntilIdle()
+
+        assertEquals(OnboardingStep.UploadMethodGuide, viewModel.uiState.value.step)
     }
 
     @Test
     fun createdViewModel_withoutSession_staysOnLanding() = runTest(testDispatcher) {
         val sessionTokenStore = mockk<SessionTokenStore>()
         coEvery { sessionTokenStore.getRefreshToken() } returns null
-        val userPreferencesRepository = mockk<UserPreferencesRepository>(relaxed = true)
         val viewModel = createViewModel(
             sessionTokenStore = sessionTokenStore,
-            userPreferencesRepository = userPreferencesRepository,
             imageAccessLevel = ImageAccessLevel.Full,
         )
         advanceUntilIdle()
 
         assertEquals(OnboardingStep.Landing, viewModel.uiState.value.step)
         assertEquals(ImageAccessLevel.Full, viewModel.uiState.value.imageAccessLevel)
-        coVerify { userPreferencesRepository.clearOnboardingStep() }
     }
 
     @Test
-    fun createdViewModel_withSession_restoresPersistedStep() = runTest(testDispatcher) {
+    fun createdViewModel_withSession_startsAtPermissionGuide() = runTest(testDispatcher) {
         val sessionTokenStore = mockk<SessionTokenStore>()
         coEvery { sessionTokenStore.getRefreshToken() } returns "refresh"
         val authRepository = mockk<AuthRepository>(relaxed = true)
@@ -109,39 +100,10 @@ class OnboardingViewModelTest {
                 accessTokenExpiresAt = "2026-07-10T13:00:00Z",
             ),
         )
-        val userPreferencesRepository = mockk<UserPreferencesRepository>(relaxed = true)
-        coEvery { userPreferencesRepository.getOnboardingStep() } returns
-            OnboardingStep.AddToFavorite.name
 
         val viewModel = createViewModel(
             authRepository = authRepository,
             sessionTokenStore = sessionTokenStore,
-            userPreferencesRepository = userPreferencesRepository,
-        )
-        advanceUntilIdle()
-
-        assertEquals(OnboardingStep.AddToFavorite, viewModel.uiState.value.step)
-    }
-
-    @Test
-    fun createdViewModel_withSessionAndNoStoredStep_startsAtPermissionGuide() = runTest(testDispatcher) {
-        val sessionTokenStore = mockk<SessionTokenStore>()
-        coEvery { sessionTokenStore.getRefreshToken() } returns "refresh"
-        val authRepository = mockk<AuthRepository>(relaxed = true)
-        coEvery { authRepository.refresh() } returns Result.success(
-            AuthSignInResult.Success(
-                accessToken = "access",
-                refreshToken = "refresh",
-                accessTokenExpiresAt = "2026-07-10T13:00:00Z",
-            ),
-        )
-        val userPreferencesRepository = mockk<UserPreferencesRepository>(relaxed = true)
-        coEvery { userPreferencesRepository.getOnboardingStep() } returns null
-
-        val viewModel = createViewModel(
-            authRepository = authRepository,
-            sessionTokenStore = sessionTokenStore,
-            userPreferencesRepository = userPreferencesRepository,
         )
         advanceUntilIdle()
 
@@ -156,18 +118,15 @@ class OnboardingViewModelTest {
         coEvery { authRepository.refresh() } returns Result.failure(
             AuthException(AuthError.Server(code = "INVALID_REFRESH_TOKEN", message = "expired")),
         )
-        val userPreferencesRepository = mockk<UserPreferencesRepository>(relaxed = true)
 
         val viewModel = createViewModel(
             authRepository = authRepository,
             sessionTokenStore = sessionTokenStore,
-            userPreferencesRepository = userPreferencesRepository,
         )
         advanceUntilIdle()
 
         assertEquals(OnboardingStep.Landing, viewModel.uiState.value.step)
         coVerify { sessionTokenStore.clear() }
-        coVerify { userPreferencesRepository.clearOnboardingStep() }
     }
 
     @Test
@@ -181,11 +140,7 @@ class OnboardingViewModelTest {
                 accessTokenExpiresAt = "2026-07-10T13:00:00Z",
             ),
         )
-        val userPreferencesRepository = mockk<UserPreferencesRepository>(relaxed = true)
-        val viewModel = createViewModel(
-            authRepository = authRepository,
-            userPreferencesRepository = userPreferencesRepository,
-        )
+        val viewModel = createViewModel(authRepository = authRepository)
         advanceUntilIdle()
 
         viewModel.loginWithKakao(context)
@@ -194,7 +149,6 @@ class OnboardingViewModelTest {
         assertEquals(OnboardingStep.PermissionGuide, viewModel.uiState.value.step)
         assertFalse(viewModel.uiState.value.isLoading)
         coVerify(exactly = 1) { authRepository.signInWithKakao(context) }
-        coVerify { userPreferencesRepository.setOnboardingStep(OnboardingStep.PermissionGuide.name) }
     }
 
     @Test
@@ -237,21 +191,17 @@ class OnboardingViewModelTest {
     }
 
     private fun createViewModel(
-        savedStateHandle: SavedStateHandle = SavedStateHandle(),
         imageAccessLevel: ImageAccessLevel = ImageAccessLevel.Denied,
         authRepository: AuthRepository = mockk(relaxed = true),
         sessionTokenStore: SessionTokenStore? = null,
-        userPreferencesRepository: UserPreferencesRepository = mockk(relaxed = true),
     ): OnboardingViewModel {
         val resolvedSessionTokenStore = sessionTokenStore ?: mockk<SessionTokenStore>(relaxed = true).also {
             coEvery { it.getRefreshToken() } returns null
         }
         return OnboardingViewModel(
-            savedStateHandle = savedStateHandle,
             imagePermissionRepository = FakeImagePermissionRepository(imageAccessLevel),
             authRepository = authRepository,
             sessionTokenStore = resolvedSessionTokenStore,
-            userPreferencesRepository = userPreferencesRepository,
         )
     }
 }

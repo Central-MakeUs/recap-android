@@ -13,10 +13,14 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.getValue
 import com.chalkak.recap.app.MainActivityEntryViewModel
 import com.chalkak.recap.app.RecapApp
-import com.chalkak.recap.app.RecapStartupUiState
 import com.chalkak.recap.app.RecapStartupViewModel
 import com.chalkak.recap.app.RecapToastViewModel
 import com.chalkak.recap.app.ScreenshotAnalysisProgressViewModel
+import com.chalkak.recap.app.resolveEffectiveToastDurationMillis
+import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.toast.RecapToastDuration
+import com.chalkak.recap.core.design.component.toast.RecapToastRequest
+import com.chalkak.recap.core.design.component.toast.RecapToastType
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -27,9 +31,7 @@ class MainActivity : ComponentActivity() {
     private val entryViewModel: MainActivityEntryViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen().setKeepOnScreenCondition {
-            startupViewModel.uiState.value is RecapStartupUiState.Loading
-        }
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge( // 라이트모드 강제
             statusBarStyle = SystemBarStyle.light(
@@ -42,6 +44,7 @@ class MainActivity : ComponentActivity() {
             ),
         )
         consumeSharedAnalysisIntent(intent)
+        consumeOnboardingSampleShareIntent(intent)
         setContent {
             val pendingHomeNavigationRequestId by
                 entryViewModel.pendingHomeNavigationRequestId.collectAsStateWithLifecycle()
@@ -60,10 +63,27 @@ class MainActivity : ComponentActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         consumeSharedAnalysisIntent(intent)
+        consumeOnboardingSampleShareIntent(intent)
     }
 
     private fun consumeSharedAnalysisIntent(intent: Intent) {
         val images = entryViewModel.consumeSharedAnalysisIntent(intent) ?: return
         analysisProgressViewModel.startAnalysis(images)
+    }
+
+    private fun consumeOnboardingSampleShareIntent(intent: Intent) {
+        if (!entryViewModel.consumeOnboardingSampleShareSuccess(intent)) {
+            return
+        }
+        toastViewModel.enqueue(
+            RecapToastRequest(
+                message = getString(R.string.share_onboarding_sample_success),
+                type = RecapToastType.Success,
+                durationMillis = resolveEffectiveToastDurationMillis(
+                    context = this,
+                    duration = RecapToastDuration.Short,
+                ),
+            ),
+        )
     }
 }

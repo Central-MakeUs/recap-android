@@ -134,9 +134,13 @@ class ScreenshotViewModelTest {
 
     @Test
     fun `toggle favorite updates content and emits toast`() = runTest(testDispatcher) {
+        val allowFavoriteToFinish = CompletableDeferred<Unit>()
         coEvery {
             captureMutationRepository.updateFavorite(captureId = 1L, isFavorite = true)
-        } returns Result.success(Unit)
+        } coAnswers {
+            allowFavoriteToFinish.await()
+            Result.success(Unit)
+        }
 
         viewModel.bind(1L)
         cardFlow.emit(storedCard(captureId = 1L, isFavorite = false))
@@ -144,6 +148,12 @@ class ScreenshotViewModelTest {
 
         viewModel.events.test {
             viewModel.onAction(ScreenshotAction.ToggleFavorite)
+
+            val optimistic = viewModel.uiState.value as ScreenshotUiState.Content
+            assertTrue(optimistic.card.analysisResult.isFavorite)
+            assertTrue(optimistic.isFavoriteUpdating)
+
+            allowFavoriteToFinish.complete(Unit)
             advanceUntilIdle()
 
             assertEquals(ScreenshotEvent.ShowFavoriteToast(isFavorite = true), awaitItem())

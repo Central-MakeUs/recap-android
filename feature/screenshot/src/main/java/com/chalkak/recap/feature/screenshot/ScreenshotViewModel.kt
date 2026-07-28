@@ -145,10 +145,19 @@ class ScreenshotViewModel @Inject constructor(
         val content = _uiState.value as? ScreenshotUiState.Content ?: return
         if (content.isFavoriteUpdating || content.isDeleting) return
         val captureId = content.card.analysisResult.captureId
-        val nextFavorite = !content.card.analysisResult.isFavorite
+        val previousFavorite = content.card.analysisResult.isFavorite
+        val nextFavorite = !previousFavorite
         favoriteJob?.cancel()
+        _uiState.updateContent { current ->
+            current.copy(
+                isFavoriteUpdating = true,
+                actionErrorMessageResId = null,
+                card = current.card.copy(
+                    analysisResult = current.card.analysisResult.copy(isFavorite = nextFavorite),
+                ),
+            )
+        }
         favoriteJob = viewModelScope.launch {
-            _uiState.updateContent { it.copy(isFavoriteUpdating = true, actionErrorMessageResId = null) }
             val result = withContext(ioDispatcher) {
                 captureMutationRepository.updateFavorite(
                     captureId = captureId,
@@ -160,18 +169,14 @@ class ScreenshotViewModel @Inject constructor(
                     it.copy(
                         isFavoriteUpdating = false,
                         actionErrorMessageResId = R.string.screenshot_detail_favorite_error,
+                        card = it.card.copy(
+                            analysisResult = it.card.analysisResult.copy(isFavorite = previousFavorite),
+                        ),
                     )
                 }
                 return@launch
             }
-            _uiState.updateContent { current ->
-                current.copy(
-                    isFavoriteUpdating = false,
-                    card = current.card.copy(
-                        analysisResult = current.card.analysisResult.copy(isFavorite = nextFavorite),
-                    ),
-                )
-            }
+            _uiState.updateContent { it.copy(isFavoriteUpdating = false) }
             eventChannel.send(ScreenshotEvent.ShowFavoriteToast(isFavorite = nextFavorite))
         }
     }

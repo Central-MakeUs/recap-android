@@ -2,6 +2,7 @@ package com.chalkak.recap.feature.home.search
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -16,13 +17,25 @@ fun SearchRoute(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
+    DisposableEffect(viewModel) {
+        onDispose {
+            viewModel.onAction(SearchAction.LeaveComposition)
+        }
+    }
+
     SearchScreen(
         modifier = modifier.fillMaxSize(),
         uiState = uiState,
         onAction = { action ->
             when (action) {
-                SearchAction.NavigateBack -> onNavigateBack()
-                is SearchAction.SelectResult -> onNavigateToScreenshot(action.captureId)
+                SearchAction.NavigateBack -> {
+                    viewModel.onAction(action)
+                    onNavigateBack()
+                }
+                is SearchAction.SelectResult -> {
+                    viewModel.onAction(action)
+                    onNavigateToScreenshot(action.captureId)
+                }
                 else -> viewModel.onAction(action)
             }
         },

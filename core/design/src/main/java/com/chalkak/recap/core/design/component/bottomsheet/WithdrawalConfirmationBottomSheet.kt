@@ -40,6 +40,9 @@ import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapSheetHandle
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -122,13 +125,13 @@ fun WithdrawalConfirmationBottomSheetContent(
             Text(
                 text = stringResource(R.string.withdrawal_confirmation_title),
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge,
+                style = RecapHeading1,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 text = stringResource(R.string.withdrawal_confirmation_description),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
+                style = RecapBody2,
             )
         }
 
@@ -164,7 +167,7 @@ fun WithdrawalConfirmationBottomSheetContent(
                 Text(
                     text = stringResource(R.string.withdrawal_confirmation_check_label),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = RecapHeading3,
                     fontWeight = FontWeight.Bold,
                 )
             }

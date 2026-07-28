@@ -1,9 +1,6 @@
 package com.chalkak.recap.feature.settings.notification
 
 import android.Manifest
-import android.content.Context
-import android.content.Intent
-import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -14,10 +11,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.app.NotificationManagerCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.chalkak.recap.core.data.notification.NotificationPermissionRequestDestination
+import com.chalkak.recap.core.data.notification.areAppNotificationsEnabled
+import com.chalkak.recap.core.data.notification.markNotificationPermissionRequested
+import com.chalkak.recap.core.data.notification.notificationPermissionRequestDestination
+import com.chalkak.recap.core.data.notification.openAppNotificationSettings
 
 @Composable
 fun NotificationSettingsRoute(
@@ -39,7 +40,7 @@ fun NotificationSettingsRoute(
         deviceNotificationsEnabled = notificationsEnabled
         if (notificationsEnabled && enableOrganizeAfterPermission) {
             viewModel.onAction(
-                NotificationSettingsAction.OrganizeCompleteEnabledChanged(true)
+                NotificationSettingsAction.OrganizeCompleteNotificationEnabledChanged(true)
             )
             enableOrganizeAfterPermission = false
         }
@@ -73,7 +74,7 @@ fun NotificationSettingsRoute(
                     )
                 }
 
-                is NotificationSettingsAction.OrganizeCompleteEnabledChanged -> {
+                is NotificationSettingsAction.OrganizeCompleteNotificationEnabledChanged -> {
                     if (action.enabled && !deviceNotificationsEnabled) {
                         enableOrganizeAfterPermission = true
                         requestNotificationPermission(
@@ -96,7 +97,7 @@ fun NotificationSettingsRoute(
 }
 
 private fun requestNotificationPermission(
-    context: Context,
+    context: android.content.Context,
     onRequestPermission: () -> Unit,
 ) {
     when (context.notificationPermissionRequestDestination()) {
@@ -108,15 +109,4 @@ private fun requestNotificationPermission(
             context.openAppNotificationSettings()
         }
     }
-}
-
-private fun Context.areAppNotificationsEnabled(): Boolean =
-    NotificationManagerCompat.from(this).areNotificationsEnabled()
-
-private fun Context.openAppNotificationSettings() {
-    startActivity(
-        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-            putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
-        },
-    )
 }

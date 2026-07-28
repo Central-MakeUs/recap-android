@@ -1,17 +1,17 @@
 package com.chalkak.recap.feature.collection
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.core.FastOutLinearInEasing
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -20,16 +20,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -52,15 +49,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
-import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
+import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue300
-import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 
 @Composable
 internal fun CollectionSelectionActions(
@@ -120,7 +117,7 @@ private fun CollectionTextButton(
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.bodyMedium,
+            style = RecapBody2,
             fontWeight = FontWeight.Medium,
         )
     }
@@ -186,10 +183,9 @@ internal fun CollectionSelectableCaptureItem(
     onSelectionToggle: () -> Unit,
     modifier: Modifier = Modifier,
     metadataMode: ScreenshotCardMetadataMode = ScreenshotCardMetadataMode.CategoryChip,
-    showBottomDivider: Boolean = true,
 ) {
     val isSelected = item.captureId in selection.selectedCaptureIds
-    val selectionContentDescription = stringResource(
+    val itemContentDescription = stringResource(
         R.string.collection_selection_item_content_description,
         item.title,
         item.summary,
@@ -217,75 +213,52 @@ internal fun CollectionSelectableCaptureItem(
                 onValueChange = { onSelectionToggle() },
             )
             .semantics {
-                contentDescription = selectionContentDescription
+                contentDescription = itemContentDescription
             }
     } else {
-        Modifier.clickable(
-            interactionSource = interactionSource,
-            indication = null,
-            role = Role.Button,
-            onClick = onOpenClick,
-        )
+        Modifier
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onOpenClick,
+            )
+            .semantics {
+                contentDescription = itemContentDescription
+            }
     }
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        Spacer(modifier = Modifier.height(CollectionSelectionTokens.DividerGap))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = CollectionSelectionTokens.ItemHorizontalPadding)
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                }
-                .clip(rowShape)
-                .background(RecapBackground)
-                .then(pressableModifier),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+    ScreenshotCard(
+        thumbnailModel = item.thumbnailModel,
+        categoryType = item.categoryType,
+        organizedAtMillis = item.organizedAtMillis,
+        metadataMode = metadataMode,
+        title = item.title,
+        description = item.summary,
+        titleHighlightRange = item.titleHighlightRange,
+        descriptionHighlightRange = item.descriptionHighlightRange,
+        isFavorite = item.isFavorite,
+        onClick = onOpenClick,
+        onFavoriteClick = onFavoriteClick,
+        modifier = modifier.fillMaxWidth(),
+        horizontalContentPadding = CollectionSelectionTokens.ItemHorizontalPadding,
+        showFavoriteButton = !selection.isActive,
+        containerClickEnabled = false,
+        contentModifier = Modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(rowShape)
+            .background(RecapBackground)
+            .then(pressableModifier),
+        leadingContent = {
             CollectionSelectionCheckbox(
                 visible = selection.isActive,
                 checked = isSelected,
             )
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .then(
-                        if (selection.isActive) {
-                            Modifier.clearAndSetSemantics { }
-                        } else {
-                            Modifier
-                        },
-                    ),
-            ) {
-                ScreenshotCard(
-                    thumbnailModel = item.thumbnailModel,
-                    categoryType = item.categoryType,
-                    organizedAtMillis = item.organizedAtMillis,
-                    metadataMode = metadataMode,
-                    title = item.title,
-                    description = item.summary,
-                    titleHighlightRange = item.titleHighlightRange,
-                    descriptionHighlightRange = item.descriptionHighlightRange,
-                    isFavorite = item.isFavorite,
-                    onClick = onOpenClick,
-                    onFavoriteClick = onFavoriteClick,
-                    horizontalContentPadding = 0.dp,
-                    showFavoriteButton = !selection.isActive,
-                    showBottomDivider = false,
-                    containerClickEnabled = false,
-                )
-            }
-        }
-        Spacer(modifier = Modifier.height(CollectionSelectionTokens.DividerGap))
-        if (showBottomDivider) {
-            HorizontalDivider(
-                modifier = Modifier.fillMaxWidth(),
-                thickness = CollectionSelectionTokens.ItemDividerThickness,
-                color = RecapGray100,
-            )
-        }
-    }
+        },
+    )
 }
 
 private fun <T> collectionSelectionEnterTween() = tween<T>(
@@ -302,14 +275,12 @@ private object CollectionSelectionTokens {
     const val EnterAnimationDurationMillis = 180
     const val ExitAnimationDurationMillis = 150
     const val PressedScale = 0.9875f
-    const val PressAnimationDurationMillis = 100
+    const val PressAnimationDurationMillis = 50
     val RowCornerRadius = 10.dp
-    val DividerGap = 2.dp
     val CheckboxContainerSize = 24.dp
     val CheckboxIconSize = 16.dp
     val CheckboxEndSpacing = 8.dp
     val ItemHorizontalPadding = 16.dp
-    val ItemDividerThickness = 1.dp
     val TextButtonMinHeight = 40.dp
     val TextButtonPadding = 4.dp
 }

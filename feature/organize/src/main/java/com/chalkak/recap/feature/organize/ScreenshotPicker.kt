@@ -104,6 +104,8 @@ import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.model.LocalImage
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
@@ -487,7 +489,7 @@ fun ScreenshotPickerContent(
                     uiState.availableScreenshots.isEmpty() -> {
                         Text(
                             text = stringResource(R.string.organize_selection_empty),
-                            style = MaterialTheme.typography.bodyMedium,
+                            style = RecapBody2,
                             color = RecapGray300,
                             textAlign = TextAlign.Center,
                             modifier = Modifier
@@ -626,7 +628,7 @@ private fun ScreenshotPickerToolbar(
 
         Text(
             text = stringResource(R.string.organize_screenshot_selection_title),
-            style = MaterialTheme.typography.titleSmall,
+            style = RecapHeading3,
             fontWeight = FontWeight.Bold,
             color = RecapGray900,
             modifier = Modifier.padding(start = ScreenshotPickerTokens.TitleStartPadding),
@@ -640,7 +642,7 @@ private fun ScreenshotPickerToolbar(
                 selectionCount,
                 MAX_SELECTION_COUNT,
             ),
-            style = MaterialTheme.typography.titleSmall,
+            style = RecapHeading3,
             fontWeight = FontWeight.Bold,
             color = RecapBlue300,
         )

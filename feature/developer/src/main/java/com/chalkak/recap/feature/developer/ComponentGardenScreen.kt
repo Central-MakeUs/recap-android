@@ -61,8 +61,7 @@ import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.chip.RecapCategoryRoundChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChipWithIcon
-import com.chalkak.recap.core.design.component.chip.RecapFilterTag
-import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
+import com.chalkak.recap.core.design.component.chip.RecapSortToggle
 import com.chalkak.recap.core.design.component.icon.RecapHazeFolderIcon
 import com.chalkak.recap.core.design.component.input.RecapInputField
 import com.chalkak.recap.core.design.component.popup.RecapPopup
@@ -76,6 +75,9 @@ import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapError
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.feature.organize.OrganizeAction
 import com.chalkak.recap.feature.organize.OrganizeUiState
 import com.chalkak.recap.feature.organize.ScreenshotPicker
@@ -117,8 +119,7 @@ internal fun ComponentGardenScreen(
     var inputFieldValue by remember { mutableStateOf("") }
     var multilineInputFieldValue by remember { mutableStateOf("") }
     var isScreenshotCardFavorited by remember { mutableStateOf(false) }
-    var selectedFilterTagOptionId by remember { mutableStateOf("latest") }
-    var isFilterTagExpanded by remember { mutableStateOf(false) }
+    var isSortLatest by remember { mutableStateOf(true) }
     val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
     val toastDispatcher = LocalRecapToastDispatcher.current
     val toastPreviewMessage = stringResource(R.string.recap_toast_preview_login_failed_message)
@@ -140,7 +141,7 @@ internal fun ComponentGardenScreen(
         ) {
             Text(
                 text = stringResource(R.string.component_garden_title),
-                style = MaterialTheme.typography.headlineSmall,
+                style = RecapHeading3,
                 color = MaterialTheme.colorScheme.onBackground,
             )
             ComponentGardenSection(
@@ -191,23 +192,17 @@ internal fun ComponentGardenScreen(
                 ComponentGardenCategoryChips()
             }
             ComponentGardenSection(
-                title = stringResource(R.string.component_garden_filter_tag_section_title),
+                title = stringResource(R.string.component_garden_sort_toggle_section_title),
             ) {
-                RecapFilterTag(
-                    options = listOf(
-                        RecapFilterTagOption(
-                            id = "latest",
-                            label = stringResource(R.string.collection_sort_latest),
-                        ),
-                        RecapFilterTagOption(
-                            id = "favorite",
-                            label = stringResource(R.string.home_favorites_title),
-                        ),
+                RecapSortToggle(
+                    label = stringResource(
+                        if (isSortLatest) {
+                            R.string.collection_sort_latest
+                        } else {
+                            R.string.collection_sort_oldest
+                        },
                     ),
-                    selectedOptionId = selectedFilterTagOptionId,
-                    onOptionSelected = { selectedFilterTagOptionId = it.id },
-                    expanded = isFilterTagExpanded,
-                    onExpandedChange = { isFilterTagExpanded = it },
+                    onClick = { isSortLatest = !isSortLatest },
                 )
             }
             ComponentGardenSection(
@@ -684,7 +679,7 @@ private fun ComponentGardenHazeFolderCards(
                 )
                 Text(
                     text = stringResource(item.category.labelResId),
-                    style = MaterialTheme.typography.labelMedium,
+                    style = RecapCaption2,
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center,
                 )
@@ -705,7 +700,7 @@ private fun ComponentGardenSection(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
+            style = RecapHeading2,
             color = MaterialTheme.colorScheme.onBackground,
         )
         content()

@@ -310,7 +310,7 @@ enum class RecapButtonIconPlacement {
 object RecapButtonDefaults {
     const val PressedScale = 0.975f
     const val PressedShadowElevationScale = 0.75f
-    const val PressAnimationDurationMillis = 100
+    const val PressAnimationDurationMillis = 50
     val FixedIconStartPadding = 28.dp
 
     fun colors(

@@ -1,10 +1,10 @@
 package com.chalkak.recap.core.data
 
-import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.mutablePreferencesOf
 import com.chalkak.recap.core.data.testdouble.InMemoryPreferencesDataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -33,31 +33,25 @@ class UserPreferencesRepositoryTest {
     }
 
     @Test
-    fun `onboardingStep defaults to null`() = runTest {
-        assertEquals(null, repository.getOnboardingStep())
+    fun `organizeCompleteNotificationEnabled defaults to false`() = runTest {
+        assertFalse(repository.organizeCompleteNotificationEnabled.first())
     }
 
     @Test
-    fun `setOnboardingStep persists and clearOnboardingStep removes value`() = runTest {
-        repository.setOnboardingStep("PermissionGuide")
+    fun `setOrganizeCompleteNotificationEnabled updates flow`() = runTest {
+        repository.setOrganizeCompleteNotificationEnabled(true)
 
-        assertEquals("PermissionGuide", repository.getOnboardingStep())
-
-        repository.clearOnboardingStep()
-
-        assertEquals(null, repository.getOnboardingStep())
-        assertEquals(null, dataStore.current()[stringPreferencesKey("onboarding_step")])
+        assertTrue(repository.organizeCompleteNotificationEnabled.first())
     }
 
     @Test
-    fun `organizeCompleteEnabled defaults to true`() = runTest {
-        assertTrue(repository.organizeCompleteEnabled.first())
-    }
+    fun `organizeCompleteNotificationEnabled migrates legacy key`() = runTest {
+        val legacyKey = booleanPreferencesKey("organize_complete_enabled")
+        dataStore = InMemoryPreferencesDataStore(
+            mutablePreferencesOf(legacyKey to true),
+        )
+        repository = UserPreferencesRepository(dataStore)
 
-    @Test
-    fun `setOrganizeCompleteEnabled updates organizeCompleteEnabled flow`() = runTest {
-        repository.setOrganizeCompleteEnabled(false)
-
-        assertFalse(repository.organizeCompleteEnabled.first())
+        assertTrue(repository.organizeCompleteNotificationEnabled.first())
     }
 }

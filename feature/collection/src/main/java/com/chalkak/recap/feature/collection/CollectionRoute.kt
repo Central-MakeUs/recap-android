@@ -36,26 +36,31 @@ fun CollectionRoute(
     modifier: Modifier = Modifier,
     hazeState: HazeState,
     onNavigateToOrganize: () -> Unit,
+    onNavigateToSearch: () -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
     onNavigateBack: () -> Unit = {},
     openCollectionFavoritesOnEnter: Boolean = false,
     onOpenCollectionFavoritesOnEnterConsumed: () -> Unit = {},
+    openCollectionTypeDetailOnEnter: String? = null,
+    onOpenCollectionTypeDetailOnEnterConsumed: () -> Unit = {},
     onPredictiveBackProgress: (Float) -> Unit = {},
     viewModel: CollectionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val resources = LocalResources.current
     val toastDispatcher = LocalRecapToastDispatcher.current
-    val initialDestination = if (openCollectionFavoritesOnEnter) {
-        CollectionDestination.FavoriteDetail
-    } else {
-        CollectionDestination.Overview
+    val initialDestination = when {
+        openCollectionFavoritesOnEnter -> CollectionDestination.FavoriteDetail
+        openCollectionTypeDetailOnEnter != null ->
+            CollectionDestination.TypeDetail(openCollectionTypeDetailOnEnter)
+        else -> CollectionDestination.Overview
     }
     val backStack = rememberNavBackStack(initialDestination)
     val isAtRoot = backStack.size <= 1
+    val canPredictivePopWithinCollection =
+        !uiState.selection.isActive && !uiState.isDetailSearchVisible
     val canPredictivePopToHome = isAtRoot &&
-        !uiState.selection.isActive &&
-        !uiState.isDetailSearchVisible
+        canPredictivePopWithinCollection
     val navigationEventState = rememberNavigationEventState(
         currentInfo = NavigationEventInfo.None,
     )
@@ -70,9 +75,12 @@ fun CollectionRoute(
         is NavigationEventTransitionState.Idle -> 0f
     }
 
-    LaunchedEffect(openCollectionFavoritesOnEnter) {
+    LaunchedEffect(openCollectionFavoritesOnEnter, openCollectionTypeDetailOnEnter) {
         if (openCollectionFavoritesOnEnter) {
             onOpenCollectionFavoritesOnEnterConsumed()
+        }
+        if (openCollectionTypeDetailOnEnter != null) {
+            onOpenCollectionTypeDetailOnEnterConsumed()
         }
     }
 
@@ -140,6 +148,8 @@ fun CollectionRoute(
 
     fun handleAction(action: CollectionAction) {
         when (action) {
+            CollectionAction.OpenSearch -> onNavigateToSearch()
+
             CollectionAction.OpenFavoriteDetail -> {
                 viewModel.onAction(action)
                 backStack.add(CollectionDestination.FavoriteDetail)
@@ -169,7 +179,8 @@ fun CollectionRoute(
             uiState.selection.isActive -> viewModel.onAction(CollectionAction.CancelSelection)
             uiState.isDetailSearchVisible -> viewModel.onAction(CollectionAction.HideDetailSearch)
             backStack.size > 1 -> navigateBackFromDetail()
-            backStack.lastOrNull() == CollectionDestination.FavoriteDetail -> {
+            backStack.lastOrNull() == CollectionDestination.FavoriteDetail ||
+                backStack.lastOrNull() is CollectionDestination.TypeDetail -> {
                 navigateBackFromDetail()
                 backStack.add(CollectionDestination.Overview)
             }
@@ -200,6 +211,7 @@ fun CollectionRoute(
             backStack = backStack,
             onBack = ::handleBack,
             modifier = Modifier.fillMaxSize(),
+            predictivePopEnabled = canPredictivePopWithinCollection,
             transitionSpec = { RecapNavigationMotion.forward() },
             popTransitionSpec = { RecapNavigationMotion.pop() },
             entryProvider = { route ->

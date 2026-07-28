@@ -1,14 +1,5 @@
 package com.chalkak.recap.feature.onboarding
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.SizeTransform
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,26 +7,32 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.feature.onboarding.component.OnboardingLayoutDefaults
-import com.chalkak.recap.feature.onboarding.component.OnboardingTopBar
+import com.chalkak.recap.core.design.component.progress.RecapStepProgressIndicator
 import com.chalkak.recap.feature.onboarding.screen.OnboardingAddToFavoriteScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingLandingScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingPermissionGuideScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingStartFirstAnalyzeScreen
 import com.chalkak.recap.feature.onboarding.screen.OnboardingUploadMethodGuideScreen
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 
 @Composable
 fun OnboardingScreen(
@@ -43,7 +40,6 @@ fun OnboardingScreen(
     onAction: (OnboardingAction) -> Unit,
     modifier: Modifier = Modifier,
     snackbarHostState: SnackbarHostState? = null,
-    showLandingLoginImmediately: Boolean = false,
     illustrationSignalFlow: Flow<OnboardingIllustrationSignal> = emptyFlow(),
 ) {
     val resolvedSnackbarHostState = snackbarHostState ?: remember { SnackbarHostState() }
@@ -58,15 +54,12 @@ fun OnboardingScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .safeDrawingPadding(),
         ) {
-            val screenModifier = Modifier
-                .fillMaxSize()
-                .padding(OnboardingLayoutDefaults.ScreenPadding)
-
             when (uiState.step) {
                 OnboardingStep.Landing -> OnboardingLandingScreen(
                     onAction = onAction,
-                    modifier = screenModifier,
-                    showLoginImmediately = showLandingLoginImmediately,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(OnboardingLayoutDefaults.LandingScreenPadding),
                     isLoading = uiState.isLoading,
                     illustrationSignalFlow = illustrationSignalFlow,
                 )
@@ -96,52 +89,54 @@ private fun OnboardingStepTransition(
     onAction: (OnboardingAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val topBarProgress by animateFloatAsState(
-        targetValue = uiState.step.toOnboardingProgressIndex()?.toFloat() ?: 0f,
-        animationSpec = tween(durationMillis = OnboardingStepTransitionDurationMillis),
-        label = "onboarding_top_bar_progress",
+    val initialPage = uiState.step.toOnboardingProgressIndex() ?: 0
+    val pagerState = rememberPagerState(
+        initialPage = initialPage,
+        pageCount = { OnboardingProgressSteps.size },
     )
+
+    LaunchedEffect(uiState.step) {
+        val targetPage = uiState.step.toOnboardingProgressIndex() ?: return@LaunchedEffect
+        if (pagerState.currentPage != targetPage || pagerState.targetPage != targetPage) {
+            pagerState.animateScrollToPage(targetPage)
+        }
+    }
+
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }
+            .map { page -> OnboardingProgressSteps.getOrNull(page) }
+            .filterNotNull()
+            .distinctUntilChanged()
+            .collect { step ->
+                onAction(OnboardingAction.SelectStep(step))
+            }
+    }
+
+    val topBarProgress = pagerState.currentPage + pagerState.currentPageOffsetFraction
 
     Column(
         modifier = modifier.fillMaxSize(),
     ) {
-        OnboardingTopBar(
+        RecapStepProgressIndicator(
             progress = topBarProgress,
             stepCount = OnboardingProgressSteps.size,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 24.dp),
         )
-        AnimatedContent(
-            targetState = uiState.step,
+        HorizontalPager(
+            state = pagerState,
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
-            transitionSpec = {
-                val initialIndex = initialState.toOnboardingProgressIndex() ?: 0
-                val targetIndex = targetState.toOnboardingProgressIndex() ?: initialIndex
-                val direction = if (targetIndex >= initialIndex) 1 else -1
-
-                slideInHorizontally(
-                    animationSpec = tween(OnboardingStepTransitionDurationMillis),
-                    initialOffsetX = { fullWidth -> direction * fullWidth },
-                ) + fadeIn(
-                    animationSpec = tween(OnboardingStepTransitionDurationMillis),
-                ) togetherWith slideOutHorizontally(
-                    animationSpec = tween(OnboardingStepTransitionDurationMillis),
-                    targetOffsetX = { fullWidth -> -direction * fullWidth },
-                ) + fadeOut(
-                    animationSpec = tween(OnboardingStepTransitionDurationMillis),
-                ) using SizeTransform(clip = false)
-            },
-            label = "onboarding_step_content",
-        ) { step ->
+        ) { page ->
             val pageModifier = Modifier
                 .fillMaxSize()
                 .padding(start = 24.dp, end = 24.dp, bottom = 24.dp)
 
-            when (step) {
+            when (OnboardingProgressSteps[page]) {
                 OnboardingStep.PermissionGuide -> OnboardingPermissionGuideScreen(
+                    imageAccessLevel = uiState.imageAccessLevel,
                     onAction = onAction,
                     modifier = pageModifier,
                 )
@@ -169,8 +164,6 @@ private fun OnboardingStepTransition(
     }
 }
 
-private const val OnboardingStepTransitionDurationMillis = 300
-
 private val OnboardingProgressSteps = listOf(
     OnboardingStep.PermissionGuide,
     OnboardingStep.UploadMethodGuide,
@@ -188,7 +181,6 @@ private fun OnboardingScreenLandingPreview() {
         OnboardingScreen(
             uiState = OnboardingUiState(step = OnboardingStep.Landing),
             onAction = {},
-            showLandingLoginImmediately = true,
         )
     }
 }

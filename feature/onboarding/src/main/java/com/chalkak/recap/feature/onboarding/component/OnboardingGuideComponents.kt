@@ -28,6 +28,8 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapGray500
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 
 @Composable
@@ -55,7 +57,7 @@ internal fun GuideBullet(
         }
         Text(
             text = text,
-            style = MaterialTheme.typography.bodyLarge,
+            style = RecapBody1,
             color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.weight(1f),
         )
@@ -67,8 +69,8 @@ internal fun StepHeader(
     modifier: Modifier = Modifier,
     title: String,
     description: String? = null,
-    titleStyle: TextStyle = MaterialTheme.typography.displaySmall,
-    descriptionStyle: TextStyle = MaterialTheme.typography.bodyLarge,
+    titleStyle: TextStyle = RecapHeading1,
+    descriptionStyle: TextStyle = RecapBody1,
     contentSpacing: Dp = 17.dp,
     descriptionFontWeight: FontWeight? = null,
 ) {

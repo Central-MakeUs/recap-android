@@ -183,15 +183,17 @@ private fun CollectionOverviewContent(
     val navigationBarBottomPadding = WindowInsets.navigationBars
         .asPaddingValues()
         .calculateBottomPadding()
-    val bottomContentPadding = RecapBottomBarDefaults.ContentScrollPadding +
+    val bottomContentPadding = RecapBottomBarDefaults.Height +
+            RecapBottomBarDefaults.BottomPadding +
             navigationBarBottomPadding
 
     Column(
         modifier = modifier.fillMaxSize(),
     ) {
         RecapSearchBar(
-            value = uiState.searchQuery,
-            onValueChange = { query -> onAction(CollectionAction.UpdateSearchQuery(query)) },
+            value = "",
+            onValueChange = {},
+            onClick = { onAction(CollectionAction.OpenSearch) },
             modifier = Modifier
                 .padding(horizontal = CollectionScreenTokens.HorizontalPadding)
                 .padding(top = CollectionScreenTokens.SearchTopPadding),
@@ -338,7 +340,7 @@ private fun CollectionTypeGridItem(
         )
         Text(
             text = stringResource(summary.labelResId),
-            style = MaterialTheme.typography.bodyMedium,
+            style = RecapBody2,
             fontWeight = FontWeight.Medium,
             color = RecapGray900,
             textAlign = TextAlign.Center,
@@ -351,7 +353,7 @@ private fun CollectionTypeGridItem(
                 summary.count,
                 summary.count,
             ),
-            style = MaterialTheme.typography.labelLarge,
+            style = RecapCaption1,
             color = RecapGray500,
             textAlign = TextAlign.Center,
             maxLines = 1,

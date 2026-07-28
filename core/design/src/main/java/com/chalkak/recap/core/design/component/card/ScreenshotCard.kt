@@ -15,7 +15,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,10 +25,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,6 +47,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -72,6 +72,8 @@ import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption3
 
 enum class ScreenshotCardMetadataMode {
     CategoryChip,
@@ -93,8 +95,9 @@ fun ScreenshotCard(
     thumbnailContentDescription: String? = null,
     horizontalContentPadding: Dp = ScreenshotCardTokens.ContainerHorizontalPadding,
     showFavoriteButton: Boolean = true,
-    showBottomDivider: Boolean = true,
     containerClickEnabled: Boolean = true,
+    contentModifier: Modifier = Modifier,
+    leadingContent: (@Composable () -> Unit)? = null,
     titleHighlightRange: IntRange? = null,
     descriptionHighlightRange: IntRange? = null,
 ) {
@@ -111,29 +114,30 @@ fun ScreenshotCard(
         label = "screenshot_card_press_scale",
     )
     val rowShape = RoundedCornerShape(ScreenshotCardTokens.RowCornerRadius)
+    val clearEmbeddedTextSemantics = leadingContent != null && !containerClickEnabled
+    val contentContainerModifier = if (containerClickEnabled) {
+        Modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(rowShape)
+            .background(RecapBackground)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onClick,
+            )
+    } else {
+        contentModifier
+    }
 
     Column(modifier = modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                }
-                .clip(rowShape)
-                .background(RecapBackground)
-                .then(
-                    if (containerClickEnabled) {
-                        Modifier.clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            role = Role.Button,
-                            onClick = onClick,
-                        )
-                    } else {
-                        Modifier
-                    },
-                ),
+                .then(contentContainerModifier),
         ) {
             Row(
                 modifier = Modifier
@@ -142,12 +146,20 @@ fun ScreenshotCard(
                         horizontal = horizontalContentPadding,
                         vertical = ScreenshotCardTokens.ContainerVerticalPadding,
                     ),
-                horizontalArrangement = Arrangement.spacedBy(
-                    ScreenshotCardTokens.ContentSpacing,
-                ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                leadingContent?.invoke()
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(
+                            if (clearEmbeddedTextSemantics) {
+                                Modifier.clearAndSetSemantics { }
+                            } else {
+                                Modifier
+                            },
+                        ),
+                ) {
                     if (
                         metadataMode == ScreenshotCardMetadataMode.CategoryChip &&
                         categoryType != null
@@ -164,7 +176,7 @@ fun ScreenshotCard(
                             highlightRange = titleHighlightRange,
                             defaultColor = RecapGray900,
                         ),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = RecapCaption1,
                         fontWeight = FontWeight.Bold,
                         color = RecapGray900,
                         maxLines = ScreenshotCardTokens.TitleMaxLines,
@@ -177,7 +189,7 @@ fun ScreenshotCard(
                             highlightRange = descriptionHighlightRange,
                             defaultColor = RecapGray500,
                         ),
-                        style = MaterialTheme.typography.labelLarge,
+                        style = RecapCaption1,
                         color = RecapGray500,
                         maxLines = ScreenshotCardTokens.DescriptionMaxLines,
                         overflow = TextOverflow.Ellipsis,
@@ -193,7 +205,7 @@ fun ScreenshotCard(
                                     R.string.collection_detail_organized_date,
                                     organizedDateLabel,
                                 ),
-                                style = MaterialTheme.typography.labelSmall,
+                                style = RecapCaption3,
                                 color = RecapGray300,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -201,6 +213,7 @@ fun ScreenshotCard(
                         }
                     }
                 }
+                Spacer(modifier = Modifier.width(ScreenshotCardTokens.ContentSpacing))
                 ScreenshotCardThumbnail(
                     thumbnailModel = thumbnailModel,
                     thumbnailContentDescription = thumbnailContentDescription,
@@ -210,14 +223,12 @@ fun ScreenshotCard(
                 )
             }
         }
-        if (showBottomDivider) {
-            Spacer(modifier = Modifier.height(ScreenshotCardTokens.DividerGap))
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = horizontalContentPadding),
-                thickness = ScreenshotCardTokens.DividerThickness,
-                color = RecapGray100,
-            )
-        }
+        Spacer(modifier = Modifier.height(ScreenshotCardTokens.DividerGap))
+        HorizontalDivider(
+            modifier = Modifier.fillMaxWidth(),
+            thickness = ScreenshotCardTokens.DividerThickness,
+            color = RecapGray100,
+        )
     }
 }
 
@@ -435,7 +446,7 @@ private object ScreenshotCardTokens {
     val FavoriteIconPadding = 6.dp
     val FavoriteIconSize = 16.dp
     const val PressedScale = 0.9875f
-    const val PressAnimationDurationMillis = 100
+    const val PressAnimationDurationMillis = 50
     val RowCornerRadius = 10.dp
     const val ThumbnailViewBoxWidth = 62f
     const val ThumbnailViewBoxHeight = 80f

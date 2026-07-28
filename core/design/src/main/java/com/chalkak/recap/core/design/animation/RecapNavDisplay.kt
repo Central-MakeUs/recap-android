@@ -7,25 +7,32 @@ import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.rememberTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneInfo
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.scene.rememberSceneState
+import androidx.navigationevent.DirectNavigationEventInput
 import androidx.navigationevent.NavigationEventTransitionState.Idle
 import androidx.navigationevent.NavigationEventTransitionState.InProgress
+import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
 /**
@@ -72,7 +79,21 @@ fun <T : Any> RecapNavDisplay(
     val transitionState = remember { SeekableTransitionState(scene) }
     val transition = rememberTransition(transitionState, label = "recapNavScene")
     val scope = rememberCoroutineScope()
+    val backCommitQueue = remember { RecapBackCommitQueue() }
+    val sceneZIndexTracker = remember { RecapSceneZIndexTracker() }
     var isCommitting by remember { mutableStateOf(false) }
+    val navigationEventDispatcher =
+        checkNotNull(LocalNavigationEventDispatcherOwner.current) {
+            "No NavigationEventDispatcher was provided via LocalNavigationEventDispatcherOwner"
+        }.navigationEventDispatcher
+    val replayInput = remember(navigationEventDispatcher) { DirectNavigationEventInput() }
+
+    DisposableEffect(navigationEventDispatcher, replayInput) {
+        navigationEventDispatcher.addInput(replayInput)
+        onDispose {
+            navigationEventDispatcher.removeInput(replayInput)
+        }
+    }
 
     val gestureState = rememberNavigationEventState(
         currentInfo = SceneInfo(scene),
@@ -99,8 +120,11 @@ fun <T : Any> RecapNavDisplay(
 
     NavigationBackHandler(
         state = gestureState,
-        isBackEnabled = scene.previousEntries.isNotEmpty() && !isCommitting,
+        isBackEnabled = scene.previousEntries.isNotEmpty(),
         onBackCancelled = {
+            if (!backCommitQueue.shouldHandleCancellation()) {
+                return@NavigationBackHandler
+            }
             scope.launch {
                 onPredictiveProgress(0f)
                 val durationMillis = (
@@ -121,8 +145,11 @@ fun <T : Any> RecapNavDisplay(
                 onBack()
                 return@NavigationBackHandler
             }
+            if (backCommitQueue.onBackCompleted() == BackCompletionDecision.Queued) {
+                return@NavigationBackHandler
+            }
+            isCommitting = true
             scope.launch {
-                isCommitting = true
                 onPredictiveProgress(1f)
                 val startFraction = transitionState.fraction.coerceIn(
                     0f,
@@ -144,7 +171,12 @@ fun <T : Any> RecapNavDisplay(
                 onBack()
                 transitionState.snapTo(previousScene)
                 onPredictiveProgress(0f)
+                awaitBackHandlerRefresh()
+                val pendingBackCount = backCommitQueue.finishCommit()
                 isCommitting = false
+                repeat(pendingBackCount) {
+                    replayInput.backCompleted()
+                }
             }
         },
     )
@@ -176,6 +208,17 @@ fun <T : Any> RecapNavDisplay(
         }
     }
 
+    val initialSceneKey = RecapAnimatedSceneKey(transition.currentState)
+    val targetSceneKey = RecapAnimatedSceneKey(transition.targetState)
+    val targetSceneZIndex = sceneZIndexTracker.targetZIndex(
+        initialKey = initialSceneKey,
+        targetKey = targetSceneKey,
+        isPop = navigationKind == RecapNavigationKind.Pop ||
+            inPredictiveBack ||
+            isCommitting,
+        reuseExistingTarget = !inPredictiveBack && transition.targetState != scene,
+    )
+
     transition.AnimatedContent(
         contentKey = { target -> target.key },
         contentAlignment = contentAlignment,
@@ -190,17 +233,88 @@ fun <T : Any> RecapNavDisplay(
             ContentTransform(
                 targetContentEnter = transform.targetContentEnter,
                 initialContentExit = transform.initialContentExit,
-                targetContentZIndex = when {
-                    navigationKind == RecapNavigationKind.Pop ||
-                        inPredictiveBack ||
-                        isCommitting -> -1f
-                    else -> 1f
-                },
+                targetContentZIndex = targetSceneZIndex,
             )
         },
     ) { targetScene ->
         targetScene.content()
     }
+
+    LaunchedEffect(transition) {
+        snapshotFlow { transition.isRunning }
+            .filter { isRunning -> !isRunning }
+            .collect {
+                sceneZIndexTracker.retainOnly(RecapAnimatedSceneKey(transition.targetState))
+            }
+    }
+}
+
+internal enum class BackCompletionDecision {
+    StartCommit,
+    Queued,
+}
+
+internal class RecapBackCommitQueue {
+    private var isCommitting = false
+    private var pendingBackCount = 0
+
+    fun onBackCompleted(): BackCompletionDecision {
+        if (isCommitting) {
+            pendingBackCount += 1
+            return BackCompletionDecision.Queued
+        }
+        isCommitting = true
+        return BackCompletionDecision.StartCommit
+    }
+
+    fun shouldHandleCancellation(): Boolean = !isCommitting
+
+    fun finishCommit(): Int {
+        check(isCommitting) { "Cannot finish a back commit that was not started" }
+        isCommitting = false
+        return pendingBackCount.also {
+            pendingBackCount = 0
+        }
+    }
+}
+
+internal class RecapSceneZIndexTracker {
+    private val zIndices = mutableMapOf<Any, Float>()
+
+    fun targetZIndex(
+        initialKey: Any,
+        targetKey: Any,
+        isPop: Boolean,
+        reuseExistingTarget: Boolean,
+    ): Float {
+        val initialZIndex = zIndices.getOrPut(initialKey) { 0f }
+        val targetZIndex = when {
+            reuseExistingTarget && targetKey in zIndices -> zIndices.getValue(targetKey)
+            initialKey == targetKey -> initialZIndex
+            isPop -> initialZIndex - 1f
+            else -> initialZIndex + 1f
+        }
+        zIndices[targetKey] = targetZIndex
+        return targetZIndex
+    }
+
+    fun retainOnly(key: Any) {
+        val retainedZIndex = zIndices[key] ?: return
+        zIndices.clear()
+        zIndices[key] = retainedZIndex
+    }
+}
+
+private data class RecapAnimatedSceneKey(
+    val sceneClass: kotlin.reflect.KClass<*>,
+    val key: Any,
+) {
+    constructor(scene: Scene<*>) : this(scene::class, scene.key)
+}
+
+private suspend fun awaitBackHandlerRefresh() {
+    withFrameNanos { }
+    withFrameNanos { }
 }
 
 private enum class RecapNavigationKind {

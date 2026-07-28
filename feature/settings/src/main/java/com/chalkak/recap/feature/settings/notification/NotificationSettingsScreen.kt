@@ -34,7 +34,7 @@ fun NotificationSettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val switchChecked =
-        uiState.deviceNotificationsEnabled && uiState.organizeCompleteEnabled
+        uiState.deviceNotificationsEnabled && uiState.organizeCompleteNotificationEnabled
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -75,7 +75,9 @@ fun NotificationSettingsScreen(
                 OrganizeNotificationToggleRow(
                     checked = switchChecked,
                     onCheckedChange = {
-                        onAction(NotificationSettingsAction.OrganizeCompleteEnabledChanged(it))
+                        onAction(
+                            NotificationSettingsAction.OrganizeCompleteNotificationEnabledChanged(it)
+                        )
                     },
                 )
             }

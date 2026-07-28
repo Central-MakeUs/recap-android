@@ -38,7 +38,9 @@ import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray900
-import com.chalkak.recap.core.design.theme.RecapTypography
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading4
 import com.chalkak.recap.core.model.ImageAccessLevel
 
 @Composable
@@ -77,7 +79,7 @@ internal fun SettingsStatusRow(
         trailing = {
             Text(
                 text = stringResource(photoAccessLevel.toStatusResId()),
-                style = RecapTypography.RecapHeading4,
+                style = RecapHeading4,
                 color = photoAccessLevel.toStatusColor(),
             )
         },
@@ -144,7 +146,7 @@ internal fun SettingsRow(
             Text(
                 text = stringResource(titleResId),
                 modifier = Modifier.weight(1f),
-                style = RecapTypography.RecapBody1,
+                style = RecapBody1,
                 color = RecapGray900,
             )
             trailing()
@@ -152,7 +154,7 @@ internal fun SettingsRow(
         if (descriptionResId != null) {
             Text(
                 text = stringResource(descriptionResId),
-                style = RecapTypography.RecapCaption1,
+                style = RecapCaption1,
                 color = RecapGray300,
             )
         }
@@ -189,7 +191,7 @@ private fun ImageAccessLevel.toStatusColor(): Color {
 
 internal object SettingsRowTokens {
     const val PressedScale = 0.9875f
-    const val PressAnimationDurationMillis = 100
+    const val PressAnimationDurationMillis = 50
     val HorizontalPadding = 28.dp
     val ClickAreaHorizontalPadding = 16.dp
     val ContentItemSpacing = 23.dp

@@ -25,7 +25,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,10 +42,12 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
-import com.chalkak.recap.core.design.theme.RecapGray100
+import com.chalkak.recap.core.design.theme.RecapGray200
+import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray500
-import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading1
 
 enum class CollectionTypeViewMode {
     Grid,
@@ -81,7 +86,7 @@ fun CollectionTopBar(
                     )
                     Text(
                         text = stringResource(R.string.collection_title),
-                        style = MaterialTheme.typography.titleLarge,
+                        style = RecapHeading1,
                         fontWeight = FontWeight.Bold,
                         color = RecapGray900,
                     )
@@ -134,17 +139,17 @@ private fun CollectionViewModeToggle(
     Row(
         modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(9.dp),
     ) {
         Text(
             text = stringResource(R.string.collection_view_label),
-            style = MaterialTheme.typography.labelMedium,
+            style = RecapCaption1,
             color = RecapGray500,
         )
         Box(
             modifier = Modifier
                 .background(
-                    color = RecapGray100,
+                    color = RecapGray50,
                     shape = RoundedCornerShape(CollectionViewModeToggleContainerCornerRadius),
                 )
                 .clickable(
@@ -153,17 +158,23 @@ private fun CollectionViewModeToggle(
                     role = Role.Button,
                     onClickLabel = toggleContentDescription,
                     onClick = { onViewModeChange(nextViewMode) },
-                )
-                .padding(CollectionViewModeToggleContainerPadding),
+                ),
         ) {
             Box(
                 modifier = Modifier
-                    .offset(x = highlightOffset)
+                    .offset(
+                        x = CollectionViewModeToggleContentPaddingHorizontal + highlightOffset,
+                        y = CollectionViewModeToggleContentPaddingVertical,
+                    )
                     .size(CollectionViewModeToggleItemSize)
                     .clip(highlightShape)
                     .background(MaterialTheme.colorScheme.background),
             )
             Row(
+                modifier = Modifier.padding(
+                    horizontal = CollectionViewModeToggleContentPaddingHorizontal,
+                    vertical = CollectionViewModeToggleContentPaddingVertical,
+                ),
                 horizontalArrangement = Arrangement.spacedBy(CollectionViewModeToggleItemSpacing),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -187,8 +198,8 @@ private fun CollectionViewModeToggleIcon(
     modifier: Modifier = Modifier,
 ) {
     val iconTint = lerp(
+        RecapGray200,
         RecapGray500,
-        RecapGray700,
         selectedStrength.coerceIn(0f, 1f),
     )
 
@@ -200,19 +211,20 @@ private fun CollectionViewModeToggleIcon(
             painter = painterResource(iconResId),
             contentDescription = null,
             tint = iconTint,
-            modifier = Modifier.size(16.dp),
+            modifier = Modifier.size(22.dp),
         )
     }
 }
 
 private const val CollectionViewModeHighlightDurationMillis = 250
 
-private val CollectionTopBarHeight = 56.dp
-private val CollectionViewModeToggleItemSize = 28.dp
-private val CollectionViewModeToggleItemSpacing = 2.dp
-private val CollectionViewModeToggleContainerPadding = 2.dp
-private val CollectionViewModeToggleContainerCornerRadius = 8.dp
-private val CollectionViewModeToggleHighlightCornerRadius = 6.dp
+private val CollectionTopBarHeight = 64.dp
+private val CollectionViewModeToggleItemSize = 24.dp
+private val CollectionViewModeToggleItemSpacing = 6.dp
+private val CollectionViewModeToggleContentPaddingHorizontal = 5.dp
+private val CollectionViewModeToggleContentPaddingVertical = 3.5.dp
+private val CollectionViewModeToggleContainerCornerRadius = 5.dp
+private val CollectionViewModeToggleHighlightCornerRadius = 2.dp
 
 @Preview(name = "Collection Top Bar", showBackground = true, widthDp = 360)
 @Composable
@@ -240,6 +252,48 @@ private fun CollectionTopBarListPreview() {
         CollectionTopBar(
             viewMode = CollectionTypeViewMode.List,
             onViewModeChange = {},
+        )
+    }
+}
+
+@Preview(name = "Collection View Mode Toggle Grid", showBackground = true)
+@Composable
+private fun CollectionViewModeToggleGridPreview() {
+    RECAPTheme(dynamicColor = false) {
+        CollectionViewModeTogglePreviewContent(initialViewMode = CollectionTypeViewMode.Grid)
+    }
+}
+
+@Preview(name = "Collection View Mode Toggle List", showBackground = true)
+@Composable
+private fun CollectionViewModeToggleListPreview() {
+    RECAPTheme(dynamicColor = false) {
+        CollectionViewModeTogglePreviewContent(initialViewMode = CollectionTypeViewMode.List)
+    }
+}
+
+@Preview(name = "Collection View Mode Toggle Interactive", showBackground = true)
+@Composable
+private fun CollectionViewModeToggleInteractivePreview() {
+    RECAPTheme(dynamicColor = false) {
+        CollectionViewModeTogglePreviewContent()
+    }
+}
+
+@Composable
+private fun CollectionViewModeTogglePreviewContent(
+    initialViewMode: CollectionTypeViewMode = CollectionTypeViewMode.Grid,
+) {
+    var viewMode by remember { mutableStateOf(initialViewMode) }
+    Box(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .padding(24.dp),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        CollectionViewModeToggle(
+            viewMode = viewMode,
+            onViewModeChange = { viewMode = it },
         )
     }
 }

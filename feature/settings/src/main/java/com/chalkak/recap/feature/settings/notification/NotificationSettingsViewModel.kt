@@ -16,9 +16,9 @@ class NotificationSettingsViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
     val uiState: StateFlow<NotificationSettingsUiState> =
-        userPreferencesRepository.organizeCompleteEnabled
+        userPreferencesRepository.organizeCompleteNotificationEnabled
             .map { enabled ->
-                NotificationSettingsUiState(organizeCompleteEnabled = enabled)
+                NotificationSettingsUiState(organizeCompleteNotificationEnabled = enabled)
             }
             .stateIn(
                 scope = viewModelScope,
@@ -32,9 +32,9 @@ class NotificationSettingsViewModel @Inject constructor(
             NotificationSettingsAction.RequestDeviceNotificationPermission,
             -> Unit
 
-            is NotificationSettingsAction.OrganizeCompleteEnabledChanged -> {
+            is NotificationSettingsAction.OrganizeCompleteNotificationEnabledChanged -> {
                 viewModelScope.launch {
-                    userPreferencesRepository.setOrganizeCompleteEnabled(action.enabled)
+                    userPreferencesRepository.setOrganizeCompleteNotificationEnabled(action.enabled)
                 }
             }
         }

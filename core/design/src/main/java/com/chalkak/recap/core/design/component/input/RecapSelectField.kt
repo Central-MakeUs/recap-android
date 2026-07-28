@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +27,7 @@ import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.White
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 
 @Composable
 fun RecapSelectField(
@@ -47,7 +47,7 @@ fun RecapSelectField(
         if (label != null) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyMedium,
+                style = RecapBody2,
                 color = RecapGray900,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -74,7 +74,7 @@ fun RecapSelectField(
                 Text(
                     text = value,
                     modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = RecapBody2,
                     color = RecapGray900,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -88,7 +88,7 @@ fun RecapSelectField(
                         role = Role.Button,
                         onClick = onActionClick,
                     ),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = RecapBody2,
                     fontWeight = FontWeight.Medium,
                     color = if (enabled) {
                         RecapBlue500

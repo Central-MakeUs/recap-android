@@ -3,6 +3,8 @@ package com.chalkak.recap.app
 import android.content.Intent
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import com.chalkak.recap.app.share.OnboardingSampleShareIntentContract
+import com.chalkak.recap.app.share.OnboardingSampleShareSuccessStore
 import com.chalkak.recap.app.share.SharedAnalysisIntentContract
 import com.chalkak.recap.app.share.SharedAnalysisRequest
 import com.chalkak.recap.app.share.SharedAnalysisRequestStore
@@ -44,6 +46,21 @@ class MainActivityEntryViewModel @Inject constructor(
         return registeredImages
     }
 
+    fun consumeOnboardingSampleShareSuccess(intent: Intent): Boolean {
+        val eventId = OnboardingSampleShareIntentContract.eventId(intent) ?: return false
+        if (!OnboardingSampleShareSuccessStore.consume(eventId)) {
+            return false
+        }
+        val lastConsumedEventId = savedStateHandle.get<String>(
+            LAST_CONSUMED_ONBOARDING_SAMPLE_EVENT_ID_KEY,
+        )
+        if (lastConsumedEventId == eventId) {
+            return false
+        }
+        savedStateHandle[LAST_CONSUMED_ONBOARDING_SAMPLE_EVENT_ID_KEY] = eventId
+        return true
+    }
+
     fun requestNavigateToHome() {
         val requestId = homeNavigationRequestCounter + 1
         homeNavigationRequestCounter = requestId
@@ -61,5 +78,7 @@ class MainActivityEntryViewModel @Inject constructor(
 }
 
 private const val LAST_CONSUMED_REQUEST_ID_KEY = "last_consumed_shared_analysis_request_id"
+private const val LAST_CONSUMED_ONBOARDING_SAMPLE_EVENT_ID_KEY =
+    "last_consumed_onboarding_sample_event_id"
 private const val PENDING_HOME_NAVIGATION_REQUEST_ID_KEY = "pending_home_navigation_request_id"
 private const val HOME_NAVIGATION_REQUEST_COUNTER_KEY = "home_navigation_request_counter"

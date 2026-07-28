@@ -52,4 +52,21 @@ class RecentSearchStoreTest {
 
         assertEquals(emptyList<String>(), store.recentSearches.first())
     }
+
+    @Test
+    fun `remove deletes matching term case-insensitively`() = runTest {
+        store.remember("숙소")
+        store.remember("파스타")
+        store.remove("숙소")
+
+        assertEquals(listOf("파스타"), store.recentSearches.first())
+    }
+
+    @Test
+    fun `remove clears key when last term is removed`() = runTest {
+        store.remember("숙소")
+        store.remove("숙소")
+
+        assertEquals(emptyList<String>(), store.recentSearches.first())
+    }
 }

@@ -2,6 +2,7 @@ package com.chalkak.recap.feature.home
 
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
+import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import java.util.concurrent.TimeUnit
 
 data class HomeUiState(
@@ -44,7 +45,7 @@ sealed interface HomeAction {
     data class SelectFavoriteItem(val id: Long) : HomeAction
     data class ToggleFavoriteItem(val id: Long) : HomeAction
     data object OpenFrequentSaveTypes : HomeAction
-    data class SelectFrequentSaveType(val id: String) : HomeAction
+    data class SelectFrequentSaveType(val contentTypeName: String) : HomeAction
 }
 
 internal val HomePreviewUiState = HomeUiState(
@@ -108,22 +109,22 @@ internal val HomePreviewUiState = HomeUiState(
     ),
     frequentSaveTypes = listOf(
         HomeFrequentSaveTypeUiModel(
-            id = RecapCategoryType.ShoppingProduct.name,
+            id = ScreenshotContentType.SHOPPING.name,
             categoryType = RecapCategoryType.ShoppingProduct,
             recapCount = 12,
         ),
         HomeFrequentSaveTypeUiModel(
-            id = RecapCategoryType.PlaceRestaurant.name,
+            id = ScreenshotContentType.PLACE.name,
             categoryType = RecapCategoryType.PlaceRestaurant,
             recapCount = 8,
         ),
         HomeFrequentSaveTypeUiModel(
-            id = RecapCategoryType.InfoKnowledge.name,
+            id = ScreenshotContentType.KNOWLEDGE.name,
             categoryType = RecapCategoryType.InfoKnowledge,
             recapCount = 6,
         ),
         HomeFrequentSaveTypeUiModel(
-            id = RecapCategoryType.BookContent.name,
+            id = ScreenshotContentType.CONTENT.name,
             categoryType = RecapCategoryType.BookContent,
             recapCount = 5,
         ),

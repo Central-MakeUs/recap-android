@@ -11,7 +11,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.core.design.theme.RecapGray100
+import com.chalkak.recap.core.design.theme.RecapGray50
 
 @Composable
 fun RecapSectionDivider(
@@ -29,7 +29,7 @@ fun RecapSectionDivider(
 
 object RecapSectionDividerDefaults {
     val Height = 8.dp
-    val Color = RecapGray100
+    val Color = RecapGray50
 }
 
 @Preview(name = "RecapSectionDivider", showBackground = true, widthDp = 360)

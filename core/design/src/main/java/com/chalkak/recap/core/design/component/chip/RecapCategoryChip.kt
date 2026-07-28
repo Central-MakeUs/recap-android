@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +33,9 @@ import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.theme.PretendardFontFamily
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption3
 
 @Immutable
 data class RecapCategoryChipColors(
@@ -136,7 +138,7 @@ fun RecapCategoryRoundChip(
                 horizontal = RecapCategoryChipDefaults.RoundHorizontalPadding,
                 vertical = RecapCategoryChipDefaults.RoundVerticalPadding,
             ),
-            style = MaterialTheme.typography.labelLarge,
+            style = RecapCaption1,
             color = colors.content,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -219,7 +221,7 @@ fun RecapCategoryTextChipWithIcon(
         }
         Text(
             text = label,
-            style = MaterialTheme.typography.labelSmall,
+            style = RecapCaption3,
             color = RecapGray900,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -269,7 +271,7 @@ private fun RecapCategoryChipVariantPreviewSection(
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(
             text = title,
-            style = MaterialTheme.typography.labelMedium,
+            style = RecapCaption2,
             color = RecapGray900,
         )
         FlowRow(

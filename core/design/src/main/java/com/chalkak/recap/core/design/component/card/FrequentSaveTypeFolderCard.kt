@@ -24,6 +24,8 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 
 @Composable
 fun FrequentSaveTypeFolderCard(
@@ -52,7 +54,7 @@ fun FrequentSaveTypeFolderCard(
             )
             Text(
                 text = categoryLabel,
-                style = MaterialTheme.typography.bodyMedium,
+                style = RecapBody2,
                 fontWeight = FontWeight.Bold,
                 color = RecapGray900,
                 maxLines = FrequentSaveTypeFolderCardTokens.CategoryMaxLines,
@@ -61,7 +63,7 @@ fun FrequentSaveTypeFolderCard(
             )
             Text(
                 text = stringResource(R.string.frequent_save_type_folder_card_recap_count, recapCount),
-                style = MaterialTheme.typography.labelMedium,
+                style = RecapCaption2,
                 color = RecapGray500,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

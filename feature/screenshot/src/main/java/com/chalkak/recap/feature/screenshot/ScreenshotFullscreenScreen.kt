@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +19,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.image.RecapPinchZoomAsyncImage
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 
 @Composable
 fun ScreenshotFullscreenScreen(
@@ -42,7 +42,7 @@ fun ScreenshotFullscreenScreen(
                 ) {
                     Text(
                         text = stringResource(R.string.screenshot_image_load_error),
-                        style = MaterialTheme.typography.bodyLarge,
+                        style = RecapBody1,
                         color = Color.White,
                         modifier = Modifier.padding(ScreenshotTokens.HorizontalPadding),
                     )

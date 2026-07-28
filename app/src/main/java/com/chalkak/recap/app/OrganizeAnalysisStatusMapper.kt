@@ -18,3 +18,11 @@ fun ScreenshotAnalysisProgressUiState.toOrganizeAnalysisStatusUiState(): Organiz
         OrganizeTerminalResult.AllFailed -> OrganizeAnalysisStatusUiState.Failed
     }
 }
+
+internal fun retainLastVisibleAnalysisStatus(
+    previous: OrganizeAnalysisStatusUiState?,
+    current: OrganizeAnalysisStatusUiState,
+): OrganizeAnalysisStatusUiState? = when (current) {
+    OrganizeAnalysisStatusUiState.Hidden -> previous
+    else -> current
+}

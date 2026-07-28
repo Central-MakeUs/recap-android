@@ -71,9 +71,20 @@ fun RecapNavHost(
             state.toOrganizeAnalysisStatusUiState()
         }
     }
+    val initialAnalysisStatus = remember(analysisProgressViewModel) {
+        analysisProgressViewModel.uiState.value.toOrganizeAnalysisStatusUiState()
+    }
     val analysisStatus by analysisStatusFlow.collectAsStateWithLifecycle(
-        initialValue = OrganizeAnalysisStatusUiState.Hidden,
+        initialValue = initialAnalysisStatus,
     )
+    var renderedAnalysisStatus by remember {
+        mutableStateOf(
+            retainLastVisibleAnalysisStatus(
+                previous = null,
+                current = initialAnalysisStatus,
+            ),
+        )
+    }
 
     fun exitOrganizeAnalysisStatus() {
         val wasRunning = analysisProgressViewModel.uiState.value.isRunning
@@ -123,6 +134,10 @@ fun RecapNavHost(
     }
 
     LaunchedEffect(analysisStatus) {
+        renderedAnalysisStatus = retainLastVisibleAnalysisStatus(
+            previous = renderedAnalysisStatus,
+            current = analysisStatus,
+        )
         if (analysisStatus !is OrganizeAnalysisStatusUiState.Hidden) {
             openOrganizeAnalysisStatusIfNeeded()
         }
@@ -134,7 +149,7 @@ fun RecapNavHost(
             if (backStack.lastOrNull() == AppRoute.OrganizeAnalysisStatus) {
                 exitOrganizeAnalysisStatus()
             } else {
-                backStack.removeLastOrNull()
+                backStack.removeLastIfNotRoot()
             }
         },
         modifier = modifier,
@@ -302,11 +317,13 @@ fun RecapNavHost(
                 }
 
                 AppRoute.OrganizeAnalysisStatus -> NavEntry(route) {
-                    OrganizeAnalysisStatusRoute(
-                        uiState = analysisStatus,
-                        onCancelClick = ::exitOrganizeAnalysisStatus,
-                        onDismissClick = ::exitOrganizeAnalysisStatus,
-                    )
+                    renderedAnalysisStatus?.let { status ->
+                        OrganizeAnalysisStatusRoute(
+                            uiState = status,
+                            onCancelClick = ::exitOrganizeAnalysisStatus,
+                            onDismissClick = ::exitOrganizeAnalysisStatus,
+                        )
+                    }
                 }
 
                 else -> error("Unknown app route: $route")
@@ -326,16 +343,19 @@ fun RecapMainTabNavHost(
     onNavigateToRecentOrganizedScreenshots: () -> Unit,
     onNavigateToOrganize: () -> Unit,
     onNavigateToCollectionFavorites: () -> Unit = {},
+    onNavigateToCollectionTypeDetail: (String) -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
     openCollectionFavoritesOnEnter: Boolean = false,
     onOpenCollectionFavoritesOnEnterConsumed: () -> Unit = {},
+    openCollectionTypeDetailOnEnter: String? = null,
+    onOpenCollectionTypeDetailOnEnterConsumed: () -> Unit = {},
     showDeveloperLogoShortcut: Boolean = false,
     onCollectionPredictiveBackProgress: (Float) -> Unit = {},
 ) {
     // Home ↔ Collection keeps its short slide+fade and bottom-bar predictive progress.
     NavDisplay(
         backStack = backStack,
-        onBack = { backStack.removeLastOrNull() },
+        onBack = { backStack.removeLastIfNotRoot() },
         modifier = modifier,
         transitionSpec = { mainTabForwardTransition() },
         popTransitionSpec = { mainTabPopTransition() },
@@ -352,6 +372,7 @@ fun RecapMainTabNavHost(
                         onNavigateToSearch = onNavigateToSearch,
                         onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
                         onNavigateToCollectionFavorites = onNavigateToCollectionFavorites,
+                        onNavigateToCollectionTypeDetail = onNavigateToCollectionTypeDetail,
                         onNavigateToOrganize = onNavigateToOrganize,
                         onNavigateToScreenshot = onNavigateToScreenshot,
                         showDeveloperLogoShortcut = showDeveloperLogoShortcut,
@@ -362,11 +383,15 @@ fun RecapMainTabNavHost(
                     CollectionRoute(
                         hazeState = hazeState,
                         onNavigateToOrganize = onNavigateToOrganize,
+                        onNavigateToSearch = onNavigateToSearch,
                         onNavigateToScreenshot = onNavigateToScreenshot,
-                        onNavigateBack = { backStack.removeLastOrNull() },
+                        onNavigateBack = { backStack.removeLastIfNotRoot() },
                         openCollectionFavoritesOnEnter = openCollectionFavoritesOnEnter,
                         onOpenCollectionFavoritesOnEnterConsumed =
                             onOpenCollectionFavoritesOnEnterConsumed,
+                        openCollectionTypeDetailOnEnter = openCollectionTypeDetailOnEnter,
+                        onOpenCollectionTypeDetailOnEnterConsumed =
+                            onOpenCollectionTypeDetailOnEnterConsumed,
                         onPredictiveBackProgress = onCollectionPredictiveBackProgress,
                     )
                 }
@@ -376,6 +401,9 @@ fun RecapMainTabNavHost(
         },
     )
 }
+
+internal fun <T> MutableList<T>.removeLastIfNotRoot(): T? =
+    if (size > 1) removeLastOrNull() else null
 
 private fun mainTabForwardTransition(): ContentTransform =
     slideInHorizontally(

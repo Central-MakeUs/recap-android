@@ -106,6 +106,8 @@ class CollectionViewModel @Inject constructor(
                 publishState()
             }
 
+            CollectionAction.OpenSearch -> Unit
+
             CollectionAction.ShowDetailSearch -> {
                 isDetailSearchVisible.value = true
                 publishState()
@@ -494,6 +496,15 @@ class CollectionViewModel @Inject constructor(
                         filter = activeFilter,
                         sort = detailSort.value,
                     )
+                    .let { detailUi ->
+                        detailUi.copy(
+                            cards = detailUi.cards.map { card ->
+                                card.copy(
+                                    isFavorite = favoriteStates[card.captureId] ?: card.isFavorite,
+                                )
+                            },
+                        )
+                    }
             }
         }
 

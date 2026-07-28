@@ -2,6 +2,7 @@ package com.chalkak.recap.feature.onboarding
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -18,6 +19,7 @@ annotation class OnboardingScreenPreview
 
 @Composable
 internal fun OnboardingPreviewContainer(
+    contentPadding: PaddingValues = OnboardingLayoutDefaults.ScreenPadding,
     content: @Composable () -> Unit,
 ) {
     RECAPTheme(dynamicColor = false) {
@@ -30,7 +32,7 @@ internal fun OnboardingPreviewContainer(
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
                     .safeDrawingPadding()
-                    .padding(OnboardingLayoutDefaults.ScreenPadding),
+                    .padding(contentPadding),
             ) {
                 content()
             }

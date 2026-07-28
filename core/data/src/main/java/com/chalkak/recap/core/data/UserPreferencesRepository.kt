@@ -4,9 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
@@ -24,36 +22,25 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
-    suspend fun getOnboardingStep(): String? {
-        return dataStore.data.first()[ONBOARDING_STEP]
-    }
-
-    suspend fun setOnboardingStep(step: String) {
-        dataStore.edit { preferences ->
-            preferences[ONBOARDING_STEP] = step
-        }
-    }
-
-    suspend fun clearOnboardingStep() {
-        dataStore.edit { preferences ->
-            preferences.remove(ONBOARDING_STEP)
-        }
-    }
-
-    val organizeCompleteEnabled: Flow<Boolean> =
+    val organizeCompleteNotificationEnabled: Flow<Boolean> =
         dataStore.data.map { preferences ->
-            preferences[ORGANIZE_COMPLETE_ENABLED] ?: true
+            preferences[ORGANIZE_COMPLETE_NOTIFICATION_ENABLED]
+                ?: preferences[LEGACY_ORGANIZE_COMPLETE_ENABLED]
+                ?: false
         }
 
-    suspend fun setOrganizeCompleteEnabled(enabled: Boolean) {
+    suspend fun setOrganizeCompleteNotificationEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
-            preferences[ORGANIZE_COMPLETE_ENABLED] = enabled
+            preferences[ORGANIZE_COMPLETE_NOTIFICATION_ENABLED] = enabled
+            preferences.remove(LEGACY_ORGANIZE_COMPLETE_ENABLED)
         }
     }
 
     private companion object {
         val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
-        val ONBOARDING_STEP = stringPreferencesKey("onboarding_step")
-        val ORGANIZE_COMPLETE_ENABLED = booleanPreferencesKey("organize_complete_enabled")
+        val ORGANIZE_COMPLETE_NOTIFICATION_ENABLED =
+            booleanPreferencesKey("organize_complete_notification_enabled")
+        val LEGACY_ORGANIZE_COMPLETE_ENABLED =
+            booleanPreferencesKey("organize_complete_enabled")
     }
 }

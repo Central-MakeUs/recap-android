@@ -30,8 +30,9 @@ import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
-import com.chalkak.recap.core.design.theme.RecapTypography
 import com.chalkak.recap.core.design.theme.White
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 
 @Composable
 fun RecapPopup(
@@ -103,13 +104,13 @@ fun RecapPopupContent(
                 Text(
                     text = title,
                     color = RecapGray900,
-                    style = RecapTypography.RecapHeading2,
+                    style = RecapHeading2,
                     textAlign = TextAlign.Center,
                 )
                 Text(
                     text = description,
                     color = RecapGray500,
-                    style = RecapTypography.RecapBody2,
+                    style = RecapBody2,
                     textAlign = TextAlign.Center,
                 )
             }

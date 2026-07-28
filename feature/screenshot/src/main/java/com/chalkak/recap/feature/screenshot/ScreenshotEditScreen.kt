@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -54,6 +53,12 @@ import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption3
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 
 @Composable
 fun ScreenshotEditScreen(
@@ -113,7 +118,7 @@ fun ScreenshotEditScreen(
                         R.string.screenshot_organized_date_format,
                         formatOrganizedDate(content.card.analysisResult.organizedAt.toEpochMilli()),
                     ),
-                    style = MaterialTheme.typography.labelMedium,
+                    style = RecapCaption2,
                     color = RecapGray500,
                 )
                 Spacer(modifier = Modifier.height(7.dp))
@@ -124,7 +129,7 @@ fun ScreenshotEditScreen(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = stringResource(R.string.screenshot_edit_image_immutable_hint),
-                    style = MaterialTheme.typography.labelSmall,
+                    style = RecapCaption3,
                     color = RecapBlue500,
                 )
                 Spacer(modifier = Modifier.height(21.dp))
@@ -168,7 +173,7 @@ fun ScreenshotEditScreen(
                 content.actionErrorMessageResId?.let { errorResId ->
                     Text(
                         text = stringResource(errorResId),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = RecapBody2,
                         color = RecapError,
                     )
                 }
@@ -195,7 +200,7 @@ private fun ScreenshotEditTopBar(
         Text(
             text = stringResource(R.string.screenshot_edit_title),
             modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.titleMedium,
+            style = RecapHeading2,
             fontWeight = FontWeight.Bold,
             color = RecapGray900,
             maxLines = 1,
@@ -248,7 +253,7 @@ private fun ScreenshotTextAction(
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.bodyLarge,
+            style = RecapBody1,
             color = if (enabled) {
                 color
             } else {
@@ -267,11 +272,20 @@ private fun ScreenshotEditImagePreview(
     var imageLoadFailed by remember(imageModel) { mutableStateOf(false) }
     val showPlaceholder = imageModel == null || imageLoadFailed
 
+    val imageInteractionSource = remember { MutableInteractionSource() }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(ScreenshotEditTokens.EditImagePreviewHeight)
-            .clip(RoundedCornerShape(ScreenshotEditTokens.EditImagePreviewCornerRadius)),
+            .clip(RoundedCornerShape(ScreenshotEditTokens.EditImagePreviewCornerRadius))
+            .clickable(
+                enabled = !showPlaceholder,
+                interactionSource = imageInteractionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onOpenFullscreen,
+            ),
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -284,7 +298,7 @@ private fun ScreenshotEditImagePreview(
                 ) {
                     Text(
                         text = stringResource(R.string.screenshot_image_load_error),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = RecapCaption1,
                         color = RecapGray500,
                         modifier = Modifier.padding(ScreenshotTokens.HorizontalPadding),
                     )

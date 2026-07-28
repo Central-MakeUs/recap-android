@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
@@ -40,6 +39,7 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
@@ -175,7 +175,7 @@ internal fun ScreenshotTypeChip(
             Text(
                 text = stringResource(categoryType.labelResId),
                 color = contentColor,
-                style = MaterialTheme.typography.labelLarge,
+                style = RecapCaption1,
                 fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
                 textAlign = TextAlign.Center,
                 maxLines = 1,

@@ -32,15 +32,19 @@ data class SearchUiState(
     val hasNext: Boolean = false,
     val nextPage: Int = 0,
     val isLoadingMore: Boolean = false,
+    val autoFocus: Boolean = true,
 )
 
 sealed interface SearchAction {
     data object NavigateBack : SearchAction
+    data object Reset : SearchAction
+    data object LeaveComposition : SearchAction
     data class UpdateQuery(val query: String) : SearchAction
     data object SubmitSearch : SearchAction
     data object RetrySearch : SearchAction
     data object LoadMore : SearchAction
     data class SelectRecentSearch(val term: String) : SearchAction
+    data class RemoveRecentSearch(val term: String) : SearchAction
     data object ClearAllRecentSearches : SearchAction
     data class SelectResult(val captureId: Long) : SearchAction
     data class ToggleFavorite(val captureId: Long) : SearchAction
