@@ -81,8 +81,7 @@ fun CollectionDetailScreen(
             navigationBarBottomPadding
     val categoryType = detail.categoryType
     val listState = rememberLazyListState()
-
-    LaunchedEffect(detail.sort) {
+    LaunchedEffect(detail.sort, detail.cards.firstOrNull()?.captureId) {
         listState.scrollToItem(0)
     }
 
