@@ -106,6 +106,8 @@ class CollectionViewModel @Inject constructor(
                 publishState()
             }
 
+            CollectionAction.OpenSearch -> Unit
+
             CollectionAction.ShowDetailSearch -> {
                 isDetailSearchVisible.value = true
                 publishState()

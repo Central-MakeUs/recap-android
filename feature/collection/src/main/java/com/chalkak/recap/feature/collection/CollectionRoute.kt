@@ -36,6 +36,7 @@ fun CollectionRoute(
     modifier: Modifier = Modifier,
     hazeState: HazeState,
     onNavigateToOrganize: () -> Unit,
+    onNavigateToSearch: () -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
     onNavigateBack: () -> Unit = {},
     openCollectionFavoritesOnEnter: Boolean = false,
@@ -140,6 +141,8 @@ fun CollectionRoute(
 
     fun handleAction(action: CollectionAction) {
         when (action) {
+            CollectionAction.OpenSearch -> onNavigateToSearch()
+
             CollectionAction.OpenFavoriteDetail -> {
                 viewModel.onAction(action)
                 backStack.add(CollectionDestination.FavoriteDetail)

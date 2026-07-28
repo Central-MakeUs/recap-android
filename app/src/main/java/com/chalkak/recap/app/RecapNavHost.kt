@@ -362,6 +362,7 @@ fun RecapMainTabNavHost(
                     CollectionRoute(
                         hazeState = hazeState,
                         onNavigateToOrganize = onNavigateToOrganize,
+                        onNavigateToSearch = onNavigateToSearch,
                         onNavigateToScreenshot = onNavigateToScreenshot,
                         onNavigateBack = { backStack.removeLastOrNull() },
                         openCollectionFavoritesOnEnter = openCollectionFavoritesOnEnter,

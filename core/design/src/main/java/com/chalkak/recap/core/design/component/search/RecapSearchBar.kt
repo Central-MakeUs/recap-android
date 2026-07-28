@@ -18,9 +18,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
@@ -45,17 +49,42 @@ fun RecapSearchBar(
     modifier: Modifier = Modifier,
     placeholder: String = stringResource(R.string.recap_search_bar_placeholder_collection),
     enabled: Boolean = true,
+    autoFocus: Boolean = false,
     imeAction: ImeAction = ImeAction.Search,
     onSearch: (() -> Unit)? = null,
+    onClick: (() -> Unit)? = null,
 ) {
     val keyboardController = LocalSoftwareKeyboardController.current
+    val focusRequester = remember { FocusRequester() }
+    val isNavigationEntry = onClick != null
+    val isEditable = enabled && !isNavigationEntry
     val submitSearch: () -> Unit = {
         onSearch?.invoke()
         keyboardController?.hide()
     }
+    val surfaceModifier = if (isNavigationEntry && enabled) {
+        modifier
+            .fillMaxWidth()
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                role = Role.Button,
+                onClick = onClick,
+            )
+    } else {
+        modifier.fillMaxWidth()
+    }
+
+    LaunchedEffect(autoFocus, isEditable) {
+        if (!autoFocus || !isEditable) return@LaunchedEffect
+        // Wait one frame so focus sticks after enter navigation transitions.
+        withFrameNanos { }
+        focusRequester.requestFocus()
+        keyboardController?.show()
+    }
 
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = surfaceModifier,
         shape = RecapSearchBarTokens.Shape,
         color = RecapGray50,
         contentColor = RecapGray900,
@@ -67,7 +96,7 @@ fun RecapSearchBar(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(RecapSearchBarTokens.IconTextSpacing),
         ) {
-            val searchIconModifier = if (onSearch != null && enabled) {
+            val searchIconModifier = if (onSearch != null && isEditable) {
                 Modifier
                     .size(RecapSearchBarTokens.IconSize)
                     .clickable(
@@ -81,10 +110,14 @@ fun RecapSearchBar(
             }
             Icon(
                 painter = painterResource(R.drawable.ic_search_24),
-                contentDescription = if (onSearch != null) {
-                    stringResource(R.string.recap_search_bar_search_content_description)
-                } else {
-                    null
+                contentDescription = when {
+                    isNavigationEntry -> stringResource(
+                        R.string.recap_search_bar_search_content_description,
+                    )
+                    onSearch != null -> stringResource(
+                        R.string.recap_search_bar_search_content_description,
+                    )
+                    else -> null
                 },
                 modifier = searchIconModifier,
                 tint = RecapGray300,
@@ -92,8 +125,10 @@ fun RecapSearchBar(
             BasicTextField(
                 value = value,
                 onValueChange = onValueChange,
-                modifier = Modifier.weight(1f),
-                enabled = enabled,
+                modifier = Modifier
+                    .weight(1f)
+                    .focusRequester(focusRequester),
+                enabled = isEditable,
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(
                     color = RecapGray900,
@@ -121,9 +156,9 @@ fun RecapSearchBar(
                     }
                 },
             )
-            if (value.isNotEmpty()) {
+            if (value.isNotEmpty() && !isNavigationEntry) {
                 RecapSearchBarClearButton(
-                    enabled = enabled,
+                    enabled = isEditable,
                     onClick = { onValueChange("") },
                 )
             }
@@ -191,6 +226,19 @@ private fun RecapSearchBarFilledPreview() {
             value = "맛집",
             onValueChange = {},
             onSearch = {},
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+}
+
+@Preview(name = "RecapSearchBar navigation entry", showBackground = true, widthDp = 360)
+@Composable
+private fun RecapSearchBarNavigationEntryPreview() {
+    RECAPTheme {
+        RecapSearchBar(
+            value = "",
+            onValueChange = {},
+            onClick = {},
             modifier = Modifier.padding(16.dp),
         )
     }

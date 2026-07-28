@@ -190,8 +190,9 @@ private fun CollectionOverviewContent(
         modifier = modifier.fillMaxSize(),
     ) {
         RecapSearchBar(
-            value = uiState.searchQuery,
-            onValueChange = { query -> onAction(CollectionAction.UpdateSearchQuery(query)) },
+            value = "",
+            onValueChange = {},
+            onClick = { onAction(CollectionAction.OpenSearch) },
             modifier = Modifier
                 .padding(horizontal = CollectionScreenTokens.HorizontalPadding)
                 .padding(top = CollectionScreenTokens.SearchTopPadding),

@@ -129,6 +129,7 @@ private fun SearchTopBar(
                 value = query,
                 onValueChange = onQueryChange,
                 onSearch = onSearch,
+                autoFocus = true,
                 modifier = Modifier.weight(1f),
                 placeholder = stringResource(R.string.search_screen_placeholder),
             )
