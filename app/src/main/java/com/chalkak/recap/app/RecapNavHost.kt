@@ -343,9 +343,12 @@ fun RecapMainTabNavHost(
     onNavigateToRecentOrganizedScreenshots: () -> Unit,
     onNavigateToOrganize: () -> Unit,
     onNavigateToCollectionFavorites: () -> Unit = {},
+    onNavigateToCollectionTypeDetail: (String) -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
     openCollectionFavoritesOnEnter: Boolean = false,
     onOpenCollectionFavoritesOnEnterConsumed: () -> Unit = {},
+    openCollectionTypeDetailOnEnter: String? = null,
+    onOpenCollectionTypeDetailOnEnterConsumed: () -> Unit = {},
     showDeveloperLogoShortcut: Boolean = false,
     onCollectionPredictiveBackProgress: (Float) -> Unit = {},
 ) {
@@ -369,6 +372,7 @@ fun RecapMainTabNavHost(
                         onNavigateToSearch = onNavigateToSearch,
                         onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
                         onNavigateToCollectionFavorites = onNavigateToCollectionFavorites,
+                        onNavigateToCollectionTypeDetail = onNavigateToCollectionTypeDetail,
                         onNavigateToOrganize = onNavigateToOrganize,
                         onNavigateToScreenshot = onNavigateToScreenshot,
                         showDeveloperLogoShortcut = showDeveloperLogoShortcut,
@@ -385,6 +389,9 @@ fun RecapMainTabNavHost(
                         openCollectionFavoritesOnEnter = openCollectionFavoritesOnEnter,
                         onOpenCollectionFavoritesOnEnterConsumed =
                             onOpenCollectionFavoritesOnEnterConsumed,
+                        openCollectionTypeDetailOnEnter = openCollectionTypeDetailOnEnter,
+                        onOpenCollectionTypeDetailOnEnterConsumed =
+                            onOpenCollectionTypeDetailOnEnterConsumed,
                         onPredictiveBackProgress = onCollectionPredictiveBackProgress,
                     )
                 }

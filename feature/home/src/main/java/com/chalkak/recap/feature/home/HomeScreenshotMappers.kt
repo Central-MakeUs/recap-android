@@ -32,10 +32,9 @@ internal fun HomeSummary.toHomeUiState(): HomeUiState {
             )
         },
         frequentSaveTypes = topTypes.map { topType ->
-            val categoryType = topType.typeCode.toRecapCategoryType()
             HomeFrequentSaveTypeUiModel(
-                id = categoryType.name,
-                categoryType = categoryType,
+                id = topType.typeCode.name,
+                categoryType = topType.typeCode.toRecapCategoryType(),
                 recapCount = topType.count.toInt(),
             )
         },

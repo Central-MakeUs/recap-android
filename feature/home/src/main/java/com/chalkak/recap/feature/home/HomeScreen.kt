@@ -44,6 +44,7 @@ import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.HomeFavoriteCard
+import com.chalkak.recap.core.design.component.card.HomeFavoriteCardDefaults
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.component.icon.RecapCategoryIcon
 import com.chalkak.recap.core.design.component.icon.RecapCategoryIconSize
@@ -222,11 +223,16 @@ private fun FavoriteItemsSection(
             HomeFavoritesEmptyText()
             return@HomeSection
         }
+        val gridItems = items.take(
+            HomeScreenTokens.FavoriteGridColumns * HomeScreenTokens.FavoriteGridRows,
+        )
+        val rows = gridItems.chunked(HomeScreenTokens.FavoriteGridColumns)
         Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.FavoriteCardSpacing),
         ) {
-            items.chunked(HomeScreenTokens.FavoriteGridColumns).forEach { rowItems ->
+            repeat(HomeScreenTokens.FavoriteGridRows) { rowIndex ->
+                val rowItems = rows.getOrElse(rowIndex) { emptyList() }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(
@@ -242,7 +248,11 @@ private fun FavoriteItemsSection(
                         )
                     }
                     repeat(HomeScreenTokens.FavoriteGridColumns - rowItems.size) {
-                        Spacer(modifier = Modifier.weight(1f))
+                        Spacer(
+                            modifier = Modifier
+                                .weight(1f)
+                                .height(HomeFavoriteCardDefaults.Height),
+                        )
                     }
                 }
             }
@@ -257,9 +267,12 @@ private fun HomeFavoritesEmptyText(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = HomeScreenTokens.EmptySectionTextVerticalPadding),
+            .height(HomeScreenTokens.FavoriteGridHeight),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.FavoritesEmptyTextSpacing),
+        verticalArrangement = Arrangement.spacedBy(
+            HomeScreenTokens.FavoritesEmptyTextSpacing,
+            Alignment.CenterVertically,
+        ),
     ) {
         Text(
             text = stringResource(R.string.home_favorites_empty),
@@ -324,7 +337,6 @@ private fun FrequentSaveTypesSection(
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(HomeScreenTokens.FrequentTypeCardSpacing),
         ) {
             saveTypes.forEach { saveType ->
                 val interactionSource = remember(saveType.id) { MutableInteractionSource() }
@@ -333,12 +345,14 @@ private fun FrequentSaveTypesSection(
                     verticalArrangement = Arrangement.spacedBy(
                         HomeScreenTokens.FrequentTypeLabelSpacing,
                     ),
-                    modifier = Modifier.clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        role = Role.Button,
-                        onClick = { onSaveTypeClick(saveType.id) },
-                    ),
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(
+                            interactionSource = interactionSource,
+                            indication = null,
+                            role = Role.Button,
+                            onClick = { onSaveTypeClick(saveType.id) },
+                        ),
                 ) {
                     RecapCategoryIcon(
                         category = saveType.categoryType,
@@ -437,9 +451,12 @@ private object HomeScreenTokens {
     val RecentCardSpacing = 10.dp
     val FavoriteCardSpacing = 11.dp
     const val FavoriteGridColumns = 2
+    const val FavoriteGridRows = 2
+    val FavoriteGridHeight =
+        HomeFavoriteCardDefaults.Height * FavoriteGridRows +
+            FavoriteCardSpacing * (FavoriteGridRows - 1)
     val EmptySectionTextVerticalPadding = 70.dp
     val FavoritesEmptyTextSpacing = 4.dp
-    val FrequentTypeCardSpacing = 16.dp
     val FrequentTypeLabelSpacing = 8.dp
     val EmptyCharacterWidth = 175.dp
     val EmptyCharacterHeight = 127.dp

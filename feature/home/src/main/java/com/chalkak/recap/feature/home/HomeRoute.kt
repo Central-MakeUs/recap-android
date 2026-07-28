@@ -15,6 +15,7 @@ fun HomeRoute(
     onNavigateToSearch: () -> Unit,
     onNavigateToRecentOrganizedScreenshots: () -> Unit,
     onNavigateToCollectionFavorites: () -> Unit,
+    onNavigateToCollectionTypeDetail: (String) -> Unit,
     onNavigateToOrganize: () -> Unit,
     onNavigateToScreenshot: (Long) -> Unit,
     modifier: Modifier = Modifier,
@@ -40,7 +41,8 @@ fun HomeRoute(
                 is HomeAction.SelectRecentScreenshot -> onNavigateToScreenshot(action.id)
                 is HomeAction.SelectFavoriteItem -> onNavigateToScreenshot(action.id)
                 HomeAction.OpenFrequentSaveTypes -> Unit
-                is HomeAction.SelectFrequentSaveType -> Unit
+                is HomeAction.SelectFrequentSaveType ->
+                    onNavigateToCollectionTypeDetail(action.contentTypeName)
             }
         },
     )

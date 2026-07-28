@@ -45,6 +45,10 @@ class HomeScreenshotMappersTest {
             listOf(RecapCategoryType.ShoppingProduct),
             state.frequentSaveTypes.map { it.categoryType },
         )
+        assertEquals(
+            listOf(ScreenshotContentType.SHOPPING.name),
+            state.frequentSaveTypes.map { it.id },
+        )
         assertEquals(listOf(5), state.frequentSaveTypes.map { it.recapCount })
     }
 

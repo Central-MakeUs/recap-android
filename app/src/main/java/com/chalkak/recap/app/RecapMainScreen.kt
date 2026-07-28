@@ -42,6 +42,7 @@ fun RecapMainScreen(
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
     val hazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
     var openCollectionFavoritesOnNextEnter by remember { mutableStateOf(false) }
+    var openCollectionTypeDetailOnNextEnter by remember { mutableStateOf<String?>(null) }
     var collectionPredictiveBackProgress by remember { mutableFloatStateOf(0f) }
     var showOrganize by rememberSaveable { mutableStateOf(false) }
 
@@ -75,7 +76,14 @@ fun RecapMainScreen(
     }
 
     fun navigateToCollectionFavorites() {
+        openCollectionTypeDetailOnNextEnter = null
         openCollectionFavoritesOnNextEnter = true
+        navigateTo(MainTabRoute.Collection)
+    }
+
+    fun navigateToCollectionTypeDetail(contentTypeName: String) {
+        openCollectionFavoritesOnNextEnter = false
+        openCollectionTypeDetailOnNextEnter = contentTypeName
         navigateTo(MainTabRoute.Collection)
     }
 
@@ -120,10 +128,15 @@ fun RecapMainScreen(
                     showOrganize = true
                 },
                 onNavigateToCollectionFavorites = ::navigateToCollectionFavorites,
+                onNavigateToCollectionTypeDetail = ::navigateToCollectionTypeDetail,
                 onNavigateToScreenshot = onNavigateToScreenshot,
                 openCollectionFavoritesOnEnter = openCollectionFavoritesOnNextEnter,
                 onOpenCollectionFavoritesOnEnterConsumed = {
                     openCollectionFavoritesOnNextEnter = false
+                },
+                openCollectionTypeDetailOnEnter = openCollectionTypeDetailOnNextEnter,
+                onOpenCollectionTypeDetailOnEnterConsumed = {
+                    openCollectionTypeDetailOnNextEnter = null
                 },
                 showDeveloperLogoShortcut = BuildConfig.DEBUG,
                 onCollectionPredictiveBackProgress = { progress ->
