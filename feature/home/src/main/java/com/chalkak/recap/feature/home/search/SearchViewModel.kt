@@ -69,6 +69,12 @@ class SearchViewModel @Inject constructor(
                 submitSearch(reset = true)
             }
 
+            is SearchAction.RemoveRecentSearch -> {
+                viewModelScope.launch {
+                    recentSearchStore.remove(action.term)
+                }
+            }
+
             SearchAction.ClearAllRecentSearches -> {
                 viewModelScope.launch {
                     recentSearchStore.clearAll()

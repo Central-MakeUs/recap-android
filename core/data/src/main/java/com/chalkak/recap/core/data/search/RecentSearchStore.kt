@@ -33,6 +33,22 @@ class RecentSearchStore @Inject constructor(
         }
     }
 
+    suspend fun remove(term: String) {
+        val normalized = term.trim()
+        if (normalized.isEmpty()) {
+            return
+        }
+        dataStore.edit { preferences ->
+            val current = decode(preferences[RECENT_SEARCHES])
+            val updated = current.filterNot { it.equals(normalized, ignoreCase = true) }
+            if (updated.isEmpty()) {
+                preferences.remove(RECENT_SEARCHES)
+            } else {
+                preferences[RECENT_SEARCHES] = encode(updated)
+            }
+        }
+    }
+
     suspend fun clearAll() {
         dataStore.edit { preferences ->
             preferences.remove(RECENT_SEARCHES)

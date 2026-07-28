@@ -51,6 +51,12 @@ class SearchViewModelTest {
         coEvery { recentSearchStore.clearAll() } coAnswers {
             recentSearchesFlow.value = emptyList()
         }
+        coEvery { recentSearchStore.remove(any()) } coAnswers {
+            val term = firstArg<String>().trim()
+            recentSearchesFlow.value = recentSearchesFlow.value.filterNot {
+                it.equals(term, ignoreCase = true)
+            }
+        }
         viewModel = SearchViewModel(
             searchRepository = searchRepository,
             captureMutationRepository = captureMutationRepository,
@@ -317,5 +323,27 @@ class SearchViewModelTest {
             )
         }
         assertNull(viewModel.uiState.value.results.firstOrNull())
+    }
+
+    @Test
+    fun `remove recent search deletes matching term`() = runTest {
+        recentSearchesFlow.value = listOf("파스타", "숙소")
+
+        viewModel.onAction(SearchAction.RemoveRecentSearch("파스타"))
+        advanceUntilIdle()
+
+        assertEquals(listOf("숙소"), viewModel.uiState.value.recentSearches)
+        coVerify(exactly = 1) { recentSearchStore.remove("파스타") }
+    }
+
+    @Test
+    fun `clear all recent searches empties list`() = runTest {
+        recentSearchesFlow.value = listOf("파스타", "숙소")
+
+        viewModel.onAction(SearchAction.ClearAllRecentSearches)
+        advanceUntilIdle()
+
+        assertEquals(emptyList<String>(), viewModel.uiState.value.recentSearches)
+        coVerify(exactly = 1) { recentSearchStore.clearAll() }
     }
 }

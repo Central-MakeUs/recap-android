@@ -41,6 +41,7 @@ sealed interface SearchAction {
     data object RetrySearch : SearchAction
     data object LoadMore : SearchAction
     data class SelectRecentSearch(val term: String) : SearchAction
+    data class RemoveRecentSearch(val term: String) : SearchAction
     data object ClearAllRecentSearches : SearchAction
     data class SelectResult(val captureId: Long) : SearchAction
     data class ToggleFavorite(val captureId: Long) : SearchAction
