@@ -1,6 +1,5 @@
 package com.chalkak.recap.core.design.component.bottomsheet
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -10,8 +9,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -23,6 +20,8 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -82,51 +81,49 @@ fun OrganizeNotificationPermissionBottomSheetContent(
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(
-            OrganizeNotificationPermissionBottomSheetTokens.SectionSpacing
-        ),
     ) {
-        Surface(
-            modifier = Modifier.size(OrganizeNotificationPermissionBottomSheetTokens.IconContainerSize),
-            shape = RoundedCornerShape(OrganizeNotificationPermissionBottomSheetTokens.IconContainerRadius),
-            color = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.primary,
-        ) {
-            Icon(
-                imageVector = Icons.Outlined.Notifications,
-                contentDescription = stringResource(
-                    R.string.organize_notification_permission_icon_content_description
-                ),
-                modifier = Modifier
-                    .padding(OrganizeNotificationPermissionBottomSheetTokens.IconPadding)
-                    .size(OrganizeNotificationPermissionBottomSheetTokens.IconSize),
-            )
-        }
-
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(
-                OrganizeNotificationPermissionBottomSheetTokens.TextSpacing
+        Icon(
+            painter = painterResource(R.drawable.ic_notification_bell_36),
+            contentDescription = stringResource(
+                R.string.organize_notification_permission_icon_content_description
             ),
-        ) {
-            Text(
-                text = stringResource(R.string.organize_notification_permission_title),
-                color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center,
-            )
-            Text(
-                text = stringResource(R.string.organize_notification_permission_description),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyMedium,
-                textAlign = TextAlign.Center,
-            )
-        }
+            modifier = Modifier.size(
+                width = OrganizeNotificationPermissionBottomSheetTokens.IconWidth,
+                height = OrganizeNotificationPermissionBottomSheetTokens.IconHeight,
+            ),
+            tint = Color.Unspecified,
+        )
 
         Spacer(
             modifier = Modifier.height(
-                OrganizeNotificationPermissionBottomSheetTokens.ActionTopSpacing
+                OrganizeNotificationPermissionBottomSheetTokens.IconToTitleSpacing
+            )
+        )
+
+        Text(
+            text = stringResource(R.string.organize_notification_permission_title),
+            color = MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+        )
+
+        Spacer(
+            modifier = Modifier.height(
+                OrganizeNotificationPermissionBottomSheetTokens.TitleToDescriptionSpacing
+            )
+        )
+
+        Text(
+            text = stringResource(R.string.organize_notification_permission_description),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyMedium,
+            textAlign = TextAlign.Center,
+        )
+
+        Spacer(
+            modifier = Modifier.height(
+                OrganizeNotificationPermissionBottomSheetTokens.DescriptionToPrimarySpacing
             )
         )
 
@@ -135,7 +132,12 @@ fun OrganizeNotificationPermissionBottomSheetContent(
             onClick = onAllowNotificationClick,
             modifier = Modifier.fillMaxWidth(),
             size = RecapButtonSize.Medium,
-            shadowElevation = OrganizeNotificationPermissionBottomSheetTokens.PrimaryButtonElevation,
+        )
+
+        Spacer(
+            modifier = Modifier.height(
+                OrganizeNotificationPermissionBottomSheetTokens.PrimaryToSecondarySpacing
+            )
         )
 
         RecapButton(
@@ -144,13 +146,6 @@ fun OrganizeNotificationPermissionBottomSheetContent(
             modifier = Modifier.fillMaxWidth(),
             size = RecapButtonSize.Medium,
             colors = RecapButtonDefaults.textColors(),
-        )
-
-        Text(
-            text = stringResource(R.string.organize_notification_permission_notice),
-            color = MaterialTheme.colorScheme.outline,
-            style = MaterialTheme.typography.labelMedium,
-            textAlign = TextAlign.Center,
         )
     }
 }
@@ -176,20 +171,18 @@ private fun OrganizeNotificationPermissionBottomSheetDragHandle(
 
 private object OrganizeNotificationPermissionBottomSheetTokens {
     val ContainerCornerRadius = 24.dp
-    val DragHandleWidth = 48.dp
-    val DragHandleHeight = 6.dp
-    val DragHandleVerticalPadding = 8.dp
+    val DragHandleWidth = 43.dp
+    val DragHandleHeight = 5.dp
+    val DragHandleVerticalPadding = 13.dp
     val HorizontalPadding = 24.dp
-    val ContentTopPadding = 4.dp
+    val ContentTopPadding = 12.dp
     val BottomPadding = 48.dp
-    val SectionSpacing = 12.dp
-    val TextSpacing = 10.dp
-    val IconContainerSize = 88.dp
-    val IconContainerRadius = 24.dp
-    val IconPadding = 24.dp
-    val IconSize = 32.dp
-    val ActionTopSpacing = 4.dp
-    val PrimaryButtonElevation = 12.dp
+    val IconWidth = 36.dp
+    val IconHeight = 41.dp
+    val IconToTitleSpacing = 20.dp
+    val TitleToDescriptionSpacing = 12.dp
+    val DescriptionToPrimarySpacing = 35.dp
+    val PrimaryToSecondarySpacing = 12.dp
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
