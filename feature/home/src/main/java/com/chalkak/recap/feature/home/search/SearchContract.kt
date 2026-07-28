@@ -36,6 +36,7 @@ data class SearchUiState(
 
 sealed interface SearchAction {
     data object NavigateBack : SearchAction
+    data object Reset : SearchAction
     data class UpdateQuery(val query: String) : SearchAction
     data object SubmitSearch : SearchAction
     data object RetrySearch : SearchAction

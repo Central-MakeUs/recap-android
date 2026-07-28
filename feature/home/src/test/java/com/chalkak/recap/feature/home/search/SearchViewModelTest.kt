@@ -262,6 +262,45 @@ class SearchViewModelTest {
     }
 
     @Test
+    fun `reset clears search bar and results while keeping recent searches`() = runTest {
+        recentSearchesFlow.value = listOf("최근검색")
+        advanceUntilIdle()
+        coEvery {
+            searchRepository.search(any(), any(), any(), any(), any())
+        } returns Result.success(
+            SearchPage(
+                count = 1L,
+                hasNext = false,
+                items = listOf(
+                    SearchResult(
+                        captureId = 7L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "숙소",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-19T00:00:00Z",
+                    ),
+                ),
+            ),
+        )
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        viewModel.onAction(SearchAction.Reset)
+        advanceUntilIdle()
+
+        assertEquals("", viewModel.uiState.value.query)
+        assertEquals("", viewModel.uiState.value.submittedQuery)
+        assertEquals(SearchContentPhase.Idle, viewModel.uiState.value.phase)
+        assertTrue(viewModel.uiState.value.results.isEmpty())
+        assertEquals(0L, viewModel.uiState.value.resultCount)
+        assertEquals(listOf("숙소", "최근검색"), viewModel.uiState.value.recentSearches)
+    }
+
+    @Test
     fun `toggle favorite updates local state and calls mutation`() = runTest {
         coEvery {
             searchRepository.search(any(), any(), any(), any(), any())

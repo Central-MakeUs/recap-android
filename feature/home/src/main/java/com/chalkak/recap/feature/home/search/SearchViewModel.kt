@@ -37,22 +37,11 @@ class SearchViewModel @Inject constructor(
 
     fun onAction(action: SearchAction) {
         when (action) {
+            SearchAction.Reset -> clearSearchSession()
+
             is SearchAction.UpdateQuery -> {
                 if (action.query.isEmpty()) {
-                    searchJob?.cancel()
-                    loadMoreJob?.cancel()
-                    _uiState.update { state ->
-                        state.copy(
-                            query = "",
-                            submittedQuery = "",
-                            phase = SearchContentPhase.Idle,
-                            results = emptyList(),
-                            resultCount = 0L,
-                            hasNext = false,
-                            nextPage = 0,
-                            isLoadingMore = false,
-                        )
-                    }
+                    clearSearchSession()
                 } else {
                     _uiState.update { state -> state.copy(query = action.query) }
                 }
@@ -86,6 +75,23 @@ class SearchViewModel @Inject constructor(
             SearchAction.NavigateBack,
             is SearchAction.SelectResult,
             -> Unit
+        }
+    }
+
+    private fun clearSearchSession() {
+        searchJob?.cancel()
+        loadMoreJob?.cancel()
+        _uiState.update { state ->
+            state.copy(
+                query = "",
+                submittedQuery = "",
+                phase = SearchContentPhase.Idle,
+                results = emptyList(),
+                resultCount = 0L,
+                hasNext = false,
+                nextPage = 0,
+                isLoadingMore = false,
+            )
         }
     }
 
