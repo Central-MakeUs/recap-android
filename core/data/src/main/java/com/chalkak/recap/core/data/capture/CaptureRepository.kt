@@ -3,8 +3,10 @@ package com.chalkak.recap.core.data.capture
 import com.chalkak.recap.core.data.capture.remote.CaptureApi
 import com.chalkak.recap.core.data.capture.remote.FavoriteRequestDto
 import com.chalkak.recap.core.data.capture.remote.OrganizeRequestDto
+import com.chalkak.recap.core.data.capture.remote.ReportRequestDto
 import com.chalkak.recap.core.data.capture.remote.UploadUrlsRequestDto
 import com.chalkak.recap.core.data.capture.remote.toDomain
+import com.chalkak.recap.core.data.capture.remote.toDto
 import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.data.network.mapApiResponse
 import com.chalkak.recap.core.data.network.runRemoteCatchingSuspend
@@ -12,6 +14,7 @@ import com.chalkak.recap.core.model.capture.CaptureDetail
 import com.chalkak.recap.core.model.capture.OrganizeBatch
 import com.chalkak.recap.core.model.capture.OrganizeStatusDetail
 import com.chalkak.recap.core.model.capture.PendingOrganizeResult
+import com.chalkak.recap.core.model.capture.ReportReason
 import com.chalkak.recap.core.model.capture.UploadItem
 import com.chalkak.recap.core.model.capture.UploadUrls
 import javax.inject.Inject
@@ -123,6 +126,17 @@ class CaptureRepository @Inject constructor(
             captureApi.updateFavorite(
                 captureId = captureId,
                 body = FavoriteRequestDto(isFavorite = isFavorite),
+            )
+        }
+
+    suspend fun report(
+        captureId: Long,
+        reason: ReportReason,
+    ): Result<Unit> =
+        runRemoteCatchingSuspend {
+            captureApi.report(
+                captureId = captureId,
+                body = ReportRequestDto(reason = reason.toDto()),
             )
         }
 }

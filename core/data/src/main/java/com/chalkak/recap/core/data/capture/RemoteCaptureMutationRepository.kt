@@ -1,5 +1,7 @@
 package com.chalkak.recap.core.data.capture
 
+import com.chalkak.recap.core.data.capture.remote.BodyUpdateRequestDto
+import com.chalkak.recap.core.data.capture.remote.BulkDeleteRequestDto
 import com.chalkak.recap.core.data.capture.remote.CaptureApi
 import com.chalkak.recap.core.data.capture.remote.FavoriteRequestDto
 import com.chalkak.recap.core.data.network.runRemoteCatchingSuspend
@@ -30,6 +32,22 @@ class RemoteCaptureMutationRepository @Inject constructor(
         return result
     }
 
+    override suspend fun updateBody(
+        captureId: Long,
+        body: String,
+    ): Result<Unit> {
+        val result = runRemoteCatchingSuspend {
+            captureApi.updateBody(
+                captureId = captureId,
+                body = BodyUpdateRequestDto(body = body),
+            )
+        }
+        if (result.isSuccess) {
+            changeNotifier.notifyCaptureChanged()
+        }
+        return result
+    }
+
     override suspend fun deleteCaptures(captureIds: Set<Long>): Result<CaptureDeleteResult> {
         if (captureIds.isEmpty()) {
             return Result.success(
@@ -40,28 +58,28 @@ class RemoteCaptureMutationRepository @Inject constructor(
             )
         }
         return try {
-            val deletedIds = linkedSetOf<Long>()
-            val failedIds = linkedSetOf<Long>()
-            for (captureId in captureIds) {
-                val deleteResult = runRemoteCatchingSuspend {
-                    captureApi.delete(captureId)
-                }
-                if (deleteResult.isSuccess) {
-                    deletedIds += captureId
-                } else {
-                    failedIds += captureId
-                }
+            val deleteResult = runRemoteCatchingSuspend {
+                captureApi.bulkDelete(
+                    BulkDeleteRequestDto(captureIds = captureIds.toList()),
+                )
             }
-            if (deletedIds.isNotEmpty()) {
-                thumbnailCache.deleteCachedThumbnails(deletedIds)
+            if (deleteResult.isSuccess) {
+                thumbnailCache.deleteCachedThumbnails(captureIds)
                 changeNotifier.notifyCaptureChanged()
+                Result.success(
+                    CaptureDeleteResult(
+                        deletedIds = captureIds,
+                        failedIds = emptySet(),
+                    ),
+                )
+            } else {
+                Result.success(
+                    CaptureDeleteResult(
+                        deletedIds = emptySet(),
+                        failedIds = captureIds,
+                    ),
+                )
             }
-            Result.success(
-                CaptureDeleteResult(
-                    deletedIds = deletedIds,
-                    failedIds = failedIds,
-                ),
-            )
         } catch (cancellation: CancellationException) {
             throw cancellation
         }

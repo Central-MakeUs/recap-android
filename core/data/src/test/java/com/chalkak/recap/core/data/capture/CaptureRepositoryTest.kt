@@ -5,6 +5,8 @@ import com.chalkak.recap.core.data.capture.remote.CaptureDetailResponseDto
 import com.chalkak.recap.core.data.capture.remote.CardTypeDto
 import com.chalkak.recap.core.data.capture.remote.OrganizeResponseDto
 import com.chalkak.recap.core.data.capture.remote.OrganizeStatusDto
+import com.chalkak.recap.core.data.capture.remote.ReportReasonDto
+import com.chalkak.recap.core.data.capture.remote.ReportRequestDto
 import com.chalkak.recap.core.data.capture.remote.UploadItemDto
 import com.chalkak.recap.core.data.capture.remote.UploadUrlsResponseDto
 import com.chalkak.recap.core.data.network.ApiErrorDto
@@ -12,8 +14,10 @@ import com.chalkak.recap.core.data.network.ApiResponseDto
 import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.data.network.RemoteNetworkException
 import com.chalkak.recap.core.model.capture.OrganizeStatus
+import com.chalkak.recap.core.model.capture.ReportReason
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import java.io.IOException
 import kotlinx.coroutines.test.runTest
@@ -143,5 +147,17 @@ class CaptureRepositoryTest {
         val result = repository.cancelOrganize(5L)
 
         assertTrue(result.isSuccess)
+    }
+
+    @Test
+    fun `report sends reason dto`() = runTest {
+        coEvery { captureApi.report(10L, ReportRequestDto(reason = ReportReasonDto.OFFENSIVE)) } returns Unit
+
+        val result = repository.report(captureId = 10L, reason = ReportReason.OFFENSIVE)
+
+        assertTrue(result.isSuccess)
+        coVerify(exactly = 1) {
+            captureApi.report(10L, ReportRequestDto(reason = ReportReasonDto.OFFENSIVE))
+        }
     }
 }

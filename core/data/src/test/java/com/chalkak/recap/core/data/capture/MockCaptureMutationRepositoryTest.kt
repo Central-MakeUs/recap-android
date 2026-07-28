@@ -1,8 +1,12 @@
 package com.chalkak.recap.core.data.capture
 
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
+import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
+import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
+import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
+import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -10,6 +14,7 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.Runs
 import io.mockk.verify
+import java.time.Instant
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -70,6 +75,58 @@ class MockCaptureMutationRepositoryTest {
 
         assertEquals(setOf(1L), result.deletedIds)
         assertTrue(result.failedIds.isEmpty())
+    }
+
+    @Test
+    fun `updateBody updates existing card content`() = runTest(testDispatcher) {
+        coEvery { cardRepository.getCard(1L) } returns StoredScreenshotCard(
+            analysisResult = ScreenshotAnalysisResult(
+                captureId = 1L,
+                typeCode = ScreenshotContentType.JOB,
+                title = "title",
+                summary = "summary",
+                body = "old",
+                originalImageUrl = "",
+                isFavorite = false,
+                organizedAt = Instant.parse("2026-07-19T00:00:00Z"),
+            ),
+            imageRefs = ScreenshotCardImageRefs(),
+            updatedAtMillis = 1L,
+        )
+        coEvery {
+            cardRepository.updateCardContent(
+                captureId = 1L,
+                title = "title",
+                summary = "summary",
+                body = "new body",
+                typeCode = ScreenshotContentType.JOB,
+                updatedAtMillis = any(),
+            )
+        } returns true
+        val repository = createRepository()
+
+        val result = repository.updateBody(captureId = 1L, body = "new body")
+
+        assertTrue(result.isSuccess)
+    }
+
+    @Test
+    fun `updateBody fails when card is missing`() = runTest(testDispatcher) {
+        coEvery { cardRepository.getCard(1L) } returns null
+        val repository = createRepository()
+
+        val result = repository.updateBody(captureId = 1L, body = "new body")
+
+        assertTrue(result.isFailure)
+        coVerify(exactly = 0) {
+            cardRepository.updateCardContent(
+                captureId = any(),
+                title = any(),
+                summary = any(),
+                body = any(),
+                typeCode = any(),
+            )
+        }
     }
 
     @Test

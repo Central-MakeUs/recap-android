@@ -18,6 +18,12 @@ class SwitchingCaptureMutationRepository @Inject constructor(
     ): Result<Unit> =
         resolveDelegate().updateFavorite(captureId = captureId, isFavorite = isFavorite)
 
+    override suspend fun updateBody(
+        captureId: Long,
+        body: String,
+    ): Result<Unit> =
+        resolveDelegate().updateBody(captureId = captureId, body = body)
+
     override suspend fun deleteCaptures(captureIds: Set<Long>): Result<CaptureDeleteResult> =
         resolveDelegate().deleteCaptures(captureIds)
 

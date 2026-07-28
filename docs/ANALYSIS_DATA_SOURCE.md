@@ -106,12 +106,14 @@ API: `ScreenshotBackendModeStore`
 
 ## Remote 다중 삭제
 
-Swagger는 `DELETE /api/v1/captures/{captureId}` 단건만 제공한다. Remote 다중 삭제는:
+Swagger `POST /api/v1/captures/bulk-delete`를 사용한다. Remote 다중 삭제는:
 
-- 각 ID를 개별 시도하고 성공/실패를 `CaptureDeleteResult`로 수집
-- 성공 ID만 `RemoteCaptureThumbnailCache`에서 삭제
-- 성공이 하나 이상이면 `RemoteCaptureChangeNotifier.notifyCaptureChanged()`를 한 번 호출
+- 빈 ID set이면 API를 호출하지 않고 빈 `CaptureDeleteResult`를 반환
+- 비어 있지 않으면 `bulkDelete`를 1회 호출한다 (서버는 all-or-nothing 204)
+- 성공 시 요청 ID 전체를 `deletedIds`로 두고 썸네일 캐시 삭제 후 `RemoteCaptureChangeNotifier.notifyCaptureChanged()`를 한 번 호출
+- 실패 시 `deletedIds`는 비우고 요청 ID 전체를 `failedIds`로 둔다 (부분 성공 없음)
 - `CancellationException`은 즉시 재throw
+
 
 ## 주요 파일
 

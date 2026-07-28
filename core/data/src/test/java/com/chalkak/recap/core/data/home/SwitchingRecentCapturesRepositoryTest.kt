@@ -11,64 +11,56 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class SwitchingRecentCapturesRepositoryTest {
     @Test
-    fun `remote mode emits empty list`() = runTest {
+    fun `remote mode uses remote recent captures`() = runTest {
         val modeStore = mockk<ScreenshotBackendModeStore>()
         every { modeStore.mode } returns MutableStateFlow(ScreenshotBackendMode.REMOTE)
         val mock = mockk<MockRecentCapturesRepository>()
         every { mock.observeRecentCaptures() } returns flowOf(
-            listOf(
-                CaptureSummary(
-                    captureId = 1L,
-                    title = "t",
-                    summary = "s",
-                    typeCode = ScreenshotContentType.JOB,
-                    thumbnailUrl = null,
-                    isFavorite = false,
-                    organizedAt = "2026-07-19T00:00:00Z",
-                ),
-            ),
+            listOf(summary(captureId = 99L)),
         )
-        val remote = StubRemoteRecentCapturesRepository()
+        val remoteItems = listOf(summary(captureId = 1L))
+        val remote = mockk<RemoteRecentCapturesRepository>()
+        every { remote.observeRecentCaptures() } returns flowOf(remoteItems)
 
         val repository = SwitchingRecentCapturesRepository(
             screenshotBackendModeStore = modeStore,
             mockRecentCapturesRepository = mock,
-            stubRemoteRecentCapturesRepository = remote,
+            remoteRecentCapturesRepository = remote,
         )
 
-        assertTrue(repository.observeRecentCaptures().first().isEmpty())
+        assertEquals(remoteItems, repository.observeRecentCaptures().first())
     }
 
     @Test
     fun `mock mode uses mock recent captures`() = runTest {
         val modeStore = mockk<ScreenshotBackendModeStore>()
         every { modeStore.mode } returns MutableStateFlow(ScreenshotBackendMode.MOCK)
-        val localItems = listOf(
-            CaptureSummary(
-                captureId = 1L,
-                title = "t",
-                summary = "s",
-                typeCode = ScreenshotContentType.JOB,
-                thumbnailUrl = null,
-                isFavorite = false,
-                organizedAt = "2026-07-19T00:00:00Z",
-            ),
-        )
+        val localItems = listOf(summary(captureId = 1L))
         val mock = mockk<MockRecentCapturesRepository>()
         every { mock.observeRecentCaptures() } returns flowOf(localItems)
-        val remote = StubRemoteRecentCapturesRepository()
+        val remote = mockk<RemoteRecentCapturesRepository>()
 
         val repository = SwitchingRecentCapturesRepository(
             screenshotBackendModeStore = modeStore,
             mockRecentCapturesRepository = mock,
-            stubRemoteRecentCapturesRepository = remote,
+            remoteRecentCapturesRepository = remote,
         )
 
         assertEquals(localItems, repository.observeRecentCaptures().first())
     }
+
+    private fun summary(captureId: Long) =
+        CaptureSummary(
+            captureId = captureId,
+            title = "t",
+            summary = "s",
+            typeCode = ScreenshotContentType.JOB,
+            thumbnailUrl = null,
+            isFavorite = false,
+            organizedAt = "2026-07-19T00:00:00Z",
+        )
 }

@@ -31,6 +31,24 @@ class MockCaptureMutationRepository @Inject constructor(
             )
         }
 
+    override suspend fun updateBody(
+        captureId: Long,
+        body: String,
+    ): Result<Unit> =
+        runCatching {
+            val card = screenshotCardRepository.getCard(captureId)
+                ?: error("Capture $captureId not found")
+            val analysis = card.analysisResult
+            val updated = screenshotCardRepository.updateCardContent(
+                captureId = captureId,
+                title = analysis.title,
+                summary = analysis.summary,
+                body = body,
+                typeCode = analysis.typeCode,
+            )
+            check(updated) { "Capture $captureId not found" }
+        }
+
     override suspend fun deleteCaptures(captureIds: Set<Long>): Result<CaptureDeleteResult> {
         if (captureIds.isEmpty()) {
             return Result.success(

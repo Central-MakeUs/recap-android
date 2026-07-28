@@ -51,4 +51,24 @@ class SwitchingCaptureMutationRepositoryTest {
         coVerify(exactly = 1) { remote.deleteCaptures(setOf(1L, 2L)) }
         coVerify(exactly = 0) { mock.deleteCaptures(any()) }
     }
+
+    @Test
+    fun `updateBody delegates to remote in remote mode`() = runTest {
+        val modeStore = mockk<ScreenshotBackendModeStore>()
+        coEvery { modeStore.currentMode() } returns ScreenshotBackendMode.REMOTE
+        val mock = mockk<MockCaptureMutationRepository>()
+        val remote = mockk<RemoteCaptureMutationRepository>()
+        coEvery { remote.updateBody(1L, "body") } returns Result.success(Unit)
+
+        val repository = SwitchingCaptureMutationRepository(
+            screenshotBackendModeStore = modeStore,
+            mockCaptureMutationRepository = mock,
+            remoteCaptureMutationRepository = remote,
+        )
+
+        repository.updateBody(captureId = 1L, body = "body")
+
+        coVerify(exactly = 1) { remote.updateBody(1L, "body") }
+        coVerify(exactly = 0) { mock.updateBody(any(), any()) }
+    }
 }

@@ -8,5 +8,10 @@ interface CaptureMutationRepository {
         isFavorite: Boolean,
     ): Result<Unit>
 
+    suspend fun updateBody(
+        captureId: Long,
+        body: String,
+    ): Result<Unit>
+
     suspend fun deleteCaptures(captureIds: Set<Long>): Result<CaptureDeleteResult>
 }

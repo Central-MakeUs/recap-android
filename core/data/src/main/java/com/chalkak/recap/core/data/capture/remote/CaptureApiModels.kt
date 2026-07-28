@@ -1,7 +1,9 @@
 package com.chalkak.recap.core.data.capture.remote
 
 import com.chalkak.recap.core.data.network.ApiResponseDto
+import com.chalkak.recap.core.model.capture.CapturePage
 import com.chalkak.recap.core.model.capture.OrganizeStatus
+import com.chalkak.recap.core.model.capture.ReportReason
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -75,6 +77,43 @@ data class FavoriteRequestDto(
 )
 
 @Serializable
+data class BulkDeleteRequestDto(
+    val captureIds: List<Long>,
+)
+
+@Serializable
+data class BodyUpdateRequestDto(
+    val body: String,
+)
+
+@Serializable
+enum class ReportReasonDto {
+    @SerialName("WRONG_TYPE")
+    WRONG_TYPE,
+
+    @SerialName("INCORRECT_INFO")
+    INCORRECT_INFO,
+
+    @SerialName("OFFENSIVE")
+    OFFENSIVE,
+
+    @SerialName("OTHER")
+    OTHER,
+}
+
+@Serializable
+data class ReportRequestDto(
+    val reason: ReportReasonDto,
+)
+
+@Serializable
+data class CapturePageResponseDto(
+    val count: Long,
+    val hasNext: Boolean,
+    val items: List<CaptureSummaryResponseDto> = emptyList(),
+)
+
+@Serializable
 enum class CardTypeDto {
     @SerialName("JOB")
     JOB,
@@ -139,6 +178,7 @@ typealias OrganizeStatusApiResponse = ApiResponseDto<OrganizeStatusResponseDto>
 typealias PendingResultApiResponse = ApiResponseDto<PendingResultResponseDto>
 typealias CaptureDetailApiResponse = ApiResponseDto<CaptureDetailResponseDto>
 typealias CaptureListApiResponse = ApiResponseDto<CaptureListResponseDto>
+typealias CapturePageApiResponse = ApiResponseDto<CapturePageResponseDto>
 
 fun CardTypeDto.toDomain(): ScreenshotContentType =
     when (this) {
@@ -203,3 +243,18 @@ fun CaptureDetailResponseDto.toDomain() =
         isFavorite = isFavorite,
         organizedAt = organizedAt,
     )
+
+fun CapturePageResponseDto.toDomain() =
+    CapturePage(
+        count = count,
+        hasNext = hasNext,
+        items = items.map { it.toDomain() },
+    )
+
+fun ReportReason.toDto(): ReportReasonDto =
+    when (this) {
+        ReportReason.WRONG_TYPE -> ReportReasonDto.WRONG_TYPE
+        ReportReason.INCORRECT_INFO -> ReportReasonDto.INCORRECT_INFO
+        ReportReason.OFFENSIVE -> ReportReasonDto.OFFENSIVE
+        ReportReason.OTHER -> ReportReasonDto.OTHER
+    }

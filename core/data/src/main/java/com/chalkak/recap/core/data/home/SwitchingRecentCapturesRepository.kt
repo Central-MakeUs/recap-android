@@ -13,14 +13,14 @@ import kotlinx.coroutines.flow.flatMapLatest
 class SwitchingRecentCapturesRepository @Inject constructor(
     private val screenshotBackendModeStore: ScreenshotBackendModeStore,
     private val mockRecentCapturesRepository: MockRecentCapturesRepository,
-    private val stubRemoteRecentCapturesRepository: StubRemoteRecentCapturesRepository,
+    private val remoteRecentCapturesRepository: RemoteRecentCapturesRepository,
 ) : RecentCapturesRepository {
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeRecentCaptures(): Flow<List<CaptureSummary>> {
         return screenshotBackendModeStore.mode.flatMapLatest { mode ->
             when (mode) {
                 ScreenshotBackendMode.MOCK -> mockRecentCapturesRepository.observeRecentCaptures()
-                ScreenshotBackendMode.REMOTE -> stubRemoteRecentCapturesRepository.observeRecentCaptures()
+                ScreenshotBackendMode.REMOTE -> remoteRecentCapturesRepository.observeRecentCaptures()
             }
         }
     }
