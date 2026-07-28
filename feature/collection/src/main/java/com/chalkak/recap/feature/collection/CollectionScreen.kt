@@ -183,7 +183,8 @@ private fun CollectionOverviewContent(
     val navigationBarBottomPadding = WindowInsets.navigationBars
         .asPaddingValues()
         .calculateBottomPadding()
-    val bottomContentPadding = RecapBottomBarDefaults.ContentScrollPadding +
+    val bottomContentPadding = RecapBottomBarDefaults.Height +
+            RecapBottomBarDefaults.BottomPadding +
             navigationBarBottomPadding
 
     Column(
