@@ -3,11 +3,14 @@ package com.chalkak.recap.core.design.component.bottombar
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -27,6 +30,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -34,6 +38,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
@@ -250,11 +255,24 @@ private fun RecapOrganizeButton(
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) RecapOrganizeButtonPressedScale else 1f,
+        animationSpec = spring(
+            dampingRatio = RecapOrganizeButtonExpressiveFastSpatialDamping,
+            stiffness = RecapOrganizeButtonExpressiveFastSpatialStiffness,
+        ),
+        label = "recap_organize_button_press_scale",
+    )
     val pillShape = RoundedCornerShape(percent = 50)
 
     Row(
         modifier = modifier
             .height(RecapBottomBarHeight)
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
             .shadow(
                 elevation = RecapBottomBarDefaults.GlassShadowElevation,
                 shape = pillShape,
@@ -306,6 +324,10 @@ object RecapBottomBarDefaults {
 
 private const val RecapBottomBarHighlightDurationMillis = 250
 private const val RecapBottomBarPredictiveMaxFraction = 1f / 3f
+private const val RecapOrganizeButtonPressedScale = 1.05f
+// Material 3 ExpressiveMotionTokens.SpringFastSpatial*
+private const val RecapOrganizeButtonExpressiveFastSpatialDamping = 0.2f
+private const val RecapOrganizeButtonExpressiveFastSpatialStiffness = 700f
 
 private val RecapBottomBarHeight: Dp = RecapBottomBarDefaults.Height
 private val RecapBottomBarItemWidth: Dp = 72.dp
