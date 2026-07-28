@@ -149,7 +149,7 @@ fun RecapNavHost(
             if (backStack.lastOrNull() == AppRoute.OrganizeAnalysisStatus) {
                 exitOrganizeAnalysisStatus()
             } else {
-                backStack.removeLastOrNull()
+                backStack.removeLastIfNotRoot()
             }
         },
         modifier = modifier,
@@ -355,7 +355,7 @@ fun RecapMainTabNavHost(
     // Home ↔ Collection keeps its short slide+fade and bottom-bar predictive progress.
     NavDisplay(
         backStack = backStack,
-        onBack = { backStack.removeLastOrNull() },
+        onBack = { backStack.removeLastIfNotRoot() },
         modifier = modifier,
         transitionSpec = { mainTabForwardTransition() },
         popTransitionSpec = { mainTabPopTransition() },
@@ -385,7 +385,7 @@ fun RecapMainTabNavHost(
                         onNavigateToOrganize = onNavigateToOrganize,
                         onNavigateToSearch = onNavigateToSearch,
                         onNavigateToScreenshot = onNavigateToScreenshot,
-                        onNavigateBack = { backStack.removeLastOrNull() },
+                        onNavigateBack = { backStack.removeLastIfNotRoot() },
                         openCollectionFavoritesOnEnter = openCollectionFavoritesOnEnter,
                         onOpenCollectionFavoritesOnEnterConsumed =
                             onOpenCollectionFavoritesOnEnterConsumed,
@@ -401,6 +401,9 @@ fun RecapMainTabNavHost(
         },
     )
 }
+
+internal fun <T> MutableList<T>.removeLastIfNotRoot(): T? =
+    if (size > 1) removeLastOrNull() else null
 
 private fun mainTabForwardTransition(): ContentTransform =
     slideInHorizontally(
