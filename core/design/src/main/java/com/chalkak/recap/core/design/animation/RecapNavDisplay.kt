@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
@@ -21,6 +22,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.rememberDecoratedNavEntries
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneInfo
 import androidx.navigation3.scene.SinglePaneSceneStrategy
 import androidx.navigation3.scene.rememberSceneState
@@ -30,6 +32,7 @@ import androidx.navigationevent.NavigationEventTransitionState.InProgress
 import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
 
 /**
@@ -77,6 +80,7 @@ fun <T : Any> RecapNavDisplay(
     val transition = rememberTransition(transitionState, label = "recapNavScene")
     val scope = rememberCoroutineScope()
     val backCommitQueue = remember { RecapBackCommitQueue() }
+    val sceneZIndexTracker = remember { RecapSceneZIndexTracker() }
     var isCommitting by remember { mutableStateOf(false) }
     val navigationEventDispatcher =
         checkNotNull(LocalNavigationEventDispatcherOwner.current) {
@@ -204,6 +208,17 @@ fun <T : Any> RecapNavDisplay(
         }
     }
 
+    val initialSceneKey = RecapAnimatedSceneKey(transition.currentState)
+    val targetSceneKey = RecapAnimatedSceneKey(transition.targetState)
+    val targetSceneZIndex = sceneZIndexTracker.targetZIndex(
+        initialKey = initialSceneKey,
+        targetKey = targetSceneKey,
+        isPop = navigationKind == RecapNavigationKind.Pop ||
+            inPredictiveBack ||
+            isCommitting,
+        reuseExistingTarget = !inPredictiveBack && transition.targetState != scene,
+    )
+
     transition.AnimatedContent(
         contentKey = { target -> target.key },
         contentAlignment = contentAlignment,
@@ -218,16 +233,19 @@ fun <T : Any> RecapNavDisplay(
             ContentTransform(
                 targetContentEnter = transform.targetContentEnter,
                 initialContentExit = transform.initialContentExit,
-                targetContentZIndex = when {
-                    navigationKind == RecapNavigationKind.Pop ||
-                        inPredictiveBack ||
-                        isCommitting -> -1f
-                    else -> 1f
-                },
+                targetContentZIndex = targetSceneZIndex,
             )
         },
     ) { targetScene ->
         targetScene.content()
+    }
+
+    LaunchedEffect(transition) {
+        snapshotFlow { transition.isRunning }
+            .filter { isRunning -> !isRunning }
+            .collect {
+                sceneZIndexTracker.retainOnly(RecapAnimatedSceneKey(transition.targetState))
+            }
     }
 }
 
@@ -258,6 +276,40 @@ internal class RecapBackCommitQueue {
             pendingBackCount = 0
         }
     }
+}
+
+internal class RecapSceneZIndexTracker {
+    private val zIndices = mutableMapOf<Any, Float>()
+
+    fun targetZIndex(
+        initialKey: Any,
+        targetKey: Any,
+        isPop: Boolean,
+        reuseExistingTarget: Boolean,
+    ): Float {
+        val initialZIndex = zIndices.getOrPut(initialKey) { 0f }
+        val targetZIndex = when {
+            reuseExistingTarget && targetKey in zIndices -> zIndices.getValue(targetKey)
+            initialKey == targetKey -> initialZIndex
+            isPop -> initialZIndex - 1f
+            else -> initialZIndex + 1f
+        }
+        zIndices[targetKey] = targetZIndex
+        return targetZIndex
+    }
+
+    fun retainOnly(key: Any) {
+        val retainedZIndex = zIndices[key] ?: return
+        zIndices.clear()
+        zIndices[key] = retainedZIndex
+    }
+}
+
+private data class RecapAnimatedSceneKey(
+    val sceneClass: kotlin.reflect.KClass<*>,
+    val key: Any,
+) {
+    constructor(scene: Scene<*>) : this(scene::class, scene.key)
 }
 
 private suspend fun awaitBackHandlerRefresh() {
