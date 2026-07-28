@@ -113,6 +113,7 @@ fun CollectionDetailScreen(
                 selectedSort = detail.sort,
                 selection = selection,
                 canStartSelection = detail.cards.isNotEmpty(),
+                showSelectionActions = detail.categoryType != null,
                 onAction = onAction,
                 modifier = Modifier.padding(
                     horizontal = CollectionDetailTokens.HorizontalPadding,
@@ -334,6 +335,7 @@ private fun CollectionDetailToolbar(
     selectedSort: CollectionListSort,
     selection: CollectionSelectionUiState,
     canStartSelection: Boolean,
+    showSelectionActions: Boolean,
     onAction: (CollectionAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -362,13 +364,15 @@ private fun CollectionDetailToolbar(
                 onAction(CollectionAction.SetDetailSort(sort))
             },
         )
-        CollectionSelectionActions(
-            selection = selection,
-            onStartSelection = { onAction(CollectionAction.StartSelection) },
-            onCancelSelection = { onAction(CollectionAction.CancelSelection) },
-            onDeleteSelected = { onAction(CollectionAction.DeleteSelected) },
-            canStartSelection = canStartSelection,
-        )
+        if (showSelectionActions) {
+            CollectionSelectionActions(
+                selection = selection,
+                onStartSelection = { onAction(CollectionAction.StartSelection) },
+                onCancelSelection = { onAction(CollectionAction.CancelSelection) },
+                onDeleteSelected = { onAction(CollectionAction.DeleteSelected) },
+                canStartSelection = canStartSelection,
+            )
+        }
     }
 }
 
