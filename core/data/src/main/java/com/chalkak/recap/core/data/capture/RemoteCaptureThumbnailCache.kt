@@ -46,6 +46,10 @@ class RemoteCaptureThumbnailCache @Inject constructor(
         imageStorage.deleteStoredImages(captureIds)
     }
 
+    fun clearAll() {
+        imageStorage.clearStoredImages()
+    }
+
     private suspend fun download(
         captureId: Long,
         remoteUrl: String,
