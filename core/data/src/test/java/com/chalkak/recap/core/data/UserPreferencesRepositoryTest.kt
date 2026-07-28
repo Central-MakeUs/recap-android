@@ -1,5 +1,7 @@
 package com.chalkak.recap.core.data
 
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.mutablePreferencesOf
 import com.chalkak.recap.core.data.testdouble.InMemoryPreferencesDataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -31,14 +33,25 @@ class UserPreferencesRepositoryTest {
     }
 
     @Test
-    fun `organizeCompleteEnabled defaults to true`() = runTest {
-        assertTrue(repository.organizeCompleteEnabled.first())
+    fun `organizeCompleteNotificationEnabled defaults to false`() = runTest {
+        assertFalse(repository.organizeCompleteNotificationEnabled.first())
     }
 
     @Test
-    fun `setOrganizeCompleteEnabled updates organizeCompleteEnabled flow`() = runTest {
-        repository.setOrganizeCompleteEnabled(false)
+    fun `setOrganizeCompleteNotificationEnabled updates flow`() = runTest {
+        repository.setOrganizeCompleteNotificationEnabled(true)
 
-        assertFalse(repository.organizeCompleteEnabled.first())
+        assertTrue(repository.organizeCompleteNotificationEnabled.first())
+    }
+
+    @Test
+    fun `organizeCompleteNotificationEnabled migrates legacy key`() = runTest {
+        val legacyKey = booleanPreferencesKey("organize_complete_enabled")
+        dataStore = InMemoryPreferencesDataStore(
+            mutablePreferencesOf(legacyKey to true),
+        )
+        repository = UserPreferencesRepository(dataStore)
+
+        assertTrue(repository.organizeCompleteNotificationEnabled.first())
     }
 }

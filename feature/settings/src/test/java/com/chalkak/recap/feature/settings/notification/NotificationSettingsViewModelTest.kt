@@ -20,13 +20,15 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class NotificationSettingsViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
-    private val organizeCompleteEnabled = MutableStateFlow(true)
+    private val organizeCompleteNotificationEnabled = MutableStateFlow(false)
     private val userPreferencesRepository = mockk<UserPreferencesRepository>(relaxed = true)
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        every { userPreferencesRepository.organizeCompleteEnabled } returns organizeCompleteEnabled
+        every {
+            userPreferencesRepository.organizeCompleteNotificationEnabled
+        } returns organizeCompleteNotificationEnabled
     }
 
     @After
@@ -42,7 +44,7 @@ class NotificationSettingsViewModelTest {
         assertEquals(
             NotificationSettingsUiState(
                 deviceNotificationsEnabled = true,
-                organizeCompleteEnabled = true,
+                organizeCompleteNotificationEnabled = false,
             ),
             viewModel.uiState.value,
         )
@@ -53,12 +55,12 @@ class NotificationSettingsViewModelTest {
         val viewModel = NotificationSettingsViewModel(userPreferencesRepository)
 
         viewModel.onAction(
-            NotificationSettingsAction.OrganizeCompleteEnabledChanged(false),
+            NotificationSettingsAction.OrganizeCompleteNotificationEnabledChanged(true),
         )
         advanceUntilIdle()
 
         coVerify(exactly = 1) {
-            userPreferencesRepository.setOrganizeCompleteEnabled(false)
+            userPreferencesRepository.setOrganizeCompleteNotificationEnabled(true)
         }
     }
 
@@ -67,13 +69,13 @@ class NotificationSettingsViewModelTest {
         val viewModel = NotificationSettingsViewModel(userPreferencesRepository)
         advanceUntilIdle()
 
-        organizeCompleteEnabled.value = false
+        organizeCompleteNotificationEnabled.value = true
         advanceUntilIdle()
 
         assertEquals(
             NotificationSettingsUiState(
                 deviceNotificationsEnabled = true,
-                organizeCompleteEnabled = false,
+                organizeCompleteNotificationEnabled = true,
             ),
             viewModel.uiState.value,
         )

@@ -50,11 +50,11 @@ class OrganizeNotificationCoordinator @Inject constructor(
         scope.launch {
             combine(
                 progressTracker.snapshot.map { snapshot -> snapshot.isRunning },
-                userPreferencesRepository.organizeCompleteEnabled,
-            ) { isRunning, organizeCompleteEnabled ->
+                userPreferencesRepository.organizeCompleteNotificationEnabled,
+            ) { isRunning, organizeCompleteNotificationEnabled ->
                 shouldShowProgress(
                     isRunning = isRunning,
-                    organizeCompleteEnabled = organizeCompleteEnabled,
+                    organizeCompleteNotificationEnabled = organizeCompleteNotificationEnabled,
                 )
             }
                 .distinctUntilChanged()
@@ -70,12 +70,12 @@ class OrganizeNotificationCoordinator @Inject constructor(
         scope.launch {
             progressTracker.terminalResults.collect { terminal ->
                 stopProgressService()
-                val organizeCompleteEnabled =
-                    userPreferencesRepository.organizeCompleteEnabled.first()
+                val organizeCompleteNotificationEnabled =
+                    userPreferencesRepository.organizeCompleteNotificationEnabled.first()
                 if (
                     shouldNotifyTerminal(
                         isAppInForeground = isAppInForeground.value,
-                        organizeCompleteEnabled = organizeCompleteEnabled,
+                        organizeCompleteNotificationEnabled = organizeCompleteNotificationEnabled,
                         notificationsEnabled = notificationNotifier.areNotificationsEnabled(),
                     )
                 ) {
@@ -106,11 +106,13 @@ class OrganizeNotificationCoordinator @Inject constructor(
 
 internal fun shouldShowProgress(
     isRunning: Boolean,
-    organizeCompleteEnabled: Boolean,
-): Boolean = isRunning && organizeCompleteEnabled
+    organizeCompleteNotificationEnabled: Boolean,
+): Boolean = isRunning && organizeCompleteNotificationEnabled
 
 internal fun shouldNotifyTerminal(
     isAppInForeground: Boolean,
-    organizeCompleteEnabled: Boolean,
+    organizeCompleteNotificationEnabled: Boolean,
     notificationsEnabled: Boolean,
-): Boolean = !isAppInForeground && organizeCompleteEnabled && notificationsEnabled
+): Boolean = !isAppInForeground &&
+    organizeCompleteNotificationEnabled &&
+    notificationsEnabled

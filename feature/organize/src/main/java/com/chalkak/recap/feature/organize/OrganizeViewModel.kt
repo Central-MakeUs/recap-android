@@ -4,19 +4,23 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.LocalScreenshotDataSource
+import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.model.LocalImage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class OrganizeViewModel @Inject constructor(
     private val localScreenshotDataSource: LocalScreenshotDataSource,
+    private val userPreferencesRepository: UserPreferencesRepository,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     private val restoredShareState = restoreShareState()
@@ -24,6 +28,13 @@ class OrganizeViewModel @Inject constructor(
         restoredShareState?.uiState ?: OrganizeUiState(),
     )
     val uiState: StateFlow<OrganizeUiState> = _uiState.asStateFlow()
+    val organizeCompleteNotificationEnabled: StateFlow<Boolean> =
+        userPreferencesRepository.organizeCompleteNotificationEnabled
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = false,
+            )
     private var seededShareSessionId: String? = restoredShareState?.sessionId
     private var sharedSourceImages: List<LocalImage> =
         restoredShareState?.sourceImages.orEmpty()
@@ -38,6 +49,12 @@ class OrganizeViewModel @Inject constructor(
             OrganizeAction.DismissMaxSelectionMessage -> {
                 _uiState.update { it.copy(showMaxSelectionReached = false) }
             }
+        }
+    }
+
+    fun setOrganizeCompleteNotificationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.setOrganizeCompleteNotificationEnabled(enabled)
         }
     }
 

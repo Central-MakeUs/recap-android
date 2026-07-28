@@ -2,13 +2,16 @@ package com.chalkak.recap.feature.organize
 
 import androidx.lifecycle.SavedStateHandle
 import com.chalkak.recap.core.data.LocalScreenshotDataSource
+import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.model.LocalImage
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -27,6 +30,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class OrganizeViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
+    private val userPreferencesRepository = mockk<UserPreferencesRepository>(relaxed = true)
     private val screenshots = List(22) { index ->
         LocalImage(
             uri = "content://screenshot/$index",
@@ -38,6 +42,9 @@ class OrganizeViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        every {
+            userPreferencesRepository.organizeCompleteNotificationEnabled
+        } returns MutableStateFlow(false)
     }
 
     @After
@@ -67,7 +74,7 @@ class OrganizeViewModelTest {
             screenshots.take(2),
             screenshots.take(4),
         )
-        val viewModel = OrganizeViewModel(dataSource, SavedStateHandle())
+        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, SavedStateHandle())
 
         viewModel.refreshScreenshots()
         advanceUntilIdle()
@@ -216,7 +223,7 @@ class OrganizeViewModelTest {
     fun seedSharedImages_setsAvailableAndSelected() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         val shared = screenshots.take(3)
-        val viewModel = OrganizeViewModel(dataSource, SavedStateHandle())
+        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, SavedStateHandle())
 
         viewModel.seedSharedImages(
             sessionId = "share-session",
@@ -233,7 +240,7 @@ class OrganizeViewModelTest {
     fun seedSharedImages_sameSessionDoesNotResetCurrentSelection() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         val shared = screenshots.take(3)
-        val viewModel = OrganizeViewModel(dataSource, SavedStateHandle())
+        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, SavedStateHandle())
 
         viewModel.seedSharedImages(
             sessionId = "share-session",
@@ -256,7 +263,7 @@ class OrganizeViewModelTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         val firstShare = screenshots.take(2)
         val secondShare = screenshots.drop(2).take(2)
-        val viewModel = OrganizeViewModel(dataSource, SavedStateHandle())
+        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, SavedStateHandle())
 
         viewModel.seedSharedImages(
             sessionId = "first-session",
@@ -285,7 +292,7 @@ class OrganizeViewModelTest {
             dateAddedMillis = 99L,
         )
         coEvery { dataSource.queryAllScreenshots() } returns gallery
-        val viewModel = OrganizeViewModel(dataSource, SavedStateHandle())
+        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, SavedStateHandle())
         viewModel.seedSharedImages(
             sessionId = "share-session",
             images = listOf(sharedOnly) + gallery.take(1),
@@ -309,14 +316,18 @@ class OrganizeViewModelTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         val savedStateHandle = SavedStateHandle()
         val shared = screenshots.take(3)
-        val viewModel = OrganizeViewModel(dataSource, savedStateHandle)
+        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, savedStateHandle)
         viewModel.seedSharedImages(
             sessionId = "share-session",
             images = shared,
         )
         viewModel.onAction(OrganizeAction.RemoveSelection(shared[1].uri))
 
-        val restoredViewModel = OrganizeViewModel(dataSource, savedStateHandle)
+        val restoredViewModel = OrganizeViewModel(
+            dataSource,
+            userPreferencesRepository,
+            savedStateHandle,
+        )
         restoredViewModel.seedSharedImages(
             sessionId = "share-session",
             images = shared,
@@ -340,7 +351,7 @@ class OrganizeViewModelTest {
                 queryResult.await()
             }
         }
-        val viewModel = OrganizeViewModel(dataSource, SavedStateHandle())
+        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, SavedStateHandle())
         val shared = screenshots.drop(10).take(2)
 
         viewModel.refreshScreenshots()
@@ -361,7 +372,7 @@ class OrganizeViewModelTest {
     }
 
     private fun TestScope.createViewModel(dataSource: LocalScreenshotDataSource): OrganizeViewModel {
-        val viewModel = OrganizeViewModel(dataSource, SavedStateHandle())
+        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, SavedStateHandle())
         viewModel.refreshScreenshots()
         advanceUntilIdle()
         return viewModel

@@ -129,19 +129,19 @@ class OrganizeNotificationPolicyTest {
         assertTrue(
             shouldShowProgress(
                 isRunning = true,
-                organizeCompleteEnabled = true,
+                organizeCompleteNotificationEnabled = true,
             ),
         )
         assertFalse(
             shouldShowProgress(
                 isRunning = true,
-                organizeCompleteEnabled = false,
+                organizeCompleteNotificationEnabled = false,
             ),
         )
         assertFalse(
             shouldShowProgress(
                 isRunning = false,
-                organizeCompleteEnabled = true,
+                organizeCompleteNotificationEnabled = true,
             ),
         )
     }
@@ -151,7 +151,7 @@ class OrganizeNotificationPolicyTest {
         assertFalse(
             shouldNotifyTerminal(
                 isAppInForeground = true,
-                organizeCompleteEnabled = true,
+                organizeCompleteNotificationEnabled = true,
                 notificationsEnabled = true,
             ),
         )
@@ -162,7 +162,7 @@ class OrganizeNotificationPolicyTest {
         assertTrue(
             shouldNotifyTerminal(
                 isAppInForeground = false,
-                organizeCompleteEnabled = true,
+                organizeCompleteNotificationEnabled = true,
                 notificationsEnabled = true,
             ),
         )
@@ -173,14 +173,14 @@ class OrganizeNotificationPolicyTest {
         assertFalse(
             shouldNotifyTerminal(
                 isAppInForeground = false,
-                organizeCompleteEnabled = false,
+                organizeCompleteNotificationEnabled = false,
                 notificationsEnabled = true,
             ),
         )
         assertFalse(
             shouldNotifyTerminal(
                 isAppInForeground = false,
-                organizeCompleteEnabled = true,
+                organizeCompleteNotificationEnabled = true,
                 notificationsEnabled = false,
             ),
         )
