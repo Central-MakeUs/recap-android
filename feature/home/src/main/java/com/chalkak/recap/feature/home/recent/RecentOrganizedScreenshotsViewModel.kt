@@ -33,11 +33,32 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
                 val currentItem = _uiState.value.items.firstOrNull { item ->
                     item.id == action.id
                 } ?: return
+                val nextFavorite = !currentItem.isFavorite
+                _uiState.value = _uiState.value.copy(
+                    items = _uiState.value.items.map { item ->
+                        if (item.id == action.id) {
+                            item.copy(isFavorite = nextFavorite)
+                        } else {
+                            item
+                        }
+                    },
+                )
                 viewModelScope.launch {
-                    captureMutationRepository.updateFavorite(
+                    val mutation = captureMutationRepository.updateFavorite(
                         captureId = action.id,
-                        isFavorite = !currentItem.isFavorite,
+                        isFavorite = nextFavorite,
                     )
+                    if (mutation.isFailure) {
+                        _uiState.value = _uiState.value.copy(
+                            items = _uiState.value.items.map { item ->
+                                if (item.id == action.id) {
+                                    item.copy(isFavorite = currentItem.isFavorite)
+                                } else {
+                                    item
+                                }
+                            },
+                        )
+                    }
                 }
             }
 

@@ -354,6 +354,59 @@ class CollectionViewModelTest {
     }
 
     @Test
+    fun `toggle favorite updates browse card immediately`() = runTest(testDispatcher) {
+        coEvery { cardRepository.updateFavorite(any(), any()) } returns Unit
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 1L,
+                    title = "Card",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    isFavorite = false,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
+
+        viewModel.onAction(CollectionAction.ToggleFavorite(1L))
+
+        assertTrue(viewModel.uiState.value.detail!!.cards.single().isFavorite)
+
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.detail!!.cards.single().isFavorite)
+    }
+
+    @Test
+    fun `toggle favorite failure rolls back browse card`() = runTest(testDispatcher) {
+        coEvery { cardRepository.updateFavorite(any(), any()) } throws IllegalStateException("network")
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 1L,
+                    title = "Card",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    isFavorite = false,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
+
+        viewModel.onAction(CollectionAction.ToggleFavorite(1L))
+        assertTrue(viewModel.uiState.value.detail!!.cards.single().isFavorite)
+
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.detail!!.cards.single().isFavorite)
+    }
+
+    @Test
     fun `selection mode toggles items and cancel clears selection`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
