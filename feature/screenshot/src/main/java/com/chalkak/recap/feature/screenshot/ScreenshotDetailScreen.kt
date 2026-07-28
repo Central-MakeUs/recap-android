@@ -60,6 +60,7 @@ import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
+import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray200
@@ -335,9 +336,9 @@ private fun ScreenshotDetailHero(
                     enabled = favoriteEnabled,
                     checked = isFavorite,
                     tint = if (isFavorite) {
-                        RecapGray200
+                        RecapBlue300
                     } else {
-                        White
+                        RecapGray200
                     },
                 )
                 ScreenshotIconButton(
