@@ -15,7 +15,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -26,6 +25,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -145,9 +145,6 @@ fun ScreenshotCard(
                         horizontal = horizontalContentPadding,
                         vertical = ScreenshotCardTokens.ContainerVerticalPadding,
                     ),
-                horizontalArrangement = Arrangement.spacedBy(
-                    ScreenshotCardTokens.ContentSpacing,
-                ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 leadingContent?.invoke()
@@ -215,6 +212,7 @@ fun ScreenshotCard(
                         }
                     }
                 }
+                Spacer(modifier = Modifier.width(ScreenshotCardTokens.ContentSpacing))
                 ScreenshotCardThumbnail(
                     thumbnailModel = thumbnailModel,
                     thumbnailContentDescription = thumbnailContentDescription,
