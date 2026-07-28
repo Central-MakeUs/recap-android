@@ -278,7 +278,11 @@ fun OrganizeRoute(
             OrganizeNotificationPermissionBottomSheet(
                 onDismissRequest = ::dismissNotificationPermissionSheetAndContinue,
                 onAllowNotificationClick = {
-                    requestNotificationPermissionForOrganize(context)
+                    if (context.areAppNotificationsEnabled()) {
+                        finishAfterPermissionResult()
+                    } else {
+                        requestNotificationPermissionForOrganize(context)
+                    }
                 },
                 onLaterClick = ::dismissNotificationPermissionSheetAndContinue,
             )

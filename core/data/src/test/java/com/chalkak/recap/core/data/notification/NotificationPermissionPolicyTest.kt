@@ -46,7 +46,7 @@ class NotificationPermissionPolicyTest {
     }
 
     @Test
-    fun `prompt shows only when never requested permission off and preference off`() {
+    fun `prompt shows when app preference is off and permission can be enabled`() {
         assertTrue(
             shouldShowOrganizeNotificationPermissionPrompt(
                 hasRequestedPermission = false,
@@ -54,17 +54,24 @@ class NotificationPermissionPolicyTest {
                 organizeCompleteNotificationEnabled = false,
             ),
         )
-        assertFalse(
+        assertTrue(
             shouldShowOrganizeNotificationPermissionPrompt(
                 hasRequestedPermission = true,
-                notificationsEnabled = false,
+                notificationsEnabled = true,
+                organizeCompleteNotificationEnabled = false,
+            ),
+        )
+        assertTrue(
+            shouldShowOrganizeNotificationPermissionPrompt(
+                hasRequestedPermission = false,
+                notificationsEnabled = true,
                 organizeCompleteNotificationEnabled = false,
             ),
         )
         assertFalse(
             shouldShowOrganizeNotificationPermissionPrompt(
-                hasRequestedPermission = false,
-                notificationsEnabled = true,
+                hasRequestedPermission = true,
+                notificationsEnabled = false,
                 organizeCompleteNotificationEnabled = false,
             ),
         )

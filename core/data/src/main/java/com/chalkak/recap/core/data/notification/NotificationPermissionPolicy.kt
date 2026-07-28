@@ -73,9 +73,8 @@ fun shouldShowOrganizeNotificationPermissionPrompt(
     hasRequestedPermission: Boolean,
     notificationsEnabled: Boolean,
     organizeCompleteNotificationEnabled: Boolean,
-): Boolean = !hasRequestedPermission &&
-    !notificationsEnabled &&
-    !organizeCompleteNotificationEnabled
+): Boolean = !organizeCompleteNotificationEnabled &&
+    (notificationsEnabled || !hasRequestedPermission)
 
 fun Context.hasNotificationPermission(): Boolean {
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
