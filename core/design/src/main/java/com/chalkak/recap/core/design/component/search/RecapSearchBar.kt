@@ -19,7 +19,11 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,7 +34,9 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -58,6 +64,29 @@ fun RecapSearchBar(
     val focusRequester = remember { FocusRequester() }
     val isNavigationEntry = onClick != null
     val isEditable = enabled && !isNavigationEntry
+    // Programmatic value updates (e.g. recent search) should place the cursor at the end.
+    // BasicTextField(String) keeps the previous selection, which is often index 0.
+    var textFieldValueState by remember {
+        mutableStateOf(
+            TextFieldValue(
+                text = value,
+                selection = TextRange(value.length),
+            ),
+        )
+    }
+    val textFieldValue = if (textFieldValueState.text != value) {
+        TextFieldValue(
+            text = value,
+            selection = TextRange(value.length),
+        )
+    } else {
+        textFieldValueState
+    }
+    SideEffect {
+        if (textFieldValueState != textFieldValue) {
+            textFieldValueState = textFieldValue
+        }
+    }
     val submitSearch: () -> Unit = {
         onSearch?.invoke()
         keyboardController?.hide()
@@ -123,8 +152,13 @@ fun RecapSearchBar(
                 tint = RecapGray300,
             )
             BasicTextField(
-                value = value,
-                onValueChange = onValueChange,
+                value = textFieldValue,
+                onValueChange = { newValue ->
+                    textFieldValueState = newValue
+                    if (newValue.text != value) {
+                        onValueChange(newValue.text)
+                    }
+                },
                 modifier = Modifier
                     .weight(1f)
                     .focusRequester(focusRequester),
