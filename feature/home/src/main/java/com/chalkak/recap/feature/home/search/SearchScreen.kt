@@ -1,5 +1,6 @@
 package com.chalkak.recap.feature.home.search
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
@@ -32,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -297,16 +300,38 @@ private fun SearchResultsContent(
 private fun SearchEmptyContent(
     modifier: Modifier = Modifier,
 ) {
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = SearchScreenTokens.HorizontalPadding),
-        contentAlignment = Alignment.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
     ) {
+        Image(
+            painter = painterResource(R.drawable.recap_character_1),
+            contentDescription = stringResource(
+                R.string.search_screen_empty_character_content_description,
+            ),
+            modifier = Modifier
+                .size(
+                    width = SearchScreenTokens.EmptyCharacterWidth,
+                    height = SearchScreenTokens.EmptyCharacterHeight,
+                )
+                .offset(x = SearchScreenTokens.EmptyCharacterOffsetX),
+            contentScale = ContentScale.Fit,
+        )
+        Spacer(modifier = Modifier.height(SearchScreenTokens.EmptyCharacterSpacing))
         Text(
             text = stringResource(R.string.search_screen_empty_results),
-            style = MaterialTheme.typography.bodyMedium,
-            color = RecapGray500,
+            style = RecapHeading3,
+            color = RecapGray300,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(SearchScreenTokens.EmptyTitleSpacing))
+        Text(
+            text = stringResource(R.string.search_screen_empty_results_description),
+            style = RecapBody2,
+            color = RecapGray300,
             textAlign = TextAlign.Center,
         )
     }
@@ -324,18 +349,38 @@ private fun SearchErrorContent(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
+        Image(
+            painter = painterResource(R.drawable.ic_error_circle_60),
+            contentDescription = stringResource(
+                R.string.search_screen_error_character_content_description,
+            ),
+            modifier = Modifier.size(SearchScreenTokens.ErrorIconSize),
+            contentScale = ContentScale.Fit,
+        )
+        Spacer(modifier = Modifier.height(SearchScreenTokens.EmptyCharacterSpacing))
         Text(
             text = stringResource(R.string.search_screen_error),
-            style = MaterialTheme.typography.bodyMedium,
-            color = RecapGray500,
+            style = RecapHeading3,
+            color = RecapGray300,
             textAlign = TextAlign.Center,
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(SearchScreenTokens.EmptyTitleSpacing))
+        Text(
+            text = stringResource(R.string.search_screen_error_description),
+            style = RecapBody2,
+            color = RecapGray300,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(SearchScreenTokens.ErrorDescriptionSpacing))
         RecapButton(
             text = stringResource(R.string.search_screen_retry),
             onClick = onRetry,
-            size = RecapButtonSize.Medium,
-            colors = RecapButtonDefaults.primaryColors(),
+            size = RecapButtonSize.Large,
+            colors = RecapButtonDefaults.secondaryColors(),
+            contentPadding = PaddingValues(
+                horizontal = SearchScreenTokens.ErrorRetryHorizontalPadding,
+                vertical = SearchScreenTokens.ErrorRetryVerticalPadding,
+            ),
         )
     }
 }
@@ -469,6 +514,15 @@ private object SearchScreenTokens {
     val HorizontalPadding = 16.dp
     val TopBarHeight = 56.dp
     val CountVerticalPadding = 8.dp
+    val EmptyCharacterWidth = 122.67.dp
+    val EmptyCharacterHeight = 89.dp
+    val EmptyCharacterOffsetX = 6.dp
+    val EmptyCharacterSpacing = 20.dp
+    val EmptyTitleSpacing = 13.dp
+    val ErrorIconSize = 60.dp
+    val ErrorDescriptionSpacing = 23.dp
+    val ErrorRetryHorizontalPadding = 52.dp
+    val ErrorRetryVerticalPadding = 12.5.dp
 }
 
 @Preview(name = "Search Screen Idle Empty", showBackground = true, widthDp = 360, heightDp = 720)
@@ -526,6 +580,19 @@ private fun SearchScreenEmptyPreview() {
             uiState = SearchUiState(
                 query = "없는검색어",
                 phase = SearchContentPhase.Empty,
+            ),
+        )
+    }
+}
+
+@Preview(name = "Search Screen Error", showBackground = true, widthDp = 360, heightDp = 720)
+@Composable
+private fun SearchScreenErrorPreview() {
+    RECAPTheme {
+        SearchScreen(
+            uiState = SearchUiState(
+                query = "숙소예약",
+                phase = SearchContentPhase.Error,
             ),
         )
     }
