@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -119,10 +119,10 @@ fun RecentOrganizedScreenshotsScreen(
                                 navigationBarBottomPadding,
                     ),
                 ) {
-                    itemsIndexed(
+                    items(
                         items = visibleItems,
-                        key = { _, item -> item.id },
-                    ) { index, item ->
+                        key = { item -> item.id },
+                    ) { item ->
                         ScreenshotCard(
                             thumbnailModel = item.thumbnailModel,
                             categoryType = item.categoryType,
@@ -133,11 +133,8 @@ fun RecentOrganizedScreenshotsScreen(
                             onFavoriteClick = {
                                 onAction(RecentOrganizedScreenshotsAction.ToggleFavorite(item.id))
                             },
-                            horizontalContentPadding = 0.dp,
-                            showBottomDivider = index < visibleItems.lastIndex,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = RecentOrganizedScreenshotsTokens.HorizontalPadding),
+                            horizontalContentPadding = RecentOrganizedScreenshotsTokens.HorizontalPadding,
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
                 }

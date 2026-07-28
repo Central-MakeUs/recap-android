@@ -48,6 +48,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -93,8 +94,9 @@ fun ScreenshotCard(
     thumbnailContentDescription: String? = null,
     horizontalContentPadding: Dp = ScreenshotCardTokens.ContainerHorizontalPadding,
     showFavoriteButton: Boolean = true,
-    showBottomDivider: Boolean = true,
     containerClickEnabled: Boolean = true,
+    contentModifier: Modifier = Modifier,
+    leadingContent: (@Composable () -> Unit)? = null,
     titleHighlightRange: IntRange? = null,
     descriptionHighlightRange: IntRange? = null,
 ) {
@@ -111,29 +113,30 @@ fun ScreenshotCard(
         label = "screenshot_card_press_scale",
     )
     val rowShape = RoundedCornerShape(ScreenshotCardTokens.RowCornerRadius)
+    val clearEmbeddedTextSemantics = leadingContent != null && !containerClickEnabled
+    val contentContainerModifier = if (containerClickEnabled) {
+        Modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(rowShape)
+            .background(RecapBackground)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onClick,
+            )
+    } else {
+        contentModifier
+    }
 
     Column(modifier = modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                }
-                .clip(rowShape)
-                .background(RecapBackground)
-                .then(
-                    if (containerClickEnabled) {
-                        Modifier.clickable(
-                            interactionSource = interactionSource,
-                            indication = null,
-                            role = Role.Button,
-                            onClick = onClick,
-                        )
-                    } else {
-                        Modifier
-                    },
-                ),
+                .then(contentContainerModifier),
         ) {
             Row(
                 modifier = Modifier
@@ -147,7 +150,18 @@ fun ScreenshotCard(
                 ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                leadingContent?.invoke()
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .then(
+                            if (clearEmbeddedTextSemantics) {
+                                Modifier.clearAndSetSemantics { }
+                            } else {
+                                Modifier
+                            },
+                        ),
+                ) {
                     if (
                         metadataMode == ScreenshotCardMetadataMode.CategoryChip &&
                         categoryType != null
@@ -210,14 +224,12 @@ fun ScreenshotCard(
                 )
             }
         }
-        if (showBottomDivider) {
-            Spacer(modifier = Modifier.height(ScreenshotCardTokens.DividerGap))
-            HorizontalDivider(
-                modifier = Modifier.padding(horizontal = horizontalContentPadding),
-                thickness = ScreenshotCardTokens.DividerThickness,
-                color = RecapGray100,
-            )
-        }
+        Spacer(modifier = Modifier.height(ScreenshotCardTokens.DividerGap))
+        HorizontalDivider(
+            modifier = Modifier.fillMaxWidth(),
+            thickness = ScreenshotCardTokens.DividerThickness,
+            color = RecapGray100,
+        )
     }
 }
 

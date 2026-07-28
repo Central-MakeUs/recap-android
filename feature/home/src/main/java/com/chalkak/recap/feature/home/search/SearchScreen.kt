@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -264,10 +264,10 @@ private fun SearchResultsContent(
             state = listState,
             contentPadding = PaddingValues(bottom = 32.dp),
         ) {
-            itemsIndexed(
+            items(
                 items = results,
-                key = { _, item -> item.captureId },
-            ) { index, item ->
+                key = { item -> item.captureId },
+            ) { item ->
                 ScreenshotCard(
                     thumbnailModel = item.thumbnailModel,
                     categoryType = item.categoryType,
@@ -278,11 +278,8 @@ private fun SearchResultsContent(
                     isFavorite = item.isFavorite,
                     onClick = { onAction(SearchAction.SelectResult(item.captureId)) },
                     onFavoriteClick = { onAction(SearchAction.ToggleFavorite(item.captureId)) },
-                    horizontalContentPadding = 0.dp,
-                    showBottomDivider = index < results.lastIndex,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = SearchScreenTokens.HorizontalPadding),
+                    horizontalContentPadding = SearchScreenTokens.HorizontalPadding,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
             if (isLoadingMore) {

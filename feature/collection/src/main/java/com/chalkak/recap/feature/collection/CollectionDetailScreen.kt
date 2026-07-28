@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.windowInsetsTopHeight
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -142,10 +142,10 @@ fun CollectionDetailScreen(
                         bottom = CollectionDetailTokens.ListVerticalPadding + bottomContentPadding,
                     ),
                 ) {
-                    itemsIndexed(
+                    items(
                         items = detail.cards,
-                        key = { _, card -> card.captureId },
-                    ) { index, card ->
+                        key = { card -> card.captureId },
+                    ) { card ->
                         CollectionSelectableCaptureItem(
                             item = card,
                             selection = selection,
@@ -157,7 +157,6 @@ fun CollectionDetailScreen(
                             onSelectionToggle = {
                                 onAction(CollectionAction.ToggleItemSelection(card.captureId))
                             },
-                            showBottomDivider = index < detail.cards.lastIndex,
                         )
                     }
                     if (detail.isLoadingMore) {
