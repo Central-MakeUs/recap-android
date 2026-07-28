@@ -71,9 +71,20 @@ fun RecapNavHost(
             state.toOrganizeAnalysisStatusUiState()
         }
     }
+    val initialAnalysisStatus = remember(analysisProgressViewModel) {
+        analysisProgressViewModel.uiState.value.toOrganizeAnalysisStatusUiState()
+    }
     val analysisStatus by analysisStatusFlow.collectAsStateWithLifecycle(
-        initialValue = OrganizeAnalysisStatusUiState.Hidden,
+        initialValue = initialAnalysisStatus,
     )
+    var renderedAnalysisStatus by remember {
+        mutableStateOf(
+            retainLastVisibleAnalysisStatus(
+                previous = null,
+                current = initialAnalysisStatus,
+            ),
+        )
+    }
 
     fun exitOrganizeAnalysisStatus() {
         val wasRunning = analysisProgressViewModel.uiState.value.isRunning
@@ -123,6 +134,10 @@ fun RecapNavHost(
     }
 
     LaunchedEffect(analysisStatus) {
+        renderedAnalysisStatus = retainLastVisibleAnalysisStatus(
+            previous = renderedAnalysisStatus,
+            current = analysisStatus,
+        )
         if (analysisStatus !is OrganizeAnalysisStatusUiState.Hidden) {
             openOrganizeAnalysisStatusIfNeeded()
         }
@@ -302,11 +317,13 @@ fun RecapNavHost(
                 }
 
                 AppRoute.OrganizeAnalysisStatus -> NavEntry(route) {
-                    OrganizeAnalysisStatusRoute(
-                        uiState = analysisStatus,
-                        onCancelClick = ::exitOrganizeAnalysisStatus,
-                        onDismissClick = ::exitOrganizeAnalysisStatus,
-                    )
+                    renderedAnalysisStatus?.let { status ->
+                        OrganizeAnalysisStatusRoute(
+                            uiState = status,
+                            onCancelClick = ::exitOrganizeAnalysisStatus,
+                            onDismissClick = ::exitOrganizeAnalysisStatus,
+                        )
+                    }
                 }
 
                 else -> error("Unknown app route: $route")

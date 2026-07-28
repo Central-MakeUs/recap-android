@@ -46,8 +46,7 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
-import com.chalkak.recap.core.design.component.chip.RecapFilterTag
-import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
+import com.chalkak.recap.core.design.component.chip.RecapSortToggle
 import com.chalkak.recap.core.design.component.divider.RecapSectionDivider
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
@@ -338,15 +337,11 @@ private fun CollectionDetailToolbar(
     onAction: (CollectionAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val sortOptions = listOf(
-        RecapFilterTagOption(
-            id = CollectionListSort.Latest.name,
-            label = stringResource(R.string.collection_sort_latest),
-        ),
-        RecapFilterTagOption(
-            id = CollectionListSort.Oldest.name,
-            label = stringResource(R.string.collection_sort_oldest),
-        ),
+    val sortLabel = stringResource(
+        when (selectedSort) {
+            CollectionListSort.Latest -> R.string.collection_sort_latest
+            CollectionListSort.Oldest -> R.string.collection_sort_oldest
+        },
     )
 
     Row(
@@ -354,13 +349,14 @@ private fun CollectionDetailToolbar(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RecapFilterTag(
-            options = sortOptions,
-            selectedOptionId = selectedSort.name,
-            onOptionSelected = { option ->
-                val sort = CollectionListSort.entries.firstOrNull { it.name == option.id }
-                    ?: return@RecapFilterTag
-                onAction(CollectionAction.SetDetailSort(sort))
+        RecapSortToggle(
+            label = sortLabel,
+            onClick = {
+                val nextSort = when (selectedSort) {
+                    CollectionListSort.Latest -> CollectionListSort.Oldest
+                    CollectionListSort.Oldest -> CollectionListSort.Latest
+                }
+                onAction(CollectionAction.SetDetailSort(nextSort))
             },
         )
         if (showSelectionActions) {

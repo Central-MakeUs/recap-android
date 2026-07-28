@@ -61,8 +61,7 @@ import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.chip.RecapCategoryRoundChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChipWithIcon
-import com.chalkak.recap.core.design.component.chip.RecapFilterTag
-import com.chalkak.recap.core.design.component.chip.RecapFilterTagOption
+import com.chalkak.recap.core.design.component.chip.RecapSortToggle
 import com.chalkak.recap.core.design.component.icon.RecapHazeFolderIcon
 import com.chalkak.recap.core.design.component.input.RecapInputField
 import com.chalkak.recap.core.design.component.popup.RecapPopup
@@ -117,8 +116,7 @@ internal fun ComponentGardenScreen(
     var inputFieldValue by remember { mutableStateOf("") }
     var multilineInputFieldValue by remember { mutableStateOf("") }
     var isScreenshotCardFavorited by remember { mutableStateOf(false) }
-    var selectedFilterTagOptionId by remember { mutableStateOf("latest") }
-    var isFilterTagExpanded by remember { mutableStateOf(false) }
+    var isSortLatest by remember { mutableStateOf(true) }
     val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
     val toastDispatcher = LocalRecapToastDispatcher.current
     val toastPreviewMessage = stringResource(R.string.recap_toast_preview_login_failed_message)
@@ -191,23 +189,17 @@ internal fun ComponentGardenScreen(
                 ComponentGardenCategoryChips()
             }
             ComponentGardenSection(
-                title = stringResource(R.string.component_garden_filter_tag_section_title),
+                title = stringResource(R.string.component_garden_sort_toggle_section_title),
             ) {
-                RecapFilterTag(
-                    options = listOf(
-                        RecapFilterTagOption(
-                            id = "latest",
-                            label = stringResource(R.string.collection_sort_latest),
-                        ),
-                        RecapFilterTagOption(
-                            id = "favorite",
-                            label = stringResource(R.string.home_favorites_title),
-                        ),
+                RecapSortToggle(
+                    label = stringResource(
+                        if (isSortLatest) {
+                            R.string.collection_sort_latest
+                        } else {
+                            R.string.collection_sort_oldest
+                        },
                     ),
-                    selectedOptionId = selectedFilterTagOptionId,
-                    onOptionSelected = { selectedFilterTagOptionId = it.id },
-                    expanded = isFilterTagExpanded,
-                    onExpandedChange = { isFilterTagExpanded = it },
+                    onClick = { isSortLatest = !isSortLatest },
                 )
             }
             ComponentGardenSection(

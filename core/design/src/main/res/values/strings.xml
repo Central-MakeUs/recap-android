@@ -161,6 +161,7 @@
     <string name="collection_detail_organized_date">%1$s 정리</string>
     <string name="collection_sort_latest">최신순</string>
     <string name="collection_sort_oldest">오래된순</string>
+    <string name="collection_sort_toggle_content_description">정렬 순서 변경</string>
     <string name="collection_detail_empty">이 폴더에 정리된 스크린샷이 없어요</string>
     <string name="collection_detail_empty_character_content_description">빈 폴더 안내 캐릭터</string>
     <string name="collection_favorites_detail_title">즐겨찾기</string>
@@ -273,9 +274,7 @@
     <string name="component_garden_haze_folder_icon_section_title">헤이즈 폴더 아이콘</string>
     <string name="component_garden_ui_components_section_title">컴포넌트</string>
     <string name="component_garden_category_chips_section_title">카테고리 칩</string>
-    <string name="component_garden_filter_tag_section_title">필터 태그</string>
-    <string name="recap_filter_tag_expand_content_description">필터 옵션 펼치기</string>
-    <string name="recap_filter_tag_collapse_content_description">필터 옵션 접기</string>
+    <string name="component_garden_sort_toggle_section_title">정렬 토글</string>
     <string name="component_garden_favorite_category_card_category_label">카테고리 01</string>
     <string name="component_garden_favorite_category_card_title">무선 키보드 후보</string>
     <string name="component_garden_favorite_category_card_description">가격과 배송 정보가 포함된 상품 캡처</string>
