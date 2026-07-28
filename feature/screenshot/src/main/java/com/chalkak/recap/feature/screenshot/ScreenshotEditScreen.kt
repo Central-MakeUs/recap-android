@@ -272,11 +272,20 @@ private fun ScreenshotEditImagePreview(
     var imageLoadFailed by remember(imageModel) { mutableStateOf(false) }
     val showPlaceholder = imageModel == null || imageLoadFailed
 
+    val imageInteractionSource = remember { MutableInteractionSource() }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(ScreenshotEditTokens.EditImagePreviewHeight)
-            .clip(RoundedCornerShape(ScreenshotEditTokens.EditImagePreviewCornerRadius)),
+            .clip(RoundedCornerShape(ScreenshotEditTokens.EditImagePreviewCornerRadius))
+            .clickable(
+                enabled = !showPlaceholder,
+                interactionSource = imageInteractionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onOpenFullscreen,
+            ),
     ) {
         Surface(
             modifier = Modifier.fillMaxSize(),

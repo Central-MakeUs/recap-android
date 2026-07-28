@@ -250,10 +250,19 @@ private fun ScreenshotDetailHero(
     var imageLoadFailed by remember(imageModel) { mutableStateOf(false) }
     val showPlaceholder = imageModel == null || imageLoadFailed
 
+    val imageInteractionSource = remember { MutableInteractionSource() }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(ScreenshotDetailTokens.HeroHeight),
+            .height(ScreenshotDetailTokens.HeroHeight)
+            .clickable(
+                enabled = !showPlaceholder,
+                interactionSource = imageInteractionSource,
+                indication = null,
+                role = Role.Button,
+                onClick = onFullscreenClick,
+            ),
     ) {
         if (showPlaceholder) {
             Surface(
