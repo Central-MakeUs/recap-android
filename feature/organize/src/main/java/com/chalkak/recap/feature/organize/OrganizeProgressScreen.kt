@@ -1,5 +1,8 @@
 package com.chalkak.recap.feature.organize
 
+import androidx.compose.animation.core.EaseInOut
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
@@ -82,6 +86,14 @@ fun OrganizeProgressContent(
     progress: Float,
     modifier: Modifier = Modifier,
 ) {
+    val animatedProgress by animateFloatAsState(
+        targetValue = progress.coerceIn(0f, 1f),
+        animationSpec = tween(
+            durationMillis = OrganizeProgressTokens.ProgressAnimationDurationMillis,
+            easing = EaseInOut,
+        ),
+        label = "organize_progress",
+    )
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -105,13 +117,15 @@ fun OrganizeProgressContent(
         )
         Spacer(modifier = Modifier.height(OrganizeProgressTokens.IllustrationToProgressSpacing))
         LinearProgressIndicator(
-            progress = { progress.coerceIn(0f, 1f) },
+            progress = { animatedProgress },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(OrganizeProgressTokens.ProgressHeight),
             color = RecapOnboardingBlue,
             trackColor = RecapCategoryOther500, // 색상 토큰 정규화 필요
             strokeCap = StrokeCap.Round,
+            gapSize = -OrganizeProgressTokens.ProgressHeight,
+            drawStopIndicator = {},
         )
         Spacer(modifier = Modifier.height(OrganizeProgressTokens.ProgressToTitleSpacing))
         Text(
@@ -140,6 +154,7 @@ private object OrganizeProgressTokens {
     val IllustrationToProgressSpacing = 32.dp
     val ProgressToTitleSpacing = 29.dp
     val TitleToDescriptionSpacing = 6.dp
+    const val ProgressAnimationDurationMillis = 500
 }
 
 @Preview(name = "Organize Progress Screen", showBackground = true, widthDp = 360, heightDp = 780)
