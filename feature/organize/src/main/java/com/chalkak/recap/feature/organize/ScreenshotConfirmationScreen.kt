@@ -77,9 +77,11 @@ fun ScreenshotConfirmationScreen(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Column(modifier = Modifier
-            .fillMaxSize()
-            .navigationBarsPadding()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .navigationBarsPadding()
+        ) {
             ScreenshotConfirmationTopBar(
                 selectionCount = uiState.selectionCount,
                 onBackClick = onBackClick,
@@ -259,7 +261,7 @@ private fun ScreenshotConfirmationAddItem(
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val borderColor = MaterialTheme.colorScheme.primary
+    val borderColor = RecapGray300
     val shape = RoundedCornerShape(ScreenshotConfirmationTokens.ItemCornerRadius)
 
     Box(
@@ -297,8 +299,8 @@ private fun ScreenshotConfirmationAddItem(
         Icon(
             painter = painterResource(R.drawable.ic_plus_32),
             contentDescription = stringResource(R.string.organize_add_more_content_description),
-            modifier = Modifier.size(28.dp),
-            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(24.dp),
+            tint = RecapGray300,
         )
     }
 }
@@ -310,7 +312,7 @@ private object ScreenshotConfirmationTokens {
     val BottomPadding = 20.dp
     val GridVerticalPadding = 12.dp
     val GridSpacing = 4.dp
-    val ItemCornerRadius = 8.dp
+    val ItemCornerRadius = 10.dp
     val RemoveButtonSize = 16.dp
     val RemoveButtonPadding = 6.dp
     val RemoveButtonCornerRadius = 50
