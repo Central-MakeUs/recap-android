@@ -136,7 +136,7 @@ core.data.screenshot 하위:
 UI 색상·타이포는 `MaterialTheme.colorScheme` / `MaterialTheme.typography`보다 `core/design/theme` 디자인 토큰을 우선 사용한다.
 
 - **RecapColor** — `core/design/src/main/java/com/chalkak/recap/core/design/theme/Color.kt`에 정의된 `RecapBlue*`, `RecapGray*`, `RecapCategory*` 등 색상 토큰
-- **RecapTypo** — `core/design/src/main/java/com/chalkak/recap/core/design/theme/Type.kt`의 `RecapTypography` (`RecapHeading*`, `RecapBody*`, `RecapCaption*`)
+- **RecapTypo** — `core/design/src/main/java/com/chalkak/recap/core/design/theme/Type.kt`의 `RecapTypography` (`RecapHeading*`, `RecapBody*`, `RecapCaption*`). 사용 시 `import ...RecapTypography.RecapBody1`처럼 멤버를 직접 import하고 `style = RecapBody1`로 쓴다. `MaterialTheme.typography` / `RecapTypography.RecapBody1` 형태는 쓰지 않는다.
 
 시맨틱 색·Material 역할 매핑이 필요할 때만 `MaterialTheme`을 보조로 쓴다. 색·타이포 임의 하드코딩은 금지한다.
 

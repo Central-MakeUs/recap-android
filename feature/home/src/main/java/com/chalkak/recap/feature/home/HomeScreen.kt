@@ -54,6 +54,8 @@ import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 import dev.chrisbanes.haze.HazeState
@@ -141,7 +143,7 @@ private fun HomeEmptyOrganizePrompt(
         Spacer(modifier = Modifier.height(HomeScreenTokens.EmptyCharacterSpacing))
         Text(
             text = stringResource(R.string.home_empty_title),
-            style = MaterialTheme.typography.bodyLarge,
+            style = RecapBody1,
             fontWeight = FontWeight.Bold,
             color = RecapGray700,
             textAlign = TextAlign.Center,
@@ -149,7 +151,7 @@ private fun HomeEmptyOrganizePrompt(
         Spacer(modifier = Modifier.height(HomeScreenTokens.EmptyTitleSpacing))
         Text(
             text = stringResource(R.string.home_empty_description),
-            style = MaterialTheme.typography.bodyMedium,
+            style = RecapBody2,
             color = RecapGray500,
             textAlign = TextAlign.Center,
         )
@@ -160,7 +162,7 @@ private fun HomeEmptyOrganizePrompt(
             onClick = onImportClick,
             size = RecapButtonSize.Medium,
             modifier = Modifier.widthIn(min = HomeScreenTokens.EmptyImportButtonMinWidth),
-            textStyle = MaterialTheme.typography.bodyMedium,
+            textStyle = RecapBody2,
         )
     }
 }
@@ -276,13 +278,13 @@ private fun HomeFavoritesEmptyText(
     ) {
         Text(
             text = stringResource(R.string.home_favorites_empty),
-            style = MaterialTheme.typography.bodyMedium,
+            style = RecapBody2,
             color = RecapGray500,
             textAlign = TextAlign.Center,
         )
         Text(
             text = stringResource(R.string.home_favorites_empty_hint),
-            style = MaterialTheme.typography.bodyMedium,
+            style = RecapBody2,
             color = RecapGray500,
             textAlign = TextAlign.Center,
         )
@@ -311,7 +313,7 @@ private fun HomeFavoritesEmptyPrompt(
         Spacer(modifier = Modifier.height(HomeScreenTokens.FavoritesEmptyCharacterSpacing))
         Text(
             text = stringResource(R.string.home_favorites_empty),
-            style = MaterialTheme.typography.bodyMedium,
+            style = RecapBody2,
             color = RecapGray500,
             textAlign = TextAlign.Center,
         )
@@ -434,7 +436,7 @@ private fun HomeSectionEmptyText(
 ) {
     Text(
         text = text,
-        style = MaterialTheme.typography.bodyMedium,
+        style = RecapBody2,
         color = RecapGray500,
         textAlign = TextAlign.Center,
         modifier = modifier

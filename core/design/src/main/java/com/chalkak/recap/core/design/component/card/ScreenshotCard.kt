@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -73,6 +72,8 @@ import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption3
 
 enum class ScreenshotCardMetadataMode {
     CategoryChip,
@@ -175,7 +176,7 @@ fun ScreenshotCard(
                             highlightRange = titleHighlightRange,
                             defaultColor = RecapGray900,
                         ),
-                        style = MaterialTheme.typography.bodySmall,
+                        style = RecapCaption1,
                         fontWeight = FontWeight.Bold,
                         color = RecapGray900,
                         maxLines = ScreenshotCardTokens.TitleMaxLines,
@@ -188,7 +189,7 @@ fun ScreenshotCard(
                             highlightRange = descriptionHighlightRange,
                             defaultColor = RecapGray500,
                         ),
-                        style = MaterialTheme.typography.labelLarge,
+                        style = RecapCaption1,
                         color = RecapGray500,
                         maxLines = ScreenshotCardTokens.DescriptionMaxLines,
                         overflow = TextOverflow.Ellipsis,
@@ -204,7 +205,7 @@ fun ScreenshotCard(
                                     R.string.collection_detail_organized_date,
                                     organizedDateLabel,
                                 ),
-                                style = MaterialTheme.typography.labelSmall,
+                                style = RecapCaption3,
                                 color = RecapGray300,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,

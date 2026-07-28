@@ -27,7 +27,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,8 +67,10 @@ import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
@@ -220,14 +221,14 @@ private fun ScreenshotDetailContent(
             Text(
                 text = bodyText,
                 modifier = Modifier.padding(top = ScreenshotDetailTokens.SummaryToBodySpacing),
-                style = MaterialTheme.typography.bodyMedium,
+                style = RecapBody2,
                 color = RecapGray700,
             )
             content.actionErrorMessageResId?.let { errorResId ->
                 Text(
                     text = stringResource(errorResId),
                     modifier = Modifier.padding(top = ScreenshotDetailTokens.SectionSpacing),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = RecapBody2,
                     color = RecapError,
                 )
             }
@@ -264,7 +265,7 @@ private fun ScreenshotDetailHero(
                 ) {
                     Text(
                         text = stringResource(R.string.screenshot_image_load_error),
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = RecapBody2,
                         color = RecapGray500,
                         modifier = Modifier.padding(ScreenshotTokens.HorizontalPadding),
                     )
@@ -316,7 +317,7 @@ private fun ScreenshotDetailHero(
                 )
                 Text(
                     text = stringResource(R.string.screenshot_detail_title),
-                    style = MaterialTheme.typography.titleMedium,
+                    style = RecapHeading2,
                     color = White,
                 )
             }
@@ -475,14 +476,14 @@ private fun ScreenshotDetailErrorState(
     ) {
         Text(
             text = message,
-            style = MaterialTheme.typography.bodyLarge,
+            style = RecapBody1,
             color = RecapGray900,
         )
         actionErrorMessageResId?.let { errorResId ->
             Text(
                 text = stringResource(errorResId),
                 modifier = Modifier.padding(top = ScreenshotDetailTokens.MetaRowSpacing),
-                style = MaterialTheme.typography.bodyMedium,
+                style = RecapBody2,
                 color = RecapError,
             )
         }

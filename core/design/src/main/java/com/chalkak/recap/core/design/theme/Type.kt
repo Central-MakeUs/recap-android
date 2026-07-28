@@ -22,7 +22,8 @@ val PretendardFontFamily = FontFamily(
  * Figma: Heading 1–4 / Body 1–2 / Caption 1–3
  * 공통: lineHeight 140%, letterSpacing -2%
  *
- * 사용: `style = RecapTypography.RecapBody1`
+ * 사용: `import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1`
+ *       `style = RecapBody1`
  */
 object RecapTypography {
     val RecapHeading1 = recapTextStyle(weight = FontWeight.SemiBold, size = 22)

@@ -25,7 +25,8 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
-import com.chalkak.recap.core.design.theme.RecapTypography
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.feature.settings.SettingsNavRow
 import com.chalkak.recap.feature.settings.SettingsRowTokens
 
@@ -119,7 +120,7 @@ private fun PrivacyGuideSection(
     ) {
         Text(
             text = stringResource(titleResId),
-            style = RecapTypography.RecapHeading3,
+            style = RecapHeading3,
             color = RecapGray900,
         )
         Column(
@@ -143,13 +144,13 @@ private fun PrivacyGuideBulletItem(
     ) {
         Text(
             text = stringResource(R.string.settings_privacy_guide_bullet_marker),
-            style = RecapTypography.RecapBody2,
+            style = RecapBody2,
             color = RecapGray500,
         )
         Text(
             text = stringResource(textResId),
             modifier = Modifier.weight(1f),
-            style = RecapTypography.RecapBody2,
+            style = RecapBody2,
             color = RecapGray500,
         )
     }

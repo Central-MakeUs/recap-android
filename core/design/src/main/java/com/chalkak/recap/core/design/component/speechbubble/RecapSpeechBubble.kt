@@ -29,8 +29,8 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
-import com.chalkak.recap.core.design.theme.RecapTypography
 import com.chalkak.recap.core.design.theme.White
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 
 
 enum class RecapSpeechBubbleArrowDirection {
@@ -52,7 +52,7 @@ object RecapSpeechBubbleDefaults {
     val ArrowHeight = 8.dp
     val BorderWidth = 1.5.dp
     val Elevation = 1.dp
-    val TextStyle: TextStyle = RecapTypography.RecapCaption1
+    val TextStyle: TextStyle = RecapCaption1
 
     fun colors(
         container: Color = White,

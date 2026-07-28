@@ -35,6 +35,7 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 
 @Composable
 fun CollectionDetailTopBar(
@@ -82,7 +83,7 @@ fun CollectionDetailTopBar(
                     }
                     Text(
                         text = title,
-                        style = MaterialTheme.typography.titleMedium,
+                        style = RecapHeading2,
                         fontWeight = FontWeight.Bold,
                         color = RecapGray900,
                         maxLines = 1,

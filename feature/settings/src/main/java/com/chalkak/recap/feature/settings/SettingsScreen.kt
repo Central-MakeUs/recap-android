@@ -22,7 +22,7 @@ import com.chalkak.recap.core.design.component.topbar.RecapTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapGray500
-import com.chalkak.recap.core.design.theme.RecapTypography
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 import com.chalkak.recap.core.model.ImageAccessLevel
 
 @Composable
@@ -117,7 +117,7 @@ private fun SettingsSection(
                 top = SettingsRowTokens.SectionHeaderTopPadding,
                 bottom = SettingsRowTokens.SectionHeaderBottomPadding,
             ),
-            style = RecapTypography.RecapBody2,
+            style = RecapBody2,
             color = RecapGray500,
         )
         Column(

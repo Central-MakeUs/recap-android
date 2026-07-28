@@ -11,6 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.component.button.RecapButton
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 
 @Composable
 fun RecapPlaceholderScreen(
@@ -30,12 +32,12 @@ fun RecapPlaceholderScreen(
         ) {
             Text(
                 text = title,
-                style = MaterialTheme.typography.headlineSmall,
+                style = RecapHeading3,
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Text(
                 text = description,
-                style = MaterialTheme.typography.bodyMedium,
+                style = RecapBody2,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             if (actionLabel != null && onActionClick != null) {

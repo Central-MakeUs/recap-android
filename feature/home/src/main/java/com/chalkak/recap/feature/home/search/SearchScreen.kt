@@ -483,7 +483,7 @@ private fun RecentSearchChip(
         ) {
             Text(
                 text = text,
-                style = MaterialTheme.typography.bodyMedium,
+                style = RecapBody2,
                 color = RecapGray500,
             )
             Box(

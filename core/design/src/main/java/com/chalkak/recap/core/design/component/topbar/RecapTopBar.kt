@@ -28,6 +28,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 
 @Composable
 fun RecapTopBar(
@@ -56,7 +57,7 @@ fun RecapTopBar(
             )
             Text(
                 text = title,
-                style = MaterialTheme.typography.titleSmall,
+                style = RecapHeading3,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.Bold,
             )

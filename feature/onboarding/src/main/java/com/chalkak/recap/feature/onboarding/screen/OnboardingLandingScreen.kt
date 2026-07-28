@@ -63,6 +63,7 @@ import com.chalkak.recap.core.design.theme.RecapKakaoYellow
 import com.chalkak.recap.core.design.theme.RecapOnboardingBlue
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingIllustrationSignal
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
@@ -257,7 +258,7 @@ private fun BrandHeadline(
                 append(" ")
                 append(stringResource(R.string.onboarding_splash_tagline_rest))
             },
-            style = MaterialTheme.typography.headlineMedium,
+            style = RecapHeading2,
             color = RecapGray700,
             textAlign = TextAlign.Center,
         )

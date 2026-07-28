@@ -75,6 +75,9 @@ import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapError
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.feature.organize.OrganizeAction
 import com.chalkak.recap.feature.organize.OrganizeUiState
 import com.chalkak.recap.feature.organize.ScreenshotPicker
@@ -138,7 +141,7 @@ internal fun ComponentGardenScreen(
         ) {
             Text(
                 text = stringResource(R.string.component_garden_title),
-                style = MaterialTheme.typography.headlineSmall,
+                style = RecapHeading3,
                 color = MaterialTheme.colorScheme.onBackground,
             )
             ComponentGardenSection(
@@ -676,7 +679,7 @@ private fun ComponentGardenHazeFolderCards(
                 )
                 Text(
                     text = stringResource(item.category.labelResId),
-                    style = MaterialTheme.typography.labelMedium,
+                    style = RecapCaption2,
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center,
                 )
@@ -697,7 +700,7 @@ private fun ComponentGardenSection(
     ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
+            style = RecapHeading2,
             color = MaterialTheme.colorScheme.onBackground,
         )
         content()

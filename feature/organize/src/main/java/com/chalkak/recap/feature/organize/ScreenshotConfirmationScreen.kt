@@ -56,6 +56,8 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.model.LocalImage
 
 @Composable
@@ -178,14 +180,14 @@ private fun ScreenshotConfirmationTopBar(
             }
             Text(
                 text = stringResource(R.string.organize_confirm_title),
-                style = MaterialTheme.typography.titleSmall,
+                style = RecapHeading3,
                 fontWeight = FontWeight.Bold,
                 color = RecapGray900,
             )
             Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = stringResource(R.string.organize_confirm_count, selectionCount),
-                style = MaterialTheme.typography.bodyMedium,
+                style = RecapBody2,
                 color = RecapGray300,
                 modifier = Modifier.padding(end = 12.dp),
             )

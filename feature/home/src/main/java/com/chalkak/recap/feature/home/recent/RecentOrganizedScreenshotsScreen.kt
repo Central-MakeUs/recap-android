@@ -47,7 +47,9 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
-import com.chalkak.recap.core.design.theme.RecapTypography
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 
 @Composable
 fun RecentOrganizedScreenshotsScreen(
@@ -100,7 +102,7 @@ fun RecentOrganizedScreenshotsScreen(
                             vertical = RecentOrganizedScreenshotsTokens.CountVerticalPadding,
                         )
                         .align(alignment = Alignment.End),
-                    style = MaterialTheme.typography.labelLarge,
+                    style = RecapCaption1,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -169,7 +171,7 @@ private fun RecentOrganizedScreenshotsEmptyContent(
         Spacer(modifier = Modifier.height(RecentOrganizedScreenshotsTokens.EmptyCharacterSpacing))
         Text(
             text = stringResource(R.string.home_empty_title),
-            style = RecapTypography.RecapHeading3,
+            style = RecapHeading3,
             fontWeight = FontWeight.Bold,
             color = RecapGray300,
             textAlign = TextAlign.Center,
@@ -177,7 +179,7 @@ private fun RecentOrganizedScreenshotsEmptyContent(
         Spacer(modifier = Modifier.height(RecentOrganizedScreenshotsTokens.EmptyTitleSpacing))
         Text(
             text = stringResource(R.string.home_empty_description),
-            style = RecapTypography.RecapBody2,
+            style = RecapBody2,
             color = RecapGray300,
             textAlign = TextAlign.Center,
         )
@@ -188,7 +190,7 @@ private fun RecentOrganizedScreenshotsEmptyContent(
             size = RecapButtonSize.Medium,
             colors = RecapButtonDefaults.secondaryColors(),
             modifier = Modifier.widthIn(min = RecentOrganizedScreenshotsTokens.EmptyImportButtonMinWidth),
-            textStyle = RecapTypography.RecapHeading3,
+            textStyle = RecapHeading3,
         )
     }
 }

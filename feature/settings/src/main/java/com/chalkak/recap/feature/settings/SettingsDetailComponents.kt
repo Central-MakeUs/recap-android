@@ -44,6 +44,9 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 
 @Composable
 internal fun SettingsDetailScreenScaffold(
@@ -106,7 +109,7 @@ internal fun SettingsDocumentButton(
         Text(
             text = text,
             modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.titleSmall,
+            style = RecapHeading3,
             color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Start,
@@ -172,7 +175,7 @@ internal fun SettingsDataCard(
         ) {
             Text(
                 text = stringResource(labelResId),
-                style = MaterialTheme.typography.labelMedium,
+                style = RecapCaption2,
                 color = RecapGray300,
                 fontWeight = FontWeight.Bold,
             )
@@ -216,7 +219,7 @@ internal fun SettingsInfoTitle(
     Text(
         text = text,
         modifier = modifier,
-        style = MaterialTheme.typography.titleSmall,
+        style = RecapHeading3,
         color = MaterialTheme.colorScheme.onSurface,
         fontWeight = FontWeight.Bold,
     )
@@ -230,7 +233,7 @@ internal fun SettingsInfoDescription(
     Text(
         text = text,
         modifier = modifier,
-        style = MaterialTheme.typography.bodySmall,
+        style = RecapCaption1,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }

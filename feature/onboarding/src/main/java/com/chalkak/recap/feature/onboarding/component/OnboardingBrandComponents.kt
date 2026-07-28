@@ -39,6 +39,8 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.RecapLogo
 import com.chalkak.recap.core.design.component.RecapLogoAspectRatio
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption3
 
 @Composable
 internal fun BrandMark(
@@ -203,7 +205,7 @@ private fun ScreenshotInputTile(
         Text(
             text = stringResource(R.string.onboarding_screenshot_label),
             modifier = Modifier.padding(bottom = 12.dp),
-            style = MaterialTheme.typography.labelSmall,
+            style = RecapCaption3,
             color = MaterialTheme.colorScheme.outline,
         )
     }
@@ -291,7 +293,7 @@ private fun IllustrationCard(
             )
             Text(
                 text = label,
-                style = MaterialTheme.typography.labelLarge,
+                style = RecapCaption1,
                 color = MaterialTheme.colorScheme.primary,
                 fontWeight = FontWeight.Bold,
             )

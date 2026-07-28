@@ -12,7 +12,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +25,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 
 @Composable
 fun OrganizedCaptureCard(
@@ -75,7 +76,7 @@ fun OrganizedCaptureCard(
                         organizedCaptureCount,
                     ),
                     color = OrganizedCaptureCardTokens.TitleColor,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = RecapBody2,
                     fontWeight = FontWeight.Bold,
                     maxLines = OrganizedCaptureCardTokens.TitleMaxLines,
                     overflow = TextOverflow.Ellipsis,
@@ -83,7 +84,7 @@ fun OrganizedCaptureCard(
                 Text(
                     text = stringResource(R.string.organized_capture_card_description),
                     color = OrganizedCaptureCardTokens.DescriptionColor,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = RecapCaption2,
                     maxLines = OrganizedCaptureCardTokens.DescriptionMaxLines,
                     overflow = TextOverflow.Ellipsis,
                 )

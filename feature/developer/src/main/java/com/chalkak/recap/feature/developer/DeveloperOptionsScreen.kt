@@ -24,6 +24,8 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapError
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 
 @Composable
 internal fun DeveloperOptionsScreen(
@@ -56,13 +58,13 @@ internal fun DeveloperOptionsScreen(
         ) {
             Text(
                 text = stringResource(R.string.developer_options_title),
-                style = MaterialTheme.typography.headlineSmall,
+                style = RecapHeading3,
                 color = MaterialTheme.colorScheme.onBackground,
             )
             if (uiState.feedbackMessageResId != null) {
                 Text(
                     text = stringResource(uiState.feedbackMessageResId),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = RecapBody2,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -71,7 +73,7 @@ internal fun DeveloperOptionsScreen(
                     R.string.developer_options_screenshot_backend_current,
                     currentModeLabel,
                 ),
-                style = MaterialTheme.typography.bodyMedium,
+                style = RecapBody2,
                 color = MaterialTheme.colorScheme.onBackground,
             )
             Button(

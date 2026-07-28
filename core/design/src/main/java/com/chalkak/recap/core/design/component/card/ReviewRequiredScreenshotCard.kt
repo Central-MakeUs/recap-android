@@ -25,6 +25,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 
 @Composable
 fun ReviewRequiredScreenshotCard(
@@ -81,7 +83,7 @@ fun ReviewRequiredScreenshotCard(
                         reviewRequiredCount,
                     ),
                     color = MaterialTheme.colorScheme.onPrimaryContainer,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = RecapBody2,
                     fontWeight = FontWeight.Bold,
                     maxLines = ReviewRequiredScreenshotCardTokens.TitleMaxLines,
                     overflow = TextOverflow.Ellipsis,
@@ -89,7 +91,7 @@ fun ReviewRequiredScreenshotCard(
                 Text(
                     text = stringResource(R.string.review_required_screenshot_card_description),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelMedium,
+                    style = RecapCaption2,
                     maxLines = ReviewRequiredScreenshotCardTokens.DescriptionMaxLines,
                     overflow = TextOverflow.Ellipsis,
                 )

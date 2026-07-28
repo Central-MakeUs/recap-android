@@ -33,6 +33,8 @@ import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapSheetHandle
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading1
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,7 +105,7 @@ fun OrganizeNotificationPermissionBottomSheetContent(
         Text(
             text = stringResource(R.string.organize_notification_permission_title),
             color = MaterialTheme.colorScheme.onSurface,
-            style = MaterialTheme.typography.titleLarge,
+            style = RecapHeading1,
             fontWeight = FontWeight.Bold,
             textAlign = TextAlign.Center,
         )
@@ -117,7 +119,7 @@ fun OrganizeNotificationPermissionBottomSheetContent(
         Text(
             text = stringResource(R.string.organize_notification_permission_description),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = MaterialTheme.typography.bodyMedium,
+            style = RecapBody2,
             textAlign = TextAlign.Center,
         )
 

@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +27,7 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray500
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 
 object RecapRecentSearchChipDefaults {
     val Shape = RoundedCornerShape(percent = 50)
@@ -44,7 +44,7 @@ fun RecapRecentSearchChip(
     onRemoveClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val labelStyle = MaterialTheme.typography.labelLarge.copy(
+    val labelStyle = RecapCaption1.copy(
         platformStyle = PlatformTextStyle(includeFontPadding = false),
         lineHeightStyle = LineHeightStyle(
             alignment = LineHeightStyle.Alignment.Center,

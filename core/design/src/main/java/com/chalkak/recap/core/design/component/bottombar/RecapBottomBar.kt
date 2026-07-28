@@ -26,7 +26,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -55,6 +54,7 @@ import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.White
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import dev.chrisbanes.haze.HazeInputScale
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.HazeColorEffect
@@ -302,7 +302,7 @@ private fun RecapOrganizeButton(
         )
         Text(
             text = stringResource(R.string.bottom_nav_organize),
-            style = MaterialTheme.typography.labelLarge,
+            style = RecapCaption1,
             color = White,
             fontWeight = FontWeight.SemiBold,
         )

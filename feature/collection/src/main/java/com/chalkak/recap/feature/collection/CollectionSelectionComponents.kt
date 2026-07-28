@@ -57,6 +57,7 @@ import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 
 @Composable
 internal fun CollectionSelectionActions(
@@ -116,7 +117,7 @@ private fun CollectionTextButton(
     ) {
         Text(
             text = text,
-            style = MaterialTheme.typography.bodyMedium,
+            style = RecapBody2,
             fontWeight = FontWeight.Medium,
         )
     }

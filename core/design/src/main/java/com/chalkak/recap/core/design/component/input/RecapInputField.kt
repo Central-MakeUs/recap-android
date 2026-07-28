@@ -17,7 +17,6 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +39,8 @@ import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapError
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 
 @Composable
 fun RecapInputField(
@@ -74,7 +75,7 @@ fun RecapInputField(
         if (label != null) {
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodyMedium,
+                style = RecapBody2,
                 color = RecapGray900,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -114,7 +115,7 @@ fun RecapInputField(
                 singleLine = singleLine,
                 minLines = resolvedMinLines,
                 maxLines = resolvedMaxLines,
-                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                textStyle = RecapBody2.copy(
                     color = RecapGray900,
                 ),
                 cursorBrush = SolidColor(RecapBlue500),
@@ -132,7 +133,7 @@ fun RecapInputField(
                         if (value.isEmpty() && placeholder.isNotEmpty()) {
                             Text(
                                 text = placeholder,
-                                style = MaterialTheme.typography.bodyMedium,
+                                style = RecapBody2,
                                 color = RecapGray300,
                                 maxLines = if (singleLine) 1 else Int.MAX_VALUE,
                                 overflow = TextOverflow.Ellipsis,
@@ -165,7 +166,7 @@ fun RecapInputField(
                             value.length,
                             maxLength,
                         ),
-                        style = MaterialTheme.typography.labelMedium,
+                        style = RecapCaption2,
                         color = RecapGray300,
                     )
                 }
@@ -192,7 +193,7 @@ private fun RecapInputFieldErrorMessage(
         )
         Text(
             text = message,
-            style = MaterialTheme.typography.labelMedium,
+            style = RecapCaption2,
             color = RecapError,
         )
     }
@@ -302,7 +303,7 @@ private fun RecapInputFieldFocusedPreviewContent(
         ) {
             Text(
                 text = stringResource(R.string.recap_input_field_preview_label),
-                style = MaterialTheme.typography.bodyMedium,
+                style = RecapBody2,
                 color = RecapGray900,
             )
             Surface(
@@ -323,7 +324,7 @@ private fun RecapInputFieldFocusedPreviewContent(
                 ) {
                     Text(
                         text = value,
-                        style = MaterialTheme.typography.bodyMedium,
+                        style = RecapBody2,
                         color = RecapGray900,
                     )
                 }

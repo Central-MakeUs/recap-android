@@ -45,6 +45,9 @@ import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapSheetHandle
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading1
 
 data class RecapActionBottomSheetIconStyle(
     val containerSize: Dp = RecapActionBottomSheetDefaults.IconContainerSize,
@@ -188,13 +191,13 @@ fun RecapActionBottomSheetContent(
             Text(
                 text = title,
                 color = MaterialTheme.colorScheme.onSurface,
-                style = MaterialTheme.typography.titleLarge,
+                style = RecapHeading1,
                 fontWeight = FontWeight.Bold,
             )
             Text(
                 text = description,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                style = MaterialTheme.typography.bodyLarge,
+                style = RecapBody1,
             )
         }
 
@@ -248,7 +251,7 @@ private fun RecapActionBottomSheetNotice(
             Modifier
         },
         color = MaterialTheme.colorScheme.outline,
-        style = MaterialTheme.typography.labelMedium,
+        style = RecapCaption2,
         textAlign = when (alignment) {
             RecapActionBottomSheetNoticeAlignment.Start -> TextAlign.Start
             RecapActionBottomSheetNoticeAlignment.Center -> TextAlign.Center

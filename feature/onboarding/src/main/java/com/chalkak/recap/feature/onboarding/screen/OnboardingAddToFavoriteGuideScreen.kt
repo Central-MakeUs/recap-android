@@ -43,7 +43,7 @@ import com.chalkak.recap.core.design.component.topbar.RecapTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapOnboardingBlue
-import com.chalkak.recap.core.design.theme.RecapTypography
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 import kotlinx.coroutines.launch
 import kotlin.math.abs
 
@@ -235,13 +235,13 @@ private fun AddToFavoriteGuideStepDescription(
             ) {
                 Text(
                     text = GuideStepIcons[index],
-                    style = RecapTypography.RecapBody1,
+                    style = RecapBody1,
                     color = RecapGray700,
                 )
                 Text(
                     text = stringResource(descriptionResId),
                     modifier = Modifier.padding(start = 8.dp),
-                    style = RecapTypography.RecapBody1,
+                    style = RecapBody1,
                     color = RecapGray700,
                 )
             }
