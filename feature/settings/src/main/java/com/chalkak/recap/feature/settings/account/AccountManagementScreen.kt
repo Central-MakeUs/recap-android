@@ -268,7 +268,7 @@ private fun AccountLogoutRow(
 
 private object AccountManagementTokens {
     const val PressedScale = 0.9875f
-    const val PressAnimationDurationMillis = 100
+    const val PressAnimationDurationMillis = 50
     val HorizontalPadding = 28.dp
     val ClickAreaHorizontalPadding = 16.dp
     val ContentItemSpacing = 23.dp

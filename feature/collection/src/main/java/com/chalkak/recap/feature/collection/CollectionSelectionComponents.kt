@@ -275,7 +275,7 @@ private object CollectionSelectionTokens {
     const val EnterAnimationDurationMillis = 180
     const val ExitAnimationDurationMillis = 150
     const val PressedScale = 0.9875f
-    const val PressAnimationDurationMillis = 100
+    const val PressAnimationDurationMillis = 50
     val RowCornerRadius = 10.dp
     val CheckboxContainerSize = 24.dp
     val CheckboxIconSize = 16.dp

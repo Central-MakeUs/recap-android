@@ -49,7 +49,7 @@ object RecapSortToggleDefaults {
     val HorizontalPadding = 10.dp
     val IconLabelSpacing = 10.dp
     val IconSize = 16.dp
-    const val PressAnimationDurationMillis = 100
+    const val PressAnimationDurationMillis = 50
     const val LabelFadeDurationMillis = 150
 }
 

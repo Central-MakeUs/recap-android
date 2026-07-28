@@ -446,7 +446,7 @@ private object ScreenshotCardTokens {
     val FavoriteIconPadding = 6.dp
     val FavoriteIconSize = 16.dp
     const val PressedScale = 0.9875f
-    const val PressAnimationDurationMillis = 100
+    const val PressAnimationDurationMillis = 50
     val RowCornerRadius = 10.dp
     const val ThumbnailViewBoxWidth = 62f
     const val ThumbnailViewBoxHeight = 80f
