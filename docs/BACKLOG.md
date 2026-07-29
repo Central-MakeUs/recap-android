@@ -132,6 +132,10 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 
 ## Done
 
+- [x] 2026-07-29 - AI 데이터 전송 동의 User API 연동
+  - Result: `GET/POST/DELETE /api/v1/users/me/consent`를 UserApi/UserRepository에 추가하고 데이터 관리 화면에서 조회·동의·철회를 서버 상태로 반영
+  - Validation: `:core:data:testDebugUnitTest --tests UserRepositoryTest`, `:feature:settings:testDebugUnitTest --tests DataManagementViewModelTest`, `:feature:settings:assembleDebug`
+
 - [x] 2026-07-23 - 공식 NavDisplay 기반 공통 navigation motion 안정화
   - Result: single-pane custom `RecapNavDisplay`를 제거하고 공식 Navigation3 `NavDisplay`가 scene lifecycle, transition, predictive back을 소유하도록 복원함. Home↔Collection은 기존 전환을 유지하고, 나머지는 공통 push/pop과 20% parallax를 사용함. 좌·우 edge gesture에는 full-range predictive pop을 적용하고, 3버튼·하드웨어 back(`EDGE_NONE`)에는 predictive preview를 적용하지 않음
   - Replaces: 40% predictive scrub과 custom commit completion 구현 및 `RecapNavDisplay` OverlayScene/공유 요소 lifecycle 패리티 후속 항목

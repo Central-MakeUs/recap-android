@@ -1,11 +1,10 @@
 package com.chalkak.recap.feature.settings.data
 
-
-
 import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
 import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.data.user.UserRepository
+import com.chalkak.recap.core.model.user.ConsentStatus
 import com.chalkak.recap.core.model.user.DataSummary
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -42,7 +41,12 @@ class DataManagementViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         coEvery { userRepository.getDataSummary() } returns Result.success(DataSummary(0))
+        coEvery { userRepository.getConsentStatus() } returns Result.success(
+            ConsentStatus(consented = false),
+        )
         coEvery { userRepository.deleteAccountData() } returns Result.success(Unit)
+        coEvery { userRepository.giveConsent() } returns Result.success(Unit)
+        coEvery { userRepository.withdrawConsent() } returns Result.success(Unit)
         coEvery { screenshotCardRepository.deleteAllCards() } just runs
         every { thumbnailCache.clearAll() } just runs
         every { changeNotifier.notifyCaptureChanged() } just runs
@@ -68,6 +72,21 @@ class DataManagementViewModelTest {
         advanceUntilIdle()
 
         assertEquals(128, viewModel.uiState.value.organizedCount)
+    }
+
+    @Test
+    fun loadConsentStatus_updatesConsentUi() = runTest(testDispatcher) {
+        coEvery { userRepository.getConsentStatus() } returns Result.success(
+            ConsentStatus(
+                consented = true,
+                consentedAt = "2026-07-27T00:00:00Z",
+            ),
+        )
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.isAiDataTransferConsented)
+        assertEquals("2026.07.27", viewModel.uiState.value.aiDataTransferConsentDate)
     }
 
     @Test
@@ -142,5 +161,120 @@ class DataManagementViewModelTest {
         coVerify(exactly = 0) { screenshotCardRepository.deleteAllCards() }
         verify(exactly = 0) { thumbnailCache.clearAll() }
         verify(exactly = 0) { changeNotifier.notifyCaptureChanged() }
+    }
+
+    @Test
+    fun aiDataTransferConsentClick_givesConsentWhenNotConsented() = runTest(testDispatcher) {
+        coEvery { userRepository.getConsentStatus() } returnsMany listOf(
+            Result.success(ConsentStatus(consented = false)),
+            Result.success(
+                ConsentStatus(
+                    consented = true,
+                    consentedAt = "2026-07-27T12:00:00Z",
+                ),
+            ),
+        )
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        assertFalse(viewModel.uiState.value.isAiDataTransferConsented)
+
+        viewModel.onAction(DataManagementAction.AiDataTransferConsentClick)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.isAiDataTransferConsented)
+        assertEquals("2026.07.27", viewModel.uiState.value.aiDataTransferConsentDate)
+        assertFalse(viewModel.uiState.value.showWithdrawConsentDialog)
+        coVerify(exactly = 1) { userRepository.giveConsent() }
+        coVerify(exactly = 0) { userRepository.withdrawConsent() }
+    }
+
+    @Test
+    fun aiDataTransferConsentClick_showsWithdrawConfirmDialogWhenConsented() = runTest(testDispatcher) {
+        coEvery { userRepository.getConsentStatus() } returns Result.success(
+            ConsentStatus(
+                consented = true,
+                consentedAt = "2026-07-27T00:00:00Z",
+            ),
+        )
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onAction(DataManagementAction.AiDataTransferConsentClick)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.showWithdrawConsentDialog)
+        coVerify(exactly = 0) { userRepository.withdrawConsent() }
+    }
+
+    @Test
+    fun dismissWithdrawConsentDialog_hidesDialog() = runTest(testDispatcher) {
+        coEvery { userRepository.getConsentStatus() } returns Result.success(
+            ConsentStatus(
+                consented = true,
+                consentedAt = "2026-07-27T00:00:00Z",
+            ),
+        )
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        viewModel.onAction(DataManagementAction.AiDataTransferConsentClick)
+        advanceUntilIdle()
+
+        viewModel.onAction(DataManagementAction.DismissWithdrawConsentDialog)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.showWithdrawConsentDialog)
+        coVerify(exactly = 0) { userRepository.withdrawConsent() }
+    }
+
+    @Test
+    fun confirmWithdrawConsent_withdrawsAndRefreshesStatus() = runTest(testDispatcher) {
+        coEvery { userRepository.getConsentStatus() } returnsMany listOf(
+            Result.success(
+                ConsentStatus(
+                    consented = true,
+                    consentedAt = "2026-07-27T00:00:00Z",
+                ),
+            ),
+            Result.success(ConsentStatus(consented = false)),
+        )
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        viewModel.onAction(DataManagementAction.AiDataTransferConsentClick)
+        advanceUntilIdle()
+
+        val eventDeferred = async { viewModel.events.first() }
+        viewModel.onAction(DataManagementAction.ConfirmWithdrawConsent)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.showWithdrawConsentDialog)
+        assertFalse(viewModel.uiState.value.isAiDataTransferConsented)
+        assertEquals("", viewModel.uiState.value.aiDataTransferConsentDate)
+        assertEquals(DataManagementEvent.ShowConsentWithdrawnToast, eventDeferred.await())
+        coVerify(exactly = 1) { userRepository.withdrawConsent() }
+    }
+
+    @Test
+    fun confirmWithdrawConsent_keepsStateWhenRemoteFails() = runTest(testDispatcher) {
+        coEvery { userRepository.getConsentStatus() } returns Result.success(
+            ConsentStatus(
+                consented = true,
+                consentedAt = "2026-07-27T00:00:00Z",
+            ),
+        )
+        coEvery { userRepository.withdrawConsent() } returns
+            Result.failure(RuntimeException("offline"))
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        viewModel.onAction(DataManagementAction.AiDataTransferConsentClick)
+        advanceUntilIdle()
+
+        viewModel.onAction(DataManagementAction.ConfirmWithdrawConsent)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.showWithdrawConsentDialog)
+        assertTrue(viewModel.uiState.value.isAiDataTransferConsented)
+        assertEquals("2026.07.27", viewModel.uiState.value.aiDataTransferConsentDate)
+        coVerify(exactly = 1) { userRepository.withdrawConsent() }
+        coVerify(exactly = 1) { userRepository.getConsentStatus() }
     }
 }

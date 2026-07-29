@@ -4,6 +4,7 @@ import com.chalkak.recap.core.data.network.ApiResponseDto
 import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.data.user.remote.AccountInfoResponseDto
+import com.chalkak.recap.core.data.user.remote.ConsentStatusResponseDto
 import com.chalkak.recap.core.data.user.remote.DataSummaryResponseDto
 import com.chalkak.recap.core.data.user.remote.UserApi
 import io.mockk.coEvery
@@ -85,5 +86,41 @@ class UserRepositoryTest {
 
         assertTrue(result.isSuccess)
         coVerify(exactly = 0) { sessionTokenStore.clear() }
+    }
+
+    @Test
+    fun `getConsentStatus maps consented fields`() = runTest {
+        coEvery { userApi.getConsentStatus() } returns ApiResponseDto(
+            success = true,
+            data = ConsentStatusResponseDto(
+                consented = true,
+                consentedAt = "2026-07-27T00:00:00Z",
+            ),
+        )
+
+        val result = repository.getConsentStatus()
+
+        assertEquals(true, result.getOrNull()?.consented)
+        assertEquals("2026-07-27T00:00:00Z", result.getOrNull()?.consentedAt)
+    }
+
+    @Test
+    fun `giveConsent returns success`() = runTest {
+        coEvery { userApi.giveConsent() } returns Unit
+
+        val result = repository.giveConsent()
+
+        assertTrue(result.isSuccess)
+        coVerify(exactly = 1) { userApi.giveConsent() }
+    }
+
+    @Test
+    fun `withdrawConsent returns success`() = runTest {
+        coEvery { userApi.withdrawConsent() } returns Unit
+
+        val result = repository.withdrawConsent()
+
+        assertTrue(result.isSuccess)
+        coVerify(exactly = 1) { userApi.withdrawConsent() }
     }
 }

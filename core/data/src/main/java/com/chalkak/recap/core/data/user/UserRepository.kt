@@ -6,6 +6,7 @@ import com.chalkak.recap.core.data.network.runRemoteCatchingSuspend
 import com.chalkak.recap.core.data.user.remote.UserApi
 import com.chalkak.recap.core.data.user.remote.toDomain
 import com.chalkak.recap.core.model.user.AccountInfo
+import com.chalkak.recap.core.model.user.ConsentStatus
 import com.chalkak.recap.core.model.user.DataSummary
 import javax.inject.Inject
 
@@ -21,6 +22,21 @@ class UserRepository @Inject constructor(
     suspend fun getDataSummary(): Result<DataSummary> =
         runRemoteCatchingSuspend {
             mapApiResponse(userApi.getDataSummary()) { it.toDomain() }.getOrThrow()
+        }
+
+    suspend fun getConsentStatus(): Result<ConsentStatus> =
+        runRemoteCatchingSuspend {
+            mapApiResponse(userApi.getConsentStatus()) { it.toDomain() }.getOrThrow()
+        }
+
+    suspend fun giveConsent(): Result<Unit> =
+        runRemoteCatchingSuspend {
+            userApi.giveConsent()
+        }
+
+    suspend fun withdrawConsent(): Result<Unit> =
+        runRemoteCatchingSuspend {
+            userApi.withdrawConsent()
         }
 
     suspend fun withdraw(): Result<Unit> {

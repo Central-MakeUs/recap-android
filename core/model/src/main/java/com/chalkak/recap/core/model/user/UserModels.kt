@@ -8,3 +8,8 @@ data class AccountInfo(
 data class DataSummary(
     val capturedCount: Long,
 )
+
+data class ConsentStatus(
+    val consented: Boolean,
+    val consentedAt: String? = null,
+)

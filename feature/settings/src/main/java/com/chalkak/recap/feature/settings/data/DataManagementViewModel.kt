@@ -28,16 +28,25 @@ class DataManagementViewModel @Inject constructor(
 ) : ViewModel() {
     private val organizedCount = MutableStateFlow(0)
     private val showDeleteConfirmDialog = MutableStateFlow(false)
+    private val showWithdrawConsentDialog = MutableStateFlow(false)
+    private val isAiDataTransferConsented = MutableStateFlow(false)
+    private val aiDataTransferConsentDate = MutableStateFlow("")
     private val _events = MutableSharedFlow<DataManagementEvent>(extraBufferCapacity = 1)
     val events: SharedFlow<DataManagementEvent> = _events.asSharedFlow()
 
     val uiState: StateFlow<DataManagementUiState> = combine(
         organizedCount,
         showDeleteConfirmDialog,
-    ) { count, showDialog ->
+        showWithdrawConsentDialog,
+        isAiDataTransferConsented,
+        aiDataTransferConsentDate,
+    ) { count, showDeleteDialog, showWithdrawDialog, isConsented, consentDate ->
         DataManagementUiState(
             organizedCount = count,
-            showDeleteConfirmDialog = showDialog,
+            showDeleteConfirmDialog = showDeleteDialog,
+            showWithdrawConsentDialog = showWithdrawDialog,
+            isAiDataTransferConsented = isConsented,
+            aiDataTransferConsentDate = consentDate,
         )
     }.stateIn(
         scope = viewModelScope,
@@ -47,6 +56,7 @@ class DataManagementViewModel @Inject constructor(
 
     init {
         refreshDataSummary()
+        refreshConsentStatus()
     }
 
     fun onAction(action: DataManagementAction) {
@@ -62,6 +72,41 @@ class DataManagementViewModel @Inject constructor(
                 showDeleteConfirmDialog.value = false
                 deleteAllData(deletedCount = uiState.value.organizedCount)
             }
+            DataManagementAction.AiDataTransferConsentClick -> {
+                if (isAiDataTransferConsented.value) {
+                    showWithdrawConsentDialog.value = true
+                } else {
+                    giveConsent()
+                }
+            }
+            DataManagementAction.DismissWithdrawConsentDialog -> {
+                showWithdrawConsentDialog.value = false
+            }
+            DataManagementAction.ConfirmWithdrawConsent -> {
+                showWithdrawConsentDialog.value = false
+                withdrawConsent()
+            }
+        }
+    }
+
+    private fun giveConsent() {
+        viewModelScope.launch {
+            val result = userRepository.giveConsent()
+            if (result.isFailure) {
+                return@launch
+            }
+            refreshConsentStatus()
+        }
+    }
+
+    private fun withdrawConsent() {
+        viewModelScope.launch {
+            val result = userRepository.withdrawConsent()
+            if (result.isFailure) {
+                return@launch
+            }
+            refreshConsentStatus()
+            _events.emit(DataManagementEvent.ShowConsentWithdrawnToast)
         }
     }
 
@@ -69,6 +114,14 @@ class DataManagementViewModel @Inject constructor(
         viewModelScope.launch {
             val summary = userRepository.getDataSummary().getOrNull() ?: return@launch
             organizedCount.value = summary.capturedCount.toInt().coerceAtLeast(0)
+        }
+    }
+
+    private fun refreshConsentStatus() {
+        viewModelScope.launch {
+            val status = userRepository.getConsentStatus().getOrNull() ?: return@launch
+            isAiDataTransferConsented.value = status.consented
+            aiDataTransferConsentDate.value = formatConsentDateFromIso(status.consentedAt)
         }
     }
 

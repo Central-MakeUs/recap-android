@@ -2,6 +2,7 @@ package com.chalkak.recap.core.data.user.remote
 
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.POST
 
 interface UserApi {
     @GET("api/v1/users/me")
@@ -15,4 +16,13 @@ interface UserApi {
 
     @DELETE("api/v1/users/me/data")
     suspend fun deleteAccountData()
+
+    @GET("api/v1/users/me/consent")
+    suspend fun getConsentStatus(): ConsentStatusApiResponse
+
+    @POST("api/v1/users/me/consent")
+    suspend fun giveConsent()
+
+    @DELETE("api/v1/users/me/consent")
+    suspend fun withdrawConsent()
 }
