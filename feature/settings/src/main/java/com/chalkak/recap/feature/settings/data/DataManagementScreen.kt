@@ -13,10 +13,16 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -24,6 +30,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.bottomsheet.AiDataTransferConsentBottomSheet
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
@@ -42,7 +49,9 @@ import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataManagementScreen(
     uiState: DataManagementUiState,
@@ -152,6 +161,50 @@ fun DataManagementScreen(
             confirmButtonColor = RecapBlue300,
         )
     }
+
+    if (uiState.showAiDataTransferConsentSheet) {
+        DataManagementAiDataTransferConsentSheet(
+            isConsented = uiState.isAiDataTransferConsented,
+            onAction = onAction,
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun DataManagementAiDataTransferConsentSheet(
+    isConsented: Boolean,
+    onAction: (DataManagementAction) -> Unit,
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val scope = rememberCoroutineScope()
+    val currentOnAction by rememberUpdatedState(onAction)
+
+    fun dismissSheet() {
+        currentOnAction(DataManagementAction.DismissAiDataTransferConsent)
+    }
+
+    // hide()만 하면 Hidden 상태로 Dialog가 남아 Back을 가로챌 수 있어, 완료 후 composition에서 제거한다.
+    LaunchedEffect(isConsented) {
+        if (!isConsented) return@LaunchedEffect
+        sheetState.hide()
+        dismissSheet()
+    }
+
+    AiDataTransferConsentBottomSheet(
+        onDismissRequest = ::dismissSheet,
+        onAgreeClick = {
+            currentOnAction(DataManagementAction.AgreeAiDataTransferConsent)
+        },
+        onCancelClick = {
+            scope.launch {
+                sheetState.hide()
+                dismissSheet()
+            }
+        },
+        onPrivacyPolicyClick = {},
+        sheetState = sheetState,
+    )
 }
 
 @Composable
@@ -341,6 +394,21 @@ private fun DataManagementWithdrawConsentConfirmPreview() {
                 aiDataTransferConsentDate = stringResource(
                     R.string.settings_data_management_ai_consent_preview_date,
                 ),
+            ),
+            onAction = {},
+        )
+    }
+}
+
+@Preview(name = "Data Management Consent Agree Sheet", showBackground = true, widthDp = 360)
+@Composable
+private fun DataManagementConsentAgreeSheetPreview() {
+    RECAPTheme(dynamicColor = false) {
+        DataManagementScreen(
+            uiState = DataManagementUiState(
+                organizedCount = DataManagementScreenPreviewCount,
+                showAiDataTransferConsentSheet = true,
+                isAiDataTransferConsented = false,
             ),
             onAction = {},
         )

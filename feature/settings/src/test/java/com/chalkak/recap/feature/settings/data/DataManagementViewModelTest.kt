@@ -164,7 +164,22 @@ class DataManagementViewModelTest {
     }
 
     @Test
-    fun aiDataTransferConsentClick_givesConsentWhenNotConsented() = runTest(testDispatcher) {
+    fun aiDataTransferConsentClick_showsConsentSheetWhenNotConsented() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        assertFalse(viewModel.uiState.value.isAiDataTransferConsented)
+
+        viewModel.onAction(DataManagementAction.AiDataTransferConsentClick)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.showAiDataTransferConsentSheet)
+        assertFalse(viewModel.uiState.value.isAiDataTransferConsented)
+        coVerify(exactly = 0) { userRepository.giveConsent() }
+        coVerify(exactly = 0) { userRepository.withdrawConsent() }
+    }
+
+    @Test
+    fun agreeAiDataTransferConsent_givesConsentAndKeepsSheetForUiHide() = runTest(testDispatcher) {
         coEvery { userRepository.getConsentStatus() } returnsMany listOf(
             Result.success(ConsentStatus(consented = false)),
             Result.success(
@@ -176,16 +191,54 @@ class DataManagementViewModelTest {
         )
         val viewModel = createViewModel()
         advanceUntilIdle()
-        assertFalse(viewModel.uiState.value.isAiDataTransferConsented)
-
         viewModel.onAction(DataManagementAction.AiDataTransferConsentClick)
         advanceUntilIdle()
 
+        viewModel.onAction(DataManagementAction.AgreeAiDataTransferConsent)
+        advanceUntilIdle()
+
+        // hide 애니메이션은 UI의 sheetState.hide()가 담당하고, 완료 후 Dismiss로 닫힌다.
+        assertTrue(viewModel.uiState.value.showAiDataTransferConsentSheet)
         assertTrue(viewModel.uiState.value.isAiDataTransferConsented)
         assertEquals("2026.07.27", viewModel.uiState.value.aiDataTransferConsentDate)
-        assertFalse(viewModel.uiState.value.showWithdrawConsentDialog)
         coVerify(exactly = 1) { userRepository.giveConsent() }
         coVerify(exactly = 0) { userRepository.withdrawConsent() }
+
+        viewModel.onAction(DataManagementAction.DismissAiDataTransferConsent)
+        advanceUntilIdle()
+        assertFalse(viewModel.uiState.value.showAiDataTransferConsentSheet)
+    }
+
+    @Test
+    fun agreeAiDataTransferConsent_keepsSheetOpenWhenRemoteFails() = runTest(testDispatcher) {
+        coEvery { userRepository.giveConsent() } returns
+            Result.failure(RuntimeException("offline"))
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        viewModel.onAction(DataManagementAction.AiDataTransferConsentClick)
+        advanceUntilIdle()
+
+        viewModel.onAction(DataManagementAction.AgreeAiDataTransferConsent)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.showAiDataTransferConsentSheet)
+        assertFalse(viewModel.uiState.value.isAiDataTransferConsented)
+        coVerify(exactly = 1) { userRepository.giveConsent() }
+    }
+
+    @Test
+    fun dismissAiDataTransferConsent_hidesSheetWithoutGivingConsent() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        viewModel.onAction(DataManagementAction.AiDataTransferConsentClick)
+        advanceUntilIdle()
+
+        viewModel.onAction(DataManagementAction.DismissAiDataTransferConsent)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.showAiDataTransferConsentSheet)
+        assertFalse(viewModel.uiState.value.isAiDataTransferConsented)
+        coVerify(exactly = 0) { userRepository.giveConsent() }
     }
 
     @Test

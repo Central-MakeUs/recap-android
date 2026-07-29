@@ -4,6 +4,7 @@ data class DataManagementUiState(
     val organizedCount: Int = 0,
     val showDeleteConfirmDialog: Boolean = false,
     val showWithdrawConsentDialog: Boolean = false,
+    val showAiDataTransferConsentSheet: Boolean = false,
     val isAiDataTransferConsented: Boolean = false,
     val aiDataTransferConsentDate: String = "",
 )
@@ -14,6 +15,8 @@ sealed interface DataManagementAction {
     data object DismissDeleteConfirmDialog : DataManagementAction
     data object ConfirmDeleteData : DataManagementAction
     data object AiDataTransferConsentClick : DataManagementAction
+    data object AgreeAiDataTransferConsent : DataManagementAction
+    data object DismissAiDataTransferConsent : DataManagementAction
     data object DismissWithdrawConsentDialog : DataManagementAction
     data object ConfirmWithdrawConsent : DataManagementAction
 }

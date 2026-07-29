@@ -29,22 +29,35 @@ class DataManagementViewModel @Inject constructor(
     private val organizedCount = MutableStateFlow(0)
     private val showDeleteConfirmDialog = MutableStateFlow(false)
     private val showWithdrawConsentDialog = MutableStateFlow(false)
+    private val showAiDataTransferConsentSheet = MutableStateFlow(false)
     private val isAiDataTransferConsented = MutableStateFlow(false)
     private val aiDataTransferConsentDate = MutableStateFlow("")
     private val _events = MutableSharedFlow<DataManagementEvent>(extraBufferCapacity = 1)
     val events: SharedFlow<DataManagementEvent> = _events.asSharedFlow()
 
-    val uiState: StateFlow<DataManagementUiState> = combine(
-        organizedCount,
+    private val dialogVisibility = combine(
         showDeleteConfirmDialog,
         showWithdrawConsentDialog,
-        isAiDataTransferConsented,
-        aiDataTransferConsentDate,
-    ) { count, showDeleteDialog, showWithdrawDialog, isConsented, consentDate ->
-        DataManagementUiState(
-            organizedCount = count,
+        showAiDataTransferConsentSheet,
+    ) { showDeleteDialog, showWithdrawDialog, showConsentSheet ->
+        DialogVisibility(
             showDeleteConfirmDialog = showDeleteDialog,
             showWithdrawConsentDialog = showWithdrawDialog,
+            showAiDataTransferConsentSheet = showConsentSheet,
+        )
+    }
+
+    val uiState: StateFlow<DataManagementUiState> = combine(
+        organizedCount,
+        dialogVisibility,
+        isAiDataTransferConsented,
+        aiDataTransferConsentDate,
+    ) { count, dialogs, isConsented, consentDate ->
+        DataManagementUiState(
+            organizedCount = count,
+            showDeleteConfirmDialog = dialogs.showDeleteConfirmDialog,
+            showWithdrawConsentDialog = dialogs.showWithdrawConsentDialog,
+            showAiDataTransferConsentSheet = dialogs.showAiDataTransferConsentSheet,
             isAiDataTransferConsented = isConsented,
             aiDataTransferConsentDate = consentDate,
         )
@@ -76,8 +89,15 @@ class DataManagementViewModel @Inject constructor(
                 if (isAiDataTransferConsented.value) {
                     showWithdrawConsentDialog.value = true
                 } else {
-                    giveConsent()
+                    showAiDataTransferConsentSheet.value = true
                 }
+            }
+            DataManagementAction.AgreeAiDataTransferConsent -> {
+                if (!showAiDataTransferConsentSheet.value) return
+                giveConsent()
+            }
+            DataManagementAction.DismissAiDataTransferConsent -> {
+                showAiDataTransferConsentSheet.value = false
             }
             DataManagementAction.DismissWithdrawConsentDialog -> {
                 showWithdrawConsentDialog.value = false
@@ -95,6 +115,8 @@ class DataManagementViewModel @Inject constructor(
             if (result.isFailure) {
                 return@launch
             }
+            // UI가 sheetState.hide()를 돌리도록 먼저 consented로 반영한다.
+            isAiDataTransferConsented.value = true
             refreshConsentStatus()
         }
     }
@@ -141,4 +163,10 @@ class DataManagementViewModel @Inject constructor(
             refreshDataSummary()
         }
     }
+
+    private data class DialogVisibility(
+        val showDeleteConfirmDialog: Boolean,
+        val showWithdrawConsentDialog: Boolean,
+        val showAiDataTransferConsentSheet: Boolean,
+    )
 }
