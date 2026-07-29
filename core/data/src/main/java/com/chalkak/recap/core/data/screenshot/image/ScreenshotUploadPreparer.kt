@@ -14,11 +14,6 @@ import androidx.exifinterface.media.ExifInterface
 import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.core.model.PreparedScreenshot
 import dagger.hilt.android.qualifiers.ApplicationContext
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
-import java.nio.ByteBuffer
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +21,12 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.coroutineContext
+import timber.log.Timber
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.nio.ByteBuffer
+import javax.inject.Inject
+import javax.inject.Singleton
 
 class ScreenshotUploadPrepareException(
     message: String,
@@ -75,6 +75,12 @@ class ScreenshotUploadPreparer @Inject constructor(
         var decoded: Bitmap? = null
         var flattened: Bitmap? = null
         var oriented: Bitmap? = null
+        Timber.d(
+            "Preparing screenshot upload jpeg displayName=%s uri=%s quality=%d",
+            image.displayName,
+            image.uri,
+            JPEG_QUALITY,
+        )
         try {
             val bytes = readUriBytes(uri)
             if (bytes.isEmpty()) {
@@ -107,20 +113,49 @@ class ScreenshotUploadPreparer @Inject constructor(
             coroutineContext.ensureActive()
 
             val jpegBytes = jpegCompressor.compress(oriented, JPEG_QUALITY)
+            Timber.d(
+                "Prepared screenshot upload jpeg displayName=%s uri=%s " +
+                        "inputBytes=%d outputBytes=%d size=%dx%d decoderExif=%s",
+                image.displayName,
+                image.uri,
+                bytes.size,
+                jpegBytes.size,
+                oriented.width,
+                oriented.height,
+                decodedResult.appliedExifOrientation,
+            )
             PreparedScreenshot(
                 localImage = image,
                 jpegBytes = jpegBytes,
                 mimeType = PreparedScreenshot.MIME_TYPE_JPEG,
             )
         } catch (cancellation: CancellationException) {
+            Timber.d(
+                "Cancelled screenshot upload jpeg preparation displayName=%s uri=%s",
+                image.displayName,
+                image.uri,
+            )
             throw cancellation
         } catch (error: ScreenshotUploadPrepareException) {
+            Timber.w(
+                error,
+                "Failed screenshot upload jpeg preparation displayName=%s uri=%s",
+                image.displayName,
+                image.uri,
+            )
             throw error
         } catch (error: Exception) {
-            throw ScreenshotUploadPrepareException(
+            val wrapped = ScreenshotUploadPrepareException(
                 message = "Failed to prepare screenshot uri=${image.uri}",
                 cause = error,
             )
+            Timber.w(
+                wrapped,
+                "Failed screenshot upload jpeg preparation displayName=%s uri=%s",
+                image.displayName,
+                image.uri,
+            )
+            throw wrapped
         } finally {
             oriented?.recycle()
             flattened?.recycle()
@@ -243,9 +278,9 @@ class ScreenshotUploadPreparer @Inject constructor(
         val sourceWidth = source.width
         val sourceHeight = source.height
         val swapsAxes = orientation == ExifInterface.ORIENTATION_TRANSPOSE ||
-            orientation == ExifInterface.ORIENTATION_ROTATE_90 ||
-            orientation == ExifInterface.ORIENTATION_TRANSVERSE ||
-            orientation == ExifInterface.ORIENTATION_ROTATE_270
+                orientation == ExifInterface.ORIENTATION_ROTATE_90 ||
+                orientation == ExifInterface.ORIENTATION_TRANSVERSE ||
+                orientation == ExifInterface.ORIENTATION_ROTATE_270
         val destinationWidth = if (swapsAxes) sourceHeight else sourceWidth
         val destinationHeight = if (swapsAxes) sourceWidth else sourceHeight
         val sourcePixels = IntArray(sourceWidth * sourceHeight)
@@ -264,17 +299,23 @@ class ScreenshotUploadPreparer @Inject constructor(
                 val (destinationX, destinationY) = when (orientation) {
                     ExifInterface.ORIENTATION_FLIP_HORIZONTAL ->
                         sourceWidth - 1 - sourceX to sourceY
+
                     ExifInterface.ORIENTATION_ROTATE_180 ->
                         sourceWidth - 1 - sourceX to sourceHeight - 1 - sourceY
+
                     ExifInterface.ORIENTATION_FLIP_VERTICAL ->
                         sourceX to sourceHeight - 1 - sourceY
+
                     ExifInterface.ORIENTATION_TRANSPOSE -> sourceY to sourceX
                     ExifInterface.ORIENTATION_ROTATE_90 ->
                         sourceHeight - 1 - sourceY to sourceX
+
                     ExifInterface.ORIENTATION_TRANSVERSE ->
                         sourceHeight - 1 - sourceY to sourceWidth - 1 - sourceX
+
                     ExifInterface.ORIENTATION_ROTATE_270 ->
                         sourceY to sourceWidth - 1 - sourceX
+
                     else -> sourceX to sourceY
                 }
                 destinationPixels[
