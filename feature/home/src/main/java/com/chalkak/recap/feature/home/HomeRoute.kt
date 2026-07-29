@@ -38,6 +38,7 @@ fun HomeRoute(
                 HomeAction.OpenRecentScreenshots -> onNavigateToRecentOrganizedScreenshots()
                 HomeAction.OpenFavoriteCategories -> onNavigateToCollectionFavorites()
                 is HomeAction.ToggleFavoriteItem -> viewModel.onAction(action)
+                HomeAction.RetryLoad -> viewModel.onAction(action)
                 is HomeAction.SelectRecentScreenshot -> onNavigateToScreenshot(action.id)
                 is HomeAction.SelectFavoriteItem -> onNavigateToScreenshot(action.id)
                 HomeAction.OpenFrequentSaveTypes -> Unit

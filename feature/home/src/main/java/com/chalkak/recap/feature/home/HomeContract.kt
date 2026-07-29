@@ -6,10 +6,16 @@ import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import java.util.concurrent.TimeUnit
 
 data class HomeUiState(
+    val phase: HomeContentPhase = HomeContentPhase.Content,
     val recentScreenshots: List<HomeRecentScreenshotUiModel> = emptyList(),
     val favoriteItems: List<HomeFavoriteItemUiModel> = emptyList(),
     val frequentSaveTypes: List<HomeFrequentSaveTypeUiModel> = emptyList(),
 )
+
+enum class HomeContentPhase {
+    Content,
+    Error,
+}
 
 data class HomeRecentScreenshotUiModel(
     val id: Long,
@@ -46,6 +52,7 @@ sealed interface HomeAction {
     data class ToggleFavoriteItem(val id: Long) : HomeAction
     data object OpenFrequentSaveTypes : HomeAction
     data class SelectFrequentSaveType(val contentTypeName: String) : HomeAction
+    data object RetryLoad : HomeAction
 }
 
 internal val HomePreviewUiState = HomeUiState(

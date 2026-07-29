@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.button.RecapButton
+import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.HomeFavoriteCard
 import com.chalkak.recap.core.design.component.card.HomeFavoriteCardDefaults
@@ -58,6 +59,7 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -87,33 +89,100 @@ fun HomeScreen(
             onSearchClick = { onAction(HomeAction.OpenSearch) },
             onLogoClick = onLogoClick,
         )
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(
-                    top = HomeScreenTokens.VerticalPadding,
-                    bottom = HomeScreenTokens.VerticalPadding + bottomContentPadding,
-                ),
-            verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.SectionSpacing),
-        ) {
-            FavoriteItemsSection(
-                items = uiState.favoriteItems,
-                onMoreClick = { onAction(HomeAction.OpenFavoriteCategories) },
-                onItemClick = { onAction(HomeAction.SelectFavoriteItem(it)) },
-                modifier = Modifier.padding(horizontal = HomeScreenTokens.HorizontalPadding),
-            )
-            RecentOrganizedScreenshotsSection(
-                screenshots = uiState.recentScreenshots,
-                onMoreClick = { onAction(HomeAction.OpenRecentScreenshots) },
-                onScreenshotClick = { onAction(HomeAction.SelectRecentScreenshot(it)) },
-            )
-            FrequentSaveTypesSection(
-                saveTypes = uiState.frequentSaveTypes,
-                onSaveTypeClick = { onAction(HomeAction.SelectFrequentSaveType(it)) },
-                modifier = Modifier.padding(horizontal = HomeScreenTokens.HorizontalPadding),
-            )
+        when (uiState.phase) {
+            HomeContentPhase.Error -> {
+                HomeLoadErrorContent(
+                    onRetryClick = { onAction(HomeAction.RetryLoad) },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(bottom = bottomContentPadding),
+                )
+            }
+
+            HomeContentPhase.Content -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(
+                            top = HomeScreenTokens.VerticalPadding,
+                            bottom = HomeScreenTokens.VerticalPadding + bottomContentPadding,
+                        ),
+                    verticalArrangement = Arrangement.spacedBy(HomeScreenTokens.SectionSpacing),
+                ) {
+                    FavoriteItemsSection(
+                        items = uiState.favoriteItems,
+                        onMoreClick = { onAction(HomeAction.OpenFavoriteCategories) },
+                        onItemClick = { onAction(HomeAction.SelectFavoriteItem(it)) },
+                        modifier = Modifier.padding(horizontal = HomeScreenTokens.HorizontalPadding),
+                    )
+                    RecentOrganizedScreenshotsSection(
+                        screenshots = uiState.recentScreenshots,
+                        onMoreClick = { onAction(HomeAction.OpenRecentScreenshots) },
+                        onScreenshotClick = { onAction(HomeAction.SelectRecentScreenshot(it)) },
+                    )
+                    FrequentSaveTypesSection(
+                        saveTypes = uiState.frequentSaveTypes,
+                        onSaveTypeClick = { onAction(HomeAction.SelectFrequentSaveType(it)) },
+                        modifier = Modifier.padding(horizontal = HomeScreenTokens.HorizontalPadding),
+                    )
+                }
+            }
         }
+    }
+}
+
+@Composable
+private fun HomeLoadErrorContent(
+    onRetryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = HomeScreenTokens.HorizontalPadding),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.illust_home_load_error),
+            contentDescription = stringResource(
+                R.string.home_load_error_character_content_description,
+            ),
+            modifier = Modifier.size(
+                width = HomeScreenTokens.LoadErrorIllustrationWidth,
+                height = HomeScreenTokens.LoadErrorIllustrationHeight,
+            ),
+            contentScale = ContentScale.Fit,
+        )
+        Spacer(modifier = Modifier.height(HomeScreenTokens.LoadErrorIllustrationSpacing))
+        Text(
+            text = stringResource(R.string.home_load_error_title),
+            style = RecapHeading3,
+            color = RecapGray300,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(HomeScreenTokens.LoadErrorTitleSpacing))
+        Text(
+            text = stringResource(R.string.home_load_error_description),
+            style = RecapBody2,
+            color = RecapGray300,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(HomeScreenTokens.LoadErrorDescriptionSpacing))
+        RecapButton(
+            text = stringResource(R.string.home_load_error_retry),
+            onClick = onRetryClick,
+            colors = RecapButtonDefaults.secondaryColors(),
+            modifier = Modifier.widthIn(min = HomeScreenTokens.LoadErrorRetryButtonMinWidth),
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.recap_arrow_retry_24),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            },
+        )
     }
 }
 
@@ -474,6 +543,12 @@ private object HomeScreenTokens {
     val FavoritesEmptyCharacterWidth = 133.dp
     val FavoritesEmptyCharacterHeight = 128.dp
     val FavoritesEmptyCharacterSpacing = 27.dp
+    val LoadErrorIllustrationWidth = 107.dp
+    val LoadErrorIllustrationHeight = 129.dp
+    val LoadErrorIllustrationSpacing = 19.dp
+    val LoadErrorTitleSpacing = 13.dp
+    val LoadErrorDescriptionSpacing = 23.dp
+    val LoadErrorRetryButtonMinWidth = 188.dp
 }
 
 @Preview(name = "Home Screen", showBackground = true, widthDp = 360, heightDp = 720)
@@ -492,6 +567,17 @@ private fun HomeScreenPreview() {
 private fun HomeScreenEmptyPreview() {
     RECAPTheme(dynamicColor = false) {
         HomeScreen(hazeState = rememberHazeState())
+    }
+}
+
+@Preview(name = "Home Screen - Load Error", showBackground = true, widthDp = 360, heightDp = 720)
+@Composable
+private fun HomeScreenLoadErrorPreview() {
+    RECAPTheme(dynamicColor = false) {
+        HomeScreen(
+            hazeState = rememberHazeState(),
+            uiState = HomeUiState(phase = HomeContentPhase.Error),
+        )
     }
 }
 

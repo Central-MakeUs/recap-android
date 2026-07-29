@@ -39,13 +39,15 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideOkHttpClient(
+        offlineNetworkInterceptor: OfflineNetworkInterceptor,
         authInterceptor: AuthInterceptor,
         tokenAuthenticator: TokenAuthenticator,
     ): OkHttpClient {
         val builder = OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(10, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
+            .addInterceptor(offlineNetworkInterceptor)
             .addInterceptor(authInterceptor)
             .authenticator(tokenAuthenticator)
 
