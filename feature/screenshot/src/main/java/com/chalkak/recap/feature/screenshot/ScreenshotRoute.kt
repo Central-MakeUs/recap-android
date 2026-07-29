@@ -9,7 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -26,7 +26,6 @@ import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.model.capture.ReportReason
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import kotlinx.serialization.Serializable
-import androidx.compose.ui.platform.LocalResources
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,7 +40,8 @@ fun ScreenshotRoute(
     val toastDispatcher = LocalRecapToastDispatcher.current
     val resources = LocalResources.current
     val favoriteAddedToastMessage = stringResource(R.string.screenshot_detail_favorite_added_toast)
-    val favoriteRemovedToastMessage = stringResource(R.string.screenshot_detail_favorite_removed_toast)
+    val favoriteRemovedToastMessage =
+        stringResource(R.string.screenshot_detail_favorite_removed_toast)
     val deleteSuccessToastMessage = stringResource(R.string.screenshot_delete_success_toast)
     val reportSuccessToastMessage = stringResource(R.string.screenshot_report_success_toast)
     var showActionSheet by rememberSaveable { mutableStateOf(false) }
@@ -119,7 +119,7 @@ fun ScreenshotRoute(
     }.getOrDefault(ScreenshotContentType.ETC)
     val isEditingWithUnsavedChanges =
         backStack.lastOrNull() is ScreenshotDestination.Edit &&
-            contentState?.hasUnsavedEditChanges() == true
+                contentState?.hasUnsavedEditChanges() == true
 
     fun leaveEditScreen() {
         // Prefer uiState over contentState snapshot (NavEntry content can be remembered).

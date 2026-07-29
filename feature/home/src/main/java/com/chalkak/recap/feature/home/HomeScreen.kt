@@ -337,10 +337,11 @@ private fun FrequentSaveTypesSection(
             )
             return@HomeSection
         }
+        val visibleSaveTypes = saveTypes.take(HomeScreenTokens.FrequentSaveTypeSlotCount)
         Row(
             modifier = Modifier.fillMaxWidth(),
         ) {
-            saveTypes.forEach { saveType ->
+            visibleSaveTypes.forEach { saveType ->
                 val interactionSource = remember(saveType.id) { MutableInteractionSource() }
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -369,6 +370,9 @@ private fun FrequentSaveTypesSection(
                         overflow = TextOverflow.Ellipsis,
                     )
                 }
+            }
+            repeat(HomeScreenTokens.FrequentSaveTypeSlotCount - visibleSaveTypes.size) {
+                Spacer(modifier = Modifier.weight(1f))
             }
         }
     }
@@ -459,6 +463,7 @@ private object HomeScreenTokens {
             FavoriteCardSpacing * (FavoriteGridRows - 1)
     val EmptySectionTextVerticalPadding = 70.dp
     val FavoritesEmptyTextSpacing = 4.dp
+    const val FrequentSaveTypeSlotCount = 4
     val FrequentTypeLabelSpacing = 8.dp
     val EmptyCharacterWidth = 175.dp
     val EmptyCharacterHeight = 127.dp
