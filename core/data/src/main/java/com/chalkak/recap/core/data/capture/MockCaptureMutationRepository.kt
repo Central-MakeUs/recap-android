@@ -4,6 +4,7 @@ import androidx.annotation.VisibleForTesting
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
+import com.chalkak.recap.core.model.capture.ReportReason
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -79,4 +80,10 @@ class MockCaptureMutationRepository @Inject constructor(
             Result.failure(error)
         }
     }
+
+    override suspend fun report(
+        captureId: Long,
+        reason: ReportReason,
+        detail: String?,
+    ): Result<Unit> = Result.success(Unit)
 }

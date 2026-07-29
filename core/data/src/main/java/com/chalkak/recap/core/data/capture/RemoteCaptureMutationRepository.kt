@@ -4,8 +4,11 @@ import com.chalkak.recap.core.data.capture.remote.BodyUpdateRequestDto
 import com.chalkak.recap.core.data.capture.remote.BulkDeleteRequestDto
 import com.chalkak.recap.core.data.capture.remote.CaptureApi
 import com.chalkak.recap.core.data.capture.remote.FavoriteRequestDto
+import com.chalkak.recap.core.data.capture.remote.ReportRequestDto
+import com.chalkak.recap.core.data.capture.remote.toDto
 import com.chalkak.recap.core.data.network.runRemoteCatchingSuspend
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
+import com.chalkak.recap.core.model.capture.ReportReason
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -88,4 +91,19 @@ class RemoteCaptureMutationRepository @Inject constructor(
             throw cancellation
         }
     }
+
+    override suspend fun report(
+        captureId: Long,
+        reason: ReportReason,
+        detail: String?,
+    ): Result<Unit> =
+        runRemoteCatchingSuspend {
+            captureApi.report(
+                captureId = captureId,
+                body = ReportRequestDto(
+                    reason = reason.toDto(),
+                    detail = detail?.takeIf { it.isNotBlank() },
+                ),
+            )
+        }
 }

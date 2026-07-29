@@ -35,9 +35,9 @@ data class CapturePage(
 )
 
 enum class ReportReason {
-    WRONG_TYPE,
-    INCORRECT_INFO,
-    OFFENSIVE,
+    INACCURATE_CONTENT,
+    INAPPROPRIATE_CONTENT,
+    SENSITIVE_INFO,
     OTHER,
 }
 

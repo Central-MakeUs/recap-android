@@ -3,6 +3,7 @@ package com.chalkak.recap.core.data.capture
 import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendMode
 import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendModeStore
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
+import com.chalkak.recap.core.model.capture.ReportReason
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,6 +27,13 @@ class SwitchingCaptureMutationRepository @Inject constructor(
 
     override suspend fun deleteCaptures(captureIds: Set<Long>): Result<CaptureDeleteResult> =
         resolveDelegate().deleteCaptures(captureIds)
+
+    override suspend fun report(
+        captureId: Long,
+        reason: ReportReason,
+        detail: String?,
+    ): Result<Unit> =
+        resolveDelegate().report(captureId = captureId, reason = reason, detail = detail)
 
     private suspend fun resolveDelegate(): CaptureMutationRepository {
         return when (screenshotBackendModeStore.currentMode()) {

@@ -132,11 +132,15 @@ class CaptureRepository @Inject constructor(
     suspend fun report(
         captureId: Long,
         reason: ReportReason,
+        detail: String? = null,
     ): Result<Unit> =
         runRemoteCatchingSuspend {
             captureApi.report(
                 captureId = captureId,
-                body = ReportRequestDto(reason = reason.toDto()),
+                body = ReportRequestDto(
+                    reason = reason.toDto(),
+                    detail = detail?.takeIf { it.isNotBlank() },
+                ),
             )
         }
 }

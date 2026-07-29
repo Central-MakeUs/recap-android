@@ -150,14 +150,56 @@ class CaptureRepositoryTest {
     }
 
     @Test
-    fun `report sends reason dto`() = runTest {
-        coEvery { captureApi.report(10L, ReportRequestDto(reason = ReportReasonDto.OFFENSIVE)) } returns Unit
+    fun `report sends reason and detail dto`() = runTest {
+        coEvery {
+            captureApi.report(
+                10L,
+                ReportRequestDto(
+                    reason = ReportReasonDto.INAPPROPRIATE_CONTENT,
+                    detail = "상세 내용",
+                ),
+            )
+        } returns Unit
 
-        val result = repository.report(captureId = 10L, reason = ReportReason.OFFENSIVE)
+        val result = repository.report(
+            captureId = 10L,
+            reason = ReportReason.INAPPROPRIATE_CONTENT,
+            detail = "상세 내용",
+        )
 
         assertTrue(result.isSuccess)
         coVerify(exactly = 1) {
-            captureApi.report(10L, ReportRequestDto(reason = ReportReasonDto.OFFENSIVE))
+            captureApi.report(
+                10L,
+                ReportRequestDto(
+                    reason = ReportReasonDto.INAPPROPRIATE_CONTENT,
+                    detail = "상세 내용",
+                ),
+            )
+        }
+    }
+
+    @Test
+    fun `report omits blank detail`() = runTest {
+        coEvery {
+            captureApi.report(
+                10L,
+                ReportRequestDto(reason = ReportReasonDto.SENSITIVE_INFO, detail = null),
+            )
+        } returns Unit
+
+        val result = repository.report(
+            captureId = 10L,
+            reason = ReportReason.SENSITIVE_INFO,
+            detail = "   ",
+        )
+
+        assertTrue(result.isSuccess)
+        coVerify(exactly = 1) {
+            captureApi.report(
+                10L,
+                ReportRequestDto(reason = ReportReasonDto.SENSITIVE_INFO, detail = null),
+            )
         }
     }
 }

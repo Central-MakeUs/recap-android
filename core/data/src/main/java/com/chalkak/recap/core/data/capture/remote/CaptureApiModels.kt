@@ -88,14 +88,14 @@ data class BodyUpdateRequestDto(
 
 @Serializable
 enum class ReportReasonDto {
-    @SerialName("WRONG_TYPE")
-    WRONG_TYPE,
+    @SerialName("INACCURATE_CONTENT")
+    INACCURATE_CONTENT,
 
-    @SerialName("INCORRECT_INFO")
-    INCORRECT_INFO,
+    @SerialName("INAPPROPRIATE_CONTENT")
+    INAPPROPRIATE_CONTENT,
 
-    @SerialName("OFFENSIVE")
-    OFFENSIVE,
+    @SerialName("SENSITIVE_INFO")
+    SENSITIVE_INFO,
 
     @SerialName("OTHER")
     OTHER,
@@ -104,6 +104,7 @@ enum class ReportReasonDto {
 @Serializable
 data class ReportRequestDto(
     val reason: ReportReasonDto,
+    val detail: String? = null,
 )
 
 @Serializable
@@ -253,8 +254,8 @@ fun CapturePageResponseDto.toDomain() =
 
 fun ReportReason.toDto(): ReportReasonDto =
     when (this) {
-        ReportReason.WRONG_TYPE -> ReportReasonDto.WRONG_TYPE
-        ReportReason.INCORRECT_INFO -> ReportReasonDto.INCORRECT_INFO
-        ReportReason.OFFENSIVE -> ReportReasonDto.OFFENSIVE
+        ReportReason.INACCURATE_CONTENT -> ReportReasonDto.INACCURATE_CONTENT
+        ReportReason.INAPPROPRIATE_CONTENT -> ReportReasonDto.INAPPROPRIATE_CONTENT
+        ReportReason.SENSITIVE_INFO -> ReportReasonDto.SENSITIVE_INFO
         ReportReason.OTHER -> ReportReasonDto.OTHER
     }

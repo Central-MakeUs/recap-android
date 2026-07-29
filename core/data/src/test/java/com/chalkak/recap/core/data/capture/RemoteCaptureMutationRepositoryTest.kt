@@ -3,8 +3,11 @@ package com.chalkak.recap.core.data.capture
 import com.chalkak.recap.core.data.capture.remote.BodyUpdateRequestDto
 import com.chalkak.recap.core.data.capture.remote.BulkDeleteRequestDto
 import com.chalkak.recap.core.data.capture.remote.CaptureApi
+import com.chalkak.recap.core.data.capture.remote.ReportReasonDto
+import com.chalkak.recap.core.data.capture.remote.ReportRequestDto
 import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
+import com.chalkak.recap.core.model.capture.ReportReason
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -154,6 +157,38 @@ class RemoteCaptureMutationRepositoryTest {
         }
         coVerify(exactly = 0) { captureApi.bulkDelete(any()) }
         verify(exactly = 0) { thumbnailCache.deleteCachedThumbnails(any()) }
+        verify(exactly = 0) { changeNotifier.notifyCaptureChanged() }
+    }
+
+    @Test
+    fun `report sends reason and detail`() = runTest {
+        coEvery {
+            captureApi.report(
+                10L,
+                ReportRequestDto(
+                    reason = ReportReasonDto.OTHER,
+                    detail = "기타 사유",
+                ),
+            )
+        } returns Unit
+        val repository = createRepository()
+
+        val result = repository.report(
+            captureId = 10L,
+            reason = ReportReason.OTHER,
+            detail = "기타 사유",
+        )
+
+        assertTrue(result.isSuccess)
+        coVerify(exactly = 1) {
+            captureApi.report(
+                10L,
+                ReportRequestDto(
+                    reason = ReportReasonDto.OTHER,
+                    detail = "기타 사유",
+                ),
+            )
+        }
         verify(exactly = 0) { changeNotifier.notifyCaptureChanged() }
     }
 

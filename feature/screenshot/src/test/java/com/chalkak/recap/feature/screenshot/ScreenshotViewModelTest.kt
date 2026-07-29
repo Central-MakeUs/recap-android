@@ -2,12 +2,14 @@ package com.chalkak.recap.feature.screenshot
 
 import app.cash.turbine.test
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
+import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotDetailRepository
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
+import com.chalkak.recap.core.model.capture.ReportReason
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import io.mockk.coEvery
@@ -447,6 +449,101 @@ class ScreenshotViewModelTest {
         val state = viewModel.uiState.value as ScreenshotUiState.Content
         assertFalse(state.isDeleting)
         assertEquals(R.string.screenshot_detail_delete_error, state.actionErrorMessageResId)
+    }
+
+    @Test
+    fun `submit report success emits ReportSucceeded`() = runTest(testDispatcher) {
+        coEvery {
+            captureMutationRepository.report(
+                captureId = 1L,
+                reason = ReportReason.SENSITIVE_INFO,
+                detail = null,
+            )
+        } returns Result.success(Unit)
+
+        viewModel.bind(1L)
+        cardFlow.emit(storedCard(captureId = 1L))
+        advanceUntilIdle()
+
+        viewModel.events.test {
+            viewModel.onAction(
+                ScreenshotAction.SubmitReport(reason = ReportReason.SENSITIVE_INFO),
+            )
+            advanceUntilIdle()
+
+            assertEquals(ScreenshotEvent.ReportSucceeded, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertFalse(state.isReporting)
+        coVerify(exactly = 1) {
+            captureMutationRepository.report(
+                captureId = 1L,
+                reason = ReportReason.SENSITIVE_INFO,
+                detail = null,
+            )
+        }
+    }
+
+    @Test
+    fun `submit report other sends trimmed detail`() = runTest(testDispatcher) {
+        coEvery {
+            captureMutationRepository.report(
+                captureId = 1L,
+                reason = ReportReason.OTHER,
+                detail = "상세",
+            )
+        } returns Result.success(Unit)
+
+        viewModel.bind(1L)
+        cardFlow.emit(storedCard(captureId = 1L))
+        advanceUntilIdle()
+
+        viewModel.onAction(
+            ScreenshotAction.SubmitReport(
+                reason = ReportReason.OTHER,
+                detail = "  상세  ",
+            ),
+        )
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            captureMutationRepository.report(
+                captureId = 1L,
+                reason = ReportReason.OTHER,
+                detail = "상세",
+            )
+        }
+    }
+
+    @Test
+    fun `submit report already reported emits ReportFailed`() = runTest(testDispatcher) {
+        coEvery {
+            captureMutationRepository.report(any(), any(), any())
+        } returns Result.failure(
+            RemoteApiException(code = "ALREADY_REPORTED", message = "already"),
+        )
+
+        viewModel.bind(1L)
+        cardFlow.emit(storedCard(captureId = 1L))
+        advanceUntilIdle()
+
+        viewModel.events.test {
+            viewModel.onAction(
+                ScreenshotAction.SubmitReport(reason = ReportReason.INACCURATE_CONTENT),
+            )
+            advanceUntilIdle()
+
+            assertEquals(
+                ScreenshotEvent.ReportFailed(
+                    messageResId = R.string.screenshot_report_already_reported_toast,
+                    dismissSheet = true,
+                ),
+                awaitItem(),
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     private fun storedCard(

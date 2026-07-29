@@ -1,6 +1,7 @@
 package com.chalkak.recap.feature.screenshot
 
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
+import com.chalkak.recap.core.model.capture.ReportReason
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 
 data class ScreenshotEditDraft(
@@ -19,6 +20,7 @@ sealed interface ScreenshotUiState {
         val isFavoriteUpdating: Boolean = false,
         val isSaving: Boolean = false,
         val isDeleting: Boolean = false,
+        val isReporting: Boolean = false,
         val showDeleteConfirmDialog: Boolean = false,
         val showDiscardEditConfirmDialog: Boolean = false,
         val titleError: Boolean = false,
@@ -50,11 +52,20 @@ sealed interface ScreenshotAction {
     data object ShowDeleteConfirmDialog : ScreenshotAction
     data object DismissDeleteConfirmDialog : ScreenshotAction
     data object DeleteScreenshot : ScreenshotAction
+    data class SubmitReport(
+        val reason: ReportReason,
+        val detail: String? = null,
+    ) : ScreenshotAction
 }
 
 sealed interface ScreenshotEvent {
     data object SaveSucceeded : ScreenshotEvent
     data object DeleteSucceeded : ScreenshotEvent
+    data object ReportSucceeded : ScreenshotEvent
+    data class ReportFailed(
+        val messageResId: Int,
+        val dismissSheet: Boolean = false,
+    ) : ScreenshotEvent
     data class ShowFavoriteToast(val isFavorite: Boolean) : ScreenshotEvent
 }
 
