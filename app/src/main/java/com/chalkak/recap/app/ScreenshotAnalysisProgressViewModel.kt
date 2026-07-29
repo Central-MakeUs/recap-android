@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.app.notification.OrganizeProgressTracker
 import com.chalkak.recap.app.notification.OrganizeTerminalResult
 import com.chalkak.recap.app.notification.OrganizeTerminalResultMapper
+import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisInput
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRepository
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRunState
@@ -23,8 +24,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -51,15 +54,30 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
     private val screenshotImageStorage: ScreenshotImageStorage,
     private val screenshotAnalysisRunState: ScreenshotAnalysisRunState,
     private val organizeProgressTracker: OrganizeProgressTracker,
+    private val userPreferencesRepository: UserPreferencesRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ScreenshotAnalysisProgressUiState())
     val uiState: StateFlow<ScreenshotAnalysisProgressUiState> = _uiState.asStateFlow()
+
+    val organizeCompleteNotificationEnabled: StateFlow<Boolean?> =
+        userPreferencesRepository.organizeCompleteNotificationEnabled
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = null,
+            )
 
     private var analysisJob: Job? = null
 
     // 추후 Dispatcher DI로 개선 가능
     @VisibleForTesting
     internal var ioDispatcher: CoroutineDispatcher = Dispatchers.IO
+
+    fun setOrganizeCompleteNotificationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.setOrganizeCompleteNotificationEnabled(enabled)
+        }
+    }
 
     fun startAnalysis(images: List<LocalImage>) {
         analysisJob?.cancel()

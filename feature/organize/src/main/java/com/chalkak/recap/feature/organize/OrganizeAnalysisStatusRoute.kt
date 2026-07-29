@@ -35,6 +35,8 @@ fun OrganizeAnalysisStatusRoute(
     onCancelClick: () -> Unit,
     onDismissClick: () -> Unit,
     modifier: Modifier = Modifier,
+    organizeCompleteNotificationEnabled: Boolean? = null,
+    onOrganizeCompleteNotificationEnabledChange: (Boolean) -> Unit = {},
 ) {
     when (uiState) {
         OrganizeAnalysisStatusUiState.Hidden -> Unit
@@ -45,6 +47,11 @@ fun OrganizeAnalysisStatusRoute(
                 onCancelClick = onCancelClick,
                 onDismissClick = onDismissClick,
                 modifier = modifier,
+            )
+            OrganizeProgressNotificationPermissionEffect(
+                organizeCompleteNotificationEnabled = organizeCompleteNotificationEnabled,
+                onOrganizeCompleteNotificationEnabledChange =
+                    onOrganizeCompleteNotificationEnabledChange,
             )
         }
     }

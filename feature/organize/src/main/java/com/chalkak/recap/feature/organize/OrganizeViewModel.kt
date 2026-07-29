@@ -4,23 +4,25 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.LocalScreenshotDataSource
-import com.chalkak.recap.core.data.UserPreferencesRepository
+import com.chalkak.recap.core.data.user.UserRepository
 import com.chalkak.recap.core.model.LocalImage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
 class OrganizeViewModel @Inject constructor(
     private val localScreenshotDataSource: LocalScreenshotDataSource,
-    private val userPreferencesRepository: UserPreferencesRepository,
+    private val userRepository: UserRepository,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     private val restoredShareState = restoreShareState()
@@ -28,18 +30,22 @@ class OrganizeViewModel @Inject constructor(
         restoredShareState?.uiState ?: OrganizeUiState(),
     )
     val uiState: StateFlow<OrganizeUiState> = _uiState.asStateFlow()
-    val organizeCompleteNotificationEnabled: StateFlow<Boolean> =
-        userPreferencesRepository.organizeCompleteNotificationEnabled
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.Eagerly,
-                initialValue = false,
-            )
+
+    private val _events = MutableSharedFlow<OrganizeEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<OrganizeEvent> = _events.asSharedFlow()
+
     private var seededShareSessionId: String? = restoredShareState?.sessionId
     private var sharedSourceImages: List<LocalImage> =
         restoredShareState?.sourceImages.orEmpty()
     private var refreshJob: Job? = null
     private var refreshGeneration = 0L
+
+    private var confirmationGeneration = 0L
+    private var isConfirmationActive = false
+    private var consentFetchDeferred: CompletableDeferred<Boolean?>? = null
+    private var consentFetchJob: Job? = null
+    private var startOrganizingJob: Job? = null
+    private var submitConsentJob: Job? = null
 
     fun onAction(action: OrganizeAction) {
         when (action) {
@@ -49,13 +55,111 @@ class OrganizeViewModel @Inject constructor(
             OrganizeAction.DismissMaxSelectionMessage -> {
                 _uiState.update { it.copy(showMaxSelectionReached = false) }
             }
+            OrganizeAction.StartOrganizing -> startOrganizing()
+            OrganizeAction.AgreeAiDataTransferConsent -> agreeAiDataTransferConsent()
+            OrganizeAction.DismissAiDataTransferConsent -> dismissAiDataTransferConsent()
         }
     }
 
-    fun setOrganizeCompleteNotificationEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            userPreferencesRepository.setOrganizeCompleteNotificationEnabled(enabled)
+    fun onConfirmationEntered() {
+        confirmationGeneration += 1
+        val generation = confirmationGeneration
+        isConfirmationActive = true
+        cancelPendingConsentWork()
+        _uiState.update {
+            it.copy(
+                showAiDataTransferConsentSheet = false,
+                isConsentSubmitting = false,
+            )
         }
+
+        val deferred = CompletableDeferred<Boolean?>()
+        consentFetchDeferred = deferred
+        consentFetchJob = viewModelScope.launch {
+            val consented = userRepository.getConsentStatus()
+                .getOrNull()
+                ?.consented
+            if (isConfirmationActive && generation == confirmationGeneration) {
+                deferred.complete(consented)
+            }
+        }
+    }
+
+    fun onConfirmationExited() {
+        confirmationGeneration += 1
+        isConfirmationActive = false
+        cancelPendingConsentWork()
+        _uiState.update {
+            it.copy(
+                showAiDataTransferConsentSheet = false,
+                isConsentSubmitting = false,
+            )
+        }
+    }
+
+    private fun startOrganizing() {
+        if (!isConfirmationActive) return
+        if (!_uiState.value.canProceed) return
+        if (startOrganizingJob?.isActive == true) return
+        val generation = confirmationGeneration
+        val consentDeferred = consentFetchDeferred ?: return
+        startOrganizingJob = viewModelScope.launch {
+            if (consentDeferred.await() == true) {
+                if (!isConfirmationActive || generation != confirmationGeneration) return@launch
+                _events.emit(OrganizeEvent.ProceedToOrganize)
+            } else {
+                if (!isConfirmationActive || generation != confirmationGeneration) return@launch
+                _uiState.update { it.copy(showAiDataTransferConsentSheet = true) }
+            }
+        }
+    }
+
+    private fun agreeAiDataTransferConsent() {
+        if (!isConfirmationActive) return
+        if (!_uiState.value.showAiDataTransferConsentSheet) return
+        if (_uiState.value.isConsentSubmitting) return
+        if (submitConsentJob?.isActive == true) return
+        val generation = confirmationGeneration
+        submitConsentJob = viewModelScope.launch {
+            _uiState.update { it.copy(isConsentSubmitting = true) }
+            val success = runCatching {
+                userRepository.giveConsent().isSuccess
+            }.getOrDefault(false)
+            if (!isConfirmationActive || generation != confirmationGeneration) return@launch
+            if (success) {
+                consentFetchDeferred = CompletableDeferred(true)
+                _uiState.update {
+                    it.copy(
+                        showAiDataTransferConsentSheet = false,
+                        isConsentSubmitting = false,
+                    )
+                }
+                _events.emit(OrganizeEvent.ProceedToOrganize)
+            } else {
+                _uiState.update { it.copy(isConsentSubmitting = false) }
+            }
+        }
+    }
+
+    private fun dismissAiDataTransferConsent() {
+        if (!isConfirmationActive) return
+        _uiState.update {
+            it.copy(
+                showAiDataTransferConsentSheet = false,
+                isConsentSubmitting = false,
+            )
+        }
+    }
+
+    private fun cancelPendingConsentWork() {
+        consentFetchJob?.cancel()
+        consentFetchJob = null
+        consentFetchDeferred?.cancel()
+        consentFetchDeferred = null
+        startOrganizingJob?.cancel()
+        startOrganizingJob = null
+        submitConsentJob?.cancel()
+        submitConsentJob = null
     }
 
     fun seedSharedImages(
@@ -155,6 +259,8 @@ class OrganizeViewModel @Inject constructor(
             state.copy(
                 selectedUris = emptyList(),
                 showMaxSelectionReached = false,
+                showAiDataTransferConsentSheet = false,
+                isConsentSubmitting = false,
             )
         }
         seededShareSessionId = null

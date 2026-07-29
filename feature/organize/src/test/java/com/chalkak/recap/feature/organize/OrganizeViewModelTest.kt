@@ -2,16 +2,17 @@ package com.chalkak.recap.feature.organize
 
 import androidx.lifecycle.SavedStateHandle
 import com.chalkak.recap.core.data.LocalScreenshotDataSource
-import com.chalkak.recap.core.data.UserPreferencesRepository
+import com.chalkak.recap.core.data.user.UserRepository
 import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.user.ConsentStatus
 import io.mockk.coEvery
-import io.mockk.every
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -30,7 +31,7 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class OrganizeViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
-    private val userPreferencesRepository = mockk<UserPreferencesRepository>(relaxed = true)
+    private val userRepository = mockk<UserRepository>()
     private val screenshots = List(22) { index ->
         LocalImage(
             uri = "content://screenshot/$index",
@@ -42,9 +43,10 @@ class OrganizeViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
-        every {
-            userPreferencesRepository.organizeCompleteNotificationEnabled
-        } returns MutableStateFlow(false)
+        coEvery { userRepository.getConsentStatus() } returns Result.success(
+            ConsentStatus(consented = true),
+        )
+        coEvery { userRepository.giveConsent() } returns Result.success(Unit)
     }
 
     @After
@@ -74,7 +76,7 @@ class OrganizeViewModelTest {
             screenshots.take(2),
             screenshots.take(4),
         )
-        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, SavedStateHandle())
+        val viewModel = OrganizeViewModel(dataSource, userRepository, SavedStateHandle())
 
         viewModel.refreshScreenshots()
         advanceUntilIdle()
@@ -223,7 +225,7 @@ class OrganizeViewModelTest {
     fun seedSharedImages_setsAvailableAndSelected() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         val shared = screenshots.take(3)
-        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, SavedStateHandle())
+        val viewModel = OrganizeViewModel(dataSource, userRepository, SavedStateHandle())
 
         viewModel.seedSharedImages(
             sessionId = "share-session",
@@ -240,7 +242,7 @@ class OrganizeViewModelTest {
     fun seedSharedImages_sameSessionDoesNotResetCurrentSelection() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         val shared = screenshots.take(3)
-        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, SavedStateHandle())
+        val viewModel = OrganizeViewModel(dataSource, userRepository, SavedStateHandle())
 
         viewModel.seedSharedImages(
             sessionId = "share-session",
@@ -263,7 +265,7 @@ class OrganizeViewModelTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         val firstShare = screenshots.take(2)
         val secondShare = screenshots.drop(2).take(2)
-        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, SavedStateHandle())
+        val viewModel = OrganizeViewModel(dataSource, userRepository, SavedStateHandle())
 
         viewModel.seedSharedImages(
             sessionId = "first-session",
@@ -292,7 +294,7 @@ class OrganizeViewModelTest {
             dateAddedMillis = 99L,
         )
         coEvery { dataSource.queryAllScreenshots() } returns gallery
-        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, SavedStateHandle())
+        val viewModel = OrganizeViewModel(dataSource, userRepository, SavedStateHandle())
         viewModel.seedSharedImages(
             sessionId = "share-session",
             images = listOf(sharedOnly) + gallery.take(1),
@@ -316,7 +318,7 @@ class OrganizeViewModelTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         val savedStateHandle = SavedStateHandle()
         val shared = screenshots.take(3)
-        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, savedStateHandle)
+        val viewModel = OrganizeViewModel(dataSource, userRepository, savedStateHandle)
         viewModel.seedSharedImages(
             sessionId = "share-session",
             images = shared,
@@ -325,7 +327,7 @@ class OrganizeViewModelTest {
 
         val restoredViewModel = OrganizeViewModel(
             dataSource,
-            userPreferencesRepository,
+            userRepository,
             savedStateHandle,
         )
         restoredViewModel.seedSharedImages(
@@ -351,7 +353,7 @@ class OrganizeViewModelTest {
                 queryResult.await()
             }
         }
-        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, SavedStateHandle())
+        val viewModel = OrganizeViewModel(dataSource, userRepository, SavedStateHandle())
         val shared = screenshots.drop(10).take(2)
 
         viewModel.refreshScreenshots()
@@ -371,8 +373,231 @@ class OrganizeViewModelTest {
         )
     }
 
+    @Test
+    fun `startOrganizing with consented status emits proceed event`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(1)
+        coEvery { userRepository.getConsentStatus() } returns Result.success(
+            ConsentStatus(consented = true),
+        )
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onConfirmationEntered()
+        advanceUntilIdle()
+
+        val events = mutableListOf<OrganizeEvent>()
+        val collectJob = launch { viewModel.events.collect { events.add(it) } }
+        runCurrent()
+
+        viewModel.onAction(OrganizeAction.StartOrganizing)
+        advanceUntilIdle()
+
+        assertEquals(listOf(OrganizeEvent.ProceedToOrganize), events)
+        assertFalse(viewModel.uiState.value.showAiDataTransferConsentSheet)
+        collectJob.cancel()
+    }
+
+    @Test
+    fun `startOrganizing waits for pending consent fetch before proceeding`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(1)
+        val consentStarted = CompletableDeferred<Unit>()
+        val consentResult = CompletableDeferred<ConsentStatus>()
+        coEvery { userRepository.getConsentStatus() } coAnswers {
+            consentStarted.complete(Unit)
+            withContext(NonCancellable) {
+                Result.success(consentResult.await())
+            }
+        }
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onConfirmationEntered()
+        runCurrent()
+        consentStarted.await()
+
+        val events = mutableListOf<OrganizeEvent>()
+        val collectJob = launch { viewModel.events.collect { events.add(it) } }
+        runCurrent()
+
+        viewModel.onAction(OrganizeAction.StartOrganizing)
+        runCurrent()
+        assertTrue(events.isEmpty())
+
+        consentResult.complete(ConsentStatus(consented = true))
+        advanceUntilIdle()
+
+        assertEquals(listOf(OrganizeEvent.ProceedToOrganize), events)
+        collectJob.cancel()
+    }
+
+    @Test
+    fun `startOrganizing without consent shows consent sheet`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(1)
+        coEvery { userRepository.getConsentStatus() } returns Result.success(
+            ConsentStatus(consented = false),
+        )
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onConfirmationEntered()
+        advanceUntilIdle()
+
+        viewModel.onAction(OrganizeAction.StartOrganizing)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.showAiDataTransferConsentSheet)
+    }
+
+    @Test
+    fun `startOrganizing after consent fetch failure shows consent sheet`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(1)
+        coEvery { userRepository.getConsentStatus() } returns Result.failure(IllegalStateException())
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onConfirmationEntered()
+        advanceUntilIdle()
+
+        viewModel.onAction(OrganizeAction.StartOrganizing)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.showAiDataTransferConsentSheet)
+    }
+
+    @Test
+    fun `agree consent success emits proceed and hides sheet`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(1)
+        coEvery { userRepository.getConsentStatus() } returns Result.success(
+            ConsentStatus(consented = false),
+        )
+        coEvery { userRepository.giveConsent() } returns Result.success(Unit)
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onConfirmationEntered()
+        advanceUntilIdle()
+        viewModel.onAction(OrganizeAction.StartOrganizing)
+        advanceUntilIdle()
+
+        val events = mutableListOf<OrganizeEvent>()
+        val collectJob = launch { viewModel.events.collect { events.add(it) } }
+        runCurrent()
+
+        viewModel.onAction(OrganizeAction.AgreeAiDataTransferConsent)
+        advanceUntilIdle()
+
+        assertEquals(listOf(OrganizeEvent.ProceedToOrganize), events)
+        assertFalse(viewModel.uiState.value.showAiDataTransferConsentSheet)
+        assertFalse(viewModel.uiState.value.isConsentSubmitting)
+        coVerify(exactly = 1) { userRepository.giveConsent() }
+        collectJob.cancel()
+    }
+
+    @Test
+    fun `agree consent failure keeps sheet open`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(1)
+        coEvery { userRepository.getConsentStatus() } returns Result.success(
+            ConsentStatus(consented = false),
+        )
+        coEvery { userRepository.giveConsent() } returns Result.failure(IllegalStateException())
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onConfirmationEntered()
+        advanceUntilIdle()
+        viewModel.onAction(OrganizeAction.StartOrganizing)
+        advanceUntilIdle()
+
+        viewModel.onAction(OrganizeAction.AgreeAiDataTransferConsent)
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.showAiDataTransferConsentSheet)
+        assertFalse(viewModel.uiState.value.isConsentSubmitting)
+    }
+
+    @Test
+    fun `dismiss consent sheet hides sheet without proceeding`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(1)
+        coEvery { userRepository.getConsentStatus() } returns Result.success(
+            ConsentStatus(consented = false),
+        )
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onConfirmationEntered()
+        advanceUntilIdle()
+        viewModel.onAction(OrganizeAction.StartOrganizing)
+        advanceUntilIdle()
+
+        viewModel.onAction(OrganizeAction.DismissAiDataTransferConsent)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.uiState.value.showAiDataTransferConsentSheet)
+    }
+
+    @Test
+    fun `confirmation reentry fetches fresh consent status`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(1)
+        coEvery { userRepository.getConsentStatus() } returnsMany listOf(
+            Result.success(ConsentStatus(consented = false)),
+            Result.success(ConsentStatus(consented = true)),
+        )
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+
+        viewModel.onConfirmationEntered()
+        advanceUntilIdle()
+        viewModel.onConfirmationExited()
+        viewModel.onConfirmationEntered()
+        advanceUntilIdle()
+
+        val events = mutableListOf<OrganizeEvent>()
+        val collectJob = launch { viewModel.events.collect { events.add(it) } }
+        runCurrent()
+
+        viewModel.onAction(OrganizeAction.StartOrganizing)
+        advanceUntilIdle()
+
+        assertEquals(listOf(OrganizeEvent.ProceedToOrganize), events)
+        coVerify(exactly = 2) { userRepository.getConsentStatus() }
+        collectJob.cancel()
+    }
+
+    @Test
+    fun `confirmation exit prevents pending consent result from proceeding`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(1)
+        val consentStarted = CompletableDeferred<Unit>()
+        val consentResult = CompletableDeferred<ConsentStatus>()
+        coEvery { userRepository.getConsentStatus() } coAnswers {
+            consentStarted.complete(Unit)
+            withContext(NonCancellable) {
+                Result.success(consentResult.await())
+            }
+        }
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        val events = mutableListOf<OrganizeEvent>()
+        val collectJob = launch { viewModel.events.collect { events.add(it) } }
+        runCurrent()
+
+        viewModel.onConfirmationEntered()
+        runCurrent()
+        consentStarted.await()
+        viewModel.onAction(OrganizeAction.StartOrganizing)
+        runCurrent()
+        viewModel.onConfirmationExited()
+        consentResult.complete(ConsentStatus(consented = true))
+        advanceUntilIdle()
+
+        assertTrue(events.isEmpty())
+        assertFalse(viewModel.uiState.value.showAiDataTransferConsentSheet)
+        collectJob.cancel()
+    }
+
     private fun TestScope.createViewModel(dataSource: LocalScreenshotDataSource): OrganizeViewModel {
-        val viewModel = OrganizeViewModel(dataSource, userPreferencesRepository, SavedStateHandle())
+        val viewModel = OrganizeViewModel(dataSource, userRepository, SavedStateHandle())
         viewModel.refreshScreenshots()
         advanceUntilIdle()
         return viewModel

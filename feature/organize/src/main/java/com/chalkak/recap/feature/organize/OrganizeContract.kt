@@ -7,6 +7,8 @@ data class OrganizeUiState(
     val availableScreenshots: List<LocalImage> = emptyList(),
     val selectedUris: List<String> = emptyList(),
     val showMaxSelectionReached: Boolean = false,
+    val showAiDataTransferConsentSheet: Boolean = false,
+    val isConsentSubmitting: Boolean = false,
 ) {
     val selectionCount: Int
         get() = selectedUris.size
@@ -25,6 +27,13 @@ sealed interface OrganizeAction {
     data class RemoveSelection(val uri: String) : OrganizeAction
     data object ClearSelection : OrganizeAction
     data object DismissMaxSelectionMessage : OrganizeAction
+    data object StartOrganizing : OrganizeAction
+    data object AgreeAiDataTransferConsent : OrganizeAction
+    data object DismissAiDataTransferConsent : OrganizeAction
+}
+
+sealed interface OrganizeEvent {
+    data object ProceedToOrganize : OrganizeEvent
 }
 
 internal const val MIN_SELECTION_COUNT = 1

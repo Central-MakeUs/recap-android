@@ -1,10 +1,6 @@
 package com.chalkak.recap.feature.organize
 
-import android.Manifest
-import android.content.Context
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -13,27 +9,18 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.chalkak.recap.core.data.notification.NotificationPermissionRequestDestination
-import com.chalkak.recap.core.data.notification.areAppNotificationsEnabled
-import com.chalkak.recap.core.data.notification.hasRequestedNotificationPermission
-import com.chalkak.recap.core.data.notification.markNotificationPermissionRequested
-import com.chalkak.recap.core.data.notification.notificationPermissionRequestDestination
-import com.chalkak.recap.core.data.notification.openAppNotificationSettings
-import com.chalkak.recap.core.data.notification.shouldShowOrganizeNotificationPermissionPrompt
-import com.chalkak.recap.core.design.component.bottomsheet.NotificationPermissionRequestBottomSheet
+import com.chalkak.recap.core.design.component.bottomsheet.AiDataTransferConsentBottomSheet
 import com.chalkak.recap.core.model.LocalImage
 import kotlinx.coroutines.launch
 
@@ -47,10 +34,7 @@ fun OrganizeRoute(
     clearSelectionOnComplete: Boolean = true,
     viewModel: OrganizeViewModel = hiltViewModel(),
 ) {
-    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val organizeCompleteNotificationEnabled by
-        viewModel.organizeCompleteNotificationEnabled.collectAsStateWithLifecycle()
     val startAtConfirmation = sharedImages != null && shareSessionId != null
 
     LaunchedEffect(shareSessionId, sharedImages) {
@@ -85,9 +69,6 @@ fun OrganizeRoute(
     var showDiscardSelectionConfirm by remember { mutableStateOf(false) }
     // 시드 직후 uiState 반영 전 empty로 오판해 닫히지 않도록, 한 번이라도 선택이 있은 뒤에만 종료한다.
     var confirmationHadSelection by remember { mutableStateOf(false) }
-    var showNotificationPermissionSheet by rememberSaveable { mutableStateOf(false) }
-    var isOrganizeStartPending by rememberSaveable { mutableStateOf(false) }
-    var awaitingSettingsPermissionResult by rememberSaveable { mutableStateOf(false) }
     val sheetState = rememberScreenshotPickerSheetState(
         selectionCount = uiState.selectionCount,
         onAttemptDismissWithSelection = { showDiscardSelectionConfirm = true },
@@ -102,76 +83,34 @@ fun OrganizeRoute(
     }
 
     fun selectedScreenshotsForOrganize(): List<LocalImage> {
-        return uiState.availableScreenshots
-            .filter { screenshot -> screenshot.uri in uiState.selectedUris }
+        val state = viewModel.uiState.value
+        return state.availableScreenshots
+            .filter { screenshot -> screenshot.uri in state.selectedUris }
             .sortedBy { screenshot ->
-                uiState.selectedUris.indexOf(screenshot.uri)
+                state.selectedUris.indexOf(screenshot.uri)
             }
     }
 
-    fun finishAfterPermissionResult() {
-        if (!isOrganizeStartPending) return
-        val selected = selectedScreenshotsForOrganize()
-        awaitingSettingsPermissionResult = false
-        showNotificationPermissionSheet = false
-        isOrganizeStartPending = false
-        if (context.areAppNotificationsEnabled()) {
-            viewModel.setOrganizeCompleteNotificationEnabled(true)
-        }
-        completeOrganize(selected)
-    }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission(),
-    ) {
-        finishAfterPermissionResult()
-    }
-    val currentAwaitingSettingsPermissionResult =
-        rememberUpdatedState(awaitingSettingsPermissionResult)
-    val currentFinishAfterPermissionResult =
-        rememberUpdatedState { finishAfterPermissionResult() }
-
-    LifecycleResumeEffect(Unit) {
-        if (currentAwaitingSettingsPermissionResult.value) {
-            currentFinishAfterPermissionResult.value()
-        }
-        onPauseOrDispose { }
-    }
-
-    fun startOrganizing() {
-        if (!uiState.canProceed) return
-        val selectedScreenshots = selectedScreenshotsForOrganize()
-        val shouldShowPrompt = shouldShowOrganizeNotificationPermissionPrompt(
-            hasRequestedPermission = context.hasRequestedNotificationPermission(),
-            notificationsEnabled = context.areAppNotificationsEnabled(),
-            organizeCompleteNotificationEnabled = organizeCompleteNotificationEnabled,
-        )
-        if (shouldShowPrompt) {
-            isOrganizeStartPending = true
-            showNotificationPermissionSheet = true
+    LaunchedEffect(destination) {
+        if (destination == OrganizeDestination.Confirmation) {
+            viewModel.onConfirmationEntered()
         } else {
-            completeOrganize(selectedScreenshots)
+            viewModel.onConfirmationExited()
         }
     }
 
-    fun dismissNotificationPermissionSheetAndContinue() {
-        if (!isOrganizeStartPending) return
-        val selected = selectedScreenshotsForOrganize()
-        showNotificationPermissionSheet = false
-        isOrganizeStartPending = false
-        completeOrganize(selected)
+    DisposableEffect(viewModel) {
+        onDispose {
+            viewModel.onConfirmationExited()
+        }
     }
 
-    fun requestNotificationPermissionForOrganize(context: Context) {
-        when (context.notificationPermissionRequestDestination()) {
-            NotificationPermissionRequestDestination.PermissionDialog -> {
-                context.markNotificationPermissionRequested()
-                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
-
-            NotificationPermissionRequestDestination.ApplicationSettings -> {
-                awaitingSettingsPermissionResult = true
-                context.openAppNotificationSettings()
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                OrganizeEvent.ProceedToOrganize -> {
+                    completeOrganize(selectedScreenshotsForOrganize())
+                }
             }
         }
     }
@@ -252,7 +191,9 @@ fun OrganizeRoute(
                 onAction = viewModel::onAction,
                 onBackClick = ::exitOrganizeImmediately,
                 onAddMoreClick = ::navigateBackToPicker,
-                onStartOrganizingClick = ::startOrganizing,
+                onStartOrganizingClick = {
+                    viewModel.onAction(OrganizeAction.StartOrganizing)
+                },
             )
         }
 
@@ -274,17 +215,20 @@ fun OrganizeRoute(
             )
         }
 
-        if (showNotificationPermissionSheet) {
-            NotificationPermissionRequestBottomSheet(
-                onDismissRequest = ::dismissNotificationPermissionSheetAndContinue,
-                onAllowNotificationClick = {
-                    if (context.areAppNotificationsEnabled()) {
-                        finishAfterPermissionResult()
-                    } else {
-                        requestNotificationPermissionForOrganize(context)
+        if (uiState.showAiDataTransferConsentSheet) {
+            AiDataTransferConsentBottomSheet(
+                onDismissRequest = {
+                    viewModel.onAction(OrganizeAction.DismissAiDataTransferConsent)
+                },
+                onAgreeClick = {
+                    if (!uiState.isConsentSubmitting) {
+                        viewModel.onAction(OrganizeAction.AgreeAiDataTransferConsent)
                     }
                 },
-                onLaterClick = ::dismissNotificationPermissionSheetAndContinue,
+                onCancelClick = {
+                    viewModel.onAction(OrganizeAction.DismissAiDataTransferConsent)
+                },
+                onPrivacyPolicyClick = {},
             )
         }
     }

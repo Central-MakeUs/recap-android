@@ -636,6 +636,11 @@ private fun OrganizeUiState.reduceGardenAction(action: OrganizeAction): Organize
         OrganizeAction.DismissMaxSelectionMessage -> {
             copy(showMaxSelectionReached = false)
         }
+
+        OrganizeAction.StartOrganizing,
+        OrganizeAction.AgreeAiDataTransferConsent,
+        OrganizeAction.DismissAiDataTransferConsent,
+        -> this
     }
 }
 

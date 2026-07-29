@@ -3,6 +3,7 @@ package com.chalkak.recap.app
 import android.net.Uri
 import com.chalkak.recap.app.notification.OrganizeProgressTracker
 import com.chalkak.recap.app.notification.OrganizeTerminalResult
+import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisInput
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRepository
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRunState
@@ -23,6 +24,7 @@ import io.mockk.mockkStatic
 import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -44,17 +46,23 @@ class ScreenshotAnalysisProgressViewModelTest {
     private val screenshotCardRepository = mockk<ScreenshotCardRepository>(relaxed = true)
     private val screenshotImageStorage = mockk<ScreenshotImageStorage>(relaxed = true)
     private val screenshotAnalysisRunState = ScreenshotAnalysisRunState()
+    private val userPreferencesRepository = mockk<UserPreferencesRepository>(relaxed = true)
+    private val organizeCompleteNotificationEnabled = MutableStateFlow(false)
     private lateinit var viewModel: ScreenshotAnalysisProgressViewModel
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        every {
+            userPreferencesRepository.organizeCompleteNotificationEnabled
+        } returns organizeCompleteNotificationEnabled
         viewModel = ScreenshotAnalysisProgressViewModel(
             screenshotAnalysisRepository = repository,
             screenshotCardRepository = screenshotCardRepository,
             screenshotImageStorage = screenshotImageStorage,
             screenshotAnalysisRunState = screenshotAnalysisRunState,
             organizeProgressTracker = OrganizeProgressTracker(),
+            userPreferencesRepository = userPreferencesRepository,
         ).apply {
             ioDispatcher = testDispatcher
         }
@@ -77,6 +85,16 @@ class ScreenshotAnalysisProgressViewModelTest {
         assertNull(state.terminalResult)
         assertFalse(state.isStatusVisible)
         assertFalse(screenshotAnalysisRunState.isRunning.value)
+    }
+
+    @Test
+    fun `notification preference stays unloaded until repository value is collected`() {
+        assertNull(viewModel.organizeCompleteNotificationEnabled.value)
+
+        organizeCompleteNotificationEnabled.value = true
+        testDispatcher.scheduler.runCurrent()
+
+        assertEquals(true, viewModel.organizeCompleteNotificationEnabled.value)
     }
 
     @Test
