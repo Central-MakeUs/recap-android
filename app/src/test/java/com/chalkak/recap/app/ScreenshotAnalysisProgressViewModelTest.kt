@@ -12,6 +12,8 @@ import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.PreparedScreenshot
+import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.core.model.capture.OrganizeStatus
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
@@ -105,7 +107,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             kotlinx.coroutines.awaitCancellation()
         }
 
-        viewModel.startAnalysis(sampleImages(count = 2))
+        viewModel.startAnalysis(samplePrepared(count = 2))
         runCurrent()
 
         val state = viewModel.uiState.value
@@ -127,7 +129,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             ScreenshotOrganizeOutcome.LocalResults(listOf(first, second))
         }
 
-        viewModel.startAnalysis(sampleImages(count = 2))
+        viewModel.startAnalysis(samplePrepared(count = 2))
         runCurrent()
 
         val state = viewModel.uiState.value
@@ -141,24 +143,70 @@ class ScreenshotAnalysisProgressViewModelTest {
     }
 
     @Test
-    fun `repository inputs use selected image display names and uris`() = runTest(testDispatcher) {
+    fun `repository inputs use prepared jpeg payload`() = runTest(testDispatcher) {
         coEvery { repository.organize(any(), any()) } returns ScreenshotOrganizeOutcome.LocalResults(
             emptyList(),
         )
 
-        val images = listOf(
-            LocalImage(uri = "content://1", displayName = "first.png", dateAddedMillis = 1L),
-            LocalImage(uri = "content://2", displayName = "second.png", dateAddedMillis = 2L),
+        val firstImage = LocalImage(
+            uri = "content://1",
+            displayName = "first.png",
+            dateAddedMillis = 1L,
+        )
+        val secondImage = LocalImage(
+            uri = "content://2",
+            displayName = "second.png",
+            dateAddedMillis = 2L,
+        )
+        val prepared = listOf(
+            ScreenshotUploadCandidate(
+                localImage = firstImage,
+                preparedScreenshot = PreparedScreenshot(
+                localImage = LocalImage(
+                    uri = "content://1",
+                    displayName = "first.png",
+                    dateAddedMillis = 1L,
+                ),
+                jpegBytes = byteArrayOf(9, 9),
+                ),
+                completedPreparationAttempts = 1,
+            ),
+            ScreenshotUploadCandidate(
+                localImage = secondImage,
+                preparedScreenshot = PreparedScreenshot(
+                localImage = LocalImage(
+                    uri = "content://2",
+                    displayName = "second.png",
+                    dateAddedMillis = 2L,
+                ),
+                jpegBytes = byteArrayOf(8, 8),
+                ),
+                completedPreparationAttempts = 1,
+            ),
         )
 
-        viewModel.startAnalysis(images)
+        viewModel.startAnalysis(prepared)
         runCurrent()
 
         coVerify(exactly = 1) {
             repository.organize(
                 listOf(
-                    ScreenshotAnalysisInput(fileName = "first.png", uri = "content://1"),
-                    ScreenshotAnalysisInput(fileName = "second.png", uri = "content://2"),
+                    ScreenshotAnalysisInput(
+                        fileName = "first.png",
+                        uri = "content://1",
+                        jpegBytes = byteArrayOf(9, 9),
+                        contentType = PreparedScreenshot.MIME_TYPE_JPEG,
+                        localImage = firstImage,
+                        completedPreparationAttempts = 1,
+                    ),
+                    ScreenshotAnalysisInput(
+                        fileName = "second.png",
+                        uri = "content://2",
+                        jpegBytes = byteArrayOf(8, 8),
+                        contentType = PreparedScreenshot.MIME_TYPE_JPEG,
+                        localImage = secondImage,
+                        completedPreparationAttempts = 1,
+                    ),
                 ),
                 any(),
             )
@@ -174,11 +222,11 @@ class ScreenshotAnalysisProgressViewModelTest {
             kotlinx.coroutines.awaitCancellation()
         }
 
-        viewModel.startAnalysis(sampleImages(count = 3))
+        viewModel.startAnalysis(samplePrepared(count = 3))
         runCurrent()
         assertEquals(3, viewModel.uiState.value.totalCount)
 
-        viewModel.startAnalysis(sampleImages(count = 1))
+        viewModel.startAnalysis(samplePrepared(count = 1))
         runCurrent()
         assertEquals(1, viewModel.uiState.value.totalCount)
         assertEquals(0, viewModel.uiState.value.completedCount)
@@ -188,7 +236,7 @@ class ScreenshotAnalysisProgressViewModelTest {
 
     @Test
     fun `empty analysis restores idle run state`() = runTest(testDispatcher) {
-        viewModel.startAnalysis(emptyList())
+        viewModel.startAnalysis(emptyList<ScreenshotUploadCandidate>())
         runCurrent()
 
         assertFalse(viewModel.uiState.value.isRunning)
@@ -204,7 +252,7 @@ class ScreenshotAnalysisProgressViewModelTest {
     fun `repository exception sets safe error and restores idle`() = runTest(testDispatcher) {
         coEvery { repository.organize(any(), any()) } throws RuntimeException("boom")
 
-        viewModel.startAnalysis(sampleImages(count = 1))
+        viewModel.startAnalysis(samplePrepared(count = 1))
         runCurrent()
 
         val state = viewModel.uiState.value
@@ -221,7 +269,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             kotlinx.coroutines.awaitCancellation()
         }
 
-        viewModel.startAnalysis(sampleImages(count = 2))
+        viewModel.startAnalysis(samplePrepared(count = 2))
         runCurrent()
         assertTrue(viewModel.uiState.value.isRunning)
 
@@ -241,7 +289,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             listOf(analysisResult(1L)),
         )
 
-        viewModel.startAnalysis(sampleImages(count = 1))
+        viewModel.startAnalysis(samplePrepared(count = 1))
         runCurrent()
         assertEquals(
             OrganizeTerminalResult.AllSuccess(successCount = 1),
@@ -262,7 +310,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             status = OrganizeStatus.PARTIAL_FAILED,
         )
 
-        viewModel.startAnalysis(sampleImages(count = 3))
+        viewModel.startAnalysis(samplePrepared(count = 3))
         runCurrent()
 
         assertEquals(
@@ -287,7 +335,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             )
         }
 
-        viewModel.startAnalysis(sampleImages(count = 2))
+        viewModel.startAnalysis(samplePrepared(count = 2))
         runCurrent()
 
         val state = viewModel.uiState.value
@@ -328,7 +376,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             screenshotCardRepository.saveAnalysisResults(any(), any())
         } returns Unit
 
-        viewModel.startAnalysis(sampleImages(count = 2))
+        viewModel.startAnalysis(samplePrepared(count = 2))
         runCurrent()
 
         coVerify(exactly = 1) {
@@ -382,7 +430,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             )
         } throws RuntimeException("room failure")
 
-        viewModel.startAnalysis(sampleImages(count = 2))
+        viewModel.startAnalysis(samplePrepared(count = 2))
         runCurrent()
 
         val state = viewModel.uiState.value
@@ -398,6 +446,19 @@ class ScreenshotAnalysisProgressViewModelTest {
         }
 
         unmockkStatic(Uri::class)
+    }
+
+    private fun samplePrepared(count: Int): List<ScreenshotUploadCandidate> {
+        return sampleImages(count).map { image ->
+            ScreenshotUploadCandidate(
+                localImage = image,
+                preparedScreenshot = PreparedScreenshot(
+                    localImage = image,
+                    jpegBytes = byteArrayOf(1, 2, 3, image.uri.hashCode().toByte()),
+                ),
+                completedPreparationAttempts = 1,
+            )
+        }
     }
 
     private fun sampleImages(count: Int): List<LocalImage> {

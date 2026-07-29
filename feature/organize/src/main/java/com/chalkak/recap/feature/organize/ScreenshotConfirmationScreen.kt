@@ -125,17 +125,21 @@ fun ScreenshotConfirmationScreen(
                     }
                 }
             }
-            RecapButton(
-                text = stringResource(R.string.organize_start_organizing),
-                onClick = onStartOrganizingClick,
-                enabled = uiState.canProceed,
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(
                         horizontal = ScreenshotConfirmationTokens.HorizontalPadding,
                         vertical = ScreenshotConfirmationTokens.BottomPadding,
                     ),
-            )
+            ) {
+                RecapButton(
+                    text = stringResource(R.string.organize_start_organizing),
+                    onClick = onStartOrganizingClick,
+                    enabled = uiState.canStartOrganizing,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
         }
     }
 }

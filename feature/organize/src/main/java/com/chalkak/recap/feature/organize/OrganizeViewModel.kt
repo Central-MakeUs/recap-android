@@ -4,10 +4,14 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.LocalScreenshotDataSource
+import com.chalkak.recap.core.data.screenshot.image.ScreenshotUploadPreparer
 import com.chalkak.recap.core.data.user.UserRepository
 import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.PreparedScreenshot
+import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -23,6 +27,7 @@ import kotlinx.coroutines.launch
 class OrganizeViewModel @Inject constructor(
     private val localScreenshotDataSource: LocalScreenshotDataSource,
     private val userRepository: UserRepository,
+    private val screenshotUploadPreparer: ScreenshotUploadPreparer,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     private val restoredShareState = restoreShareState()
@@ -46,6 +51,11 @@ class OrganizeViewModel @Inject constructor(
     private var consentFetchJob: Job? = null
     private var startOrganizingJob: Job? = null
     private var submitConsentJob: Job? = null
+
+    private val preparedByUri = LinkedHashMap<String, PreparedScreenshot>()
+    private val preparationAttemptsByUri = LinkedHashMap<String, Int>()
+    private var preparationJob: Job? = null
+    private var preparationGeneration = 0L
 
     fun onAction(action: OrganizeAction) {
         when (action) {
@@ -83,12 +93,14 @@ class OrganizeViewModel @Inject constructor(
                 deferred.complete(consented)
             }
         }
+        reconcilePreparation()
     }
 
     fun onConfirmationExited() {
         confirmationGeneration += 1
         isConfirmationActive = false
         cancelPendingConsentWork()
+        cancelPreparation(clearCache = true)
         _uiState.update {
             it.copy(
                 showAiDataTransferConsentSheet = false,
@@ -101,12 +113,14 @@ class OrganizeViewModel @Inject constructor(
         if (!isConfirmationActive) return
         if (!_uiState.value.canProceed) return
         if (startOrganizingJob?.isActive == true) return
+        if (snapshotCandidatesInSelectionOrder() == null) return
         val generation = confirmationGeneration
         val consentDeferred = consentFetchDeferred ?: return
         startOrganizingJob = viewModelScope.launch {
             if (consentDeferred.await() == true) {
                 if (!isConfirmationActive || generation != confirmationGeneration) return@launch
-                _events.emit(OrganizeEvent.ProceedToOrganize)
+                val candidates = takeCandidatesInSelectionOrder() ?: return@launch
+                _events.emit(OrganizeEvent.ProceedToOrganize(candidates))
             } else {
                 if (!isConfirmationActive || generation != confirmationGeneration) return@launch
                 _uiState.update { it.copy(showAiDataTransferConsentSheet = true) }
@@ -119,6 +133,7 @@ class OrganizeViewModel @Inject constructor(
         if (!_uiState.value.showAiDataTransferConsentSheet) return
         if (_uiState.value.isConsentSubmitting) return
         if (submitConsentJob?.isActive == true) return
+        if (snapshotCandidatesInSelectionOrder() == null) return
         val generation = confirmationGeneration
         submitConsentJob = viewModelScope.launch {
             _uiState.update { it.copy(isConsentSubmitting = true) }
@@ -134,7 +149,8 @@ class OrganizeViewModel @Inject constructor(
                         isConsentSubmitting = false,
                     )
                 }
-                _events.emit(OrganizeEvent.ProceedToOrganize)
+                val candidates = takeCandidatesInSelectionOrder() ?: return@launch
+                _events.emit(OrganizeEvent.ProceedToOrganize(candidates))
             } else {
                 _uiState.update { it.copy(isConsentSubmitting = false) }
             }
@@ -179,6 +195,9 @@ class OrganizeViewModel @Inject constructor(
             )
         }
         persistShareState()
+        if (isConfirmationActive) {
+            reconcilePreparation()
+        }
     }
 
     fun refreshScreenshots() {
@@ -195,6 +214,9 @@ class OrganizeViewModel @Inject constructor(
                     isLoading = false,
                     availableScreenshots = screenshots,
                 )
+            }
+            if (isConfirmationActive) {
+                reconcilePreparation()
             }
         }
     }
@@ -223,6 +245,9 @@ class OrganizeViewModel @Inject constructor(
                 )
             }
             persistShareState()
+            if (isConfirmationActive) {
+                reconcilePreparation()
+            }
         }
     }
 
@@ -244,6 +269,9 @@ class OrganizeViewModel @Inject constructor(
             }
         }
         persistShareState()
+        if (isConfirmationActive) {
+            reconcilePreparation()
+        }
     }
 
     private fun removeSelection(uri: String) {
@@ -251,10 +279,14 @@ class OrganizeViewModel @Inject constructor(
             state.copy(selectedUris = state.selectedUris.filterNot { it == uri })
         }
         persistShareState()
+        if (isConfirmationActive) {
+            reconcilePreparation()
+        }
     }
 
     private fun clearSelection() {
         invalidateRefresh()
+        cancelPreparation(clearCache = true)
         _uiState.update { state ->
             state.copy(
                 selectedUris = emptyList(),
@@ -266,6 +298,83 @@ class OrganizeViewModel @Inject constructor(
         seededShareSessionId = null
         sharedSourceImages = emptyList()
         clearPersistedShareState()
+    }
+
+    private fun reconcilePreparation() {
+        if (!isConfirmationActive) return
+        val selectedUris = _uiState.value.selectedUris
+        val selectedSet = selectedUris.toHashSet()
+        preparedByUri.keys
+            .filter { uri -> uri !in selectedSet }
+            .forEach { uri -> preparedByUri.remove(uri) }
+        preparationAttemptsByUri.keys
+            .filter { uri -> uri !in selectedSet }
+            .forEach { uri -> preparationAttemptsByUri.remove(uri) }
+
+        val missingUris = selectedUris.filter { uri ->
+            uri !in preparedByUri && preparationAttemptsByUri[uri] == null
+        }
+        if (missingUris.isEmpty()) {
+            cancelPreparation(clearCache = false)
+            return
+        }
+
+        preparationJob?.cancel()
+        preparationGeneration += 1
+        val generation = preparationGeneration
+        preparationJob = viewModelScope.launch {
+            for (uri in missingUris) {
+                if (!isConfirmationActive || generation != preparationGeneration) return@launch
+                val image = _uiState.value.availableScreenshots.find { screenshot ->
+                    screenshot.uri == uri
+                }
+                if (image == null) {
+                    preparationAttemptsByUri[uri] = 1
+                    continue
+                }
+                preparationAttemptsByUri[uri] = 1
+                try {
+                    val prepared = screenshotUploadPreparer.prepare(image)
+                    if (!isConfirmationActive || generation != preparationGeneration) return@launch
+                    preparedByUri[uri] = prepared
+                } catch (cancellation: CancellationException) {
+                    throw cancellation
+                } catch (_: Exception) {
+                    if (!isConfirmationActive || generation != preparationGeneration) return@launch
+                }
+            }
+        }
+    }
+
+    private fun cancelPreparation(clearCache: Boolean) {
+        preparationJob?.cancel()
+        preparationJob = null
+        preparationGeneration += 1
+        if (clearCache) {
+            preparedByUri.clear()
+            preparationAttemptsByUri.clear()
+        }
+    }
+
+    private fun snapshotCandidatesInSelectionOrder(): List<ScreenshotUploadCandidate>? {
+        val selectedUris = _uiState.value.selectedUris
+        if (selectedUris.isEmpty()) return null
+        val candidates = ArrayList<ScreenshotUploadCandidate>(selectedUris.size)
+        for (uri in selectedUris) {
+            val image = _uiState.value.availableScreenshots.find { it.uri == uri } ?: return null
+            candidates += ScreenshotUploadCandidate(
+                localImage = image,
+                preparedScreenshot = preparedByUri[uri],
+                completedPreparationAttempts = preparationAttemptsByUri[uri] ?: 0,
+            )
+        }
+        return candidates
+    }
+
+    private fun takeCandidatesInSelectionOrder(): List<ScreenshotUploadCandidate>? {
+        val candidates = snapshotCandidatesInSelectionOrder() ?: return null
+        cancelPreparation(clearCache = false)
+        return candidates
     }
 
     private fun invalidateRefresh(): Long {

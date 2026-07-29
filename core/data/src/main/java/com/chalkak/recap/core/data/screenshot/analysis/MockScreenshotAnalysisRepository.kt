@@ -1,15 +1,21 @@
 package com.chalkak.recap.core.data.screenshot.analysis
 
+import com.chalkak.recap.core.data.screenshot.image.ScreenshotUploadPreparer
+import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.PreparedScreenshot
+import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
 @Singleton
 class MockScreenshotAnalysisRepository @Inject constructor(
     private val randomizer: ScreenshotMockRandomizer,
+    private val screenshotUploadPreparer: ScreenshotUploadPreparer,
 ) : ScreenshotAnalysisRepository {
     override suspend fun analyze(input: ScreenshotAnalysisInput): ScreenshotAnalysisResult {
         return buildResult(input)
@@ -28,13 +34,54 @@ class MockScreenshotAnalysisRepository @Inject constructor(
             onProgress(0, 0)
             return ScreenshotOrganizeOutcome.LocalResults(emptyList())
         }
-        val results = ArrayList<ScreenshotAnalysisResult>(total)
-        inputs.forEachIndexed { index, input ->
+        val preparedInputs = ArrayList<ScreenshotAnalysisInput>(total)
+        var preparationFailCount = 0
+        inputs.forEach { input ->
+            val prepared = prepareWithRetry(input)
+            if (prepared == null) {
+                preparationFailCount += 1
+            } else {
+                preparedInputs += input.copy(
+                    jpegBytes = prepared.jpegBytes,
+                    contentType = PreparedScreenshot.MIME_TYPE_JPEG,
+                )
+            }
+        }
+        val results = ArrayList<ScreenshotAnalysisResult>(preparedInputs.size)
+        val sourceImages = ArrayList<LocalImage>(preparedInputs.size)
+        preparedInputs.forEachIndexed { index, input ->
             delay(MOCK_ANALYSIS_DELAY_MILLIS.milliseconds)
             results += buildResult(input)
+            input.localImage?.let(sourceImages::add)
             onProgress(index + 1, total)
         }
-        return ScreenshotOrganizeOutcome.LocalResults(results)
+        return ScreenshotOrganizeOutcome.LocalResults(
+            results = results,
+            sourceImages = sourceImages,
+            preparationFailCount = preparationFailCount,
+        )
+    }
+
+    private suspend fun prepareWithRetry(input: ScreenshotAnalysisInput): PreparedScreenshot? {
+        input.jpegBytes?.takeIf { it.isNotEmpty() }?.let { bytes ->
+            val image = input.localImage ?: return null
+            return PreparedScreenshot(image, bytes)
+        }
+        val image = input.localImage ?: return null
+        val remainingAttempts = (
+            ScreenshotUploadCandidate.MAX_PREPARATION_ATTEMPTS -
+                input.completedPreparationAttempts
+            ).coerceAtLeast(0)
+        repeat(remainingAttempts) {
+            try {
+                return screenshotUploadPreparer.prepare(image)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: Exception) {
+                // One retry is allowed across confirmation and progress preparation.
+            }
+        }
+        return null
     }
 
     private fun buildResult(input: ScreenshotAnalysisInput): ScreenshotAnalysisResult {

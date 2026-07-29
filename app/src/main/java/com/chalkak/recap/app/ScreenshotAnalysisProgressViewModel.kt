@@ -16,6 +16,8 @@ import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.PreparedScreenshot
+import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -79,9 +81,9 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
         }
     }
 
-    fun startAnalysis(images: List<LocalImage>) {
+    fun startAnalysis(candidates: List<ScreenshotUploadCandidate>) {
         analysisJob?.cancel()
-        val totalCount = images.size
+        val totalCount = candidates.size
         analysisJob = viewModelScope.launch {
             screenshotAnalysisRunState.beginRun()
             val runId = organizeProgressTracker.onStarted(totalCount)
@@ -107,10 +109,17 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                     return@launch
                 }
 
-                val inputs = images.map { image ->
+                val inputs = candidates.map { candidate ->
+                    val prepared = candidate.preparedScreenshot
                     ScreenshotAnalysisInput(
-                        fileName = image.displayName,
-                        uri = image.uri,
+                        fileName = candidate.localImage.displayName,
+                        uri = candidate.localImage.uri,
+                        jpegBytes = prepared?.jpegBytes,
+                        contentType = prepared?.mimeType
+                            ?: PreparedScreenshot.MIME_TYPE_JPEG,
+                        localImage = candidate.localImage,
+                        completedPreparationAttempts =
+                            candidate.completedPreparationAttempts,
                     )
                 }
 
@@ -131,7 +140,9 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                         val persisted = mutableListOf<ScreenshotAnalysisResult>()
                         outcome.results.forEachIndexed { index, result ->
                             ensureActive()
-                            val image = images[index]
+                            val image = outcome.sourceImages.getOrNull(index)
+                                ?: candidates.getOrNull(index)?.localImage
+                                ?: return@forEachIndexed
                             val saved = persistAnalysisResult(image = image, result = result)
                             if (!saved) {
                                 if (!isActive) {
@@ -161,15 +172,25 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                             organizeProgressTracker.onCancelled(runId)
                             return@launch
                         }
-                        val terminal = OrganizeTerminalResultMapper.fromLocalPersisted(
-                            persistedCount = persisted.size,
-                            totalCount = totalCount,
-                            saveFailed = false,
-                        )
+                        val terminal = when {
+                            persisted.isEmpty() && outcome.preparationFailCount > 0 ->
+                                OrganizeTerminalResult.AllFailed
+                            outcome.preparationFailCount > 0 ->
+                                OrganizeTerminalResult.PartialSuccess(
+                                    successCount = persisted.size,
+                                    failCount = outcome.preparationFailCount,
+                                )
+                            else -> OrganizeTerminalResultMapper.fromLocalPersisted(
+                                persistedCount = persisted.size,
+                                totalCount = totalCount,
+                                saveFailed = false,
+                            )
+                        }
                         _uiState.value = _uiState.value.copy(
                             isRunning = false,
-                            completedCount = persisted.size,
-                            progress = (persisted.size.toFloat() / totalCount).coerceIn(0f, 1f),
+                            completedCount = (persisted.size + outcome.preparationFailCount)
+                                .coerceIn(0, totalCount),
+                            progress = 1f,
                             results = persisted.toList(),
                             terminalResult = terminal,
                         )

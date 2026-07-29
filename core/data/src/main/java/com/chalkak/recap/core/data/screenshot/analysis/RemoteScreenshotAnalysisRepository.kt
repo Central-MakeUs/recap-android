@@ -1,15 +1,14 @@
 package com.chalkak.recap.core.data.screenshot.analysis
 
-import android.content.Context
-import android.net.Uri
-import androidx.core.net.toUri
 import com.chalkak.recap.core.data.capture.CaptureRepository
 import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
 import com.chalkak.recap.core.data.network.RemoteApiException
+import com.chalkak.recap.core.data.screenshot.image.ScreenshotUploadPreparer
+import com.chalkak.recap.core.model.PreparedScreenshot
+import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.core.model.capture.OrganizeStatus
 import com.chalkak.recap.core.model.capture.OrganizeStatusDetail
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
-import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -24,9 +23,9 @@ class RemoteOrganizeFailedException(
 
 @Singleton
 class RemoteScreenshotAnalysisRepository @Inject constructor(
-    @param:ApplicationContext private val context: Context,
     private val captureRepository: CaptureRepository,
     private val changeNotifier: RemoteCaptureChangeNotifier,
+    private val screenshotUploadPreparer: ScreenshotUploadPreparer,
 ) : ScreenshotAnalysisRepository {
     override suspend fun analyze(input: ScreenshotAnalysisInput): ScreenshotAnalysisResult {
         throw UnsupportedOperationException("Remote analyze requires organize()")
@@ -61,19 +60,49 @@ class RemoteScreenshotAnalysisRepository @Inject constructor(
             )
         }
 
-        // image PUT 업로드
-        val imageKeys = ArrayList<String>(total)
-        inputs.forEachIndexed { index, input ->
-            val upload = uploadUrls.uploads[index]
-            val bytes = readImageBytes(input.uri)
-            val contentType = resolveContentType(input.uri)
-            captureRepository.uploadImage(
-                uploadUrl = upload.uploadUrl,
-                bytes = bytes,
-                contentType = contentType,
-            ).getOrThrow()
-            imageKeys += upload.imageKey
-            onProgress(index + 1, total)
+        // Confirmation에서 준비된 항목을 먼저 업로드한다.
+        val uploadedImageKeys = ArrayList<Pair<Int, String>>(total)
+        var preparationFailCount = 0
+        inputs.withIndex()
+            .filter { (_, input) -> input.jpegBytes?.isNotEmpty() == true }
+            .forEach { (index, input) ->
+                val upload = uploadUrls.uploads[index]
+                val bytes = requirePreparedJpegBytes(input)
+                captureRepository.uploadImage(
+                    uploadUrl = upload.uploadUrl,
+                    bytes = bytes,
+                    contentType = PreparedScreenshot.MIME_TYPE_JPEG,
+                ).getOrThrow()
+                uploadedImageKeys += index to upload.imageKey
+            }
+
+        // 아직 준비되지 않은 항목은 선택 순서대로 압축하고 성공 즉시 업로드한다.
+        inputs.withIndex()
+            .filter { (_, input) -> input.jpegBytes?.isNotEmpty() != true }
+            .forEach { (index, input) ->
+                val prepared = prepareWithRetry(input)
+                if (prepared == null) {
+                    preparationFailCount += 1
+                    return@forEach
+                }
+                val upload = uploadUrls.uploads[index]
+                captureRepository.uploadImage(
+                    uploadUrl = upload.uploadUrl,
+                    bytes = prepared.jpegBytes,
+                    contentType = PreparedScreenshot.MIME_TYPE_JPEG,
+                ).getOrThrow()
+                uploadedImageKeys += index to upload.imageKey
+            }
+
+        val imageKeys = uploadedImageKeys
+            .sortedBy { (index, _) -> index }
+            .map { (_, imageKey) -> imageKey }
+        if (imageKeys.isEmpty()) {
+            return ScreenshotOrganizeOutcome.RemoteCompleted(
+                successCount = 0,
+                failCount = preparationFailCount,
+                status = OrganizeStatus.FAILED,
+            )
         }
 
         // 분석 시작
@@ -81,7 +110,7 @@ class RemoteScreenshotAnalysisRepository @Inject constructor(
         // 1초 단위 status 폴링
         val finalStatus = pollUntilTerminal(
             batchId = batch.batchId,
-            fallbackTotal = batch.totalCount.coerceAtLeast(total),
+            fallbackTotal = batch.totalCount.coerceAtLeast(imageKeys.size),
             onProgress = onProgress,
         )
 
@@ -97,8 +126,15 @@ class RemoteScreenshotAnalysisRepository @Inject constructor(
                 changeNotifier.notifyCaptureChanged()
                 return ScreenshotOrganizeOutcome.RemoteCompleted(
                     successCount = finalStatus.successCount,
-                    failCount = finalStatus.failCount,
-                    status = finalStatus.status,
+                    failCount = finalStatus.failCount + preparationFailCount,
+                    status = if (
+                        preparationFailCount > 0 &&
+                        finalStatus.status == OrganizeStatus.COMPLETED
+                    ) {
+                        OrganizeStatus.PARTIAL_FAILED
+                    } else {
+                        finalStatus.status
+                    },
                 )
             }
 
@@ -124,6 +160,40 @@ class RemoteScreenshotAnalysisRepository @Inject constructor(
         }
     }
 
+    private fun requirePreparedJpegBytes(input: ScreenshotAnalysisInput): ByteArray {
+        val bytes = input.jpegBytes
+        if (bytes == null || bytes.isEmpty()) {
+            throw RemoteApiException(
+                code = "PREPARED_IMAGE_MISSING",
+                message = "Prepared JPEG bytes missing for uri=${input.uri}",
+            )
+        }
+        return bytes
+    }
+
+    private suspend fun prepareWithRetry(
+        input: ScreenshotAnalysisInput,
+    ): PreparedScreenshot? {
+        val image = input.localImage ?: throw RemoteApiException(
+            code = "PREPARED_IMAGE_MISSING",
+            message = "Prepared JPEG bytes and local image missing for uri=${input.uri}",
+        )
+        val remainingAttempts = (
+            ScreenshotUploadCandidate.MAX_PREPARATION_ATTEMPTS -
+                input.completedPreparationAttempts
+            ).coerceAtLeast(0)
+        repeat(remainingAttempts) {
+            try {
+                return screenshotUploadPreparer.prepare(image)
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: Exception) {
+                // Retry only image preparation. Upload failures still fail the whole run.
+            }
+        }
+        return null
+    }
+
     private suspend fun pollUntilTerminal(
         batchId: Long,
         fallbackTotal: Int,
@@ -141,46 +211,7 @@ class RemoteScreenshotAnalysisRepository @Inject constructor(
         }
     }
 
-    private fun readImageBytes(uriString: String): ByteArray {
-        val uri = parseUri(uriString)
-        return try {
-            context.contentResolver.openInputStream(uri)?.use { input ->
-                input.readBytes()
-            } ?: throw RemoteApiException(
-                code = "IMAGE_READ_FAILED",
-                message = "Unable to open image uri=$uriString",
-            )
-        } catch (cancellation: CancellationException) {
-            throw cancellation
-        } catch (error: RemoteApiException) {
-            throw error
-        } catch (error: Exception) {
-            throw RemoteApiException(
-                code = "IMAGE_READ_FAILED",
-                message = error.message ?: "Unable to read image uri=$uriString",
-            )
-        }
-    }
-
-    private fun resolveContentType(uriString: String): String {
-        val uri = parseUri(uriString)
-        return context.contentResolver.getType(uri)
-            ?.takeIf { it.isNotBlank() }
-            ?: DEFAULT_CONTENT_TYPE
-    }
-
-    private fun parseUri(uriString: String): Uri {
-        if (uriString.isBlank()) {
-            throw RemoteApiException(
-                code = "INVALID_IMAGE_URI",
-                message = "Image uri is blank",
-            )
-        }
-        return uriString.toUri()
-    }
-
     private companion object {
         const val POLL_INTERVAL_MILLIS = 1_000L
-        const val DEFAULT_CONTENT_TYPE = "image/jpeg"
     }
 }

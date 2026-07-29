@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
 import java.util.UUID
@@ -156,8 +157,8 @@ class ShareIntakeViewModel @Inject constructor(
         updatePendingShareIntake(null)
     }
 
-    fun requestStartOrganize(images: List<LocalImage>) {
-        if (isSubmittingStart || images.isEmpty()) {
+    fun requestStartOrganize(candidates: List<ScreenshotUploadCandidate>) {
+        if (isSubmittingStart || candidates.isEmpty()) {
             return
         }
         isSubmittingStart = true
@@ -180,7 +181,11 @@ class ShareIntakeViewModel @Inject constructor(
                 ShareEntryGate.Allowed -> Unit
             }
             val requestId = UUID.randomUUID().toString()
-            sharedAnalysisRequestStore.register(requestId = requestId, images = images)
+            val images = candidates.map { candidate -> candidate.localImage }
+            sharedAnalysisRequestStore.register(
+                requestId = requestId,
+                candidates = candidates,
+            )
             try {
                 eventChannel.send(
                     ShareIntakeEvent.LaunchMainAnalysis(

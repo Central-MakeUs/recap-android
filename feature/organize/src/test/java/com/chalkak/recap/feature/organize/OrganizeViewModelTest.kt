@@ -2,8 +2,10 @@ package com.chalkak.recap.feature.organize
 
 import androidx.lifecycle.SavedStateHandle
 import com.chalkak.recap.core.data.LocalScreenshotDataSource
+import com.chalkak.recap.core.data.screenshot.image.ScreenshotUploadPreparer
 import com.chalkak.recap.core.data.user.UserRepository
 import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.PreparedScreenshot
 import com.chalkak.recap.core.model.user.ConsentStatus
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -32,6 +34,7 @@ import org.junit.Test
 class OrganizeViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val userRepository = mockk<UserRepository>()
+    private val screenshotUploadPreparer = mockk<ScreenshotUploadPreparer>()
     private val screenshots = List(22) { index ->
         LocalImage(
             uri = "content://screenshot/$index",
@@ -47,6 +50,7 @@ class OrganizeViewModelTest {
             ConsentStatus(consented = true),
         )
         coEvery { userRepository.giveConsent() } returns Result.success(Unit)
+        stubSuccessfulPreparer()
     }
 
     @After
@@ -76,7 +80,7 @@ class OrganizeViewModelTest {
             screenshots.take(2),
             screenshots.take(4),
         )
-        val viewModel = OrganizeViewModel(dataSource, userRepository, SavedStateHandle())
+        val viewModel = createOrganizeViewModel(dataSource)
 
         viewModel.refreshScreenshots()
         advanceUntilIdle()
@@ -225,7 +229,7 @@ class OrganizeViewModelTest {
     fun seedSharedImages_setsAvailableAndSelected() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         val shared = screenshots.take(3)
-        val viewModel = OrganizeViewModel(dataSource, userRepository, SavedStateHandle())
+        val viewModel = createOrganizeViewModel(dataSource)
 
         viewModel.seedSharedImages(
             sessionId = "share-session",
@@ -242,7 +246,7 @@ class OrganizeViewModelTest {
     fun seedSharedImages_sameSessionDoesNotResetCurrentSelection() = runTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         val shared = screenshots.take(3)
-        val viewModel = OrganizeViewModel(dataSource, userRepository, SavedStateHandle())
+        val viewModel = createOrganizeViewModel(dataSource)
 
         viewModel.seedSharedImages(
             sessionId = "share-session",
@@ -265,7 +269,7 @@ class OrganizeViewModelTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         val firstShare = screenshots.take(2)
         val secondShare = screenshots.drop(2).take(2)
-        val viewModel = OrganizeViewModel(dataSource, userRepository, SavedStateHandle())
+        val viewModel = createOrganizeViewModel(dataSource)
 
         viewModel.seedSharedImages(
             sessionId = "first-session",
@@ -294,7 +298,7 @@ class OrganizeViewModelTest {
             dateAddedMillis = 99L,
         )
         coEvery { dataSource.queryAllScreenshots() } returns gallery
-        val viewModel = OrganizeViewModel(dataSource, userRepository, SavedStateHandle())
+        val viewModel = createOrganizeViewModel(dataSource)
         viewModel.seedSharedImages(
             sessionId = "share-session",
             images = listOf(sharedOnly) + gallery.take(1),
@@ -318,7 +322,12 @@ class OrganizeViewModelTest {
         val dataSource = mockk<LocalScreenshotDataSource>()
         val savedStateHandle = SavedStateHandle()
         val shared = screenshots.take(3)
-        val viewModel = OrganizeViewModel(dataSource, userRepository, savedStateHandle)
+        val viewModel = OrganizeViewModel(
+            dataSource,
+            userRepository,
+            screenshotUploadPreparer,
+            savedStateHandle,
+        )
         viewModel.seedSharedImages(
             sessionId = "share-session",
             images = shared,
@@ -328,6 +337,7 @@ class OrganizeViewModelTest {
         val restoredViewModel = OrganizeViewModel(
             dataSource,
             userRepository,
+            screenshotUploadPreparer,
             savedStateHandle,
         )
         restoredViewModel.seedSharedImages(
@@ -353,7 +363,7 @@ class OrganizeViewModelTest {
                 queryResult.await()
             }
         }
-        val viewModel = OrganizeViewModel(dataSource, userRepository, SavedStateHandle())
+        val viewModel = createOrganizeViewModel(dataSource)
         val shared = screenshots.drop(10).take(2)
 
         viewModel.refreshScreenshots()
@@ -392,7 +402,8 @@ class OrganizeViewModelTest {
         viewModel.onAction(OrganizeAction.StartOrganizing)
         advanceUntilIdle()
 
-        assertEquals(listOf(OrganizeEvent.ProceedToOrganize), events)
+        assertEquals(1, events.size)
+        assertTrue(events.single() is OrganizeEvent.ProceedToOrganize)
         assertFalse(viewModel.uiState.value.showAiDataTransferConsentSheet)
         collectJob.cancel()
     }
@@ -414,6 +425,7 @@ class OrganizeViewModelTest {
         viewModel.onConfirmationEntered()
         runCurrent()
         consentStarted.await()
+        advanceUntilIdle()
 
         val events = mutableListOf<OrganizeEvent>()
         val collectJob = launch { viewModel.events.collect { events.add(it) } }
@@ -426,7 +438,8 @@ class OrganizeViewModelTest {
         consentResult.complete(ConsentStatus(consented = true))
         advanceUntilIdle()
 
-        assertEquals(listOf(OrganizeEvent.ProceedToOrganize), events)
+        assertEquals(1, events.size)
+        assertTrue(events.single() is OrganizeEvent.ProceedToOrganize)
         collectJob.cancel()
     }
 
@@ -486,7 +499,8 @@ class OrganizeViewModelTest {
         viewModel.onAction(OrganizeAction.AgreeAiDataTransferConsent)
         advanceUntilIdle()
 
-        assertEquals(listOf(OrganizeEvent.ProceedToOrganize), events)
+        assertEquals(1, events.size)
+        assertTrue(events.single() is OrganizeEvent.ProceedToOrganize)
         assertFalse(viewModel.uiState.value.showAiDataTransferConsentSheet)
         assertFalse(viewModel.uiState.value.isConsentSubmitting)
         coVerify(exactly = 1) { userRepository.giveConsent() }
@@ -559,7 +573,8 @@ class OrganizeViewModelTest {
         viewModel.onAction(OrganizeAction.StartOrganizing)
         advanceUntilIdle()
 
-        assertEquals(listOf(OrganizeEvent.ProceedToOrganize), events)
+        assertEquals(1, events.size)
+        assertTrue(events.single() is OrganizeEvent.ProceedToOrganize)
         coVerify(exactly = 2) { userRepository.getConsentStatus() }
         collectJob.cancel()
     }
@@ -585,6 +600,7 @@ class OrganizeViewModelTest {
         viewModel.onConfirmationEntered()
         runCurrent()
         consentStarted.await()
+        advanceUntilIdle()
         viewModel.onAction(OrganizeAction.StartOrganizing)
         runCurrent()
         viewModel.onConfirmationExited()
@@ -596,10 +612,291 @@ class OrganizeViewModelTest {
         collectJob.cancel()
     }
 
+    @Test
+    fun `confirmation entry prepares selected images sequentially without blocking start`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(2)
+        val firstStarted = CompletableDeferred<Unit>()
+        val firstGate = CompletableDeferred<Unit>()
+        val prepareOrder = mutableListOf<String>()
+        coEvery { screenshotUploadPreparer.prepare(any()) } coAnswers {
+            val image = firstArg<LocalImage>()
+            prepareOrder += image.uri
+            if (image.uri == screenshots[0].uri) {
+                firstStarted.complete(Unit)
+                firstGate.await()
+            }
+            preparedOf(image)
+        }
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[1].uri))
+
+        viewModel.onConfirmationEntered()
+        runCurrent()
+        firstStarted.await()
+
+        assertTrue(viewModel.uiState.value.canStartOrganizing)
+
+        firstGate.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(
+            listOf(screenshots[0].uri, screenshots[1].uri),
+            prepareOrder,
+        )
+        assertTrue(viewModel.uiState.value.canStartOrganizing)
+    }
+
+    @Test
+    fun `start during preparation hands off one completed attempt immediately`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(1)
+        val preparationStarted = CompletableDeferred<Unit>()
+        val preparationGate = CompletableDeferred<Unit>()
+        coEvery { screenshotUploadPreparer.prepare(any()) } coAnswers {
+            preparationStarted.complete(Unit)
+            preparationGate.await()
+            preparedOf(firstArg())
+        }
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onConfirmationEntered()
+        runCurrent()
+        preparationStarted.await()
+        val events = mutableListOf<OrganizeEvent>()
+        val collectJob = launch { viewModel.events.collect(events::add) }
+        runCurrent()
+
+        viewModel.onAction(OrganizeAction.StartOrganizing)
+        runCurrent()
+
+        val candidate = (events.single() as OrganizeEvent.ProceedToOrganize).candidates.single()
+        assertEquals(null, candidate.preparedScreenshot)
+        assertEquals(1, candidate.completedPreparationAttempts)
+        preparationGate.complete(Unit)
+        collectJob.cancel()
+    }
+
+    @Test
+    fun `shared seed after confirmation entry still prepares images`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns emptyList()
+        val viewModel = createOrganizeViewModel(dataSource)
+
+        viewModel.onConfirmationEntered()
+        advanceUntilIdle()
+        assertFalse(viewModel.uiState.value.canStartOrganizing)
+
+        viewModel.seedSharedImages(
+            sessionId = "share-session",
+            images = screenshots.take(2),
+        )
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.canStartOrganizing)
+        coVerify(exactly = 2) { screenshotUploadPreparer.prepare(any()) }
+    }
+
+    @Test
+    fun `start emits prepared payload in selection order`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(2)
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[1].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onConfirmationEntered()
+        advanceUntilIdle()
+
+        val events = mutableListOf<OrganizeEvent>()
+        val collectJob = launch { viewModel.events.collect { events.add(it) } }
+        runCurrent()
+        viewModel.onAction(OrganizeAction.StartOrganizing)
+        advanceUntilIdle()
+
+        val payload = (events.single() as OrganizeEvent.ProceedToOrganize).candidates
+        assertEquals(
+            listOf(screenshots[1].uri, screenshots[0].uri),
+            payload.map { it.localImage.uri },
+        )
+        collectJob.cancel()
+    }
+
+    @Test
+    fun `remove clears cache and prepares only missing`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(2)
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[1].uri))
+        viewModel.onConfirmationEntered()
+        advanceUntilIdle()
+        coVerify(exactly = 2) { screenshotUploadPreparer.prepare(any()) }
+
+        viewModel.onAction(OrganizeAction.RemoveSelection(screenshots[0].uri))
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.canStartOrganizing)
+        coVerify(exactly = 2) { screenshotUploadPreparer.prepare(any()) }
+    }
+
+    @Test
+    fun `confirmation exit cancels preparation and clears cache`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(1)
+        val started = CompletableDeferred<Unit>()
+        val gate = CompletableDeferred<Unit>()
+        coEvery { screenshotUploadPreparer.prepare(any()) } coAnswers {
+            started.complete(Unit)
+            withContext(NonCancellable) {
+                gate.await()
+            }
+            preparedOf(firstArg())
+        }
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onConfirmationEntered()
+        runCurrent()
+        started.await()
+
+        viewModel.onConfirmationExited()
+        gate.complete(Unit)
+        advanceUntilIdle()
+
+        viewModel.onConfirmationEntered()
+        advanceUntilIdle()
+        coVerify(exactly = 2) { screenshotUploadPreparer.prepare(any()) }
+    }
+
+    @Test
+    fun `preparation failure stays hidden and is handed off for one remaining attempt`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(2)
+        var failFirst = true
+        coEvery { screenshotUploadPreparer.prepare(any()) } coAnswers {
+            val image = firstArg<LocalImage>()
+            if (failFirst && image.uri == screenshots[1].uri) {
+                failFirst = false
+                error("boom")
+            }
+            preparedOf(image)
+        }
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[1].uri))
+        viewModel.onConfirmationEntered()
+        advanceUntilIdle()
+
+        val events = mutableListOf<OrganizeEvent>()
+        val collectJob = launch { viewModel.events.collect(events::add) }
+        runCurrent()
+        viewModel.onAction(OrganizeAction.StartOrganizing)
+        advanceUntilIdle()
+
+        val candidates = (events.single() as OrganizeEvent.ProceedToOrganize).candidates
+        assertTrue(candidates[0].preparedScreenshot != null)
+        assertEquals(1, candidates[1].completedPreparationAttempts)
+        assertEquals(null, candidates[1].preparedScreenshot)
+        coVerify(exactly = 2) { screenshotUploadPreparer.prepare(any()) }
+        collectJob.cancel()
+    }
+
+    @Test
+    fun `selection reconcile does not retry an image that already failed preparation`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(3)
+        val secondStarted = CompletableDeferred<Unit>()
+        val secondGate = CompletableDeferred<Unit>()
+        coEvery {
+            screenshotUploadPreparer.prepare(match { it.uri == screenshots[0].uri })
+        } throws IllegalStateException("first image failed")
+        coEvery {
+            screenshotUploadPreparer.prepare(match { it.uri == screenshots[1].uri })
+        } coAnswers {
+            secondStarted.complete(Unit)
+            withContext(NonCancellable) {
+                secondGate.await()
+            }
+            preparedOf(firstArg())
+        }
+        val viewModel = createViewModel(dataSource)
+        screenshots.take(3).forEach { image ->
+            viewModel.onAction(OrganizeAction.ToggleSelection(image.uri))
+        }
+        viewModel.onConfirmationEntered()
+        runCurrent()
+        secondStarted.await()
+
+        viewModel.onAction(OrganizeAction.RemoveSelection(screenshots[2].uri))
+        runCurrent()
+        secondGate.complete(Unit)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            screenshotUploadPreparer.prepare(match { it.uri == screenshots[0].uri })
+        }
+    }
+
+    @Test
+    fun `stale preparation result is ignored after selection change`() = runTest {
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots.take(2)
+        val firstStarted = CompletableDeferred<Unit>()
+        val firstGate = CompletableDeferred<Unit>()
+        coEvery { screenshotUploadPreparer.prepare(match { it.uri == screenshots[0].uri }) } coAnswers {
+            firstStarted.complete(Unit)
+            withContext(NonCancellable) {
+                firstGate.await()
+            }
+            preparedOf(firstArg())
+        }
+        coEvery { screenshotUploadPreparer.prepare(match { it.uri == screenshots[1].uri }) } coAnswers {
+            preparedOf(firstArg())
+        }
+        val viewModel = createViewModel(dataSource)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[0].uri))
+        viewModel.onConfirmationEntered()
+        runCurrent()
+        firstStarted.await()
+
+        viewModel.onAction(OrganizeAction.RemoveSelection(screenshots[0].uri))
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[1].uri))
+        firstGate.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(listOf(screenshots[1].uri), viewModel.uiState.value.selectedUris)
+        assertTrue(viewModel.uiState.value.canStartOrganizing)
+    }
+
     private fun TestScope.createViewModel(dataSource: LocalScreenshotDataSource): OrganizeViewModel {
-        val viewModel = OrganizeViewModel(dataSource, userRepository, SavedStateHandle())
+        val viewModel = createOrganizeViewModel(dataSource)
         viewModel.refreshScreenshots()
         advanceUntilIdle()
         return viewModel
+    }
+
+    private fun createOrganizeViewModel(
+        dataSource: LocalScreenshotDataSource,
+        savedStateHandle: SavedStateHandle = SavedStateHandle(),
+    ): OrganizeViewModel {
+        return OrganizeViewModel(
+            localScreenshotDataSource = dataSource,
+            userRepository = userRepository,
+            screenshotUploadPreparer = screenshotUploadPreparer,
+            savedStateHandle = savedStateHandle,
+        )
+    }
+
+    private fun stubSuccessfulPreparer() {
+        coEvery { screenshotUploadPreparer.prepare(any()) } coAnswers {
+            preparedOf(firstArg())
+        }
+    }
+
+    private fun preparedOf(image: LocalImage): PreparedScreenshot {
+        return PreparedScreenshot(
+            localImage = image,
+            jpegBytes = byteArrayOf(1, 2, 3, image.uri.hashCode().toByte()),
+        )
     }
 }

@@ -8,7 +8,7 @@ import com.chalkak.recap.app.share.OnboardingSampleShareSuccessStore
 import com.chalkak.recap.app.share.SharedAnalysisIntentContract
 import com.chalkak.recap.app.share.SharedAnalysisRequest
 import com.chalkak.recap.app.share.SharedAnalysisRequestStore
-import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,21 +29,21 @@ class MainActivityEntryViewModel @Inject constructor(
     private var homeNavigationRequestCounter =
         savedStateHandle.get<Int>(HOME_NAVIGATION_REQUEST_COUNTER_KEY) ?: 0
 
-    fun consumeSharedAnalysisIntent(intent: Intent): List<LocalImage>? {
+    fun consumeSharedAnalysisIntent(intent: Intent): List<ScreenshotUploadCandidate>? {
         val decoded = SharedAnalysisIntentContract.decode(intent) ?: return null
         return consumeSharedAnalysisRequest(decoded)
     }
 
-    fun consumeSharedAnalysisRequest(request: SharedAnalysisRequest): List<LocalImage>? {
+    fun consumeSharedAnalysisRequest(request: SharedAnalysisRequest): List<ScreenshotUploadCandidate>? {
         val lastConsumedRequestId = savedStateHandle.get<String>(LAST_CONSUMED_REQUEST_ID_KEY)
         if (lastConsumedRequestId == request.requestId) {
             return null
         }
         // Only accept requests previously registered by this app process.
-        val registeredImages = sharedAnalysisRequestStore.consume(request.requestId) ?: return null
+        val registered = sharedAnalysisRequestStore.consume(request.requestId) ?: return null
         savedStateHandle[LAST_CONSUMED_REQUEST_ID_KEY] = request.requestId
         requestNavigateToHome()
-        return registeredImages
+        return registered
     }
 
     fun consumeOnboardingSampleShareSuccess(intent: Intent): Boolean {

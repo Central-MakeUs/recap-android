@@ -1,6 +1,7 @@
 package com.chalkak.recap.feature.organize
 
 import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 
 data class OrganizeUiState(
     val isLoading: Boolean = true,
@@ -15,6 +16,9 @@ data class OrganizeUiState(
 
     val canProceed: Boolean
         get() = selectionCount in MIN_SELECTION_COUNT..MAX_SELECTION_COUNT
+
+    val canStartOrganizing: Boolean
+        get() = canProceed
 
     fun selectionOrder(uri: String): Int? {
         val index = selectedUris.indexOf(uri)
@@ -33,7 +37,9 @@ sealed interface OrganizeAction {
 }
 
 sealed interface OrganizeEvent {
-    data object ProceedToOrganize : OrganizeEvent
+    data class ProceedToOrganize(
+        val candidates: List<ScreenshotUploadCandidate>,
+    ) : OrganizeEvent
 }
 
 internal const val MIN_SELECTION_COUNT = 1

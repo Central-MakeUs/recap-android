@@ -22,13 +22,14 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chalkak.recap.core.design.component.bottomsheet.AiDataTransferConsentBottomSheet
 import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrganizeRoute(
     onNavigateBack: () -> Unit,
-    onOrganizeComplete: (List<LocalImage>) -> Unit,
+    onOrganizeComplete: (List<ScreenshotUploadCandidate>) -> Unit,
     sharedImages: List<LocalImage>? = null,
     shareSessionId: String? = null,
     clearSelectionOnComplete: Boolean = true,
@@ -75,20 +76,11 @@ fun OrganizeRoute(
         allowHideWithoutConfirm = { suppressPickerDismiss },
     )
 
-    fun completeOrganize(selectedScreenshots: List<LocalImage>) {
-        onOrganizeComplete(selectedScreenshots)
+    fun completeOrganize(candidates: List<ScreenshotUploadCandidate>) {
+        onOrganizeComplete(candidates)
         if (clearSelectionOnComplete) {
             viewModel.onAction(OrganizeAction.ClearSelection)
         }
-    }
-
-    fun selectedScreenshotsForOrganize(): List<LocalImage> {
-        val state = viewModel.uiState.value
-        return state.availableScreenshots
-            .filter { screenshot -> screenshot.uri in state.selectedUris }
-            .sortedBy { screenshot ->
-                state.selectedUris.indexOf(screenshot.uri)
-            }
     }
 
     LaunchedEffect(destination) {
@@ -108,8 +100,8 @@ fun OrganizeRoute(
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
-                OrganizeEvent.ProceedToOrganize -> {
-                    completeOrganize(selectedScreenshotsForOrganize())
+                is OrganizeEvent.ProceedToOrganize -> {
+                    completeOrganize(event.candidates)
                 }
             }
         }

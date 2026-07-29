@@ -30,12 +30,6 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Next: 서버 content update API 확정 후 `CaptureMutationRepository`에 updateContent를 추가하고 `ScreenshotViewModel.saveEdit`을 Switching mutation으로 위임
   - Handoff: not started
 
-- [ ] 2026-07-22 - Remote 정리 진행률 모델 분리 및 역행 버그 수정
-  - Context: `RemoteScreenshotAnalysisRepository.organize()`가 업로드(`index + 1 / total`)와 서버 분석 poll(`successCount + failCount / total`)을 동일 `onProgress` 콜백으로 방출함. 마지막 업로드 직후 100%였다가 첫 PROCESSING poll에서 0%로 역행함. Home 상단 progress bar는 mock 분석 흐름용 디버그 UI이며, 사용자용 진행률은 추후 별도 인터페이스로 제공 예정. 현재 백엔드에서 실제 분석을 돌리기 어려워 E2E 검증·UX 확정이 보류됨
-  - Next: repository/ViewModel에 업로드·분석 단계를 구분한 progress 모델 도입 또는 단조 증가 overall progress로 환산. Home은 디버그용 최소 표시(단계 텍스트 등) 유지, 사용자 UI는 별도 설계 후 동일 progress 소스 소비
-  - Blocked by: 백엔드 organize/status poll 실환경 분석 파이프라인 가용
-  - Handoff: not started
-
 - [ ] 2026-07-22 - `ScreenshotAnalysisProgressViewModel` 부분 실패·상태 불일치 처리
   - Context: (1) `RemoteCompleted`가 `PARTIAL_FAILED`여도 `successCount + failCount`를 완료 수로 기록하고 오류 없이 종료함. `outcome.status`/`failCount`를 검사하지 않아 진행 UI가 사라지면 사용자는 누락 사실을 알 수 없음. (2) Local 경로에서 `organize` 콜백이 이미 `completedCount`/`progress`를 2/2로 올린 뒤 Room 저장이 실패하면 `errorMessage`만 설정되고 완료 수는 그대로라 실제 저장 결과와 모순됨. 작업 완료 UI가 전체 성공만 전제하고 단계별·부분 성공 outcome을 구분하지 않음
   - Next: Remote는 `PARTIAL_FAILED`/`failCount`를 검사해 부분 실패 상태 또는 복구 가능한 오류 노출. Local 저장 실패 분기에서 `persisted.size` 기준으로 `completedCount`/`progress` 동기화. 상위 progress 역행 이슈와 함께 단계별 outcome 모델 정리
@@ -131,6 +125,11 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 - 없음
 
 ## Done
+
+- [x] 2026-07-29 - 스크린샷 선행 압축 및 서버 분석 진행률 분리
+  - Result: Confirmation 진입 시 PNG/JPEG/HEIC/HEIF를 JPEG 품질 75로 백그라운드 선행 압축하고, 시작 시 미완료 작업을 Progress 단계로 넘겨 최대 2회 안에서 완료하도록 구성함. 압축·업로드 진행률은 숨기고 서버 status polling만 progress bar에 반영하며, 공유 경로의 메모리 전용 one-shot 전달과 부분 준비 실패 처리를 유지함
+  - Handoff: `docs/handoff/archive/2026-07-29-screenshot-upload-compression.md`
+  - Validation: `:core:data:testDebugUnitTest :feature:organize:testDebugUnitTest :app:testDebugUnitTest` GREEN, `assembleDebug` GREEN, `git diff --check` GREEN
 
 - [x] 2026-07-29 - AI 데이터 전송 동의 User API 연동
   - Result: `GET/POST/DELETE /api/v1/users/me/consent`를 UserApi/UserRepository에 추가하고 데이터 관리 화면에서 조회·동의·철회를 서버 상태로 반영

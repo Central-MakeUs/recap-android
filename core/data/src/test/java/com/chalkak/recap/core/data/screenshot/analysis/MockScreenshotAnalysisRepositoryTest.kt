@@ -1,6 +1,8 @@
 package com.chalkak.recap.core.data.screenshot.analysis
 
+import com.chalkak.recap.core.data.screenshot.image.ScreenshotUploadPreparer
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
+import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -141,6 +143,7 @@ class MockScreenshotAnalysisRepositoryTest {
                 nextOrganizedAt = { organizedAt },
                 nextContentTypeIndex = { contentTypeIndex },
             ),
+            screenshotUploadPreparer = mockk<ScreenshotUploadPreparer>(),
         )
     }
 }
