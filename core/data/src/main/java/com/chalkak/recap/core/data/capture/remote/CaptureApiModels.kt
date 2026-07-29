@@ -82,8 +82,11 @@ data class BulkDeleteRequestDto(
 )
 
 @Serializable
-data class BodyUpdateRequestDto(
+data class CaptureUpdateRequestDto(
+    val title: String,
+    val summary: String,
     val body: String,
+    val cardType: CardTypeDto,
 )
 
 @Serializable

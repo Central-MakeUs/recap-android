@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.network.RemoteApiException
-import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotDetailRepository
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.model.capture.ReportReason
@@ -26,7 +25,6 @@ import kotlinx.coroutines.withContext
 @HiltViewModel
 class ScreenshotViewModel @Inject constructor(
     private val screenshotDetailRepository: ScreenshotDetailRepository,
-    private val screenshotCardRepository: ScreenshotCardRepository,
     private val captureMutationRepository: CaptureMutationRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<ScreenshotUiState>(ScreenshotUiState.Loading)
@@ -268,7 +266,7 @@ class ScreenshotViewModel @Inject constructor(
             }
             val updated = try {
                 withContext(ioDispatcher) {
-                    screenshotCardRepository.updateCardContent(
+                    captureMutationRepository.updateCapture(
                         captureId = captureId,
                         title = normalized.title,
                         summary = normalized.summary,
@@ -288,7 +286,7 @@ class ScreenshotViewModel @Inject constructor(
                 }
                 return@launch
             }
-            if (!updated) {
+            if (updated.isFailure) {
                 _uiState.updateContent {
                     it.copy(
                         isSaving = false,

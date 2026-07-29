@@ -57,10 +57,10 @@ interface CaptureApi {
         @Body body: BulkDeleteRequestDto,
     )
 
-    @PATCH("api/v1/captures/{captureId}/body")
-    suspend fun updateBody(
+    @PATCH("api/v1/captures/{captureId}")
+    suspend fun update(
         @Path("captureId") captureId: Long,
-        @Body body: BodyUpdateRequestDto,
+        @Body body: CaptureUpdateRequestDto,
     )
 
     @POST("api/v1/captures/{captureId}/report")

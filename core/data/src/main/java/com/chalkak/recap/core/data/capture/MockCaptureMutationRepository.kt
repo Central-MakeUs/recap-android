@@ -5,6 +5,7 @@ import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
 import com.chalkak.recap.core.model.capture.ReportReason
+import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -32,20 +33,20 @@ class MockCaptureMutationRepository @Inject constructor(
             )
         }
 
-    override suspend fun updateBody(
+    override suspend fun updateCapture(
         captureId: Long,
+        title: String,
+        summary: String,
         body: String,
+        typeCode: ScreenshotContentType,
     ): Result<Unit> =
         runCatching {
-            val card = screenshotCardRepository.getCard(captureId)
-                ?: error("Capture $captureId not found")
-            val analysis = card.analysisResult
             val updated = screenshotCardRepository.updateCardContent(
                 captureId = captureId,
-                title = analysis.title,
-                summary = analysis.summary,
+                title = title,
+                summary = summary,
                 body = body,
-                typeCode = analysis.typeCode,
+                typeCode = typeCode,
             )
             check(updated) { "Capture $captureId not found" }
         }

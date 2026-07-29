@@ -1,13 +1,15 @@
 package com.chalkak.recap.core.data.capture
 
-import com.chalkak.recap.core.data.capture.remote.BodyUpdateRequestDto
 import com.chalkak.recap.core.data.capture.remote.BulkDeleteRequestDto
 import com.chalkak.recap.core.data.capture.remote.CaptureApi
+import com.chalkak.recap.core.data.capture.remote.CaptureUpdateRequestDto
+import com.chalkak.recap.core.data.capture.remote.CardTypeDto
 import com.chalkak.recap.core.data.capture.remote.ReportReasonDto
 import com.chalkak.recap.core.data.capture.remote.ReportRequestDto
 import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
 import com.chalkak.recap.core.model.capture.ReportReason
+import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -112,23 +114,45 @@ class RemoteCaptureMutationRepositoryTest {
     }
 
     @Test
-    fun `updateBody success notifies capture changed`() = runTest {
-        coEvery { captureApi.updateBody(1L, BodyUpdateRequestDto(body = "new body")) } returns Unit
+    fun `updateCapture success notifies capture changed`() = runTest {
+        coEvery {
+            captureApi.update(
+                1L,
+                CaptureUpdateRequestDto(
+                    title = "title",
+                    summary = "summary",
+                    body = "new body",
+                    cardType = CardTypeDto.JOB,
+                ),
+            )
+        } returns Unit
         every { changeNotifier.notifyCaptureChanged() } just Runs
         val repository = createRepository()
 
-        val result = repository.updateBody(captureId = 1L, body = "new body")
+        val result = repository.updateCapture(
+            captureId = 1L,
+            title = "title",
+            summary = "summary",
+            body = "new body",
+            typeCode = ScreenshotContentType.JOB,
+        )
 
         assertTrue(result.isSuccess)
         verify(exactly = 1) { changeNotifier.notifyCaptureChanged() }
     }
 
     @Test
-    fun `updateBody failure skips notifier`() = runTest {
-        coEvery { captureApi.updateBody(any(), any()) } throws RemoteApiException(code = "ERR", message = "fail")
+    fun `updateCapture failure skips notifier`() = runTest {
+        coEvery { captureApi.update(any(), any()) } throws RemoteApiException(code = "ERR", message = "fail")
         val repository = createRepository()
 
-        val result = repository.updateBody(captureId = 1L, body = "new body")
+        val result = repository.updateCapture(
+            captureId = 1L,
+            title = "title",
+            summary = "summary",
+            body = "new body",
+            typeCode = ScreenshotContentType.JOB,
+        )
 
         assertTrue(result.isFailure)
         verify(exactly = 0) { changeNotifier.notifyCaptureChanged() }

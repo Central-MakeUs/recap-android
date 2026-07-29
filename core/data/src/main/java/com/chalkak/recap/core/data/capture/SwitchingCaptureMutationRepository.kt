@@ -4,6 +4,7 @@ import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendMode
 import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendModeStore
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
 import com.chalkak.recap.core.model.capture.ReportReason
+import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,11 +20,20 @@ class SwitchingCaptureMutationRepository @Inject constructor(
     ): Result<Unit> =
         resolveDelegate().updateFavorite(captureId = captureId, isFavorite = isFavorite)
 
-    override suspend fun updateBody(
+    override suspend fun updateCapture(
         captureId: Long,
+        title: String,
+        summary: String,
         body: String,
+        typeCode: ScreenshotContentType,
     ): Result<Unit> =
-        resolveDelegate().updateBody(captureId = captureId, body = body)
+        resolveDelegate().updateCapture(
+            captureId = captureId,
+            title = title,
+            summary = summary,
+            body = body,
+            typeCode = typeCode,
+        )
 
     override suspend fun deleteCaptures(captureIds: Set<Long>): Result<CaptureDeleteResult> =
         resolveDelegate().deleteCaptures(captureIds)

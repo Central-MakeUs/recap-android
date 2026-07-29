@@ -4,7 +4,6 @@ import app.cash.turbine.test
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
-import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotDetailRepository
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
 import com.chalkak.recap.core.design.R
@@ -37,7 +36,6 @@ import java.time.Instant
 class ScreenshotViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val detailRepository = mockk<ScreenshotDetailRepository>()
-    private val cardRepository = mockk<ScreenshotCardRepository>()
     private val captureMutationRepository = mockk<CaptureMutationRepository>()
     private val cardFlow = MutableSharedFlow<StoredScreenshotCard?>(replay = 1)
     private lateinit var viewModel: ScreenshotViewModel
@@ -48,7 +46,6 @@ class ScreenshotViewModelTest {
         every { detailRepository.observeCard(any()) } returns cardFlow
         viewModel = ScreenshotViewModel(
             screenshotDetailRepository = detailRepository,
-            screenshotCardRepository = cardRepository,
             captureMutationRepository = captureMutationRepository,
         ).apply {
             ioDispatcher = testDispatcher
@@ -97,17 +94,16 @@ class ScreenshotViewModelTest {
     fun `discard during save cancels update and does not emit success`() = runTest(testDispatcher) {
         val allowSaveToFinish = CompletableDeferred<Unit>()
         coEvery {
-            cardRepository.updateCardContent(
+            captureMutationRepository.updateCapture(
                 captureId = any(),
                 title = any(),
                 summary = any(),
                 body = any(),
                 typeCode = any(),
-                updatedAtMillis = any(),
             )
         } coAnswers {
             allowSaveToFinish.await()
-            true
+            Result.success(Unit)
         }
 
         viewModel.bind(1L)
@@ -235,15 +231,14 @@ class ScreenshotViewModelTest {
     @Test
     fun `save edit sends repository values and save succeeded event`() = runTest(testDispatcher) {
         coEvery {
-            cardRepository.updateCardContent(
+            captureMutationRepository.updateCapture(
                 captureId = 1L,
                 title = "새 제목",
                 summary = "새 요약",
                 body = "새 본문",
                 typeCode = ScreenshotContentType.SCHEDULE,
-                updatedAtMillis = any(),
             )
-        } returns true
+        } returns Result.success(Unit)
 
         viewModel.bind(1L)
         cardFlow.emit(storedCard(captureId = 1L))
@@ -266,13 +261,12 @@ class ScreenshotViewModelTest {
         }
 
         coVerify(exactly = 1) {
-            cardRepository.updateCardContent(
+            captureMutationRepository.updateCapture(
                 captureId = 1L,
                 title = "새 제목",
                 summary = "새 요약",
                 body = "새 본문",
                 typeCode = ScreenshotContentType.SCHEDULE,
-                updatedAtMillis = any(),
             )
         }
     }
@@ -280,15 +274,14 @@ class ScreenshotViewModelTest {
     @Test
     fun `save edit keeps draft when repository fails`() = runTest(testDispatcher) {
         coEvery {
-            cardRepository.updateCardContent(
+            captureMutationRepository.updateCapture(
                 captureId = any(),
                 title = any(),
                 summary = any(),
                 body = any(),
                 typeCode = any(),
-                updatedAtMillis = any(),
             )
-        } throws IllegalStateException("save failed")
+        } returns Result.failure(IllegalStateException("save failed"))
 
         viewModel.bind(1L)
         cardFlow.emit(storedCard(captureId = 1L, title = "원본"))
@@ -305,17 +298,16 @@ class ScreenshotViewModelTest {
     }
 
     @Test
-    fun `save edit shows save error when update returns false`() = runTest(testDispatcher) {
+    fun `save edit shows save error when update returns failure`() = runTest(testDispatcher) {
         coEvery {
-            cardRepository.updateCardContent(
+            captureMutationRepository.updateCapture(
                 captureId = any(),
                 title = any(),
                 summary = any(),
                 body = any(),
                 typeCode = any(),
-                updatedAtMillis = any(),
             )
-        } returns false
+        } returns Result.failure(IllegalStateException("not found"))
 
         viewModel.bind(1L)
         cardFlow.emit(storedCard(captureId = 1L, title = "원본"))
@@ -370,13 +362,12 @@ class ScreenshotViewModelTest {
         val state = viewModel.uiState.value as ScreenshotUiState.Content
         assertTrue(state.titleError)
         coVerify(exactly = 0) {
-            cardRepository.updateCardContent(
+            captureMutationRepository.updateCapture(
                 captureId = any(),
                 title = any(),
                 summary = any(),
                 body = any(),
                 typeCode = any(),
-                updatedAtMillis = any(),
             )
         }
     }

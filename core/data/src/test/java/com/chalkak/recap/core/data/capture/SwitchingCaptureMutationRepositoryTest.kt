@@ -4,6 +4,7 @@ import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendMode
 import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendModeStore
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
 import com.chalkak.recap.core.model.capture.ReportReason
+import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -54,12 +55,20 @@ class SwitchingCaptureMutationRepositoryTest {
     }
 
     @Test
-    fun `updateBody delegates to remote in remote mode`() = runTest {
+    fun `updateCapture delegates to remote in remote mode`() = runTest {
         val modeStore = mockk<ScreenshotBackendModeStore>()
         coEvery { modeStore.currentMode() } returns ScreenshotBackendMode.REMOTE
         val mock = mockk<MockCaptureMutationRepository>()
         val remote = mockk<RemoteCaptureMutationRepository>()
-        coEvery { remote.updateBody(1L, "body") } returns Result.success(Unit)
+        coEvery {
+            remote.updateCapture(
+                captureId = 1L,
+                title = "title",
+                summary = "summary",
+                body = "body",
+                typeCode = ScreenshotContentType.JOB,
+            )
+        } returns Result.success(Unit)
 
         val repository = SwitchingCaptureMutationRepository(
             screenshotBackendModeStore = modeStore,
@@ -67,10 +76,26 @@ class SwitchingCaptureMutationRepositoryTest {
             remoteCaptureMutationRepository = remote,
         )
 
-        repository.updateBody(captureId = 1L, body = "body")
+        repository.updateCapture(
+            captureId = 1L,
+            title = "title",
+            summary = "summary",
+            body = "body",
+            typeCode = ScreenshotContentType.JOB,
+        )
 
-        coVerify(exactly = 1) { remote.updateBody(1L, "body") }
-        coVerify(exactly = 0) { mock.updateBody(any(), any()) }
+        coVerify(exactly = 1) {
+            remote.updateCapture(
+                captureId = 1L,
+                title = "title",
+                summary = "summary",
+                body = "body",
+                typeCode = ScreenshotContentType.JOB,
+            )
+        }
+        coVerify(exactly = 0) {
+            mock.updateCapture(any(), any(), any(), any(), any())
+        }
     }
 
     @Test
