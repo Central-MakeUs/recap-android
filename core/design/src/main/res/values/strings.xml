@@ -304,6 +304,7 @@
     <string name="component_garden_photo_access_permission_bottom_sheet_button">사진 접근 권한 바텀시트 보기</string>
     <string name="component_garden_image_load_failure_bottom_sheet_button">이미지 로드 실패 바텀시트 보기</string>
     <string name="component_garden_organize_notification_permission_bottom_sheet_button">정리 알림 권한 바텀시트 보기</string>
+    <string name="component_garden_ai_data_transfer_consent_bottom_sheet_button">AI 전송 동의 바텀시트 보기</string>
     <string name="component_garden_notification_disabled_bottom_sheet_button">알림 꺼짐 바텀시트 보기</string>
     <string name="component_garden_deletion_confirmation_bottom_sheet_button">삭제 확인 바텀시트 보기</string>
     <string name="component_garden_unsaved_changes_bottom_sheet_button">저장 안 됨 확인 바텀시트 보기</string>
@@ -424,6 +425,15 @@
     <string name="organize_notification_permission_description">앱을 닫아도 스크린샷 정리가 완료되면\n알림을 받고 확인할 수 있어요.</string>
     <string name="organize_notification_permission_allow_button">알림 받기</string>
     <string name="organize_notification_permission_later_button">나중에 하기</string>
+    <string name="organize_ai_data_transfer_consent_icon_content_description">이미지 전송</string>
+    <string name="organize_ai_data_transfer_consent_title">AI 분석을 위해 이미지를 전송해요</string>
+    <string name="organize_ai_data_transfer_consent_description">리캡은 제목 · 요약 · 유형을 생성하기 위해 회원님이 선택한 스크린샷 이미지와 이미지에서 추출한 텍스트를 당사 서버를 거쳐 Google LLC의 Gemini API로 전송합니다.</string>
+    <string name="organize_ai_data_transfer_consent_privacy_policy">개인정보 처리방침</string>
+    <string name="organize_ai_data_transfer_consent_bullet_1">업로드한 원본 이미지는 1개월간 보관 후 삭제되며, 미리보기용 이미지와 정보카드는 회원 탈퇴 시까지 보관돼요.</string>
+    <string name="organize_ai_data_transfer_consent_bullet_2">전송된 정보는 Google의 AI모델 학습에 사용되지 않아요.</string>
+    <string name="organize_ai_data_transfer_consent_bullet_3">AI가 생성한 결과는 일부 부정확할 수 있으며, 직접 수정할 수 있어요.</string>
+    <string name="organize_ai_data_transfer_consent_agree_button">동의하고 정리하기</string>
+    <string name="organize_ai_data_transfer_consent_cancel_button">취소</string>
     <string name="organize_screenshot_selection_title">스크린샷 선택</string>
     <string name="organize_discard_selection_confirm_title">스크린샷 선택을 그만둘까요?</string>
     <string name="organize_discard_selection_confirm_description">지금 나가면 선택한 스크린샷이\n모두 해제돼요.</string>
