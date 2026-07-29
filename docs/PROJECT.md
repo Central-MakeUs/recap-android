@@ -34,6 +34,7 @@
 - Image loading: Coil
 - Logging: Timber
 - Analytics: Firebase Analytics
+- Crash reporting: Firebase Crashlytics
 
 ## 빌드 명령
 

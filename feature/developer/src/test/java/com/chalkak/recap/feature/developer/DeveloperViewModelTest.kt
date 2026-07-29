@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DeveloperViewModelTest {
@@ -199,6 +200,18 @@ class DeveloperViewModelTest {
             com.chalkak.recap.core.design.R.string.developer_options_reset_screenshot_data_success,
             viewModel.uiState.value.feedbackMessageResId,
         )
+    }
+
+    @Test
+    fun `force test crash throws runtime exception`() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        val exception = assertThrows<RuntimeException> {
+            viewModel.onAction(DeveloperOptionAction.ForceTestCrash)
+        }
+
+        assertEquals("Test Crash", exception.message)
     }
 
     private fun createViewModel(): DeveloperViewModel {

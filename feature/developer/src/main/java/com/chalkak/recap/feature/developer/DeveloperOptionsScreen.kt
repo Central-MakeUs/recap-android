@@ -142,12 +142,17 @@ internal enum class DeveloperOption(
         labelResId = R.string.developer_options_reset_screenshot_data_button,
         action = DeveloperOptionAction.ResetScreenshotData,
     ),
+    TestCrash(
+        labelResId = R.string.developer_options_test_crash_button,
+        action = DeveloperOptionAction.ForceTestCrash,
+    ),
 }
 
 internal sealed interface DeveloperOptionAction {
     data object OpenComponentGarden : DeveloperOptionAction
     data object ResetOnboarding : DeveloperOptionAction
     data object ResetScreenshotData : DeveloperOptionAction
+    data object ForceTestCrash : DeveloperOptionAction
     data class RequestScreenshotBackendSwitch(
         val targetMode: ScreenshotBackendMode,
     ) : DeveloperOptionAction

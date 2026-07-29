@@ -66,6 +66,10 @@ class DeveloperViewModel @Inject constructor(
                 -> Unit
 
             DeveloperOptionAction.ResetScreenshotData -> resetScreenshotData()
+            DeveloperOptionAction.ForceTestCrash -> {
+                throw RuntimeException("Test Crash")
+            }
+
             is DeveloperOptionAction.RequestScreenshotBackendSwitch -> {
                 requestScreenshotBackendSwitch(action.targetMode)
             }
