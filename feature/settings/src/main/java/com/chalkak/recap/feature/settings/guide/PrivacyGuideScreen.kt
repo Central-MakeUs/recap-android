@@ -73,6 +73,14 @@ fun PrivacyGuideScreen(
                         ),
                     )
                     PrivacyGuideSection(
+                        titleResId = R.string.settings_privacy_guide_ai_processing_title,
+                        bulletResIds = listOf(
+                            R.string.settings_privacy_guide_ai_processing_bullet_1,
+                            R.string.settings_privacy_guide_ai_processing_bullet_2,
+                            R.string.settings_privacy_guide_ai_processing_bullet_3,
+                        ),
+                    )
+                    PrivacyGuideSection(
                         titleResId = R.string.settings_privacy_guide_original_storage_title,
                         bulletResIds = listOf(
                             R.string.settings_privacy_guide_original_storage_bullet_1,
@@ -84,6 +92,12 @@ fun PrivacyGuideScreen(
                         bulletResIds = listOf(
                             R.string.settings_privacy_guide_sensitive_info_bullet_1,
                             R.string.settings_privacy_guide_sensitive_info_bullet_2,
+                        ),
+                    )
+                    PrivacyGuideSection(
+                        titleResId = R.string.settings_privacy_guide_ai_consent_withdraw_title,
+                        bulletResIds = listOf(
+                            R.string.settings_privacy_guide_ai_consent_withdraw_bullet_1,
                         ),
                     )
                 }
