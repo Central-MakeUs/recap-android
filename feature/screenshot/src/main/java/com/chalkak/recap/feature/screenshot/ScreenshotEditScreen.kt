@@ -54,7 +54,6 @@ import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
-import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption3
@@ -170,13 +169,6 @@ fun ScreenshotEditScreen(
                     singleLine = false,
                     minLines = 4,
                 )
-                content.actionErrorMessageResId?.let { errorResId ->
-                    Text(
-                        text = stringResource(errorResId),
-                        style = RecapBody2,
-                        color = RecapError,
-                    )
-                }
             }
         }
     }

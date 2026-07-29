@@ -60,6 +60,7 @@ sealed interface ScreenshotAction {
 
 sealed interface ScreenshotEvent {
     data object SaveSucceeded : ScreenshotEvent
+    data class SaveFailed(val messageResId: Int) : ScreenshotEvent
     data object DeleteSucceeded : ScreenshotEvent
     data object ReportSucceeded : ScreenshotEvent
     data class ReportFailed(
@@ -100,5 +101,5 @@ internal fun sanitizeEditSummaryInput(raw: String): String =
 internal fun ScreenshotEditDraft.isTitleValid(): Boolean = title.trim().isNotEmpty()
 
 internal fun ScreenshotUiState.Content.hasUnsavedEditChanges(): Boolean {
-    return editDraft != card.toEditDraft()
+    return editDraft.normalizedForSave() != card.toEditDraft().normalizedForSave()
 }

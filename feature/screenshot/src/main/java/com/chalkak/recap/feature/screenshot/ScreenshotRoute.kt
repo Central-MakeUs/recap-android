@@ -44,6 +44,7 @@ fun ScreenshotRoute(
         stringResource(R.string.screenshot_detail_favorite_removed_toast)
     val deleteSuccessToastMessage = stringResource(R.string.screenshot_delete_success_toast)
     val reportSuccessToastMessage = stringResource(R.string.screenshot_report_success_toast)
+    val saveSuccessToastMessage = stringResource(R.string.screenshot_edit_save_success_toast)
     var showActionSheet by rememberSaveable { mutableStateOf(false) }
     var showReportSheet by rememberSaveable { mutableStateOf(false) }
     var reportReasonSelection by rememberSaveable { mutableStateOf<String?>(null) }
@@ -70,6 +71,17 @@ fun ScreenshotRoute(
                     if (backStack.size > 1) {
                         backStack.removeLastOrNull()
                     }
+                    toastDispatcher.showToast(
+                        message = saveSuccessToastMessage,
+                        type = RecapToastType.Success,
+                    )
+                }
+
+                is ScreenshotEvent.SaveFailed -> {
+                    toastDispatcher.showToast(
+                        message = resources.getString(event.messageResId),
+                        type = RecapToastType.Error,
+                    )
                 }
 
                 ScreenshotEvent.DeleteSucceeded -> {

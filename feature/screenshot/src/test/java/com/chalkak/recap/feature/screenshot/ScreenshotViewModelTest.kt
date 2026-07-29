@@ -288,13 +288,22 @@ class ScreenshotViewModelTest {
         advanceUntilIdle()
 
         viewModel.onAction(ScreenshotAction.UpdateEditTitle("실패할 제목"))
-        viewModel.onAction(ScreenshotAction.SaveEdit)
-        advanceUntilIdle()
+
+        viewModel.events.test {
+            viewModel.onAction(ScreenshotAction.SaveEdit)
+            advanceUntilIdle()
+
+            assertEquals(
+                ScreenshotEvent.SaveFailed(R.string.screenshot_edit_save_error),
+                awaitItem(),
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
 
         val state = viewModel.uiState.value as ScreenshotUiState.Content
         assertEquals("실패할 제목", state.editDraft.title)
         assertFalse(state.isSaving)
-        assertEquals(R.string.screenshot_edit_save_error, state.actionErrorMessageResId)
+        assertEquals(null, state.actionErrorMessageResId)
     }
 
     @Test
@@ -314,13 +323,49 @@ class ScreenshotViewModelTest {
         advanceUntilIdle()
 
         viewModel.onAction(ScreenshotAction.UpdateEditTitle("원격 미지원"))
-        viewModel.onAction(ScreenshotAction.SaveEdit)
-        advanceUntilIdle()
+
+        viewModel.events.test {
+            viewModel.onAction(ScreenshotAction.SaveEdit)
+            advanceUntilIdle()
+
+            assertEquals(
+                ScreenshotEvent.SaveFailed(R.string.screenshot_edit_save_error),
+                awaitItem(),
+            )
+            cancelAndIgnoreRemainingEvents()
+        }
 
         val state = viewModel.uiState.value as ScreenshotUiState.Content
         assertFalse(state.isSaving)
-        assertEquals(R.string.screenshot_edit_save_error, state.actionErrorMessageResId)
+        assertEquals(null, state.actionErrorMessageResId)
         assertTrue(viewModel.uiState.value is ScreenshotUiState.Content)
+    }
+
+    @Test
+    fun `trailing whitespace only does not count as unsaved changes`() = runTest(testDispatcher) {
+        viewModel.bind(1L)
+        cardFlow.emit(storedCard(captureId = 1L, title = "원본", summary = "요약"))
+        advanceUntilIdle()
+
+        viewModel.onAction(ScreenshotAction.UpdateEditTitle("원본  "))
+        viewModel.onAction(ScreenshotAction.UpdateEditSummary("  요약"))
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value as ScreenshotUiState.Content
+        assertFalse(state.hasUnsavedEditChanges())
+
+        viewModel.onAction(ScreenshotAction.SaveEdit)
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) {
+            captureMutationRepository.updateCapture(
+                captureId = any(),
+                title = any(),
+                summary = any(),
+                body = any(),
+                typeCode = any(),
+            )
+        }
     }
 
     @Test

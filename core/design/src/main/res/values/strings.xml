@@ -558,7 +558,8 @@
     <string name="screenshot_edit_summary_label">한 줄 요약</string>
     <string name="screenshot_edit_body_label">본문</string>
     <string name="screenshot_edit_title_error">제목을 입력해주세요.</string>
-    <string name="screenshot_edit_save_error">저장에 실패했어요. 다시 시도해주세요.</string>
+    <string name="screenshot_edit_save_success_toast">수정한 내용을 저장했어요.</string>
+    <string name="screenshot_edit_save_error">스크린샷 정보를 저장하지 못했어요. 다시 시도해주세요.</string>
     <string name="screenshot_edit_discard_confirm_title">수정을 그만둘까요?</string>
     <string name="screenshot_edit_discard_confirm_description">저장하지 않은 변경사항은 사라져요.</string>
     <string name="screenshot_edit_discard_confirm_keep_editing">계속 수정하기</string>

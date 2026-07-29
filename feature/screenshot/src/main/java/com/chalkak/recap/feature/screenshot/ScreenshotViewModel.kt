@@ -278,21 +278,17 @@ class ScreenshotViewModel @Inject constructor(
                 _uiState.updateContent { it.copy(isSaving = false) }
                 throw cancellation
             } catch (_: Exception) {
-                _uiState.updateContent {
-                    it.copy(
-                        isSaving = false,
-                        actionErrorMessageResId = R.string.screenshot_edit_save_error,
-                    )
-                }
+                _uiState.updateContent { it.copy(isSaving = false) }
+                eventChannel.send(
+                    ScreenshotEvent.SaveFailed(R.string.screenshot_edit_save_error),
+                )
                 return@launch
             }
             if (updated.isFailure) {
-                _uiState.updateContent {
-                    it.copy(
-                        isSaving = false,
-                        actionErrorMessageResId = R.string.screenshot_edit_save_error,
-                    )
-                }
+                _uiState.updateContent { it.copy(isSaving = false) }
+                eventChannel.send(
+                    ScreenshotEvent.SaveFailed(R.string.screenshot_edit_save_error),
+                )
                 return@launch
             }
             _uiState.updateContent { it.copy(isSaving = false) }
