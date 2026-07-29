@@ -44,6 +44,13 @@ android {
                 enable = false
             }
         }
+
+        create("qa") {
+            initWith(getByName("release"))
+            signingConfig = signingConfigs.getByName("debug")
+            matchingFallbacks += listOf("release")
+            versionNameSuffix = "-qa"
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
