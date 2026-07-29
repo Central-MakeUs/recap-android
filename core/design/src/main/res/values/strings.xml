@@ -421,8 +421,8 @@
     <string name="image_load_failure_home_button">홈으로 가기</string>
     <string name="organize_notification_permission_icon_content_description">정리 완료 알림</string>
     <string name="organize_notification_permission_title">정리가 끝나면 알려드릴까요?</string>
-    <string name="organize_notification_permission_description">앱을 닫아도 스크린샷 정리가 완료되면 알림을 받고 확인할 수 있어요.</string>
-    <string name="organize_notification_permission_allow_button">알림 허용하기</string>
+    <string name="organize_notification_permission_description">앱을 닫아도 스크린샷 정리가 완료되면\n알림을 받고 확인할 수 있어요.</string>
+    <string name="organize_notification_permission_allow_button">알림 받기</string>
     <string name="organize_notification_permission_later_button">나중에 하기</string>
     <string name="organize_screenshot_selection_title">스크린샷 선택</string>
     <string name="organize_discard_selection_confirm_title">스크린샷 선택을 그만둘까요?</string>

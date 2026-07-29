@@ -40,7 +40,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
-import com.chalkak.recap.core.design.component.bottomsheet.OrganizeNotificationPermissionBottomSheet
+import com.chalkak.recap.core.design.component.bottomsheet.NotificationPermissionRequestBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.LogoutConfirmationBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheetDefaults
@@ -93,7 +93,7 @@ internal fun ComponentGardenScreen(
 ) {
     var showPhotoAccessPermissionBottomSheet by remember { mutableStateOf(false) }
     var showImageLoadFailureBottomSheet by remember { mutableStateOf(false) }
-    var showOrganizeNotificationPermissionBottomSheet by remember { mutableStateOf(false) }
+    var showNotificationPermissionRequestBottomSheet by remember { mutableStateOf(false) }
     var showNotificationDisabledBottomSheet by remember { mutableStateOf(false) }
     var showDeletionConfirmationActionBottomSheet by remember { mutableStateOf(false) }
     var showUnsavedChangesBottomSheet by remember { mutableStateOf(false) }
@@ -345,7 +345,7 @@ internal fun ComponentGardenScreen(
                 }
                 Button(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = { showOrganizeNotificationPermissionBottomSheet = true },
+                    onClick = { showNotificationPermissionRequestBottomSheet = true },
                 ) {
                     Text(
                         text = stringResource(
@@ -458,11 +458,11 @@ internal fun ComponentGardenScreen(
             },
         )
     }
-    if (showOrganizeNotificationPermissionBottomSheet) {
-        OrganizeNotificationPermissionBottomSheet(
-            onDismissRequest = { showOrganizeNotificationPermissionBottomSheet = false },
-            onAllowNotificationClick = { showOrganizeNotificationPermissionBottomSheet = false },
-            onLaterClick = { showOrganizeNotificationPermissionBottomSheet = false },
+    if (showNotificationPermissionRequestBottomSheet) {
+        NotificationPermissionRequestBottomSheet(
+            onDismissRequest = { showNotificationPermissionRequestBottomSheet = false },
+            onAllowNotificationClick = { showNotificationPermissionRequestBottomSheet = false },
+            onLaterClick = { showNotificationPermissionRequestBottomSheet = false },
         )
     }
     if (showNotificationDisabledBottomSheet) {

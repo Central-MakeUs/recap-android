@@ -33,7 +33,7 @@ import com.chalkak.recap.core.data.notification.markNotificationPermissionReques
 import com.chalkak.recap.core.data.notification.notificationPermissionRequestDestination
 import com.chalkak.recap.core.data.notification.openAppNotificationSettings
 import com.chalkak.recap.core.data.notification.shouldShowOrganizeNotificationPermissionPrompt
-import com.chalkak.recap.core.design.component.bottomsheet.OrganizeNotificationPermissionBottomSheet
+import com.chalkak.recap.core.design.component.bottomsheet.NotificationPermissionRequestBottomSheet
 import com.chalkak.recap.core.model.LocalImage
 import kotlinx.coroutines.launch
 
@@ -275,7 +275,7 @@ fun OrganizeRoute(
         }
 
         if (showNotificationPermissionSheet) {
-            OrganizeNotificationPermissionBottomSheet(
+            NotificationPermissionRequestBottomSheet(
                 onDismissRequest = ::dismissNotificationPermissionSheetAndContinue,
                 onAllowNotificationClick = {
                     if (context.areAppNotificationsEnabled()) {

@@ -16,7 +16,7 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 ## Open
 
 - [ ] 2026-07-25 - 정리 알림 클릭 딥링크
-  - Context: 정리 진행/완료 알림 클릭은 현재 MainActivity 실행만 한다. 확인 화면의 OrganizeNotificationPermissionBottomSheet → POST_NOTIFICATIONS 요청 및 `organizeCompleteNotificationEnabled` 동기화는 완료.
+  - Context: 정리 진행/완료 알림 클릭은 현재 MainActivity 실행만 한다. 확인 화면의 NotificationPermissionRequestBottomSheet → POST_NOTIFICATIONS 요청 및 `organizeCompleteNotificationEnabled` 동기화는 완료.
   - Next: 완료/부분실패 결과 화면으로 PendingIntent 딥링크
   - Handoff: not started
 
