@@ -247,7 +247,10 @@ private fun CollectionUnifiedOverview(
                         modifier = Modifier
                             .fillMaxSize()
                             .padding(horizontal = CollectionScreenTokens.HorizontalPadding),
-                        contentPadding = PaddingValues(bottom = bottomContentPadding),
+                        contentPadding = PaddingValues(
+                            top = CollectionScreenTokens.TypeGridTopPadding,
+                            bottom = bottomContentPadding,
+                        ),
                         horizontalArrangement = Arrangement.spacedBy(CollectionScreenTokens.TypeGridSpacing),
                         verticalArrangement = Arrangement.spacedBy(CollectionScreenTokens.TypeGridRowSpacing),
                     ) {
@@ -269,7 +272,10 @@ private fun CollectionUnifiedOverview(
                 CollectionTypeViewMode.List -> {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = bottomContentPadding),
+                        contentPadding = PaddingValues(
+                            top = CollectionScreenTokens.TypeListTopPadding,
+                            bottom = bottomContentPadding,
+                        ),
                     ) {
                         itemsIndexed(
                             items = typeSummaries,
@@ -340,7 +346,7 @@ private fun CollectionTypeGridItem(
         )
         Text(
             text = stringResource(summary.labelResId),
-            style = RecapBody2,
+            style = RecapHeading3,
             fontWeight = FontWeight.Medium,
             color = RecapGray900,
             textAlign = TextAlign.Center,
@@ -353,8 +359,8 @@ private fun CollectionTypeGridItem(
                 summary.count,
                 summary.count,
             ),
-            style = RecapCaption1,
-            color = RecapGray500,
+            style = RecapCaption2,
+            color = RecapGray300,
             textAlign = TextAlign.Center,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -442,7 +448,9 @@ private object CollectionScreenTokens {
     val HorizontalPadding = 20.dp
     val SearchTopPadding = 8.dp
     val ContentTopPadding = 20.dp
-    val FavoriteCardBottomPadding = 20.dp
+    val FavoriteCardBottomPadding = 10.dp
+    val TypeGridTopPadding = 16.dp
+    val TypeListTopPadding = 10.dp
     val TypeGridSpacing = 19.dp
     val TypeGridRowSpacing = 24.dp
     val MinimumTouchTarget = 48.dp
