@@ -177,20 +177,24 @@
 
 역할:
 - 사용자 설정 접근 API를 제공한다.
-- 현재는 온보딩 완료 여부/단계만 관리한다.
+- 온보딩 완료 여부, 알림 설정, MOCK 모드용 AI 데이터 전송 동의 상태를 관리한다.
 
 주요 API:
 - `onboardingCompleted: Flow<Boolean>`
 - `setOnboardingCompleted(completed)`
-- `getOnboardingStep()` / `setOnboardingStep(step)` / `clearOnboardingStep()`
+- `organizeCompleteNotificationEnabled: Flow<Boolean>`
+- `setOrganizeCompleteNotificationEnabled(enabled)`
+- `getAiDataTransferConsentStatus()` / `setAiDataTransferConsent(consented, consentedAt)`
 
 저장 key:
 - `onboarding_completed`
-- `onboarding_step`
+- `organize_complete_notification_enabled`
+- `ai_data_transfer_consented` / `ai_data_transfer_consented_at` (MOCK consent SoT)
 
 주의사항:
 - 스크린샷 backend 모드는 `ScreenshotBackendModeStore`가 같은 `user_preferences` DataStore에서 관리한다.
 - 새 설정을 추가할 때는 같은 `user_preferences` DataStore를 사용하고, 별도 DataStore 파일을 만들지 않는다.
+- AI 동의 DataStore 값은 MOCK backend에서만 사용한다. REMOTE는 서버 consent API가 SoT다.
 
 ### `ScreenshotBackendModeStore`
 
@@ -211,10 +215,13 @@
 | 정보카드 SoT | Room `ScreenshotCardRepository` | 서버 Capture/Storage API |
 | 원본 이미지 | 앱 private `ScreenshotImageStorage` | 서버 URL (기기 원본 캐시 없음) |
 | 썸네일 | 앱 private 썸네일 파일 | `RemoteCaptureThumbnailCache` (capture ID 기반 로컬 캐시) |
-| Mock 구현 | `MockHomeRepository`, `MockStorageRepository`, `MockCaptureMutationRepository` 등 | — |
-| Remote 구현 | — | `RemoteHomeRepository`, `RemoteStorageRepository`, `RemoteCaptureMutationRepository`, `RemoteScreenshotDetailRepository` 등 |
+| 데이터 요약 | Room 카드 수 (`MockUserRepository.getDataSummary`) | `GET /api/v1/users/me/data-summary` |
+| AI 동의 | `user_preferences` consent keys | `GET/POST/DELETE /api/v1/users/me/consent` |
+| 전체 데이터 삭제 | `MockScreenshotDataResetter` | `DELETE /api/v1/users/me/data` + 로컬 캐시 정리 |
+| Mock 구현 | `MockHomeRepository`, `MockStorageRepository`, `MockCaptureMutationRepository`, `MockUserRepository` 등 | — |
+| Remote 구현 | — | `RemoteHomeRepository`, `RemoteStorageRepository`, `RemoteCaptureMutationRepository`, `RemoteScreenshotDetailRepository`, `RemoteUserRepository` 등 |
 
-모드 전환 시 `MockScreenshotDataResetter`가 Mock Room 카드와 private 원본/썸네일만 삭제한다. session token·onboarding·일반 사용자 설정은 유지한다.
+모드 전환 시 `MockScreenshotDataResetter`가 Mock Room 카드와 private 원본/썸네일만 삭제한다. session token·onboarding·MOCK consent·일반 사용자 설정은 유지한다.
 
 ## 현재 연결되지 않은 부분
 

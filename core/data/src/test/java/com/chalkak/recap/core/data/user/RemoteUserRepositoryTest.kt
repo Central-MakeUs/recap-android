@@ -1,32 +1,48 @@
 package com.chalkak.recap.core.data.user
 
+import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
 import com.chalkak.recap.core.data.network.ApiResponseDto
 import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.data.network.SessionTokenStore
+import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.data.user.remote.AccountInfoResponseDto
 import com.chalkak.recap.core.data.user.remote.ConsentStatusResponseDto
 import com.chalkak.recap.core.data.user.remote.DataSummaryResponseDto
 import com.chalkak.recap.core.data.user.remote.UserApi
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
+import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class UserRepositoryTest {
+class RemoteUserRepositoryTest {
     private val userApi = mockk<UserApi>()
     private val sessionTokenStore = mockk<SessionTokenStore>(relaxed = true)
+    private val screenshotCardRepository = mockk<ScreenshotCardRepository>()
+    private val thumbnailCache = mockk<RemoteCaptureThumbnailCache>(relaxed = true)
+    private val changeNotifier = mockk<RemoteCaptureChangeNotifier>(relaxed = true)
 
-    private lateinit var repository: UserRepository
+    private lateinit var repository: RemoteUserRepository
 
     @BeforeEach
     fun setUp() {
-        repository = UserRepository(
+        coEvery { screenshotCardRepository.deleteAllCards() } just runs
+        every { thumbnailCache.clearAll() } just runs
+        every { changeNotifier.notifyCaptureChanged() } just runs
+        repository = RemoteUserRepository(
             userApi = userApi,
             sessionTokenStore = sessionTokenStore,
+            screenshotCardRepository = screenshotCardRepository,
+            thumbnailCache = thumbnailCache,
+            changeNotifier = changeNotifier,
         )
     }
 
@@ -79,13 +95,28 @@ class UserRepositoryTest {
     }
 
     @Test
-    fun `deleteAccountData does not clear session`() = runTest {
+    fun `deleteAccountData clears local cache and does not clear session`() = runTest {
         coEvery { userApi.deleteAccountData() } returns Unit
 
         val result = repository.deleteAccountData()
 
         assertTrue(result.isSuccess)
         coVerify(exactly = 0) { sessionTokenStore.clear() }
+        coVerify(exactly = 1) { screenshotCardRepository.deleteAllCards() }
+        verify(exactly = 1) { thumbnailCache.clearAll() }
+        verify(exactly = 1) { changeNotifier.notifyCaptureChanged() }
+    }
+
+    @Test
+    fun `deleteAccountData skips local cleanup when api fails`() = runTest {
+        coEvery { userApi.deleteAccountData() } throws RemoteApiException(code = "ERR", message = "fail")
+
+        val result = repository.deleteAccountData()
+
+        assertTrue(result.isFailure)
+        coVerify(exactly = 0) { screenshotCardRepository.deleteAllCards() }
+        verify(exactly = 0) { thumbnailCache.clearAll() }
+        verify(exactly = 0) { changeNotifier.notifyCaptureChanged() }
     }
 
     @Test

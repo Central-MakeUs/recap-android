@@ -1,55 +1,21 @@
 package com.chalkak.recap.core.data.user
 
-import com.chalkak.recap.core.data.network.SessionTokenStore
-import com.chalkak.recap.core.data.network.mapApiResponse
-import com.chalkak.recap.core.data.network.runRemoteCatchingSuspend
-import com.chalkak.recap.core.data.user.remote.UserApi
-import com.chalkak.recap.core.data.user.remote.toDomain
 import com.chalkak.recap.core.model.user.AccountInfo
 import com.chalkak.recap.core.model.user.ConsentStatus
 import com.chalkak.recap.core.model.user.DataSummary
-import javax.inject.Inject
 
-class UserRepository @Inject constructor(
-    private val userApi: UserApi,
-    private val sessionTokenStore: SessionTokenStore,
-) {
-    suspend fun getAccountInfo(): Result<AccountInfo> =
-        runRemoteCatchingSuspend {
-            mapApiResponse(userApi.getAccountInfo()) { it.toDomain() }.getOrThrow()
-        }
+interface UserRepository {
+    suspend fun getAccountInfo(): Result<AccountInfo>
 
-    suspend fun getDataSummary(): Result<DataSummary> =
-        runRemoteCatchingSuspend {
-            mapApiResponse(userApi.getDataSummary()) { it.toDomain() }.getOrThrow()
-        }
+    suspend fun getDataSummary(): Result<DataSummary>
 
-    suspend fun getConsentStatus(): Result<ConsentStatus> =
-        runRemoteCatchingSuspend {
-            mapApiResponse(userApi.getConsentStatus()) { it.toDomain() }.getOrThrow()
-        }
+    suspend fun getConsentStatus(): Result<ConsentStatus>
 
-    suspend fun giveConsent(): Result<Unit> =
-        runRemoteCatchingSuspend {
-            userApi.giveConsent()
-        }
+    suspend fun giveConsent(): Result<Unit>
 
-    suspend fun withdrawConsent(): Result<Unit> =
-        runRemoteCatchingSuspend {
-            userApi.withdrawConsent()
-        }
+    suspend fun withdrawConsent(): Result<Unit>
 
-    suspend fun withdraw(): Result<Unit> {
-        val result = runRemoteCatchingSuspend {
-            userApi.withdraw()
-        }
-        // 서버 실패여도 로컬 세션은 비워 재로그인 가능하게 한다.
-        sessionTokenStore.clear()
-        return result
-    }
+    suspend fun withdraw(): Result<Unit>
 
-    suspend fun deleteAccountData(): Result<Unit> =
-        runRemoteCatchingSuspend {
-            userApi.deleteAccountData()
-        }
+    suspend fun deleteAccountData(): Result<Unit>
 }

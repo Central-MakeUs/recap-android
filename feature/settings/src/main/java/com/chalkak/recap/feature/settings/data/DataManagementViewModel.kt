@@ -2,9 +2,6 @@ package com.chalkak.recap.feature.settings.data
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
-import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
-import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.data.user.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -22,9 +19,6 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class DataManagementViewModel @Inject constructor(
     private val userRepository: UserRepository,
-    private val screenshotCardRepository: ScreenshotCardRepository,
-    private val thumbnailCache: RemoteCaptureThumbnailCache,
-    private val changeNotifier: RemoteCaptureChangeNotifier,
 ) : ViewModel() {
     private val organizedCount = MutableStateFlow(0)
     private val showDeleteConfirmDialog = MutableStateFlow(false)
@@ -149,14 +143,9 @@ class DataManagementViewModel @Inject constructor(
 
     private fun deleteAllData(deletedCount: Int) {
         viewModelScope.launch {
-            val remoteResult = userRepository.deleteAccountData()
-            if (remoteResult.isFailure) {
+            val result = userRepository.deleteAccountData()
+            if (result.isFailure) {
                 return@launch
-            }
-            runCatching {
-                screenshotCardRepository.deleteAllCards()
-                thumbnailCache.clearAll()
-                changeNotifier.notifyCaptureChanged()
             }
             organizedCount.update { 0 }
             _events.emit(DataManagementEvent.ShowDeleteSuccessToast(deletedCount))

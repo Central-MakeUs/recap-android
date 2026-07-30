@@ -1,18 +1,11 @@
 package com.chalkak.recap.feature.settings.data
 
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
-import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
-import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.data.user.UserRepository
 import com.chalkak.recap.core.model.user.ConsentStatus
 import com.chalkak.recap.core.model.user.DataSummary
 import io.mockk.coEvery
 import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.runs
-import io.mockk.verify
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
@@ -33,9 +26,6 @@ import org.junit.Test
 class DataManagementViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val userRepository = mockk<UserRepository>()
-    private val screenshotCardRepository = mockk<ScreenshotCardRepository>()
-    private val thumbnailCache = mockk<RemoteCaptureThumbnailCache>(relaxed = true)
-    private val changeNotifier = mockk<RemoteCaptureChangeNotifier>(relaxed = true)
 
     @Before
     fun setUp() {
@@ -47,9 +37,6 @@ class DataManagementViewModelTest {
         coEvery { userRepository.deleteAccountData() } returns Result.success(Unit)
         coEvery { userRepository.giveConsent() } returns Result.success(Unit)
         coEvery { userRepository.withdrawConsent() } returns Result.success(Unit)
-        coEvery { screenshotCardRepository.deleteAllCards() } just runs
-        every { thumbnailCache.clearAll() } just runs
-        every { changeNotifier.notifyCaptureChanged() } just runs
     }
 
     @After
@@ -60,9 +47,6 @@ class DataManagementViewModelTest {
     private fun createViewModel() =
         DataManagementViewModel(
             userRepository = userRepository,
-            screenshotCardRepository = screenshotCardRepository,
-            thumbnailCache = thumbnailCache,
-            changeNotifier = changeNotifier,
         )
 
     @Test
@@ -99,8 +83,6 @@ class DataManagementViewModelTest {
 
         assertTrue(viewModel.uiState.value.showDeleteConfirmDialog)
         coVerify(exactly = 0) { userRepository.deleteAccountData() }
-        coVerify(exactly = 0) { screenshotCardRepository.deleteAllCards() }
-        verify(exactly = 0) { thumbnailCache.clearAll() }
     }
 
     @Test
@@ -116,7 +98,7 @@ class DataManagementViewModelTest {
     }
 
     @Test
-    fun confirmDeleteData_deletesRemoteAndLocalThenShowsSuccessToast() = runTest(testDispatcher) {
+    fun confirmDeleteData_deletesThenShowsSuccessToast() = runTest(testDispatcher) {
         coEvery { userRepository.getDataSummary() } returnsMany listOf(
             Result.success(DataSummary(3)),
             Result.success(DataSummary(0)),
@@ -138,13 +120,10 @@ class DataManagementViewModelTest {
             eventDeferred.await(),
         )
         coVerify(exactly = 1) { userRepository.deleteAccountData() }
-        coVerify(exactly = 1) { screenshotCardRepository.deleteAllCards() }
-        verify(exactly = 1) { thumbnailCache.clearAll() }
-        verify(exactly = 1) { changeNotifier.notifyCaptureChanged() }
     }
 
     @Test
-    fun confirmDeleteData_skipsLocalCleanupWhenRemoteFails() = runTest(testDispatcher) {
+    fun confirmDeleteData_keepsCountWhenDeleteFails() = runTest(testDispatcher) {
         coEvery { userRepository.getDataSummary() } returns Result.success(DataSummary(5))
         coEvery { userRepository.deleteAccountData() } returns
             Result.failure(RuntimeException("offline"))
@@ -158,9 +137,6 @@ class DataManagementViewModelTest {
 
         assertEquals(5, viewModel.uiState.value.organizedCount)
         coVerify(exactly = 1) { userRepository.deleteAccountData() }
-        coVerify(exactly = 0) { screenshotCardRepository.deleteAllCards() }
-        verify(exactly = 0) { thumbnailCache.clearAll() }
-        verify(exactly = 0) { changeNotifier.notifyCaptureChanged() }
     }
 
     @Test
