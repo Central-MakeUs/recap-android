@@ -25,7 +25,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -129,8 +132,15 @@ private fun RecentOrganizedScreenshotsContent(
     }
     val listState = rememberLazyListState()
     val displayCount = uiState.resultCount.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+    var lastRequestedPage by remember { mutableIntStateOf(-1) }
 
-    LaunchedEffect(listState, visibleItems.size, uiState.hasNext, uiState.isLoadingMore) {
+    LaunchedEffect(
+        listState,
+        visibleItems.size,
+        uiState.hasNext,
+        uiState.isLoadingMore,
+        uiState.nextPage,
+    ) {
         snapshotFlow {
             val secondLastIndex = visibleItems.lastIndex - 1
             secondLastIndex >= 0 &&
@@ -139,7 +149,12 @@ private fun RecentOrganizedScreenshotsContent(
             .distinctUntilChanged()
             .filter { isSecondLastVisible -> isSecondLastVisible }
             .collect {
-                if (uiState.hasNext && !uiState.isLoadingMore) {
+                if (
+                    uiState.hasNext &&
+                    !uiState.isLoadingMore &&
+                    lastRequestedPage != uiState.nextPage
+                ) {
+                    lastRequestedPage = uiState.nextPage
                     onAction(RecentOrganizedScreenshotsAction.LoadMore)
                 }
             }
