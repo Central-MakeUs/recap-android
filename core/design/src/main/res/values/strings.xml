@@ -241,10 +241,10 @@
     <string name="settings_data_management_ai_consent_agree">동의하기</string>
     <string name="settings_data_management_ai_consent_preview_date">2026.07.27</string>
     <string name="settings_data_management_withdraw_consent_title">데이터 전송 동의를 철회할까요?</string>
-    <string name="settings_data_management_withdraw_consent_description">동의를 철회하면 스크린샷 정리 기능을 사용할 수 없어요.\n다시 정리를 시작하면 동의화면이 표시돼요.</string>
+    <string name="settings_data_management_withdraw_consent_description">동의를 철회하면 스크린샷 정리 기능을 사용할 수 없어요. 다시 정리를 시작하면 동의화면이 표시돼요.</string>
     <string name="settings_data_management_withdraw_consent_cancel_button">취소</string>
     <string name="settings_data_management_withdraw_consent_confirm_button">철회하기</string>
-    <string name="settings_data_management_consent_withdrawn_toast">AI 전송 동의가 철회했어요.</string>
+    <string name="settings_data_management_consent_withdrawn_toast">AI 전송 동의를 철회했어요.</string>
     <string name="settings_data_management_organized_label">정리된 캡처 데이터</string>
     <string name="settings_data_management_organized_title">정리된 캡처</string>
     <string name="settings_data_management_organized_description">원본 이미지, 제목, 요약, 보관함 정보가 함께 관리돼요.</string>
