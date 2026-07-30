@@ -2,7 +2,7 @@
 <resources>
 
     <style name="Theme.RECAP" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">@color/splash_background</item>
+        <item name="android:windowBackground">@color/recap_background</item>
     </style>
 
     <style name="Theme.RECAP.Starting" parent="Theme.SplashScreen">

@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -37,6 +38,7 @@ import com.chalkak.recap.core.design.component.toast.RecapToastHost
 import com.chalkak.recap.core.design.component.toast.RecapToastRequest
 import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.feature.developer.DeveloperRoute
 import com.chalkak.recap.feature.onboarding.OnboardingRoute
 import dev.chrisbanes.haze.HazePositionStrategy
@@ -194,6 +196,7 @@ private fun RecapAppReadyContent(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .background(RecapBackground)
                     .hazeSource(state = toastHazeState),
             ) {
                 RecapNavDisplay(

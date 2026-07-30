@@ -121,6 +121,11 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 
 ## Done
 
+- [x] 2026-07-30 - 빠른 전역 navigation push/pop 역전의 화면 레이어 안정화
+  - Result: 실제 initial/target scene pair에 방향과 z-index를 고정하는 transition planner를 도입하고, 취소/재타기팅/idle 정규화 및 post-splash 흰색 window/root fallback 배경을 적용
+  - Handoff: `docs/handoff/archive/2026-07-30-navigation-interrupted-transition-stability.md`
+  - Validation: `:core:design:testDebugUnitTest :app:testDebugUnitTest` GREEN, `assembleDebug` GREEN, `git diff --check` GREEN, SM-S948N 빠른 Home↔Settings·Settings↔NotificationSettings 교차 입력 및 predictive commit 확인
+
 - [x] 2026-07-10 - 민감한 스크린샷·분석 데이터의 Android 백업 정책 강화
   - Result: 서버 SoT 기준으로 `backup_rules.xml` / `data_extraction_rules.xml`(cloud + device-transfer)에서 `recap/` 이미지, `recap.db`, `user_preferences` DataStore를 exclude. 복원 후 재로그인·서버 재동기화가 정상 경로. `LOCAL_DATA.md`·`PROJECT.md`에 정책 문서화
   - Validation: `assembleDebug` GREEN

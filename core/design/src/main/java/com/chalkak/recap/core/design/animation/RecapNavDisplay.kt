@@ -80,7 +80,7 @@ fun <T : Any> RecapNavDisplay(
     val transition = rememberTransition(transitionState, label = "recapNavScene")
     val scope = rememberCoroutineScope()
     val backCommitQueue = remember { RecapBackCommitQueue() }
-    val sceneZIndexTracker = remember { RecapSceneZIndexTracker() }
+    val sceneTransitionPlanner = remember { RecapSceneTransitionPlanner() }
     var isCommitting by remember { mutableStateOf(false) }
     val navigationEventDispatcher =
         checkNotNull(LocalNavigationEventDispatcherOwner.current) {
@@ -138,6 +138,7 @@ fun <T : Any> RecapNavDisplay(
                     launch { transitionState.seekTo(value) }
                 }
                 transitionState.snapTo(scene)
+                sceneTransitionPlanner.cancelTo(RecapAnimatedSceneKey(scene))
             }
         },
         onBackCompleted = {
@@ -156,6 +157,11 @@ fun <T : Any> RecapNavDisplay(
                     RecapNavigationMotion.PredictiveMaxFraction,
                 )
                 if (transitionState.targetState != previousScene) {
+                    sceneTransitionPlanner.begin(
+                        initialKey = RecapAnimatedSceneKey(transitionState.currentState),
+                        targetKey = RecapAnimatedSceneKey(previousScene),
+                        kind = RecapNavigationKind.Pop,
+                    )
                     transitionState.seekTo(startFraction, previousScene)
                 }
                 val durationMillis = (
@@ -170,6 +176,7 @@ fun <T : Any> RecapNavDisplay(
                 }
                 onBack()
                 transitionState.snapTo(previousScene)
+                sceneTransitionPlanner.onIdle(RecapAnimatedSceneKey(previousScene))
                 onPredictiveProgress(0f)
                 awaitBackHandlerRefresh()
                 val pendingBackCount = backCommitQueue.finishCommit()
@@ -192,6 +199,13 @@ fun <T : Any> RecapNavDisplay(
 
     val predictiveTarget = previousScene.takeIf { inPredictiveBack }
     if (predictiveTarget != null) {
+        LaunchedEffect(predictiveTarget) {
+            sceneTransitionPlanner.begin(
+                initialKey = RecapAnimatedSceneKey(scene),
+                targetKey = RecapAnimatedSceneKey(predictiveTarget),
+                kind = RecapNavigationKind.Pop,
+            )
+        }
         LaunchedEffect(predictiveTarget, gestureProgress) {
             transitionState.seekTo(
                 RecapNavigationMotionOffsets.previewPopFraction(gestureProgress),
@@ -199,41 +213,52 @@ fun <T : Any> RecapNavDisplay(
             )
         }
     } else if (!isCommitting) {
-        LaunchedEffect(scene) {
-            if (transitionState.currentState != scene) {
-                transitionState.animateTo(scene)
-            } else if (transitionState.targetState != scene) {
-                transitionState.snapTo(scene)
+        LaunchedEffect(scene, navigationKind) {
+            val currentScene = transitionState.currentState
+            val targetScene = transitionState.targetState
+            when {
+                currentScene == scene && targetScene != scene -> {
+                    sceneTransitionPlanner.cancelTo(RecapAnimatedSceneKey(scene))
+                    transitionState.snapTo(scene)
+                }
+                currentScene != scene -> {
+                    sceneTransitionPlanner.begin(
+                        initialKey = RecapAnimatedSceneKey(currentScene),
+                        targetKey = RecapAnimatedSceneKey(scene),
+                        kind = navigationKind,
+                    )
+                    transitionState.animateTo(scene)
+                }
+                targetScene != scene -> {
+                    sceneTransitionPlanner.cancelTo(RecapAnimatedSceneKey(scene))
+                    transitionState.snapTo(scene)
+                }
             }
         }
     }
-
-    val initialSceneKey = RecapAnimatedSceneKey(transition.currentState)
-    val targetSceneKey = RecapAnimatedSceneKey(transition.targetState)
-    val targetSceneZIndex = sceneZIndexTracker.targetZIndex(
-        initialKey = initialSceneKey,
-        targetKey = targetSceneKey,
-        isPop = navigationKind == RecapNavigationKind.Pop ||
-            inPredictiveBack ||
-            isCommitting,
-        reuseExistingTarget = !inPredictiveBack && transition.targetState != scene,
-    )
 
     transition.AnimatedContent(
         contentKey = { target -> target.key },
         contentAlignment = contentAlignment,
         modifier = modifier,
         transitionSpec = {
-            val transform = when {
-                inPredictiveBack || isCommitting -> popTransitionSpec()
-                navigationKind == RecapNavigationKind.Replace -> RecapNavigationMotion.none()
-                navigationKind == RecapNavigationKind.Pop -> popTransitionSpec()
-                else -> transitionSpec()
+            val plan = sceneTransitionPlanner.requirePlan(
+                initialKey = RecapAnimatedSceneKey(initialState),
+                targetKey = RecapAnimatedSceneKey(targetState),
+                fallbackKind = when {
+                    inPredictiveBack || isCommitting -> RecapNavigationKind.Pop
+                    else -> navigationKind
+                },
+            )
+            val transform = when (plan.kind) {
+                RecapNavigationKind.Replace -> RecapNavigationMotion.none()
+                RecapNavigationKind.Pop -> popTransitionSpec()
+                RecapNavigationKind.Forward -> transitionSpec()
             }
             ContentTransform(
                 targetContentEnter = transform.targetContentEnter,
                 initialContentExit = transform.initialContentExit,
-                targetContentZIndex = targetSceneZIndex,
+                targetContentZIndex = plan.targetContentZIndex,
             )
         },
     ) { targetScene ->
@@ -244,7 +269,7 @@ fun <T : Any> RecapNavDisplay(
         snapshotFlow { transition.isRunning }
             .filter { isRunning -> !isRunning }
             .collect {
-                sceneZIndexTracker.retainOnly(RecapAnimatedSceneKey(transition.targetState))
+                sceneTransitionPlanner.onIdle(RecapAnimatedSceneKey(transition.targetState))
             }
     }
 }
@@ -278,34 +303,139 @@ internal class RecapBackCommitQueue {
     }
 }
 
-internal class RecapSceneZIndexTracker {
-    private val zIndices = mutableMapOf<Any, Float>()
+internal enum class RecapNavigationKind {
+    Forward,
+    Pop,
+    Replace,
+}
 
-    fun targetZIndex(
+internal data class RecapSceneTransitionPlan(
+    val initialKey: Any,
+    val targetKey: Any,
+    val kind: RecapNavigationKind,
+    val targetContentZIndex: Float,
+)
+
+/**
+ * 한 전환의 방향과 target z-index를 같은 actual scene pair에 고정한다.
+ * stale pair의 계획을 재사용하지 않으며, 역전 취소 시 취소된 target 레이어를 제거한다.
+ */
+internal class RecapSceneTransitionPlanner {
+    private val zIndices = mutableMapOf<Any, Float>()
+    private var activePlan: RecapSceneTransitionPlan? = null
+
+    fun begin(
         initialKey: Any,
         targetKey: Any,
-        isPop: Boolean,
-        reuseExistingTarget: Boolean,
-    ): Float {
-        val initialZIndex = zIndices.getOrPut(initialKey) { 0f }
-        val targetZIndex = when {
-            reuseExistingTarget && targetKey in zIndices -> zIndices.getValue(targetKey)
-            initialKey == targetKey -> initialZIndex
-            isPop -> initialZIndex - 1f
-            else -> initialZIndex + 1f
+        kind: RecapNavigationKind,
+    ): RecapSceneTransitionPlan {
+        activePlan?.takeIf {
+            it.initialKey == initialKey && it.targetKey == targetKey && it.kind == kind
+        }?.let { return it }
+
+        activePlan?.let { previous ->
+            if (previous.targetKey != targetKey && previous.targetKey != initialKey) {
+                zIndices.remove(previous.targetKey)
+            }
         }
-        zIndices[targetKey] = targetZIndex
-        return targetZIndex
+
+        return createPlan(initialKey, targetKey, kind).also { activePlan = it }
     }
 
-    fun retainOnly(key: Any) {
-        val retainedZIndex = zIndices[key] ?: return
+    fun requirePlan(
+        initialKey: Any,
+        targetKey: Any,
+        fallbackKind: RecapNavigationKind,
+    ): RecapSceneTransitionPlan {
+        if (initialKey == targetKey) {
+            val zIndex = zIndices.getOrPut(targetKey) { 0f }
+            return RecapSceneTransitionPlan(
+                initialKey = initialKey,
+                targetKey = targetKey,
+                kind = fallbackKind,
+                targetContentZIndex = zIndex,
+            )
+        }
+        activePlan?.takeIf {
+            it.initialKey == initialKey && it.targetKey == targetKey
+        }?.let { return it }
+        return begin(initialKey, targetKey, fallbackKind)
+    }
+
+    fun cancelTo(currentKey: Any) {
+        activePlan?.let { plan ->
+            if (plan.targetKey != currentKey) {
+                zIndices.remove(plan.targetKey)
+            }
+        }
+        activePlan = null
+        retainOnly(currentKey)
+    }
+
+    fun onIdle(currentKey: Any) {
+        activePlan = null
+        retainOnly(currentKey)
+    }
+
+    fun zIndexOf(key: Any): Float? = zIndices[key]
+
+    fun trackedKeys(): Set<Any> = zIndices.keys.toSet()
+
+    fun activePlanOrNull(): RecapSceneTransitionPlan? = activePlan
+
+    private fun createPlan(
+        initialKey: Any,
+        targetKey: Any,
+        kind: RecapNavigationKind,
+    ): RecapSceneTransitionPlan {
+        if (initialKey == targetKey) {
+            val zIndex = zIndices.getOrPut(targetKey) { 0f }
+            return RecapSceneTransitionPlan(initialKey, targetKey, kind, zIndex)
+        }
+        return when (kind) {
+            RecapNavigationKind.Replace -> {
+                zIndices.clear()
+                zIndices[targetKey] = 0f
+                RecapSceneTransitionPlan(
+                    initialKey = initialKey,
+                    targetKey = targetKey,
+                    kind = kind,
+                    targetContentZIndex = 0f,
+                )
+            }
+            RecapNavigationKind.Forward -> {
+                val initialZIndex = zIndices.getOrPut(initialKey) { 0f }
+                val targetZIndex = initialZIndex + 1f
+                zIndices[targetKey] = targetZIndex
+                RecapSceneTransitionPlan(
+                    initialKey = initialKey,
+                    targetKey = targetKey,
+                    kind = kind,
+                    targetContentZIndex = targetZIndex,
+                )
+            }
+            RecapNavigationKind.Pop -> {
+                val initialZIndex = zIndices.getOrPut(initialKey) { 0f }
+                val targetZIndex = initialZIndex - 1f
+                zIndices[targetKey] = targetZIndex
+                RecapSceneTransitionPlan(
+                    initialKey = initialKey,
+                    targetKey = targetKey,
+                    kind = kind,
+                    targetContentZIndex = targetZIndex,
+                )
+            }
+        }
+    }
+
+    private fun retainOnly(key: Any) {
+        val retainedZIndex = zIndices[key] ?: 0f
         zIndices.clear()
         zIndices[key] = retainedZIndex
     }
 }
 
-private data class RecapAnimatedSceneKey(
+internal data class RecapAnimatedSceneKey(
     val sceneClass: kotlin.reflect.KClass<*>,
     val key: Any,
 ) {
@@ -317,13 +447,7 @@ private suspend fun awaitBackHandlerRefresh() {
     withFrameNanos { }
 }
 
-private enum class RecapNavigationKind {
-    Forward,
-    Pop,
-    Replace,
-}
-
-private fun <T : Any> classifyRecapNavigation(
+internal fun <T : Any> classifyRecapNavigation(
     oldBackStack: List<T>,
     newBackStack: List<T>,
 ): RecapNavigationKind {

@@ -1,80 +1,57 @@
 package com.chalkak.recap.core.design.animation
 
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
+/**
+ * [RecapSceneTransitionPlanner]로 대체된 레이어 불변식의 회귀 가드.
+ * 상세 sequence는 [RecapSceneTransitionPlannerTest]를 본다.
+ */
 class RecapSceneZIndexTrackerTest {
 
     @Test
     fun `consecutive pops keep each incoming scene below the outgoing scene`() {
-        val tracker = RecapSceneZIndexTracker()
+        val planner = RecapSceneTransitionPlanner()
+        planner.begin("first", "second", RecapNavigationKind.Forward)
+        planner.onIdle("second")
+        planner.begin("second", "third", RecapNavigationKind.Forward)
+        planner.onIdle("third")
 
         assertEquals(
-            -1f,
-            tracker.targetZIndex(
-                initialKey = "third",
-                targetKey = "second",
-                isPop = true,
-                reuseExistingTarget = false,
-            ),
+            1f,
+            planner.begin("third", "second", RecapNavigationKind.Pop).targetContentZIndex,
         )
-        tracker.retainOnly("second")
-
+        planner.onIdle("second")
         assertEquals(
-            -2f,
-            tracker.targetZIndex(
-                initialKey = "second",
-                targetKey = "first",
-                isPop = true,
-                reuseExistingTarget = false,
-            ),
+            0f,
+            planner.begin("second", "first", RecapNavigationKind.Pop).targetContentZIndex,
         )
     }
 
     @Test
     fun `consecutive forwards keep each incoming scene above the outgoing scene`() {
-        val tracker = RecapSceneZIndexTracker()
+        val planner = RecapSceneTransitionPlanner()
 
         assertEquals(
             1f,
-            tracker.targetZIndex(
-                initialKey = "first",
-                targetKey = "second",
-                isPop = false,
-                reuseExistingTarget = false,
-            ),
+            planner.begin("first", "second", RecapNavigationKind.Forward).targetContentZIndex,
         )
-        tracker.retainOnly("second")
-
+        planner.onIdle("second")
         assertEquals(
             2f,
-            tracker.targetZIndex(
-                initialKey = "second",
-                targetKey = "third",
-                isPop = false,
-                reuseExistingTarget = false,
-            ),
+            planner.begin("second", "third", RecapNavigationKind.Forward).targetContentZIndex,
         )
     }
 
     @Test
-    fun `retargeting an existing scene preserves its z index`() {
-        val tracker = RecapSceneZIndexTracker()
-        tracker.targetZIndex(
-            initialKey = "first",
-            targetKey = "second",
-            isPop = false,
-            reuseExistingTarget = false,
-        )
+    fun `cancel then retarget does not reuse cancelled target as top layer`() {
+        val planner = RecapSceneTransitionPlanner()
+        planner.begin("first", "second", RecapNavigationKind.Forward)
+        planner.cancelTo("first")
 
-        assertEquals(
-            0f,
-            tracker.targetZIndex(
-                initialKey = "second",
-                targetKey = "first",
-                isPop = true,
-                reuseExistingTarget = true,
-            ),
-        )
+        val retarget = planner.begin("first", "third", RecapNavigationKind.Forward)
+        assertTrue(retarget.targetContentZIndex > planner.zIndexOf("first")!!)
+        assertEquals(null, planner.zIndexOf("second"))
     }
 }
