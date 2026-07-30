@@ -162,9 +162,9 @@ internal fun ComponentGardenScreen(
                 )
                 ShareFavoriteGuideCard(onClick = {})
                 RecentOrganizedScreenshotCard(
-                    thumbnailModel = R.drawable.bid_landscape_24px,
-                    title = stringResource(R.string.home_recent_screenshot_return_title),
-                    categoryType = RecapCategoryType.ShoppingProduct,
+                    thumbnailModel = null,
+                    title = stringResource(R.string.recent_organized_screenshot_card_preview_title),
+                    categoryType = RecapCategoryType.InfoKnowledge,
                     onClick = {},
                 )
                 FrequentSaveTypeFolderCard(

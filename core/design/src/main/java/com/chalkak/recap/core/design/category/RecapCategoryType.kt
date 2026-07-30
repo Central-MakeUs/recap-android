@@ -75,7 +75,7 @@ enum class RecapCategoryType(
         tintColor = RecapCategoryBookContent300,
     ),
     BenefitEvent(
-        iconResId = R.drawable.ic_star_16,
+        iconResId = R.drawable.ic_star_filled_16,
         labelResId = R.string.home_category_benefit_event,
         borderColor = RecapCategoryBenefitEvent500,
         contentColor = RecapCategoryBenefitEvent700,

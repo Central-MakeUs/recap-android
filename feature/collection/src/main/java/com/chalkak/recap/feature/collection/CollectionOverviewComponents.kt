@@ -76,7 +76,7 @@ fun CollectionFavoritesEntryCard(
                 color = White,
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.ic_star_24),
+                    painter = painterResource(R.drawable.ic_star_filled_24),
                     contentDescription = null,
                     modifier = Modifier.padding(CollectionFavoritesEntryCardTokens.IconPadding),
                     tint = RecapBlue500,
