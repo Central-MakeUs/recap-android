@@ -55,6 +55,10 @@ class MainActivity : ComponentActivity() {
                 pendingHomeNavigationRequestId = pendingHomeNavigationRequestId,
                 onRequestNavigateHome = entryViewModel::requestNavigateToHome,
                 onHomeNavigationComplete = entryViewModel::completeHomeNavigation,
+                pendingOnboardingSampleShareAdvanceRequestIds =
+                    entryViewModel.pendingOnboardingSampleShareAdvanceRequestId,
+                onOnboardingSampleShareAdvanceComplete =
+                    entryViewModel::completeOnboardingSampleShareAdvance,
             )
         }
     }

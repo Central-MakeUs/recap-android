@@ -52,6 +52,16 @@ class OnboardingViewModelTest {
     }
 
     @Test
+    fun onAction_completeAddToFavoriteWinsOverInitialization() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(OnboardingAction.CompleteAddToFavorite)
+        advanceUntilIdle()
+
+        assertEquals(OnboardingStep.StartFirstAnalyze, viewModel.uiState.value.step)
+    }
+
+    @Test
     fun onAction_movesBackToPreviousStep() = runTest(testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()

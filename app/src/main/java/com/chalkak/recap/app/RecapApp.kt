@@ -42,6 +42,7 @@ import com.chalkak.recap.feature.onboarding.OnboardingRoute
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import kotlinx.coroutines.flow.StateFlow
 
 private const val RecapSplashToAppFadeMillis = 300
 
@@ -53,6 +54,8 @@ fun RecapApp(
     pendingHomeNavigationRequestId: Int?,
     onRequestNavigateHome: () -> Unit,
     onHomeNavigationComplete: (Int) -> Unit,
+    pendingOnboardingSampleShareAdvanceRequestIds: StateFlow<Int?>,
+    onOnboardingSampleShareAdvanceComplete: (Int) -> Unit,
 ) {
     RECAPTheme {
         val uiState by startupViewModel.uiState.collectAsStateWithLifecycle()
@@ -83,6 +86,10 @@ fun RecapApp(
                         pendingHomeNavigationRequestId = pendingHomeNavigationRequestId,
                         onRequestNavigateHome = onRequestNavigateHome,
                         onHomeNavigationComplete = onHomeNavigationComplete,
+                        pendingOnboardingSampleShareAdvanceRequestIds =
+                            pendingOnboardingSampleShareAdvanceRequestIds,
+                        onOnboardingSampleShareAdvanceComplete =
+                            onOnboardingSampleShareAdvanceComplete,
                         onboardingSessionKey = onboardingSessionKey,
                         onOnboardingSessionKeyChange = { onboardingSessionKey = it },
                     )
@@ -112,6 +119,8 @@ private fun RecapAppReadyContent(
     pendingHomeNavigationRequestId: Int?,
     onRequestNavigateHome: () -> Unit,
     onHomeNavigationComplete: (Int) -> Unit,
+    pendingOnboardingSampleShareAdvanceRequestIds: StateFlow<Int?>,
+    onOnboardingSampleShareAdvanceComplete: (Int) -> Unit,
     onboardingSessionKey: Int,
     onOnboardingSessionKeyChange: (Int) -> Unit,
 ) {
@@ -198,6 +207,10 @@ private fun RecapAppReadyContent(
                                 OnboardingRoute(
                                     onOnboardingComplete = startupViewModel::completeOnboarding,
                                     viewModelKey = "onboarding-$onboardingSessionKey",
+                                    pendingSampleShareAdvanceRequestIds =
+                                        pendingOnboardingSampleShareAdvanceRequestIds,
+                                    onSampleShareAdvanceComplete =
+                                        onOnboardingSampleShareAdvanceComplete,
                                 )
                             }
 

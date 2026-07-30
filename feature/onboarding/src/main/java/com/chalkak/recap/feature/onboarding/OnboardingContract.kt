@@ -14,6 +14,7 @@ sealed interface OnboardingAction {
     data object LoginWithKakao : OnboardingAction
     data object SelectFirstScreenshots : OnboardingAction
     data object OpenAddToFavoriteGuide : OnboardingAction
+    data object CompleteAddToFavorite : OnboardingAction
     data object SkipFirstOrganize : OnboardingAction
     data object GrantPermission : OnboardingAction
     data object OpenPhotoPermissionSettings : OnboardingAction

@@ -35,11 +35,15 @@ class OnboardingViewModel @Inject constructor(
         _illustrationSignals.asSharedFlow()
     private val _events = MutableSharedFlow<OnboardingEvent>(extraBufferCapacity = 1)
     val events: SharedFlow<OnboardingEvent> = _events.asSharedFlow()
+    private var hasStepTransitionRequest = false
 
     init {
         refreshImagePermissionLevel()
         viewModelScope.launch {
-            applyStep(resolveInitialStep())
+            val initialStep = resolveInitialStep()
+            if (!hasStepTransitionRequest) {
+                applyStep(initialStep)
+            }
         }
     }
 
@@ -111,6 +115,7 @@ class OnboardingViewModel @Inject constructor(
                 )
             }
             OnboardingAction.OpenAddToFavoriteGuide -> Unit
+            OnboardingAction.CompleteAddToFavorite -> moveTo(OnboardingStep.StartFirstAnalyze)
             OnboardingAction.SkipFirstOrganize -> moveTo(OnboardingStep.StartFirstAnalyze)
 
             OnboardingAction.GrantPermission -> Unit
@@ -144,6 +149,7 @@ class OnboardingViewModel @Inject constructor(
     }
 
     private fun moveTo(step: OnboardingStep) {
+        hasStepTransitionRequest = true
         applyStep(step)
     }
 

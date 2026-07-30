@@ -30,12 +30,18 @@ import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.feature.onboarding.screen.OnboardingAddToFavoriteGuideScreen
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
+
+private val NoPendingSampleShareAdvanceRequestIds: StateFlow<Int?> = MutableStateFlow(null)
 
 @Composable
 fun OnboardingRoute(
     onOnboardingComplete: (openOrganize: Boolean) -> Unit,
     viewModelKey: String? = null,
+    pendingSampleShareAdvanceRequestIds: StateFlow<Int?> = NoPendingSampleShareAdvanceRequestIds,
+    onSampleShareAdvanceComplete: (Int) -> Unit = {},
     viewModel: OnboardingViewModel = hiltViewModel(key = viewModelKey),
 ) {
     val context = LocalContext.current
@@ -48,6 +54,8 @@ fun OnboardingRoute(
     val loginCancelledMessage = stringResource(
         R.string.onboarding_login_cancelled_message
     )
+    val pendingSampleShareAdvanceRequestId by
+        pendingSampleShareAdvanceRequestIds.collectAsStateWithLifecycle()
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
@@ -63,6 +71,12 @@ fun OnboardingRoute(
                 }
             }
         }
+    }
+
+    LaunchedEffect(pendingSampleShareAdvanceRequestId) {
+        val requestId = pendingSampleShareAdvanceRequestId ?: return@LaunchedEffect
+        viewModel.onAction(OnboardingAction.CompleteAddToFavorite)
+        onSampleShareAdvanceComplete(requestId)
     }
 
     LifecycleResumeEffect(Unit) {
