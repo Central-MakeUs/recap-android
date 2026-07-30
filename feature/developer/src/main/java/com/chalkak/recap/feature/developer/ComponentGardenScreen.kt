@@ -160,7 +160,7 @@ internal fun ComponentGardenScreen(
                     onClick = {},
                 )
                 FrequentSaveTypeFolderCard(
-                    categoryLabel = stringResource(R.string.home_category_shopping_product),
+                    categoryLabel = stringResource(R.string.category_type_shopping_product),
                     recapCount = ComponentGardenFrequentSaveTypeCount,
                     onClick = {},
                 )

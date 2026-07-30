@@ -114,6 +114,10 @@ fun CollectionDetailScreen(
                         },
                         onSearch = { onAction(CollectionAction.SubmitDetailSearch) },
                         onBackClick = { onAction(CollectionAction.HideDetailSearch) },
+                        placeholder = stringResource(
+                            R.string.collection_detail_search_placeholder,
+                            stringResource(detail.titleResId),
+                        ),
                     )
                 } else {
                     CollectionDetailTopBar(
@@ -237,6 +241,7 @@ private fun CollectionDetailSearchBar(
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     onBackClick: () -> Unit,
+    placeholder: String,
     modifier: Modifier = Modifier,
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
@@ -254,6 +259,7 @@ private fun CollectionDetailSearchBar(
                 onValueChange = onQueryChange,
                 onSearch = onSearch,
                 autoFocus = true,
+                placeholder = placeholder,
                 modifier = Modifier.weight(1f),
             )
             Text(
@@ -465,7 +471,7 @@ private fun CollectionDetailEmptyPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionDetailScreen(
             detail = CollectionDetailUiModel(
-                titleResId = R.string.collection_content_type_shopping_product,
+                titleResId = R.string.category_type_shopping_product,
                 count = 0,
                 sort = CollectionListSort.Latest,
                 categoryType = RecapCategoryType.ShoppingProduct,
@@ -482,7 +488,7 @@ private fun CollectionDetailEmptyPreview() {
 
 private fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
     return CollectionDetailUiModel(
-        titleResId = R.string.collection_content_type_shopping_product,
+        titleResId = R.string.category_type_shopping_product,
         count = 3,
         sort = CollectionListSort.Latest,
         categoryType = RecapCategoryType.ShoppingProduct,
@@ -492,7 +498,7 @@ private fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
                 captureId = 1L,
                 title = "여름 원피스 주문 내역",
                 summary = "가격과 배송 정보가 포함된 상품 캡처",
-                contentTypeLabelResId = R.string.collection_content_type_shopping_product,
+                contentTypeLabelResId = R.string.category_type_shopping_product,
                 categoryType = RecapCategoryType.ShoppingProduct,
                 organizedAtMillis = 1_719_446_400_000L,
                 isFavorite = true,
@@ -502,7 +508,7 @@ private fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
                 captureId = 2L,
                 title = "택배 반품 절차",
                 summary = "반품 신청 전 확인해야 할 체크리스트",
-                contentTypeLabelResId = R.string.collection_content_type_shopping_product,
+                contentTypeLabelResId = R.string.category_type_shopping_product,
                 categoryType = RecapCategoryType.ShoppingProduct,
                 organizedAtMillis = 1_718_208_000_000L,
                 isFavorite = false,
@@ -512,7 +518,7 @@ private fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
                 captureId = 3L,
                 title = "노트북 가격 비교",
                 summary = "쿠팡 · 컴퓨존 견적 캡처 비교",
-                contentTypeLabelResId = R.string.collection_content_type_shopping_product,
+                contentTypeLabelResId = R.string.category_type_shopping_product,
                 categoryType = RecapCategoryType.ShoppingProduct,
                 organizedAtMillis = 1_717_862_400_000L,
                 isFavorite = false,

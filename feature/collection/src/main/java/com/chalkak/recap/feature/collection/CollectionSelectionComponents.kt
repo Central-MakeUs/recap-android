@@ -402,7 +402,7 @@ private fun previewCollectionCaptureItem(
         captureId = captureId,
         title = "미분류 메모",
         summary = "카테고리 없이 저장된 캡처",
-        contentTypeLabelResId = R.string.collection_content_type_other,
+        contentTypeLabelResId = R.string.category_type_other,
         categoryType = categoryType,
         organizedAtMillis = 1_719_446_400_000L,
         isFavorite = false,

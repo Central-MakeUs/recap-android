@@ -526,7 +526,7 @@ private fun previewOverviewUiState(
             typeSummaries = listOf(
                 CollectionTypeSummaryUiModel(
                     contentType = ScreenshotContentType.SHOPPING,
-                    labelResId = R.string.home_category_shopping_product,
+                    labelResId = R.string.category_type_shopping_product,
                     categoryType = RecapCategoryType.ShoppingProduct,
                     count = 20,
                     exampleTitles = listOf("택배 반품 절차", "노트북 가격 비교"),
@@ -534,7 +534,7 @@ private fun previewOverviewUiState(
                 ),
                 CollectionTypeSummaryUiModel(
                     contentType = ScreenshotContentType.PLACE,
-                    labelResId = R.string.home_category_place_restaurant,
+                    labelResId = R.string.category_type_place_restaurant,
                     categoryType = RecapCategoryType.PlaceRestaurant,
                     count = 23,
                     exampleTitles = listOf("성수 카페", "강남 맛집"),
@@ -542,7 +542,7 @@ private fun previewOverviewUiState(
                 ),
                 CollectionTypeSummaryUiModel(
                     contentType = ScreenshotContentType.ETC,
-                    labelResId = R.string.home_category_other,
+                    labelResId = R.string.category_type_other,
                     categoryType = RecapCategoryType.Other,
                     count = 2,
                     exampleTitles = listOf("미분류 메모"),
