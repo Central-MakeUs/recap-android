@@ -26,7 +26,11 @@ fun RecentOrganizedScreenshotsRoute(
                 RecentOrganizedScreenshotsAction.NavigateBack -> onNavigateBack()
                 RecentOrganizedScreenshotsAction.OpenSearch -> onNavigateToSearch()
                 RecentOrganizedScreenshotsAction.StartImport -> onNavigateToOrganize()
-                is RecentOrganizedScreenshotsAction.ToggleFavorite -> viewModel.onAction(action)
+                RecentOrganizedScreenshotsAction.LoadMore,
+                RecentOrganizedScreenshotsAction.Retry,
+                is RecentOrganizedScreenshotsAction.ToggleFavorite,
+                -> viewModel.onAction(action)
+
                 is RecentOrganizedScreenshotsAction.SelectItem -> onNavigateToScreenshot(action.id)
             }
         },

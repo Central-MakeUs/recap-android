@@ -40,11 +40,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -64,6 +66,7 @@ import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray200
+import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapGray900
@@ -76,6 +79,7 @@ import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import java.time.Instant
+
 @Composable
 fun ScreenshotDetailScreen(
     uiState: ScreenshotUiState,
@@ -162,77 +166,110 @@ private fun ScreenshotDetailContent(
         .asPaddingValues()
         .calculateBottomPadding()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
-    ) {
-        ScreenshotDetailHero(
-            imageModel = imageModel,
-            isFavorite = analysis.isFavorite,
-            favoriteEnabled = !content.isFavoriteUpdating && !content.isDeleting,
-            onNavigateBack = onNavigateBack,
-            onFavoriteClick = { onAction(ScreenshotAction.ToggleFavorite) },
-            onMoreClick = onOpenMore,
-            onFullscreenClick = onOpenFullscreen,
-        )
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(
-                    start = ScreenshotTokens.HorizontalPadding,
-                    top = ScreenshotTokens.ContentTopPadding,
-                    end = ScreenshotTokens.HorizontalPadding,
-                )
-                .padding(
-                    bottom = navigationBarBottomPadding +
-                        ScreenshotDetailTokens.ContentBottomPadding,
+                    bottom = ScreenshotDetailTokens.DisclaimerFooterReserve +
+                            navigationBarBottomPadding,
                 ),
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                RecapCategoryTextChip(
-                    type = categoryType,
-                    textSize = 14.sp,
-                )
-                Text(
-                    text = stringResource(
-                        R.string.screenshot_organized_date_format,
-                        formatOrganizedDate(card.analysisResult.organizedAt.toEpochMilli()),
+            ScreenshotDetailHero(
+                imageModel = imageModel,
+                isFavorite = analysis.isFavorite,
+                favoriteEnabled = !content.isFavoriteUpdating && !content.isDeleting,
+                onNavigateBack = onNavigateBack,
+                onFavoriteClick = { onAction(ScreenshotAction.ToggleFavorite) },
+                onMoreClick = onOpenMore,
+                onFullscreenClick = onOpenFullscreen,
+            )
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        start = ScreenshotTokens.HorizontalPadding,
+                        top = ScreenshotTokens.ContentTopPadding,
+                        end = ScreenshotTokens.HorizontalPadding,
+                        bottom = ScreenshotDetailTokens.ContentBottomPadding,
                     ),
-                    style = RecapCaption2,
-                    color = RecapGray200,
-                )
-            }
-            Text(
-                text = analysis.title,
-                modifier = Modifier.padding(top = ScreenshotDetailTokens.SectionSpacing),
-                style = RecapHeading1,
-                color = RecapGray900,
-            )
-            Text(
-                text = analysis.summary,
-                modifier = Modifier.padding(top = ScreenshotDetailTokens.TitleToSummarySpacing),
-                style = RecapBody1,
-                color = RecapGray700,
-            )
-            Text(
-                text = bodyText,
-                modifier = Modifier.padding(top = ScreenshotDetailTokens.SummaryToBodySpacing),
-                style = RecapBody2,
-                color = RecapGray700,
-            )
-            content.actionErrorMessageResId?.let { errorResId ->
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    RecapCategoryTextChip(
+                        type = categoryType,
+                        textSize = 14.sp,
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.screenshot_organized_date_format,
+                            formatOrganizedDate(card.analysisResult.organizedAt.toEpochMilli()),
+                        ),
+                        style = RecapCaption2,
+                        color = RecapGray200,
+                    )
+                }
                 Text(
-                    text = stringResource(errorResId),
+                    text = analysis.title,
                     modifier = Modifier.padding(top = ScreenshotDetailTokens.SectionSpacing),
-                    style = RecapBody2,
-                    color = RecapError,
+                    style = RecapHeading1,
+                    color = RecapGray900,
                 )
+                Text(
+                    text = analysis.summary,
+                    modifier = Modifier.padding(top = ScreenshotDetailTokens.TitleToSummarySpacing),
+                    style = RecapBody1,
+                    color = RecapGray700,
+                )
+                Text(
+                    text = bodyText,
+                    modifier = Modifier.padding(top = ScreenshotDetailTokens.SummaryToBodySpacing),
+                    style = RecapBody2,
+                    color = RecapGray700,
+                )
+                content.actionErrorMessageResId?.let { errorResId ->
+                    Text(
+                        text = stringResource(errorResId),
+                        modifier = Modifier.padding(top = ScreenshotDetailTokens.SectionSpacing),
+                        style = RecapBody2,
+                        color = RecapError,
+                    )
+                }
             }
+        }
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth(),
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(ScreenshotDetailTokens.DisclaimerFadeHeight)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(Color.Transparent, RecapBackground),
+                        ),
+                    )
+                    .pointerInteropFilter { false },
+            )
+            Text(
+                text = stringResource(R.string.screenshot_detail_ai_disclaimer),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(RecapBackground)
+                    .navigationBarsPadding()
+                    .padding(
+                        start = 16.dp, end = 16.dp, bottom = 16.dp
+                    ),
+                style = RecapBody1,
+                color = RecapGray300,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }
@@ -610,11 +647,44 @@ private fun ScreenshotDetailEmptyBodyPreview() {
     }
 }
 
+@Preview(
+    name = "Screenshot Detail Long Body",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 800
+)
+@Composable
+private fun ScreenshotDetailLongBodyPreview() {
+    val longBody = buildString {
+        repeat(50) { index ->
+            appendLine(
+                "${index + 1}. 본문 스크롤과 하단 AI 고지 문구 고정을 확인하기 위한 " +
+                        "매우 긴 미리보기 문단입니다. 내용이 계속 이어져도 화면 최하단 문구는 " +
+                        "항상 보여야 합니다.",
+            )
+        }
+    }
+    RECAPTheme(dynamicColor = false) {
+        ScreenshotDetailScreen(
+            uiState = previewScreenshotContent(body = longBody),
+            onAction = {},
+            onNavigateBack = {},
+            onOpenEdit = {},
+            onOpenFullscreen = {},
+            onOpenMore = {},
+        )
+    }
+}
+
 private object ScreenshotDetailTokens {
     val HeroHeight = 285.dp
 
     /** Hero 전체 높이(시스템 status bar 영역 포함) 기준 상단 그라데이션 비율. */
     const val HeroGradientHeightFraction = 0.831f
+    val DisclaimerFadeHeight = 40.dp
+
+    /** fade + 안내 문구 영역만큼 본문이 가려지지 않도록 확보하는 하단 여백. */
+    val DisclaimerFooterReserve = 96.dp
     val ContentBottomPadding = 32.dp
     val SectionSpacing = 17.dp
     val MetaRowSpacing = 8.dp

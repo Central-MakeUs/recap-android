@@ -12,3 +12,17 @@ fun formatJoinedDate(
     connectedAt: Instant,
     zoneId: ZoneId = ZoneId.systemDefault(),
 ): String = connectedAt.atZone(zoneId).toLocalDate().format(JoinedDateFormatter)
+
+fun formatJoinedDateFromIso(
+    createdAt: String,
+    zoneId: ZoneId = ZoneId.systemDefault(),
+): String? =
+    runCatching {
+        formatJoinedDate(Instant.parse(createdAt), zoneId)
+    }.getOrNull()
+
+fun parseLoginPlatform(platform: String): LoginPlatform =
+    when (platform.lowercase(Locale.ROOT)) {
+        "apple" -> LoginPlatform.Apple
+        else -> LoginPlatform.Kakao
+    }

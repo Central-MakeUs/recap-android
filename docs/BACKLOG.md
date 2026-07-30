@@ -16,7 +16,7 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 ## Open
 
 - [ ] 2026-07-25 - 정리 알림 클릭 딥링크
-  - Context: 정리 진행/완료 알림 클릭은 현재 MainActivity 실행만 한다. 확인 화면의 OrganizeNotificationPermissionBottomSheet → POST_NOTIFICATIONS 요청 및 `organizeCompleteNotificationEnabled` 동기화는 완료.
+  - Context: 정리 진행/완료 알림 클릭은 현재 MainActivity 실행만 한다. 확인 화면의 NotificationPermissionRequestBottomSheet → POST_NOTIFICATIONS 요청 및 `organizeCompleteNotificationEnabled` 동기화는 완료.
   - Next: 완료/부분실패 결과 화면으로 PendingIntent 딥링크
   - Handoff: not started
 
@@ -28,12 +28,6 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 - [ ] 2026-07-25 - Remote 스크린샷 상세 content 편집 API 연결
   - Context: Remote 상세 로드(`ScreenshotDetailRepository` + `CaptureRepository.getDetail`)와 삭제/즐겨찾기는 연결됐지만 `CaptureApi`에 title/summary/body/type PATCH가 없어 편집 저장은 Room `updateCardContent`만 호출한다. Remote에서는 저장이 실패(save error)한다.
   - Next: 서버 content update API 확정 후 `CaptureMutationRepository`에 updateContent를 추가하고 `ScreenshotViewModel.saveEdit`을 Switching mutation으로 위임
-  - Handoff: not started
-
-- [ ] 2026-07-22 - Remote 정리 진행률 모델 분리 및 역행 버그 수정
-  - Context: `RemoteScreenshotAnalysisRepository.organize()`가 업로드(`index + 1 / total`)와 서버 분석 poll(`successCount + failCount / total`)을 동일 `onProgress` 콜백으로 방출함. 마지막 업로드 직후 100%였다가 첫 PROCESSING poll에서 0%로 역행함. Home 상단 progress bar는 mock 분석 흐름용 디버그 UI이며, 사용자용 진행률은 추후 별도 인터페이스로 제공 예정. 현재 백엔드에서 실제 분석을 돌리기 어려워 E2E 검증·UX 확정이 보류됨
-  - Next: repository/ViewModel에 업로드·분석 단계를 구분한 progress 모델 도입 또는 단조 증가 overall progress로 환산. Home은 디버그용 최소 표시(단계 텍스트 등) 유지, 사용자 UI는 별도 설계 후 동일 progress 소스 소비
-  - Blocked by: 백엔드 organize/status poll 실환경 분석 파이프라인 가용
   - Handoff: not started
 
 - [ ] 2026-07-22 - `ScreenshotAnalysisProgressViewModel` 부분 실패·상태 불일치 처리
@@ -131,6 +125,15 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 - 없음
 
 ## Done
+
+- [x] 2026-07-29 - 스크린샷 선행 압축 및 서버 분석 진행률 분리
+  - Result: Confirmation 진입 시 PNG/JPEG/HEIC/HEIF를 JPEG 품질 75로 백그라운드 선행 압축하고, 시작 시 미완료 작업을 Progress 단계로 넘겨 최대 2회 안에서 완료하도록 구성함. 압축·업로드 진행률은 숨기고 서버 status polling만 progress bar에 반영하며, 공유 경로의 메모리 전용 one-shot 전달과 부분 준비 실패 처리를 유지함
+  - Handoff: `docs/handoff/archive/2026-07-29-screenshot-upload-compression.md`
+  - Validation: `:core:data:testDebugUnitTest :feature:organize:testDebugUnitTest :app:testDebugUnitTest` GREEN, `assembleDebug` GREEN, `git diff --check` GREEN
+
+- [x] 2026-07-29 - AI 데이터 전송 동의 User API 연동
+  - Result: `GET/POST/DELETE /api/v1/users/me/consent`를 UserApi/UserRepository에 추가하고 데이터 관리 화면에서 조회·동의·철회를 서버 상태로 반영
+  - Validation: `:core:data:testDebugUnitTest --tests UserRepositoryTest`, `:feature:settings:testDebugUnitTest --tests DataManagementViewModelTest`, `:feature:settings:assembleDebug`
 
 - [x] 2026-07-23 - 공식 NavDisplay 기반 공통 navigation motion 안정화
   - Result: single-pane custom `RecapNavDisplay`를 제거하고 공식 Navigation3 `NavDisplay`가 scene lifecycle, transition, predictive back을 소유하도록 복원함. Home↔Collection은 기존 전환을 유지하고, 나머지는 공통 push/pop과 20% parallax를 사용함. 좌·우 edge gesture에는 full-range predictive pop을 적용하고, 3버튼·하드웨어 back(`EDGE_NONE`)에는 predictive preview를 적용하지 않음

@@ -2,6 +2,7 @@ package com.chalkak.recap.core.design.component.bottomsheet
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -23,22 +24,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
-import com.chalkak.recap.core.design.component.button.RecapButtonSize
+import com.chalkak.recap.core.design.theme.Black
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapBlue50
+import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapSheetHandle
-import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
-import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrganizeNotificationPermissionBottomSheet(
+fun NotificationPermissionRequestBottomSheet(
     onDismissRequest: () -> Unit,
     onAllowNotificationClick: () -> Unit,
     onLaterClick: () -> Unit,
@@ -50,32 +52,32 @@ fun OrganizeNotificationPermissionBottomSheet(
         modifier = modifier,
         sheetState = sheetState,
         shape = RoundedCornerShape(
-            topStart = OrganizeNotificationPermissionBottomSheetTokens.ContainerCornerRadius,
-            topEnd = OrganizeNotificationPermissionBottomSheetTokens.ContainerCornerRadius,
+            topStart = NotificationPermissionRequestBottomSheetTokens.ContainerCornerRadius,
+            topEnd = NotificationPermissionRequestBottomSheetTokens.ContainerCornerRadius,
         ),
         containerColor = MaterialTheme.colorScheme.surface,
         contentColor = MaterialTheme.colorScheme.onSurface,
         dragHandle = {
-            OrganizeNotificationPermissionBottomSheetDragHandle()
+            NotificationPermissionRequestBottomSheetDragHandle()
         },
     ) {
-        OrganizeNotificationPermissionBottomSheetContent(
+        NotificationPermissionRequestBottomSheetContent(
             onAllowNotificationClick = onAllowNotificationClick,
             onLaterClick = onLaterClick,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(
-                    start = OrganizeNotificationPermissionBottomSheetTokens.HorizontalPadding,
-                    top = OrganizeNotificationPermissionBottomSheetTokens.ContentTopPadding,
-                    end = OrganizeNotificationPermissionBottomSheetTokens.HorizontalPadding,
-                    bottom = OrganizeNotificationPermissionBottomSheetTokens.BottomPadding,
+                    start = NotificationPermissionRequestBottomSheetTokens.HorizontalPadding,
+                    top = NotificationPermissionRequestBottomSheetTokens.ContentTopPadding,
+                    end = NotificationPermissionRequestBottomSheetTokens.HorizontalPadding,
+                    bottom = NotificationPermissionRequestBottomSheetTokens.BottomPadding,
                 ),
         )
     }
 }
 
 @Composable
-fun OrganizeNotificationPermissionBottomSheetContent(
+fun NotificationPermissionRequestBottomSheetContent(
     onAllowNotificationClick: () -> Unit,
     onLaterClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -84,48 +86,59 @@ fun OrganizeNotificationPermissionBottomSheetContent(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_notification_bell_36),
-            contentDescription = stringResource(
-                R.string.organize_notification_permission_icon_content_description
-            ),
+        Surface(
             modifier = Modifier.size(
-                width = OrganizeNotificationPermissionBottomSheetTokens.IconWidth,
-                height = OrganizeNotificationPermissionBottomSheetTokens.IconHeight,
+                NotificationPermissionRequestBottomSheetTokens.IconContainerSize
             ),
-            tint = Color.Unspecified,
-        )
+            shape = RoundedCornerShape(
+                NotificationPermissionRequestBottomSheetTokens.IconContainerRadius
+            ),
+            color = RecapBlue50,
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_notification_bell_36),
+                    contentDescription = stringResource(
+                        R.string.organize_notification_permission_icon_content_description
+                    ),
+                    modifier = Modifier.size(
+                        width = NotificationPermissionRequestBottomSheetTokens.IconWidth,
+                        height = NotificationPermissionRequestBottomSheetTokens.IconHeight,
+                    ),
+                    tint = Color.Unspecified,
+                )
+            }
+        }
 
         Spacer(
             modifier = Modifier.height(
-                OrganizeNotificationPermissionBottomSheetTokens.IconToTitleSpacing
+                NotificationPermissionRequestBottomSheetTokens.IconToTitleSpacing
             )
         )
 
         Text(
             text = stringResource(R.string.organize_notification_permission_title),
-            color = MaterialTheme.colorScheme.onSurface,
-            style = RecapHeading1,
-            fontWeight = FontWeight.Bold,
+            color = Black,
+            style = RecapHeading2,
             textAlign = TextAlign.Center,
         )
 
         Spacer(
             modifier = Modifier.height(
-                OrganizeNotificationPermissionBottomSheetTokens.TitleToDescriptionSpacing
+                NotificationPermissionRequestBottomSheetTokens.TitleToDescriptionSpacing
             )
         )
 
         Text(
             text = stringResource(R.string.organize_notification_permission_description),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            style = RecapBody2,
+            color = RecapGray500,
+            style = RecapBody1,
             textAlign = TextAlign.Center,
         )
 
         Spacer(
             modifier = Modifier.height(
-                OrganizeNotificationPermissionBottomSheetTokens.DescriptionToPrimarySpacing
+                NotificationPermissionRequestBottomSheetTokens.DescriptionToPrimarySpacing
             )
         )
 
@@ -133,12 +146,12 @@ fun OrganizeNotificationPermissionBottomSheetContent(
             text = stringResource(R.string.organize_notification_permission_allow_button),
             onClick = onAllowNotificationClick,
             modifier = Modifier.fillMaxWidth(),
-            size = RecapButtonSize.Medium,
+            contentPadding = PaddingValues(vertical = 15.dp)
         )
 
         Spacer(
             modifier = Modifier.height(
-                OrganizeNotificationPermissionBottomSheetTokens.PrimaryToSecondarySpacing
+                NotificationPermissionRequestBottomSheetTokens.PrimaryToSecondarySpacing
             )
         )
 
@@ -146,51 +159,57 @@ fun OrganizeNotificationPermissionBottomSheetContent(
             text = stringResource(R.string.organize_notification_permission_later_button),
             onClick = onLaterClick,
             modifier = Modifier.fillMaxWidth(),
-            size = RecapButtonSize.Medium,
             colors = RecapButtonDefaults.textColors(),
+            contentPadding = PaddingValues(vertical = 15.dp)
         )
     }
 }
 
 @Composable
-private fun OrganizeNotificationPermissionBottomSheetDragHandle(
+private fun NotificationPermissionRequestBottomSheetDragHandle(
     modifier: Modifier = Modifier,
 ) {
     Surface(
         modifier = modifier
             .padding(
-                vertical = OrganizeNotificationPermissionBottomSheetTokens.DragHandleVerticalPadding
+                vertical = NotificationPermissionRequestBottomSheetTokens.DragHandleVerticalPadding
             )
             .size(
-                width = OrganizeNotificationPermissionBottomSheetTokens.DragHandleWidth,
-                height = OrganizeNotificationPermissionBottomSheetTokens.DragHandleHeight,
+                width = NotificationPermissionRequestBottomSheetTokens.DragHandleWidth,
+                height = NotificationPermissionRequestBottomSheetTokens.DragHandleHeight,
             ),
-        shape = RoundedCornerShape(OrganizeNotificationPermissionBottomSheetTokens.DragHandleHeight),
+        shape = RoundedCornerShape(NotificationPermissionRequestBottomSheetTokens.DragHandleHeight),
         color = RecapSheetHandle,
         content = {},
     )
 }
 
-private object OrganizeNotificationPermissionBottomSheetTokens {
+private object NotificationPermissionRequestBottomSheetTokens {
     val ContainerCornerRadius = 24.dp
     val DragHandleWidth = 43.dp
     val DragHandleHeight = 5.dp
     val DragHandleVerticalPadding = 13.dp
     val HorizontalPadding = 24.dp
-    val ContentTopPadding = 12.dp
+    val ContentTopPadding = 16.dp
     val BottomPadding = 48.dp
-    val IconWidth = 36.dp
-    val IconHeight = 41.dp
-    val IconToTitleSpacing = 20.dp
+    val IconContainerSize = 40.dp
+    val IconContainerRadius = 10.dp
+    val IconWidth = 16.dp
+    val IconHeight = 19.dp
+    val IconToTitleSpacing = 18.dp
     val TitleToDescriptionSpacing = 12.dp
     val DescriptionToPrimarySpacing = 35.dp
     val PrimaryToSecondarySpacing = 12.dp
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Preview(name = "Organize Notification Permission Bottom Sheet", showBackground = true, widthDp = 360)
+@Preview(
+    name = "Notification Permission Request Bottom Sheet",
+    showBackground = true,
+    widthDp = 360
+)
 @Composable
-private fun OrganizeNotificationPermissionBottomSheetPreview() {
+private fun NotificationPermissionRequestBottomSheetPreview() {
     RECAPTheme(dynamicColor = false) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -199,24 +218,24 @@ private fun OrganizeNotificationPermissionBottomSheetPreview() {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(
-                    topStart = OrganizeNotificationPermissionBottomSheetTokens.ContainerCornerRadius,
-                    topEnd = OrganizeNotificationPermissionBottomSheetTokens.ContainerCornerRadius,
+                    topStart = NotificationPermissionRequestBottomSheetTokens.ContainerCornerRadius,
+                    topEnd = NotificationPermissionRequestBottomSheetTokens.ContainerCornerRadius,
                 ),
                 color = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.onSurface,
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    OrganizeNotificationPermissionBottomSheetDragHandle()
-                    OrganizeNotificationPermissionBottomSheetContent(
+                    NotificationPermissionRequestBottomSheetDragHandle()
+                    NotificationPermissionRequestBottomSheetContent(
                         onAllowNotificationClick = {},
                         onLaterClick = {},
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(
-                                start = OrganizeNotificationPermissionBottomSheetTokens.HorizontalPadding,
-                                top = OrganizeNotificationPermissionBottomSheetTokens.ContentTopPadding,
-                                end = OrganizeNotificationPermissionBottomSheetTokens.HorizontalPadding,
-                                bottom = OrganizeNotificationPermissionBottomSheetTokens.BottomPadding,
+                                start = NotificationPermissionRequestBottomSheetTokens.HorizontalPadding,
+                                top = NotificationPermissionRequestBottomSheetTokens.ContentTopPadding,
+                                end = NotificationPermissionRequestBottomSheetTokens.HorizontalPadding,
+                                bottom = NotificationPermissionRequestBottomSheetTokens.BottomPadding,
                             ),
                     )
                 }

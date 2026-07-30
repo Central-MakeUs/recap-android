@@ -33,6 +33,14 @@ fun DataManagementRoute(
                         type = RecapToastType.Success,
                     )
                 }
+                DataManagementEvent.ShowConsentWithdrawnToast -> {
+                    toastDispatcher.showToast(
+                        message = resources.getString(
+                            R.string.settings_data_management_consent_withdrawn_toast,
+                        ),
+                        type = RecapToastType.Success,
+                    )
+                }
             }
         }
     }

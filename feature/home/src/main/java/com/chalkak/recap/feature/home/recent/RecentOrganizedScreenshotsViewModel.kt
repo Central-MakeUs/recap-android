@@ -6,9 +6,13 @@ import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.home.RecentCapturesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 @HiltViewModel
@@ -19,50 +23,165 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(RecentOrganizedScreenshotsUiState())
     val uiState: StateFlow<RecentOrganizedScreenshotsUiState> = _uiState.asStateFlow()
 
+    private val refreshKey = MutableStateFlow(0)
+    private var loadMoreJob: Job? = null
+
     init {
-        viewModelScope.launch {
-            recentCapturesRepository.observeRecentCaptures().collect { captures ->
-                _uiState.value = captures.toRecentOrganizedScreenshotsUiState()
-            }
-        }
+        observeFirstPage()
     }
 
     fun onAction(action: RecentOrganizedScreenshotsAction) {
         when (action) {
-            is RecentOrganizedScreenshotsAction.ToggleFavorite -> {
-                val currentItem = _uiState.value.items.firstOrNull { item ->
-                    item.id == action.id
-                } ?: return
-                val nextFavorite = !currentItem.isFavorite
-                _uiState.value = _uiState.value.copy(
-                    items = _uiState.value.items.map { item ->
-                        if (item.id == action.id) {
-                            item.copy(isFavorite = nextFavorite)
-                        } else {
-                            item
-                        }
-                    },
-                )
-                viewModelScope.launch {
-                    val mutation = captureMutationRepository.updateFavorite(
-                        captureId = action.id,
-                        isFavorite = nextFavorite,
-                    )
-                    if (mutation.isFailure) {
-                        _uiState.value = _uiState.value.copy(
-                            items = _uiState.value.items.map { item ->
-                                if (item.id == action.id) {
-                                    item.copy(isFavorite = currentItem.isFavorite)
-                                } else {
-                                    item
+            RecentOrganizedScreenshotsAction.LoadMore -> loadMore()
+            RecentOrganizedScreenshotsAction.Retry -> retry()
+            is RecentOrganizedScreenshotsAction.ToggleFavorite -> toggleFavorite(action.id)
+            else -> Unit
+        }
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun observeFirstPage() {
+        viewModelScope.launch {
+            refreshKey
+                .flatMapLatest {
+                    recentCapturesRepository.observeRecentCaptures(page = 0)
+                }
+                .collect { result ->
+                    loadMoreJob?.cancel()
+                    result.fold(
+                        onSuccess = { page ->
+                            val items = page.toRecentOrganizedScreenshotItems()
+                            _uiState.update { state ->
+                                state.copy(
+                                    phase = if (items.isEmpty()) {
+                                        RecentOrganizedScreenshotsPhase.Empty
+                                    } else {
+                                        RecentOrganizedScreenshotsPhase.Content
+                                    },
+                                    items = items,
+                                    resultCount = page.count,
+                                    hasNext = page.hasNext,
+                                    nextPage = 1,
+                                    isLoadingMore = false,
+                                )
+                            }
+                        },
+                        onFailure = {
+                            _uiState.update { state ->
+                                when (state.phase) {
+                                    RecentOrganizedScreenshotsPhase.Content,
+                                    RecentOrganizedScreenshotsPhase.Empty,
+                                    -> state.copy(isLoadingMore = false)
+                                    RecentOrganizedScreenshotsPhase.Loading,
+                                    RecentOrganizedScreenshotsPhase.Error,
+                                    -> state.copy(
+                                        phase = RecentOrganizedScreenshotsPhase.Error,
+                                        items = emptyList(),
+                                        resultCount = 0L,
+                                        hasNext = false,
+                                        nextPage = 0,
+                                        isLoadingMore = false,
+                                    )
                                 }
-                            },
+                            }
+                        },
+                    )
+                }
+        }
+    }
+
+    private fun retry() {
+        loadMoreJob?.cancel()
+        _uiState.update { state ->
+            state.copy(
+                phase = RecentOrganizedScreenshotsPhase.Loading,
+                isLoadingMore = false,
+                hasNext = false,
+                nextPage = 0,
+            )
+        }
+        refreshKey.update { value -> value + 1 }
+    }
+
+    private fun loadMore() {
+        val state = _uiState.value
+        if (
+            state.phase != RecentOrganizedScreenshotsPhase.Content ||
+            !state.hasNext ||
+            state.isLoadingMore
+        ) {
+            return
+        }
+        if (loadMoreJob?.isActive == true) {
+            return
+        }
+
+        val pageToLoad = state.nextPage
+        loadMoreJob = viewModelScope.launch {
+            _uiState.update { current -> current.copy(isLoadingMore = true) }
+
+            val result = recentCapturesRepository.getRecentCaptures(page = pageToLoad)
+
+            result.fold(
+                onSuccess = { page ->
+                    val newItems = page.toRecentOrganizedScreenshotItems()
+                    _uiState.update { current ->
+                        val merged = (current.items + newItems)
+                            .distinctBy { item -> item.id }
+                        current.copy(
+                            items = merged,
+                            resultCount = page.count,
+                            hasNext = page.hasNext,
+                            nextPage = pageToLoad + 1,
+                            isLoadingMore = false,
                         )
                     }
+                },
+                onFailure = {
+                    _uiState.update { current ->
+                        current.copy(isLoadingMore = false)
+                    }
+                },
+            )
+        }
+    }
+
+    private fun toggleFavorite(id: Long) {
+        val currentItem = _uiState.value.items.firstOrNull { item ->
+            item.id == id
+        } ?: return
+        val nextFavorite = !currentItem.isFavorite
+
+        _uiState.update { state ->
+            state.copy(
+                items = state.items.map { item ->
+                    if (item.id == id) {
+                        item.copy(isFavorite = nextFavorite)
+                    } else {
+                        item
+                    }
+                },
+            )
+        }
+
+        viewModelScope.launch {
+            val mutation = captureMutationRepository.updateFavorite(
+                captureId = id,
+                isFavorite = nextFavorite,
+            )
+            if (mutation.isFailure) {
+                _uiState.update { state ->
+                    state.copy(
+                        items = state.items.map { item ->
+                            if (item.id == id) {
+                                item.copy(isFavorite = currentItem.isFavorite)
+                            } else {
+                                item
+                            }
+                        },
+                    )
                 }
             }
-
-            else -> Unit
         }
     }
 }

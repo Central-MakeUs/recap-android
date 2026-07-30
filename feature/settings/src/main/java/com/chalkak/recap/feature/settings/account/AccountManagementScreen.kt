@@ -96,6 +96,7 @@ fun AccountManagementScreen(
                     )
                     Spacer(modifier = Modifier.height(AccountManagementTokens.SectionHeaderBottomPadding))
                     AccountLoginInfoRow(
+                        platform = uiState.platform,
                         joinedDate = uiState.joinedDate,
                     )
                     Spacer(modifier = Modifier.height(AccountManagementTokens.DividerTopPadding))
@@ -161,9 +162,31 @@ fun AccountManagementScreen(
 
 @Composable
 private fun AccountLoginInfoRow(
+    platform: LoginPlatform,
     joinedDate: String,
     modifier: Modifier = Modifier,
 ) {
+    val iconBackground = when (platform) {
+        LoginPlatform.Kakao -> KakaoYellow
+        LoginPlatform.Apple -> Color.Black
+    }
+    val iconRes = when (platform) {
+        LoginPlatform.Kakao -> R.drawable.kakao_96px
+        LoginPlatform.Apple -> R.drawable.apple_96px
+    }
+    val iconTint = when (platform) {
+        LoginPlatform.Kakao -> Color.Black
+        LoginPlatform.Apple -> Color.White
+    }
+    val statusRes = when (platform) {
+        LoginPlatform.Kakao -> R.string.settings_account_kakao_login_status
+        LoginPlatform.Apple -> R.string.settings_account_apple_login_status
+    }
+    val contentDescriptionRes = when (platform) {
+        LoginPlatform.Kakao -> R.string.settings_account_kakao_content_description
+        LoginPlatform.Apple -> R.string.settings_account_apple_content_description
+    }
+
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(AccountManagementTokens.AccountInfoSpacing),
@@ -171,25 +194,23 @@ private fun AccountLoginInfoRow(
     ) {
         Box(
             modifier = Modifier
-                .size(AccountManagementTokens.KakaoIconSize)
+                .size(AccountManagementTokens.ProviderIconSize)
                 .clip(CircleShape)
-                .background(KakaoYellow),
+                .background(iconBackground),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
-                painter = painterResource(R.drawable.kakao_96px),
-                contentDescription = stringResource(
-                    R.string.settings_account_kakao_content_description,
-                ),
-                modifier = Modifier.size(AccountManagementTokens.KakaoGlyphSize),
-                tint = Color.Black,
+                painter = painterResource(iconRes),
+                contentDescription = stringResource(contentDescriptionRes),
+                modifier = Modifier.size(AccountManagementTokens.ProviderGlyphSize),
+                tint = iconTint,
             )
         }
         Column(
             verticalArrangement = Arrangement.spacedBy(AccountManagementTokens.AccountTextSpacing),
         ) {
             Text(
-                text = stringResource(R.string.settings_account_kakao_login_status),
+                text = stringResource(statusRes),
                 style = RecapBody1,
                 color = RecapGray900,
             )
@@ -280,8 +301,8 @@ private object AccountManagementTokens {
     val DividerBottomPadding = 24.dp
     val AccountInfoSpacing = 12.dp
     val AccountTextSpacing = 4.dp
-    val KakaoIconSize = 30.dp
-    val KakaoGlyphSize = 16.dp
+    val ProviderIconSize = 30.dp
+    val ProviderGlyphSize = 16.dp
     val RowCornerRadius = 10.dp
     val ChevronSize = 16.dp
     val WithdrawBottomPadding = 36.dp
@@ -293,6 +314,21 @@ private fun AccountManagementScreenPreview() {
     RECAPTheme(dynamicColor = false) {
         AccountManagementScreen(
             uiState = AccountManagementUiState(
+                platform = LoginPlatform.Kakao,
+                joinedDate = stringResource(R.string.settings_account_preview_joined_date),
+            ),
+            onAction = {},
+        )
+    }
+}
+
+@Preview(name = "Account Management Apple", showBackground = true, widthDp = 360, heightDp = 780)
+@Composable
+private fun AccountManagementAppleScreenPreview() {
+    RECAPTheme(dynamicColor = false) {
+        AccountManagementScreen(
+            uiState = AccountManagementUiState(
+                platform = LoginPlatform.Apple,
                 joinedDate = stringResource(R.string.settings_account_preview_joined_date),
             ),
             onAction = {},

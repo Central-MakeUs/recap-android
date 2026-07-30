@@ -36,7 +36,7 @@ import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue500
-import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.feature.organize.MAX_SELECTION_COUNT
 import com.chalkak.recap.feature.organize.OrganizeRoute
 import com.chalkak.recap.feature.organize.UnsupportedShareScreen
@@ -117,7 +117,7 @@ internal fun ShareReceiverContent(
     pendingShareIntake: PendingShareIntake?,
     isLoading: Boolean,
     onFinish: (sessionId: String?) -> Unit,
-    onOrganizeComplete: (List<LocalImage>) -> Unit,
+    onOrganizeComplete: (List<ScreenshotUploadCandidate>) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val toastDispatcher = LocalRecapToastDispatcher.current

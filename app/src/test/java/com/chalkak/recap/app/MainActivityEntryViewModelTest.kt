@@ -7,6 +7,8 @@ import com.chalkak.recap.app.share.OnboardingSampleShareSuccessStore
 import com.chalkak.recap.app.share.SharedAnalysisRequest
 import com.chalkak.recap.app.share.SharedAnalysisRequestStore
 import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.PreparedScreenshot
+import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import io.mockk.every
 import io.mockk.mockk
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -22,12 +24,13 @@ class MainActivityEntryViewModelTest {
     fun `same request id is consumed only once`() {
         val viewModel = MainActivityEntryViewModel(SavedStateHandle(), store)
         val request = sampleRequest(requestId = "req-1")
-        store.register(request.requestId, request.images)
+        val prepared = samplePrepared(request.images)
+        store.register(request.requestId, prepared)
 
         val first = viewModel.consumeSharedAnalysisRequest(request)
         val second = viewModel.consumeSharedAnalysisRequest(request)
 
-        assertEquals(request.images, first)
+        assertEquals(prepared, first)
         assertNull(second)
         assertEquals(1, viewModel.pendingHomeNavigationRequestId.value)
     }
@@ -37,8 +40,8 @@ class MainActivityEntryViewModelTest {
         val viewModel = MainActivityEntryViewModel(SavedStateHandle(), store)
         val first = sampleRequest(requestId = "req-1")
         val second = sampleRequest(requestId = "req-2")
-        store.register(first.requestId, first.images)
-        store.register(second.requestId, second.images)
+        store.register(first.requestId, samplePrepared(first.images))
+        store.register(second.requestId, samplePrepared(second.images))
 
         viewModel.consumeSharedAnalysisRequest(first)
         viewModel.consumeSharedAnalysisRequest(second)
@@ -152,5 +155,18 @@ class MainActivityEntryViewModelTest {
                 ),
             ),
         )
+    }
+
+    private fun samplePrepared(images: List<LocalImage>): List<ScreenshotUploadCandidate> {
+        return images.map { image ->
+            ScreenshotUploadCandidate(
+                localImage = image,
+                preparedScreenshot = PreparedScreenshot(
+                    localImage = image,
+                    jpegBytes = byteArrayOf(1, 2, 3),
+                ),
+                completedPreparationAttempts = 1,
+            )
+        }
     }
 }

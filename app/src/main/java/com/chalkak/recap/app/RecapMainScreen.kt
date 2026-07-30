@@ -19,7 +19,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBar
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDestination
-import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.feature.organize.OrganizeRoute
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.rememberHazeState
@@ -31,7 +31,7 @@ fun RecapMainScreen(
     onNavigateToSettings: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
     onNavigateToRecentOrganizedScreenshots: () -> Unit = {},
-    onOrganizeComplete: (List<LocalImage>) -> Unit = {},
+    onOrganizeComplete: (List<ScreenshotUploadCandidate>) -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
     pendingHomeNavigationRequestId: Int? = null,
     onHomeNavigationComplete: (Int) -> Unit = {},

@@ -22,18 +22,11 @@ class RemoteHomeRepository @Inject constructor(
     private val changeNotifier: RemoteCaptureChangeNotifier,
 ) : HomeRepository {
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun observeSummary(): Flow<HomeSummary> {
+    override fun observeSummary(): Flow<Result<HomeSummary>> {
         return changeNotifier.changes
             .onStart { emit(Unit) }
             .mapLatest {
-                fetchSummary().getOrElse {
-                    HomeSummary(
-                        recentCaptures = emptyList(),
-                        favorites = emptyList(),
-                        topTypes = emptyList(),
-                        hasAnyCapture = false,
-                    )
-                }
+                fetchSummary()
             }
     }
 

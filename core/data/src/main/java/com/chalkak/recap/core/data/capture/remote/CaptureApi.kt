@@ -51,4 +51,21 @@ interface CaptureApi {
         @Path("captureId") captureId: Long,
         @Body body: FavoriteRequestDto,
     )
+
+    @POST("api/v1/captures/bulk-delete")
+    suspend fun bulkDelete(
+        @Body body: BulkDeleteRequestDto,
+    )
+
+    @PATCH("api/v1/captures/{captureId}")
+    suspend fun update(
+        @Path("captureId") captureId: Long,
+        @Body body: CaptureUpdateRequestDto,
+    )
+
+    @POST("api/v1/captures/{captureId}/report")
+    suspend fun report(
+        @Path("captureId") captureId: Long,
+        @Body body: ReportRequestDto,
+    )
 }

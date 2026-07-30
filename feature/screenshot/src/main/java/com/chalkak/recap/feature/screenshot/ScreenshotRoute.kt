@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,6 +23,7 @@ import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.theme.RecapError
+import com.chalkak.recap.core.model.capture.ReportReason
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import kotlinx.serialization.Serializable
 
@@ -36,13 +38,26 @@ fun ScreenshotRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val backStack = rememberNavBackStack(ScreenshotDestination.Detail)
     val toastDispatcher = LocalRecapToastDispatcher.current
+    val resources = LocalResources.current
     val favoriteAddedToastMessage = stringResource(R.string.screenshot_detail_favorite_added_toast)
-    val favoriteRemovedToastMessage = stringResource(R.string.screenshot_detail_favorite_removed_toast)
+    val favoriteRemovedToastMessage =
+        stringResource(R.string.screenshot_detail_favorite_removed_toast)
     val deleteSuccessToastMessage = stringResource(R.string.screenshot_delete_success_toast)
+    val reportSuccessToastMessage = stringResource(R.string.screenshot_report_success_toast)
+    val saveSuccessToastMessage = stringResource(R.string.screenshot_edit_save_success_toast)
     var showActionSheet by rememberSaveable { mutableStateOf(false) }
+    var showReportSheet by rememberSaveable { mutableStateOf(false) }
+    var reportReasonSelection by rememberSaveable { mutableStateOf<String?>(null) }
+    var reportDetail by rememberSaveable { mutableStateOf("") }
     var showTypePicker by rememberSaveable { mutableStateOf(false) }
     var tempTypeSelection by rememberSaveable {
         mutableStateOf(ScreenshotContentType.ETC.name)
+    }
+
+    fun dismissReportSheet() {
+        showReportSheet = false
+        reportReasonSelection = null
+        reportDetail = ""
     }
 
     LaunchedEffect(captureId) {
@@ -56,6 +71,17 @@ fun ScreenshotRoute(
                     if (backStack.size > 1) {
                         backStack.removeLastOrNull()
                     }
+                    toastDispatcher.showToast(
+                        message = saveSuccessToastMessage,
+                        type = RecapToastType.Success,
+                    )
+                }
+
+                is ScreenshotEvent.SaveFailed -> {
+                    toastDispatcher.showToast(
+                        message = resources.getString(event.messageResId),
+                        type = RecapToastType.Error,
+                    )
                 }
 
                 ScreenshotEvent.DeleteSucceeded -> {
@@ -65,6 +91,24 @@ fun ScreenshotRoute(
                         type = RecapToastType.Success,
                     )
                     onDeleteSucceeded()
+                }
+
+                ScreenshotEvent.ReportSucceeded -> {
+                    dismissReportSheet()
+                    toastDispatcher.showToast(
+                        message = reportSuccessToastMessage,
+                        type = RecapToastType.Success,
+                    )
+                }
+
+                is ScreenshotEvent.ReportFailed -> {
+                    if (event.dismissSheet) {
+                        dismissReportSheet()
+                    }
+                    toastDispatcher.showToast(
+                        message = resources.getString(event.messageResId),
+                        type = RecapToastType.Error,
+                    )
                 }
 
                 is ScreenshotEvent.ShowFavoriteToast -> {
@@ -87,7 +131,7 @@ fun ScreenshotRoute(
     }.getOrDefault(ScreenshotContentType.ETC)
     val isEditingWithUnsavedChanges =
         backStack.lastOrNull() is ScreenshotDestination.Edit &&
-            contentState?.hasUnsavedEditChanges() == true
+                contentState?.hasUnsavedEditChanges() == true
 
     fun leaveEditScreen() {
         // Prefer uiState over contentState snapshot (NavEntry content can be remembered).
@@ -214,8 +258,43 @@ fun ScreenshotRoute(
                 showActionSheet = false
                 viewModel.onAction(ScreenshotAction.ShowDeleteConfirmDialog)
             },
+            onReportClick = {
+                showActionSheet = false
+                reportReasonSelection = null
+                reportDetail = ""
+                showReportSheet = true
+            },
             onCloseClick = { showActionSheet = false },
-            enabled = !contentState.isDeleting,
+            enabled = !contentState.isDeleting && !contentState.isReporting,
+        )
+    }
+
+    if (showReportSheet && contentState != null) {
+        val selectedReportReason = reportReasonSelection?.let { name ->
+            runCatching { ReportReason.valueOf(name) }.getOrNull()
+        }
+        ScreenshotReportBottomSheet(
+            selectedReason = selectedReportReason,
+            detail = reportDetail,
+            onDismissRequest = ::dismissReportSheet,
+            onReasonSelected = { reason ->
+                reportReasonSelection = reason.name
+                if (reason != ReportReason.OTHER) {
+                    reportDetail = ""
+                }
+            },
+            onDetailChange = { reportDetail = it },
+            onCloseClick = ::dismissReportSheet,
+            onSubmitClick = {
+                val reason = selectedReportReason ?: return@ScreenshotReportBottomSheet
+                viewModel.onAction(
+                    ScreenshotAction.SubmitReport(
+                        reason = reason,
+                        detail = reportDetail,
+                    ),
+                )
+            },
+            enabled = !contentState.isReporting,
         )
     }
 

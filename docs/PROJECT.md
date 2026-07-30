@@ -34,6 +34,7 @@
 - Image loading: Coil
 - Logging: Timber
 - Analytics: Firebase Analytics
+- Crash reporting: Firebase Crashlytics
 
 ## 빌드 명령
 
@@ -144,7 +145,7 @@ UI 색상·타이포는 `MaterialTheme.colorScheme` / `MaterialTheme.typography`
 
 - 테마 토큰만 사용: 색/타이포는 위 디자인 패턴의 RecapColor·RecapTypo를 우선한다.
 - Material 아이콘 금지: 새 작업에서 `Icons.*`를 추가하지 않는다. 필요한 아이콘은 drawable/vector asset으로 추가하거나 handoff에 요청한다. 아이콘을 Canvas나 텍스트로 대체하지 않는다.
-- 문자열 리소스 필수: UI 텍스트는 `app/src/main/res/values/strings.xml`에 정의해서 사용한다.
+- 문자열 리소스 필수: UI 텍스트는 하드코딩하지 않고 모두 `core/design/src/main/res/values/strings.xml`에 정의해 사용한다.
 - Preview 필수: UI 컴포넌트와 화면에는 필요한 Preview를 작성하고 `RECAPTheme`로 감싼다. `core/design` 컴포넌트는 variant/state가 여러 개면 그만큼 Preview를 둔다. 기존 예시는 `RecapButton.kt`, `RecapActionBottomSheet.kt` 참고.
 - 화면/파일 분리: 하나의 파일에 두 개 이상의 screen을 넣지 않는다. 파일이 길어지면 `Route`, `Screen`, `Contract`, `ViewModel`, `component`, `Previews`로 분리한다.
 - 상태/액션 규칙: 화면 상태는 immutable `UiState` data class로 두고, 사용자 액션은 sealed interface로 명시한다.

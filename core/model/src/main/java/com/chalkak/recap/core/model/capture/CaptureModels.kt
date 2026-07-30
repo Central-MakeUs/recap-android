@@ -28,6 +28,19 @@ data class CaptureList(
     val items: List<CaptureSummary>,
 )
 
+data class CapturePage(
+    val count: Long,
+    val hasNext: Boolean,
+    val items: List<CaptureSummary>,
+)
+
+enum class ReportReason {
+    INACCURATE_CONTENT,
+    INAPPROPRIATE_CONTENT,
+    SENSITIVE_INFO,
+    OTHER,
+}
+
 data class CaptureDeleteResult(
     val deletedIds: Set<Long>,
     val failedIds: Set<Long>,

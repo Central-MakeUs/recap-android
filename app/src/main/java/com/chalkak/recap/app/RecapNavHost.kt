@@ -317,11 +317,18 @@ fun RecapNavHost(
                 }
 
                 AppRoute.OrganizeAnalysisStatus -> NavEntry(route) {
+                    val organizeCompleteNotificationEnabled by
+                        analysisProgressViewModel.organizeCompleteNotificationEnabled
+                            .collectAsStateWithLifecycle()
                     renderedAnalysisStatus?.let { status ->
                         OrganizeAnalysisStatusRoute(
                             uiState = status,
                             onCancelClick = ::exitOrganizeAnalysisStatus,
                             onDismissClick = ::exitOrganizeAnalysisStatus,
+                            organizeCompleteNotificationEnabled =
+                                organizeCompleteNotificationEnabled,
+                            onOrganizeCompleteNotificationEnabledChange =
+                                analysisProgressViewModel::setOrganizeCompleteNotificationEnabled,
                         )
                     }
                 }

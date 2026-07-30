@@ -15,9 +15,9 @@ import kotlinx.coroutines.flow.map
 class MockHomeRepository @Inject constructor(
     private val screenshotCardRepository: ScreenshotCardRepository,
 ) : HomeRepository {
-    override fun observeSummary(): Flow<HomeSummary> {
+    override fun observeSummary(): Flow<Result<HomeSummary>> {
         return screenshotCardRepository.observeStoredCards().map { cards ->
-            cards.toHomeSummary()
+            Result.success(cards.toHomeSummary())
         }
     }
 }

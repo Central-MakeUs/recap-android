@@ -3,9 +3,10 @@ package com.chalkak.recap.feature.screenshot
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
-import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
+import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotDetailRepository
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.model.capture.ReportReason
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
@@ -24,7 +25,6 @@ import kotlinx.coroutines.withContext
 @HiltViewModel
 class ScreenshotViewModel @Inject constructor(
     private val screenshotDetailRepository: ScreenshotDetailRepository,
-    private val screenshotCardRepository: ScreenshotCardRepository,
     private val captureMutationRepository: CaptureMutationRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow<ScreenshotUiState>(ScreenshotUiState.Loading)
@@ -38,6 +38,7 @@ class ScreenshotViewModel @Inject constructor(
     private var favoriteJob: Job? = null
     private var saveJob: Job? = null
     private var deleteJob: Job? = null
+    private var reportJob: Job? = null
 
     internal var ioDispatcher: CoroutineDispatcher = Dispatchers.IO
 
@@ -78,6 +79,10 @@ class ScreenshotViewModel @Inject constructor(
             ScreenshotAction.ShowDeleteConfirmDialog -> showDeleteConfirmDialog()
             ScreenshotAction.DismissDeleteConfirmDialog -> dismissDeleteConfirmDialog()
             ScreenshotAction.DeleteScreenshot -> deleteScreenshot()
+            is ScreenshotAction.SubmitReport -> submitReport(
+                reason = action.reason,
+                detail = action.detail,
+            )
         }
     }
 
@@ -261,7 +266,7 @@ class ScreenshotViewModel @Inject constructor(
             }
             val updated = try {
                 withContext(ioDispatcher) {
-                    screenshotCardRepository.updateCardContent(
+                    captureMutationRepository.updateCapture(
                         captureId = captureId,
                         title = normalized.title,
                         summary = normalized.summary,
@@ -273,21 +278,17 @@ class ScreenshotViewModel @Inject constructor(
                 _uiState.updateContent { it.copy(isSaving = false) }
                 throw cancellation
             } catch (_: Exception) {
-                _uiState.updateContent {
-                    it.copy(
-                        isSaving = false,
-                        actionErrorMessageResId = R.string.screenshot_edit_save_error,
-                    )
-                }
+                _uiState.updateContent { it.copy(isSaving = false) }
+                eventChannel.send(
+                    ScreenshotEvent.SaveFailed(R.string.screenshot_edit_save_error),
+                )
                 return@launch
             }
-            if (!updated) {
-                _uiState.updateContent {
-                    it.copy(
-                        isSaving = false,
-                        actionErrorMessageResId = R.string.screenshot_edit_save_error,
-                    )
-                }
+            if (updated.isFailure) {
+                _uiState.updateContent { it.copy(isSaving = false) }
+                eventChannel.send(
+                    ScreenshotEvent.SaveFailed(R.string.screenshot_edit_save_error),
+                )
                 return@launch
             }
             _uiState.updateContent { it.copy(isSaving = false) }
@@ -337,6 +338,59 @@ class ScreenshotViewModel @Inject constructor(
                 return@launch
             }
             eventChannel.send(ScreenshotEvent.DeleteSucceeded)
+        }
+    }
+
+    private fun submitReport(
+        reason: ReportReason,
+        detail: String?,
+    ) {
+        val content = _uiState.value as? ScreenshotUiState.Content ?: return
+        if (content.isReporting || content.isDeleting || content.isSaving) return
+        val captureId = content.card.analysisResult.captureId
+        val normalizedDetail = detail?.trim()?.takeIf { it.isNotEmpty() }
+        reportJob?.cancel()
+        reportJob = viewModelScope.launch {
+            _uiState.updateContent {
+                it.copy(
+                    isReporting = true,
+                    actionErrorMessageResId = null,
+                )
+            }
+            val result = try {
+                withContext(ioDispatcher) {
+                    captureMutationRepository.report(
+                        captureId = captureId,
+                        reason = reason,
+                        detail = normalizedDetail,
+                    )
+                }
+            } catch (cancellation: CancellationException) {
+                _uiState.updateContent { it.copy(isReporting = false) }
+                throw cancellation
+            } catch (_: Exception) {
+                _uiState.updateContent { it.copy(isReporting = false) }
+                eventChannel.send(
+                    ScreenshotEvent.ReportFailed(R.string.screenshot_report_error_toast),
+                )
+                return@launch
+            }
+            _uiState.updateContent { it.copy(isReporting = false) }
+            if (result.isSuccess) {
+                eventChannel.send(ScreenshotEvent.ReportSucceeded)
+                return@launch
+            }
+            val apiCode = (result.exceptionOrNull() as? RemoteApiException)?.code
+            val messageResId = when (apiCode) {
+                "ALREADY_REPORTED" -> R.string.screenshot_report_already_reported_toast
+                else -> R.string.screenshot_report_error_toast
+            }
+            eventChannel.send(
+                ScreenshotEvent.ReportFailed(
+                    messageResId = messageResId,
+                    dismissSheet = apiCode == "ALREADY_REPORTED",
+                ),
+            )
         }
     }
 

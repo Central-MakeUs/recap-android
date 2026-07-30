@@ -4,6 +4,8 @@ import androidx.annotation.VisibleForTesting
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
+import com.chalkak.recap.core.model.capture.ReportReason
+import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -29,6 +31,24 @@ class MockCaptureMutationRepository @Inject constructor(
                 captureId = captureId,
                 isFavorite = isFavorite,
             )
+        }
+
+    override suspend fun updateCapture(
+        captureId: Long,
+        title: String,
+        summary: String,
+        body: String,
+        typeCode: ScreenshotContentType,
+    ): Result<Unit> =
+        runCatching {
+            val updated = screenshotCardRepository.updateCardContent(
+                captureId = captureId,
+                title = title,
+                summary = summary,
+                body = body,
+                typeCode = typeCode,
+            )
+            check(updated) { "Capture $captureId not found" }
         }
 
     override suspend fun deleteCaptures(captureIds: Set<Long>): Result<CaptureDeleteResult> {
@@ -61,4 +81,10 @@ class MockCaptureMutationRepository @Inject constructor(
             Result.failure(error)
         }
     }
+
+    override suspend fun report(
+        captureId: Long,
+        reason: ReportReason,
+        detail: String?,
+    ): Result<Unit> = Result.success(Unit)
 }

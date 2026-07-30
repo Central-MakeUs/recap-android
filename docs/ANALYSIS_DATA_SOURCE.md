@@ -10,7 +10,7 @@
 
 포함:
 - Debug에서 개발자 옵션으로 `MOCK` / `REMOTE` 선택
-- Home / Storage / Capture command / Capture 상세 / 최근 정리 / 분석 Switching repository에 동일 모드 위임
+- Home / Storage / Capture command / Capture 상세 / 최근 정리 / 분석 / User data-summary·consent·delete Switching repository에 동일 모드 위임
 - 분석 중 모드 전환 거부
 - 전환 시 Mock 스크린샷 데이터 초기화 후 모드 저장
 
@@ -18,6 +18,7 @@
 - Splash에서 모드 hydrate 대기
 - Capture 상세 content 편집(Remote PATCH) — 로드/삭제/즐겨찾기는 연결됨
 - instrumentation 테스트용 Hilt replacement 인프라
+- Auth(`getAccountInfo` / `withdraw`) — 계정 조회·탈퇴는 mode와 무관하게 Remote
 
 ## 빌드별 effective mode
 
@@ -50,10 +51,10 @@ Developer Options (Debug only UI)
 ScreenshotBackendModeStore (user_preferences DataStore)
         │  mode Flow / currentMode() / setMode()
         ▼
-Switching*Repository (analysis / home / storage / capture command / recent)
+Switching*Repository (analysis / home / storage / capture / recent / user data)
         │
-        ├── MOCK   → Mock*Repository (+ Room / private images)
-        └── REMOTE → Remote*Repository (+ RemoteCaptureThumbnailCache)
+        ├── MOCK   → Mock*Repository (+ Room / private images / local consent)
+        └── REMOTE → Remote*Repository (+ RemoteCaptureThumbnailCache / UserApi)
 
 ScreenshotAnalysisRunState
         ▲
@@ -62,7 +63,8 @@ ScreenshotAnalysisRunState
 
 핵심 원칙:
 - 호출부는 domain repository interface만 본다. Mock/Remote를 직접 주입하지 않는다.
-- Auth, onboarding, 일반 사용자 설정은 이 모드의 영향을 받지 않는다.
+- Auth(`getAccountInfo` / `withdraw`), onboarding, 일반 사용자 설정은 이 모드의 영향을 받지 않는다.
+- 데이터 관리의 data-summary / AI 동의(consent) / 전체 삭제는 backend 모드에 따라 Mock 또는 Remote로 위임한다.
 - Splash는 모드 로드를 기다리지 않는다. 요청 시 `currentMode()`로 조회한다.
 
 ## 모드 (`ScreenshotBackendMode`)
@@ -88,6 +90,7 @@ API: `ScreenshotBackendModeStore`
 - `SwitchingRecentCapturesRepository`
 - `SwitchingStorageRepository`
 - `SwitchingCaptureMutationRepository`
+- `SwitchingUserRepository` (data-summary / consent / deleteAccountData만 mode 위임; Auth는 항상 Remote)
 
 주의:
 - list 분석 overload는 **한 번** mode를 조회한 뒤 동일 구현체로만 위임한다.
@@ -106,12 +109,14 @@ API: `ScreenshotBackendModeStore`
 
 ## Remote 다중 삭제
 
-Swagger는 `DELETE /api/v1/captures/{captureId}` 단건만 제공한다. Remote 다중 삭제는:
+Swagger `POST /api/v1/captures/bulk-delete`를 사용한다. Remote 다중 삭제는:
 
-- 각 ID를 개별 시도하고 성공/실패를 `CaptureDeleteResult`로 수집
-- 성공 ID만 `RemoteCaptureThumbnailCache`에서 삭제
-- 성공이 하나 이상이면 `RemoteCaptureChangeNotifier.notifyCaptureChanged()`를 한 번 호출
+- 빈 ID set이면 API를 호출하지 않고 빈 `CaptureDeleteResult`를 반환
+- 비어 있지 않으면 `bulkDelete`를 1회 호출한다 (서버는 all-or-nothing 204)
+- 성공 시 요청 ID 전체를 `deletedIds`로 두고 썸네일 캐시 삭제 후 `RemoteCaptureChangeNotifier.notifyCaptureChanged()`를 한 번 호출
+- 실패 시 `deletedIds`는 비우고 요청 ID 전체를 `failedIds`로 둔다 (부분 성공 없음)
 - `CancellationException`은 즉시 재throw
+
 
 ## 주요 파일
 
@@ -125,6 +130,9 @@ core/data/.../screenshot/analysis/SwitchingScreenshotAnalysisRepository.kt
 core/data/.../home/SwitchingHomeRepository.kt
 core/data/.../storage/SwitchingStorageRepository.kt
 core/data/.../capture/SwitchingCaptureMutationRepository.kt
+core/data/.../user/SwitchingUserRepository.kt
+core/data/.../user/MockUserRepository.kt
+core/data/.../user/RemoteUserRepository.kt
 feature/developer/DeveloperViewModel.kt
 feature/developer/DeveloperOptionsScreen.kt
 ```

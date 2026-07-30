@@ -3,6 +3,8 @@ package com.chalkak.recap.core.data.capture
 import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendMode
 import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendModeStore
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
+import com.chalkak.recap.core.model.capture.ReportReason
+import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -50,5 +52,77 @@ class SwitchingCaptureMutationRepositoryTest {
 
         coVerify(exactly = 1) { remote.deleteCaptures(setOf(1L, 2L)) }
         coVerify(exactly = 0) { mock.deleteCaptures(any()) }
+    }
+
+    @Test
+    fun `updateCapture delegates to remote in remote mode`() = runTest {
+        val modeStore = mockk<ScreenshotBackendModeStore>()
+        coEvery { modeStore.currentMode() } returns ScreenshotBackendMode.REMOTE
+        val mock = mockk<MockCaptureMutationRepository>()
+        val remote = mockk<RemoteCaptureMutationRepository>()
+        coEvery {
+            remote.updateCapture(
+                captureId = 1L,
+                title = "title",
+                summary = "summary",
+                body = "body",
+                typeCode = ScreenshotContentType.JOB,
+            )
+        } returns Result.success(Unit)
+
+        val repository = SwitchingCaptureMutationRepository(
+            screenshotBackendModeStore = modeStore,
+            mockCaptureMutationRepository = mock,
+            remoteCaptureMutationRepository = remote,
+        )
+
+        repository.updateCapture(
+            captureId = 1L,
+            title = "title",
+            summary = "summary",
+            body = "body",
+            typeCode = ScreenshotContentType.JOB,
+        )
+
+        coVerify(exactly = 1) {
+            remote.updateCapture(
+                captureId = 1L,
+                title = "title",
+                summary = "summary",
+                body = "body",
+                typeCode = ScreenshotContentType.JOB,
+            )
+        }
+        coVerify(exactly = 0) {
+            mock.updateCapture(any(), any(), any(), any(), any())
+        }
+    }
+
+    @Test
+    fun `report delegates to remote in remote mode`() = runTest {
+        val modeStore = mockk<ScreenshotBackendModeStore>()
+        coEvery { modeStore.currentMode() } returns ScreenshotBackendMode.REMOTE
+        val mock = mockk<MockCaptureMutationRepository>()
+        val remote = mockk<RemoteCaptureMutationRepository>()
+        coEvery {
+            remote.report(1L, ReportReason.INACCURATE_CONTENT, "detail")
+        } returns Result.success(Unit)
+
+        val repository = SwitchingCaptureMutationRepository(
+            screenshotBackendModeStore = modeStore,
+            mockCaptureMutationRepository = mock,
+            remoteCaptureMutationRepository = remote,
+        )
+
+        repository.report(
+            captureId = 1L,
+            reason = ReportReason.INACCURATE_CONTENT,
+            detail = "detail",
+        )
+
+        coVerify(exactly = 1) {
+            remote.report(1L, ReportReason.INACCURATE_CONTENT, "detail")
+        }
+        coVerify(exactly = 0) { mock.report(any(), any(), any()) }
     }
 }

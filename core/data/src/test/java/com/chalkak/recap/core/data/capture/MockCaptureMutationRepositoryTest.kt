@@ -3,6 +3,7 @@ package com.chalkak.recap.core.data.capture
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
+import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -70,6 +71,66 @@ class MockCaptureMutationRepositoryTest {
 
         assertEquals(setOf(1L), result.deletedIds)
         assertTrue(result.failedIds.isEmpty())
+    }
+
+    @Test
+    fun `updateCapture updates existing card content`() = runTest(testDispatcher) {
+        coEvery {
+            cardRepository.updateCardContent(
+                captureId = 1L,
+                title = "new title",
+                summary = "new summary",
+                body = "new body",
+                typeCode = ScreenshotContentType.SCHEDULE,
+                updatedAtMillis = any(),
+            )
+        } returns true
+        val repository = createRepository()
+
+        val result = repository.updateCapture(
+            captureId = 1L,
+            title = "new title",
+            summary = "new summary",
+            body = "new body",
+            typeCode = ScreenshotContentType.SCHEDULE,
+        )
+
+        assertTrue(result.isSuccess)
+    }
+
+    @Test
+    fun `updateCapture fails when card is missing`() = runTest(testDispatcher) {
+        coEvery {
+            cardRepository.updateCardContent(
+                captureId = 1L,
+                title = any(),
+                summary = any(),
+                body = any(),
+                typeCode = any(),
+                updatedAtMillis = any(),
+            )
+        } returns false
+        val repository = createRepository()
+
+        val result = repository.updateCapture(
+            captureId = 1L,
+            title = "title",
+            summary = "summary",
+            body = "body",
+            typeCode = ScreenshotContentType.JOB,
+        )
+
+        assertTrue(result.isFailure)
+        coVerify(exactly = 1) {
+            cardRepository.updateCardContent(
+                captureId = 1L,
+                title = "title",
+                summary = "summary",
+                body = "body",
+                typeCode = ScreenshotContentType.JOB,
+                updatedAtMillis = any(),
+            )
+        }
     }
 
     @Test

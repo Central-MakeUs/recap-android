@@ -1,6 +1,8 @@
 package com.chalkak.recap.feature.screenshot
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -14,11 +16,16 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
@@ -29,8 +36,10 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray50
+import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapSheetHandle
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 import com.chalkak.recap.core.design.theme.White
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -39,6 +48,7 @@ fun ScreenshotActionBottomSheet(
     onDismissRequest: () -> Unit,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    onReportClick: () -> Unit,
     onCloseClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
@@ -59,6 +69,7 @@ fun ScreenshotActionBottomSheet(
         ScreenshotActionBottomSheetContent(
             onEditClick = onEditClick,
             onDeleteClick = onDeleteClick,
+            onReportClick = onReportClick,
             onCloseClick = onCloseClick,
             enabled = enabled,
             modifier = Modifier
@@ -77,12 +88,14 @@ fun ScreenshotActionBottomSheet(
 fun ScreenshotActionBottomSheetContent(
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
+    onReportClick: () -> Unit,
     onCloseClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
     Column(
         modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         RecapButton(
             text = stringResource(R.string.screenshot_action_edit),
@@ -106,7 +119,28 @@ fun ScreenshotActionBottomSheetContent(
                 disabledContentColor = RecapError.copy(alpha = 0.38f),
             ),
         )
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(ScreenshotActionBottomSheetTokens.ReportTopSpacing))
+        Text(
+            text = stringResource(R.string.screenshot_action_report),
+            modifier = Modifier
+                .clickable(
+                    enabled = enabled,
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onReportClick,
+                )
+                .padding(vertical = ScreenshotActionBottomSheetTokens.ReportVerticalPadding),
+            style = RecapBody2,
+            color = if (enabled) {
+                RecapGray500
+            } else {
+                RecapGray500.copy(alpha = 0.38f)
+            },
+            textAlign = TextAlign.Center,
+            textDecoration = TextDecoration.Underline,
+        )
+        Spacer(modifier = Modifier.height(ScreenshotActionBottomSheetTokens.ReportBottomSpacing))
         RecapButton(
             text = stringResource(R.string.screenshot_action_close),
             onClick = onCloseClick,
@@ -166,6 +200,7 @@ private fun ScreenshotActionBottomSheetPreview() {
                     ScreenshotActionBottomSheetContent(
                         onEditClick = {},
                         onDeleteClick = {},
+                        onReportClick = {},
                         onCloseClick = {},
                         modifier = Modifier
                             .fillMaxWidth()
@@ -187,4 +222,7 @@ private object ScreenshotActionBottomSheetTokens {
     val DragHandleHeight = 5.dp
     val DragHandleTopPadding = 13.dp
     val DragHandleBottomPadding = 17.dp
+    val ReportTopSpacing = 16.dp
+    val ReportBottomSpacing = 16.dp
+    val ReportVerticalPadding = 4.dp
 }

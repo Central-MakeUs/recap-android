@@ -1,7 +1,9 @@
 package com.chalkak.recap.core.data.capture.remote
 
 import com.chalkak.recap.core.data.network.ApiResponseDto
+import com.chalkak.recap.core.model.capture.CapturePage
 import com.chalkak.recap.core.model.capture.OrganizeStatus
+import com.chalkak.recap.core.model.capture.ReportReason
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -75,6 +77,47 @@ data class FavoriteRequestDto(
 )
 
 @Serializable
+data class BulkDeleteRequestDto(
+    val captureIds: List<Long>,
+)
+
+@Serializable
+data class CaptureUpdateRequestDto(
+    val title: String,
+    val summary: String,
+    val body: String,
+    val cardType: CardTypeDto,
+)
+
+@Serializable
+enum class ReportReasonDto {
+    @SerialName("INACCURATE_CONTENT")
+    INACCURATE_CONTENT,
+
+    @SerialName("INAPPROPRIATE_CONTENT")
+    INAPPROPRIATE_CONTENT,
+
+    @SerialName("SENSITIVE_INFO")
+    SENSITIVE_INFO,
+
+    @SerialName("OTHER")
+    OTHER,
+}
+
+@Serializable
+data class ReportRequestDto(
+    val reason: ReportReasonDto,
+    val detail: String? = null,
+)
+
+@Serializable
+data class CapturePageResponseDto(
+    val count: Long,
+    val hasNext: Boolean,
+    val items: List<CaptureSummaryResponseDto> = emptyList(),
+)
+
+@Serializable
 enum class CardTypeDto {
     @SerialName("JOB")
     JOB,
@@ -139,6 +182,7 @@ typealias OrganizeStatusApiResponse = ApiResponseDto<OrganizeStatusResponseDto>
 typealias PendingResultApiResponse = ApiResponseDto<PendingResultResponseDto>
 typealias CaptureDetailApiResponse = ApiResponseDto<CaptureDetailResponseDto>
 typealias CaptureListApiResponse = ApiResponseDto<CaptureListResponseDto>
+typealias CapturePageApiResponse = ApiResponseDto<CapturePageResponseDto>
 
 fun CardTypeDto.toDomain(): ScreenshotContentType =
     when (this) {
@@ -203,3 +247,18 @@ fun CaptureDetailResponseDto.toDomain() =
         isFavorite = isFavorite,
         organizedAt = organizedAt,
     )
+
+fun CapturePageResponseDto.toDomain() =
+    CapturePage(
+        count = count,
+        hasNext = hasNext,
+        items = items.map { it.toDomain() },
+    )
+
+fun ReportReason.toDto(): ReportReasonDto =
+    when (this) {
+        ReportReason.INACCURATE_CONTENT -> ReportReasonDto.INACCURATE_CONTENT
+        ReportReason.INAPPROPRIATE_CONTENT -> ReportReasonDto.INAPPROPRIATE_CONTENT
+        ReportReason.SENSITIVE_INFO -> ReportReasonDto.SENSITIVE_INFO
+        ReportReason.OTHER -> ReportReasonDto.OTHER
+    }

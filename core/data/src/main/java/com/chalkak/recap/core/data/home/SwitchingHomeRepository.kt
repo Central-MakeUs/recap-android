@@ -16,7 +16,7 @@ class SwitchingHomeRepository @Inject constructor(
     private val remoteHomeRepository: RemoteHomeRepository,
 ) : HomeRepository {
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun observeSummary(): Flow<HomeSummary> {
+    override fun observeSummary(): Flow<Result<HomeSummary>> {
         return screenshotBackendModeStore.mode.flatMapLatest { mode ->
             when (mode) {
                 ScreenshotBackendMode.MOCK -> mockHomeRepository.observeSummary()

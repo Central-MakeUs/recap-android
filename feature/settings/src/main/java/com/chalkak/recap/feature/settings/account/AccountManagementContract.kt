@@ -1,9 +1,15 @@
 package com.chalkak.recap.feature.settings.account
 
 data class AccountManagementUiState(
+    val platform: LoginPlatform = LoginPlatform.Kakao,
     val joinedDate: String = "",
     val dialog: AccountManagementDialog = AccountManagementDialog.None,
 )
+
+enum class LoginPlatform {
+    Kakao,
+    Apple,
+}
 
 enum class AccountManagementDialog {
     None,

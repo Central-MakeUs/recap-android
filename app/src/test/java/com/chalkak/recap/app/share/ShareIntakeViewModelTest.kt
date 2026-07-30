@@ -8,6 +8,8 @@ import app.cash.turbine.test
 import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.PreparedScreenshot
+import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -168,10 +170,11 @@ class ShareIntakeViewModelTest {
             parseResult = ::sampleParseResult,
         )
         val images = sampleParseResult().accepted
+        val prepared = samplePrepared(images)
 
         viewModel.events.test {
-            viewModel.requestStartOrganize(images)
-            viewModel.requestStartOrganize(images)
+            viewModel.requestStartOrganize(prepared)
+            viewModel.requestStartOrganize(prepared)
             advanceUntilIdle()
 
             val event = awaitItem() as ShareIntakeEvent.LaunchMainAnalysis
@@ -196,7 +199,7 @@ class ShareIntakeViewModelTest {
         coEvery { sessionTokenStore.getRefreshToken() } returns null
 
         viewModel.events.test {
-            viewModel.requestStartOrganize(sampleParseResult().accepted)
+            viewModel.requestStartOrganize(samplePrepared(sampleParseResult().accepted))
             advanceUntilIdle()
 
             assertEquals(ShareIntakeEvent.LoginRequired, awaitItem())
@@ -220,7 +223,7 @@ class ShareIntakeViewModelTest {
             every { userPreferencesRepository.onboardingCompleted } returns flowOf(false)
 
             viewModel.events.test {
-                viewModel.requestStartOrganize(sampleParseResult().accepted)
+                viewModel.requestStartOrganize(samplePrepared(sampleParseResult().accepted))
                 advanceUntilIdle()
 
                 assertEquals(ShareIntakeEvent.OnboardingRequired, awaitItem())
@@ -238,7 +241,7 @@ class ShareIntakeViewModelTest {
         )
         val images = sampleParseResult().accepted
 
-        viewModel.requestStartOrganize(images)
+        viewModel.requestStartOrganize(samplePrepared(images))
         advanceUntilIdle()
 
         viewModel.events.test {
@@ -298,6 +301,19 @@ class ShareIntakeViewModelTest {
             ),
             rejectedCount = 0,
         )
+    }
+
+    private fun samplePrepared(images: List<LocalImage>): List<ScreenshotUploadCandidate> {
+        return images.map { image ->
+            ScreenshotUploadCandidate(
+                localImage = image,
+                preparedScreenshot = PreparedScreenshot(
+                    localImage = image,
+                    jpegBytes = byteArrayOf(1, 2, 3),
+                ),
+                completedPreparationAttempts = 1,
+            )
+        }
     }
 
     private fun onboardingSampleParseResult(): ShareImageParseResult {

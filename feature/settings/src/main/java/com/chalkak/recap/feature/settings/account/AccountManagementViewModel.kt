@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.LocalAppDataResetter
 import com.chalkak.recap.core.data.auth.AuthRepository
+import com.chalkak.recap.core.data.user.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -15,6 +16,7 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class AccountManagementViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val userRepository: UserRepository,
     private val localAppDataResetter: LocalAppDataResetter,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(AccountManagementUiState())
@@ -22,10 +24,11 @@ class AccountManagementViewModel @Inject constructor(
 
     fun loadAccountInfo() {
         viewModelScope.launch {
-            val loaded = authRepository.getKakaoUserProfile().getOrNull()
+            val accountInfo = userRepository.getAccountInfo().getOrNull() ?: return@launch
             _uiState.update {
                 it.copy(
-                    joinedDate = loaded?.connectedAt?.let(::formatJoinedDate).orEmpty(),
+                    platform = parseLoginPlatform(accountInfo.platform),
+                    joinedDate = formatJoinedDateFromIso(accountInfo.createdAt).orEmpty(),
                 )
             }
         }
@@ -43,11 +46,13 @@ class AccountManagementViewModel @Inject constructor(
             AccountManagementAction.DismissDialog -> {
                 _uiState.update { it.copy(dialog = AccountManagementDialog.None) }
             }
-            AccountManagementAction.ConfirmLogout,
-            AccountManagementAction.ConfirmWithdraw,
-            -> {
+            AccountManagementAction.ConfirmLogout -> {
                 _uiState.update { it.copy(dialog = AccountManagementDialog.None) }
                 logoutAndResetLocalData()
+            }
+            AccountManagementAction.ConfirmWithdraw -> {
+                _uiState.update { it.copy(dialog = AccountManagementDialog.None) }
+                withdrawAndResetLocalData()
             }
         }
     }
@@ -56,6 +61,14 @@ class AccountManagementViewModel @Inject constructor(
         viewModelScope.launch {
             // 서버 실패여도 AuthRepository가 로컬 토큰을 clear한다.
             authRepository.logout()
+            localAppDataResetter.resetDatabaseAndOnboarding()
+        }
+    }
+
+    private fun withdrawAndResetLocalData() {
+        viewModelScope.launch {
+            // 서버 실패여도 UserRepository가 로컬 토큰을 clear한다.
+            userRepository.withdraw()
             localAppDataResetter.resetDatabaseAndOnboarding()
         }
     }

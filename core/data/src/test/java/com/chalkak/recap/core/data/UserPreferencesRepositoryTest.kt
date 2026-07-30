@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.mutablePreferencesOf
 import com.chalkak.recap.core.data.testdouble.InMemoryPreferencesDataStore
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
@@ -53,5 +54,41 @@ class UserPreferencesRepositoryTest {
         repository = UserPreferencesRepository(dataStore)
 
         assertTrue(repository.organizeCompleteNotificationEnabled.first())
+    }
+
+    @Test
+    fun `getAiDataTransferConsentStatus defaults to not consented`() = runTest {
+        val status = repository.getAiDataTransferConsentStatus()
+
+        assertFalse(status.consented)
+        assertEquals(null, status.consentedAt)
+    }
+
+    @Test
+    fun `setAiDataTransferConsent persists consented status`() = runTest {
+        repository.setAiDataTransferConsent(
+            consented = true,
+            consentedAt = "2026-07-27T00:00:00Z",
+        )
+
+        val status = repository.getAiDataTransferConsentStatus()
+
+        assertTrue(status.consented)
+        assertEquals("2026-07-27T00:00:00Z", status.consentedAt)
+    }
+
+    @Test
+    fun `setAiDataTransferConsent clears consentedAt when withdrawn`() = runTest {
+        repository.setAiDataTransferConsent(
+            consented = true,
+            consentedAt = "2026-07-27T00:00:00Z",
+        )
+
+        repository.setAiDataTransferConsent(consented = false, consentedAt = null)
+
+        val status = repository.getAiDataTransferConsentStatus()
+
+        assertFalse(status.consented)
+        assertEquals(null, status.consentedAt)
     }
 }

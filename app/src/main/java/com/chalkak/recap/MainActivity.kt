@@ -67,8 +67,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun consumeSharedAnalysisIntent(intent: Intent) {
-        val images = entryViewModel.consumeSharedAnalysisIntent(intent) ?: return
-        analysisProgressViewModel.startAnalysis(images)
+        val candidates = entryViewModel.consumeSharedAnalysisIntent(intent) ?: return
+        analysisProgressViewModel.startAnalysis(candidates)
     }
 
     private fun consumeOnboardingSampleShareIntent(intent: Intent) {

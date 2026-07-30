@@ -1,9 +1,16 @@
 package com.chalkak.recap.core.data.capture
 
+import com.chalkak.recap.core.data.capture.remote.BulkDeleteRequestDto
 import com.chalkak.recap.core.data.capture.remote.CaptureApi
+import com.chalkak.recap.core.data.capture.remote.CaptureUpdateRequestDto
 import com.chalkak.recap.core.data.capture.remote.FavoriteRequestDto
+import com.chalkak.recap.core.data.capture.remote.ReportRequestDto
+import com.chalkak.recap.core.data.capture.remote.toCardTypeDto
+import com.chalkak.recap.core.data.capture.remote.toDto
 import com.chalkak.recap.core.data.network.runRemoteCatchingSuspend
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
+import com.chalkak.recap.core.model.capture.ReportReason
+import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
@@ -30,6 +37,30 @@ class RemoteCaptureMutationRepository @Inject constructor(
         return result
     }
 
+    override suspend fun updateCapture(
+        captureId: Long,
+        title: String,
+        summary: String,
+        body: String,
+        typeCode: ScreenshotContentType,
+    ): Result<Unit> {
+        val result = runRemoteCatchingSuspend {
+            captureApi.update(
+                captureId = captureId,
+                body = CaptureUpdateRequestDto(
+                    title = title,
+                    summary = summary,
+                    body = body,
+                    cardType = typeCode.toCardTypeDto(),
+                ),
+            )
+        }
+        if (result.isSuccess) {
+            changeNotifier.notifyCaptureChanged()
+        }
+        return result
+    }
+
     override suspend fun deleteCaptures(captureIds: Set<Long>): Result<CaptureDeleteResult> {
         if (captureIds.isEmpty()) {
             return Result.success(
@@ -40,30 +71,49 @@ class RemoteCaptureMutationRepository @Inject constructor(
             )
         }
         return try {
-            val deletedIds = linkedSetOf<Long>()
-            val failedIds = linkedSetOf<Long>()
-            for (captureId in captureIds) {
-                val deleteResult = runRemoteCatchingSuspend {
-                    captureApi.delete(captureId)
-                }
-                if (deleteResult.isSuccess) {
-                    deletedIds += captureId
+            val deleteResult = runRemoteCatchingSuspend {
+                if (captureIds.size == 1) {
+                    captureApi.delete(captureIds.first())
                 } else {
-                    failedIds += captureId
+                    captureApi.bulkDelete(
+                        BulkDeleteRequestDto(captureIds = captureIds.toList()),
+                    )
                 }
             }
-            if (deletedIds.isNotEmpty()) {
-                thumbnailCache.deleteCachedThumbnails(deletedIds)
+            if (deleteResult.isSuccess) {
+                thumbnailCache.deleteCachedThumbnails(captureIds)
                 changeNotifier.notifyCaptureChanged()
+                Result.success(
+                    CaptureDeleteResult(
+                        deletedIds = captureIds,
+                        failedIds = emptySet(),
+                    ),
+                )
+            } else {
+                Result.success(
+                    CaptureDeleteResult(
+                        deletedIds = emptySet(),
+                        failedIds = captureIds,
+                    ),
+                )
             }
-            Result.success(
-                CaptureDeleteResult(
-                    deletedIds = deletedIds,
-                    failedIds = failedIds,
-                ),
-            )
         } catch (cancellation: CancellationException) {
             throw cancellation
         }
     }
+
+    override suspend fun report(
+        captureId: Long,
+        reason: ReportReason,
+        detail: String?,
+    ): Result<Unit> =
+        runRemoteCatchingSuspend {
+            captureApi.report(
+                captureId = captureId,
+                body = ReportRequestDto(
+                    reason = reason.toDto(),
+                    detail = detail?.takeIf { it.isNotBlank() },
+                ),
+            )
+        }
 }
