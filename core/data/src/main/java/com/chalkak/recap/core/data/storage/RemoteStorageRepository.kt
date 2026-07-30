@@ -107,12 +107,12 @@ class RemoteStorageRepository @Inject constructor(
 
     private suspend fun fetchOverview(): Result<StorageOverview> =
         runRemoteCatchingSuspend {
-            val types = getStorageTypes().getOrThrow()
+            val types = getStorageTypes().getOrThrow().withAllOverviewCategories()
             val favorites = getFavoriteCaptures().getOrThrow()
             StorageOverview(
                 hasAnyCapture = types.any { it.count > 0 } || favorites.count > 0,
                 favoriteCount = favorites.count,
-                types = types.filter { it.count > 0 },
+                types = types,
             )
         }
 

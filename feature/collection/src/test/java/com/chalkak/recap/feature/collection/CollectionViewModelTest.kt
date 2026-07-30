@@ -80,7 +80,8 @@ class CollectionViewModelTest {
         assertFalse(state.isLoading)
         assertFalse(state.hasStoredScreenshots)
         assertEquals(0, state.overview.favoriteSummary.count)
-        assertTrue(state.overview.typeSummaries.isEmpty())
+        assertEquals(ExpectedOverviewCategoryOrder, state.overview.typeSummaries.map { it.contentType })
+        assertTrue(state.overview.typeSummaries.all { it.count == 0 })
     }
 
     @Test
@@ -100,7 +101,12 @@ class CollectionViewModelTest {
         val state = viewModel.uiState.value
         assertTrue(state.hasStoredScreenshots)
         assertEquals(0, state.overview.favoriteSummary.count)
-        assertEquals(1, state.overview.typeSummaries.single().count)
+        assertEquals(
+            1,
+            state.overview.typeSummaries
+                .single { it.contentType == ScreenshotContentType.SHOPPING }
+                .count,
+        )
     }
 
     @Test
@@ -152,7 +158,8 @@ class CollectionViewModelTest {
         )
         advanceUntilIdle()
 
-        val summary = viewModel.uiState.value.overview.typeSummaries.single()
+        val summary = viewModel.uiState.value.overview.typeSummaries
+            .single { it.contentType == ScreenshotContentType.SHOPPING }
         assertEquals(3, summary.count)
         assertEquals(
             listOf("택배 반품 절차", "노트북 가격 비교"),
@@ -188,18 +195,19 @@ class CollectionViewModelTest {
         advanceUntilIdle()
 
         val overview = viewModel.uiState.value.overview
+        assertEquals(ExpectedOverviewCategoryOrder, overview.typeSummaries.map { it.contentType })
         assertEquals(
-            listOf(
-                ScreenshotContentType.SHOPPING,
-                ScreenshotContentType.ETC,
-            ),
-            overview.typeSummaries.map { it.contentType },
+            1,
+            overview.typeSummaries.single { it.contentType == ScreenshotContentType.SHOPPING }.count,
         )
-        assertEquals(2, overview.typeSummaries.last().count)
+        assertEquals(
+            2,
+            overview.typeSummaries.single { it.contentType == ScreenshotContentType.ETC }.count,
+        )
     }
 
     @Test
-    fun `zero count categories are excluded from overview`() = runTest(testDispatcher) {
+    fun `zero count categories are included in overview`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
                 storedCard(
@@ -212,9 +220,16 @@ class CollectionViewModelTest {
         )
         advanceUntilIdle()
 
+        val typeSummaries = viewModel.uiState.value.overview.typeSummaries
+        assertEquals(ExpectedOverviewCategoryOrder, typeSummaries.map { it.contentType })
         assertEquals(
-            listOf(ScreenshotContentType.SHOPPING),
-            viewModel.uiState.value.overview.typeSummaries.map { it.contentType },
+            1,
+            typeSummaries.single { it.contentType == ScreenshotContentType.SHOPPING }.count,
+        )
+        assertTrue(
+            typeSummaries
+                .filter { it.contentType != ScreenshotContentType.SHOPPING }
+                .all { it.count == 0 },
         )
     }
 
@@ -251,13 +266,18 @@ class CollectionViewModelTest {
 
         val overview = viewModel.uiState.value.overview
         assertEquals(2, overview.favoriteSummary.count)
+        assertEquals(ExpectedOverviewCategoryOrder, overview.typeSummaries.map { it.contentType })
         assertEquals(
-            listOf(
-                ScreenshotContentType.SHOPPING,
-                ScreenshotContentType.PLACE,
-                ScreenshotContentType.ETC,
-            ),
-            overview.typeSummaries.map { it.contentType },
+            1,
+            overview.typeSummaries.single { it.contentType == ScreenshotContentType.SHOPPING }.count,
+        )
+        assertEquals(
+            1,
+            overview.typeSummaries.single { it.contentType == ScreenshotContentType.PLACE }.count,
+        )
+        assertEquals(
+            1,
+            overview.typeSummaries.single { it.contentType == ScreenshotContentType.ETC }.count,
         )
     }
 
@@ -876,3 +896,15 @@ class CollectionViewModelTest {
         )
     }
 }
+
+private val ExpectedOverviewCategoryOrder = listOf(
+    ScreenshotContentType.SHOPPING,
+    ScreenshotContentType.PLACE,
+    ScreenshotContentType.SCHEDULE,
+    ScreenshotContentType.KNOWLEDGE,
+    ScreenshotContentType.CONTENT,
+    ScreenshotContentType.BENEFIT,
+    ScreenshotContentType.RECORD,
+    ScreenshotContentType.JOB,
+    ScreenshotContentType.ETC,
+)

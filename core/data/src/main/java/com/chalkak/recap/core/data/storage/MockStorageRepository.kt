@@ -92,11 +92,8 @@ internal fun List<StoredScreenshotCard>.toStorageOverview(searchQuery: String): 
     val allSummaries = map { it.toCaptureSummary() }
     val filtered = allSummaries.matchesSearch(searchQuery)
     val favoriteCount = filtered.count { it.isFavorite }
-    val types = StorageOverviewCategoryOrder.mapNotNull { contentType ->
+    val types = StorageOverviewCategoryOrder.map { contentType ->
         val typeCards = filtered.filter { summary -> summary.typeCode == contentType }
-        if (typeCards.isEmpty()) {
-            return@mapNotNull null
-        }
         StorageType(
             typeCode = contentType,
             count = typeCards.size.toLong(),
@@ -112,6 +109,17 @@ internal fun List<StoredScreenshotCard>.toStorageOverview(searchQuery: String): 
 
 private fun List<CaptureSummary>.toCaptureList(): CaptureList =
     CaptureList(count = size, items = this)
+
+internal fun List<StorageType>.withAllOverviewCategories(): List<StorageType> {
+    val byType = associateBy { it.typeCode }
+    return StorageOverviewCategoryOrder.map { contentType ->
+        byType[contentType] ?: StorageType(
+            typeCode = contentType,
+            count = 0,
+            representativeTitles = emptyList(),
+        )
+    }
+}
 
 internal val StorageOverviewCategoryOrder: List<ScreenshotContentType> = listOf(
     ScreenshotContentType.SHOPPING,

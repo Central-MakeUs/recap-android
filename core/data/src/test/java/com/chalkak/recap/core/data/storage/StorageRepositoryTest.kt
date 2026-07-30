@@ -17,6 +17,7 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import java.io.IOException
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -58,6 +59,34 @@ class StorageRepositoryTest {
 
         assertEquals(ScreenshotContentType.KNOWLEDGE, result.getOrNull()?.single()?.typeCode)
         assertEquals(2L, result.getOrNull()?.single()?.count)
+    }
+
+    @Test
+    fun `observeOverview includes zero count categories in display order`() = runTest {
+        coEvery { storageApi.getTypes() } returns ApiResponseDto(
+            success = true,
+            data = listOf(
+                StorageTypeResponseDto(
+                    typeCode = CardTypeDto.SHOPPING,
+                    count = 1L,
+                    representativeTitles = listOf("택배"),
+                ),
+            ),
+        )
+        coEvery { storageApi.getFavorites() } returns ApiResponseDto(
+            success = true,
+            data = CaptureListResponseDto(count = 0, items = emptyList()),
+        )
+
+        val overview = repository.observeOverview("").first()
+
+        assertEquals(StorageOverviewCategoryOrder, overview.types.map { it.typeCode })
+        assertEquals(1L, overview.types.single { it.typeCode == ScreenshotContentType.SHOPPING }.count)
+        assertTrue(
+            overview.types
+                .filter { it.typeCode != ScreenshotContentType.SHOPPING }
+                .all { it.count == 0L },
+        )
     }
 
     @Test
