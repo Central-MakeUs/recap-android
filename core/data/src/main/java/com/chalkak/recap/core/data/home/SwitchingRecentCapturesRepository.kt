@@ -5,6 +5,9 @@ import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendModeStore
 import com.chalkak.recap.core.model.capture.CapturePage
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
 
 @Singleton
 class SwitchingRecentCapturesRepository @Inject constructor(
@@ -12,6 +15,21 @@ class SwitchingRecentCapturesRepository @Inject constructor(
     private val mockRecentCapturesRepository: MockRecentCapturesRepository,
     private val remoteRecentCapturesRepository: RemoteRecentCapturesRepository,
 ) : RecentCapturesRepository {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun observeRecentCaptures(
+        page: Int,
+        size: Int,
+    ): Flow<Result<CapturePage>> {
+        return screenshotBackendModeStore.mode.flatMapLatest { mode ->
+            when (mode) {
+                ScreenshotBackendMode.MOCK ->
+                    mockRecentCapturesRepository.observeRecentCaptures(page = page, size = size)
+                ScreenshotBackendMode.REMOTE ->
+                    remoteRecentCapturesRepository.observeRecentCaptures(page = page, size = size)
+            }
+        }
+    }
+
     override suspend fun getRecentCaptures(
         page: Int,
         size: Int,
