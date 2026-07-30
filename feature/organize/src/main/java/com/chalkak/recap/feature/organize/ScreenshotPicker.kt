@@ -44,6 +44,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -99,12 +100,16 @@ import com.chalkak.recap.core.design.component.toast.RecapToastPresentation
 import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
+import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
+import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
+import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.LocalImage
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
@@ -151,6 +156,8 @@ fun ScreenshotPicker(
     onCloseClick: () -> Unit,
     onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier,
+    imageAccessLevel: ImageAccessLevel = ImageAccessLevel.Full,
+    onRequestFullPhotoAccess: () -> Unit = {},
     sheetState: SheetState? = null,
     discardSelectionConfirmVisible: Boolean? = null,
     onDiscardSelectionConfirmVisibleChange: ((Boolean) -> Unit)? = null,
@@ -242,6 +249,8 @@ fun ScreenshotPicker(
             onAction = onAction,
             onCloseClick = requestExit,
             onConfirmClick = onConfirmClick,
+            imageAccessLevel = imageAccessLevel,
+            onRequestFullPhotoAccess = onRequestFullPhotoAccess,
             onImageLongClick = { imageModel -> zoomImageModel = imageModel },
             sheetState = resolvedSheetState,
             showGalleryBody = showGalleryBody,
@@ -307,6 +316,8 @@ fun ScreenshotPickerContent(
     onCloseClick: () -> Unit,
     onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier,
+    imageAccessLevel: ImageAccessLevel = ImageAccessLevel.Full,
+    onRequestFullPhotoAccess: () -> Unit = {},
     sheetState: SheetState? = null,
     showGalleryBody: Boolean = true,
     trackItemBounds: Boolean = true,
@@ -471,6 +482,18 @@ fun ScreenshotPickerContent(
                 onCloseClick = onCloseClick,
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            if (imageAccessLevel == ImageAccessLevel.Selected) {
+                PartialPhotoAccessCard(
+                    onRequestFullPhotoAccess = onRequestFullPhotoAccess,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = ScreenshotPickerTokens.PartialAccessCardHorizontalPadding,
+                            vertical = ScreenshotPickerTokens.PartialAccessCardVerticalPadding,
+                        ),
+                )
+            }
 
             Box(
                 modifier = Modifier
@@ -645,6 +668,40 @@ private fun ScreenshotPickerToolbar(
             fontWeight = FontWeight.Bold,
             color = RecapBlue300,
         )
+    }
+}
+
+@Composable
+private fun PartialPhotoAccessCard(
+    onRequestFullPhotoAccess: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier,
+        shape = RoundedCornerShape(ScreenshotPickerTokens.PartialAccessCardCornerRadius),
+        color = RecapBlue50,
+        shadowElevation = 2.dp
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(ScreenshotPickerTokens.PartialAccessCardContentPadding),
+            verticalArrangement = Arrangement.spacedBy(
+                ScreenshotPickerTokens.PartialAccessCardSpacing,
+            ),
+        ) {
+            Text(
+                text = stringResource(R.string.organize_partial_photo_access_message),
+                style = RecapCaption1,
+                color = RecapGray500,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            RecapButton(
+                text = stringResource(R.string.organize_partial_photo_access_button),
+                onClick = onRequestFullPhotoAccess,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
@@ -892,6 +949,11 @@ private object ScreenshotPickerTokens {
     val ToolbarHorizontalPadding = 16.dp
     val TitleStartPadding = 4.dp
     val CountStartPadding = 8.dp
+    val PartialAccessCardHorizontalPadding = 16.dp
+    val PartialAccessCardVerticalPadding = 8.dp
+    val PartialAccessCardContentPadding = 12.dp
+    val PartialAccessCardCornerRadius = 12.dp
+    val PartialAccessCardSpacing = 12.dp
     val ControlMinSize = 48.dp
     val IconSize = 24.dp
     val GridSpacing = 2.dp
@@ -922,6 +984,26 @@ private fun ScreenshotPickerEmptyPreview() {
             onAction = {},
             onCloseClick = {},
             onConfirmClick = {},
+        )
+    }
+}
+
+@Preview(
+    name = "Screenshot Picker - Partial Access",
+    showBackground = true,
+    widthDp = 393,
+    heightDp = 852,
+)
+@Composable
+private fun ScreenshotPickerPartialAccessPreview() {
+    RECAPTheme(dynamicColor = false) {
+        ScreenshotPickerContent(
+            uiState = OrganizeUiState(isLoading = false),
+            onAction = {},
+            onCloseClick = {},
+            onConfirmClick = {},
+            imageAccessLevel = ImageAccessLevel.Selected,
+            onRequestFullPhotoAccess = {},
         )
     }
 }

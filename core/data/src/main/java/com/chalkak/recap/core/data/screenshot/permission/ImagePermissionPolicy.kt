@@ -4,10 +4,14 @@ import android.Manifest
 import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
+import android.provider.Settings
 import androidx.core.content.ContextCompat
 import com.chalkak.recap.core.model.ImageAccessLevel
+import androidx.core.content.edit
 
 enum class ImagePermissionRequestDestination {
     PermissionDialog,
@@ -70,9 +74,35 @@ fun Context.imagePermissionRequestDestination(): ImagePermissionRequestDestinati
 
 fun Context.markImagePermissionRequested(accessLevel: ImageAccessLevel) {
     imagePermissionPreferences()
-        .edit()
-        .putBoolean(accessLevel.requestHistoryKey(), true)
-        .apply()
+        .edit {
+            putBoolean(accessLevel.requestHistoryKey(), true)
+        }
+}
+
+fun openPhotoAccessPermission(
+    context: Context,
+    photoAccessLevel: ImageAccessLevel,
+    onRequestPermissions: (Array<String>) -> Unit,
+) {
+    when (context.imagePermissionRequestDestination()) {
+        ImagePermissionRequestDestination.PermissionDialog -> {
+            context.markImagePermissionRequested(photoAccessLevel)
+            onRequestPermissions(imagePermissionRequest(photoAccessLevel))
+        }
+
+        ImagePermissionRequestDestination.ApplicationSettings -> {
+            context.openApplicationDetailsSettings()
+        }
+    }
+}
+
+fun Context.openApplicationDetailsSettings() {
+    startActivity(
+        Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", packageName, null),
+        ),
+    )
 }
 
 internal fun resolveImagePermissionRequestDestination(

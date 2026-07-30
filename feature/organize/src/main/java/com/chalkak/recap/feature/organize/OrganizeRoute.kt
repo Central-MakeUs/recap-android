@@ -1,6 +1,8 @@
 package com.chalkak.recap.feature.organize
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -18,9 +20,21 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.chalkak.recap.core.data.screenshot.permission.ImagePermissionRequestDestination
+import com.chalkak.recap.core.data.screenshot.permission.currentImageAccessLevel
+import com.chalkak.recap.core.data.screenshot.permission.imagePermissionRequestDestination
+import com.chalkak.recap.core.data.screenshot.permission.openPhotoAccessPermission
+import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.bottomsheet.AiDataTransferConsentBottomSheet
+import com.chalkak.recap.core.design.component.popup.RecapPopup
+import com.chalkak.recap.core.design.theme.RecapBlue300
+import com.chalkak.recap.core.design.theme.White
+import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import kotlinx.coroutines.launch
@@ -35,19 +49,17 @@ fun OrganizeRoute(
     clearSelectionOnComplete: Boolean = true,
     viewModel: OrganizeViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val startAtConfirmation = sharedImages != null && shareSessionId != null
-
-    LaunchedEffect(shareSessionId, sharedImages) {
-        if (sharedImages != null && shareSessionId != null) {
-            viewModel.seedSharedImages(
-                sessionId = shareSessionId,
-                images = sharedImages,
-            )
-        } else {
-            viewModel.refreshScreenshots()
-        }
+    var imageAccessLevel by remember {
+        mutableStateOf(context.currentImageAccessLevel())
     }
+    var showPhotoPermissionPopup by rememberSaveable { mutableStateOf(false) }
+    // 앱 설정에서 돌아온 뒤에만 피커 오픈을 시도한다.
+    // 시스템 권한 다이얼로그는 pause/resume을 유발하므로 런처 콜백으로만 처리한다.
+    var awaitPermissionFromSettings by rememberSaveable { mutableStateOf(false) }
+    var openPickerAfterPermission by rememberSaveable { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
     var destination by rememberSaveable {
@@ -75,6 +87,81 @@ fun OrganizeRoute(
         onAttemptDismissWithSelection = { showDiscardSelectionConfirm = true },
         allowHideWithoutConfirm = { suppressPickerDismiss },
     )
+
+    fun refreshScreenshotList() {
+        when {
+            sharedImages == null -> viewModel.refreshScreenshots()
+            destination == OrganizeDestination.Selection -> {
+                viewModel.refreshScreenshotsMergingSelected()
+            }
+        }
+    }
+
+    fun refreshPhotoAccess() {
+        imageAccessLevel = context.currentImageAccessLevel()
+        refreshScreenshotList()
+    }
+
+    fun navigateBackToPicker() {
+        destination = OrganizeDestination.Selection
+        suppressPickerDismiss = false
+        showScreenshotPicker = true
+    }
+
+    fun finishPickerPermissionRequest() {
+        imageAccessLevel = context.currentImageAccessLevel()
+        showPhotoPermissionPopup = false
+        awaitPermissionFromSettings = false
+        val shouldOpenPicker = openPickerAfterPermission
+        openPickerAfterPermission = false
+        if (shouldOpenPicker) {
+            if (imageAccessLevel != ImageAccessLevel.Denied) {
+                navigateBackToPicker()
+            }
+        } else {
+            refreshScreenshotList()
+        }
+    }
+
+    fun attemptNavigateBackToPicker() {
+        imageAccessLevel = context.currentImageAccessLevel()
+        if (imageAccessLevel == ImageAccessLevel.Denied) {
+            openPickerAfterPermission = true
+            showPhotoPermissionPopup = true
+        } else {
+            navigateBackToPicker()
+        }
+    }
+
+    LifecycleResumeEffect(Unit) {
+        if (awaitPermissionFromSettings) {
+            finishPickerPermissionRequest()
+        } else {
+            refreshPhotoAccess()
+        }
+        onPauseOrDispose { }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+    ) {
+        if (openPickerAfterPermission) {
+            finishPickerPermissionRequest()
+        } else {
+            refreshPhotoAccess()
+        }
+    }
+
+    LaunchedEffect(shareSessionId, sharedImages) {
+        if (sharedImages != null && shareSessionId != null) {
+            viewModel.seedSharedImages(
+                sessionId = shareSessionId,
+                images = sharedImages,
+            )
+        } else {
+            viewModel.refreshScreenshots()
+        }
+    }
 
     fun completeOrganize(candidates: List<ScreenshotUploadCandidate>) {
         onOrganizeComplete(candidates)
@@ -114,12 +201,6 @@ fun OrganizeRoute(
         ) {
             viewModel.refreshScreenshotsMergingSelected()
         }
-    }
-
-    fun navigateBackToPicker() {
-        destination = OrganizeDestination.Selection
-        suppressPickerDismiss = false
-        showScreenshotPicker = true
     }
 
     fun exitOrganizeImmediately() {
@@ -182,7 +263,7 @@ fun OrganizeRoute(
                 uiState = uiState,
                 onAction = viewModel::onAction,
                 onBackClick = ::exitOrganizeImmediately,
-                onAddMoreClick = ::navigateBackToPicker,
+                onAddMoreClick = ::attemptNavigateBackToPicker,
                 onStartOrganizingClick = {
                     viewModel.onAction(OrganizeAction.StartOrganizing)
                 },
@@ -192,6 +273,7 @@ fun OrganizeRoute(
         if (showScreenshotPicker) {
             ScreenshotPicker(
                 uiState = uiState,
+                imageAccessLevel = imageAccessLevel,
                 onAction = viewModel::onAction,
                 onDismissRequest = {
                     // Material이 이미 hide 애니메이션을 끝낸 뒤 호출된다.
@@ -201,6 +283,15 @@ fun OrganizeRoute(
                 },
                 onCloseClick = ::dismissScreenshotPickerAndExit,
                 onConfirmClick = ::navigateToConfirmation,
+                onRequestFullPhotoAccess = {
+                    openPhotoAccessPermission(
+                        context = context,
+                        photoAccessLevel = imageAccessLevel,
+                        onRequestPermissions = { permissions ->
+                            permissionLauncher.launch(permissions)
+                        },
+                    )
+                },
                 sheetState = sheetState,
                 discardSelectionConfirmVisible = showDiscardSelectionConfirm,
                 onDiscardSelectionConfirmVisibleChange = { showDiscardSelectionConfirm = it },
@@ -221,6 +312,44 @@ fun OrganizeRoute(
                     viewModel.onAction(OrganizeAction.DismissAiDataTransferConsent)
                 },
                 onPrivacyPolicyClick = {},
+            )
+        }
+
+        if (showPhotoPermissionPopup) {
+            RecapPopup(
+                title = stringResource(R.string.photo_access_permission_title),
+                description = stringResource(R.string.photo_access_permission_description),
+                confirmButtonText = stringResource(
+                    R.string.photo_access_permission_request_permission,
+                ),
+                cancelButtonText = stringResource(R.string.photo_access_permission_later_button),
+                onConfirmClick = {
+                    if (
+                        context.imagePermissionRequestDestination() ==
+                        ImagePermissionRequestDestination.ApplicationSettings
+                    ) {
+                        awaitPermissionFromSettings = true
+                    }
+                    openPhotoAccessPermission(
+                        context = context,
+                        photoAccessLevel = imageAccessLevel,
+                        onRequestPermissions = { permissions ->
+                            permissionLauncher.launch(permissions)
+                        },
+                    )
+                },
+                onCancelClick = {
+                    showPhotoPermissionPopup = false
+                    openPickerAfterPermission = false
+                    awaitPermissionFromSettings = false
+                },
+                onDismissRequest = {
+                    showPhotoPermissionPopup = false
+                    openPickerAfterPermission = false
+                    awaitPermissionFromSettings = false
+                },
+                confirmButtonColor = RecapBlue300,
+                confirmButtonContentColor = White,
             )
         }
     }
