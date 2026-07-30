@@ -385,7 +385,7 @@
     <string name="onboarding_simple_login_label">간편로그인</string>
     <string name="onboarding_landing_terms">이용약관</string>
     <string name="onboarding_landing_privacy">개인정보 처리방침</string>
-    <string name="onboarding_landing_legal_agreement_notice">로그인 시 이용약관 및 개인정보 처리방침에 동의하는 것으로 간주됩니다</string>
+    <string name="onboarding_landing_legal_agreement_notice">로그인 시 만 14세 이상이며 이용약관 및 개인정보처리방침에 동의하는 것으로 간주됩니다</string>
     <string name="onboarding_kakao_login_content_description">카카오 로그인</string>
     <string name="onboarding_brand_mark_initial">R</string>
     <string name="onboarding_brand_mark_name">RE-CAP</string>
