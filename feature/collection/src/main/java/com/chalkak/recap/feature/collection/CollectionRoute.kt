@@ -178,12 +178,8 @@ fun CollectionRoute(
         when {
             uiState.selection.isActive -> viewModel.onAction(CollectionAction.CancelSelection)
             uiState.isDetailSearchVisible -> viewModel.onAction(CollectionAction.HideDetailSearch)
+            // Overview → Detail: pop within collection. Home deep-link (detail as root): back to Home.
             backStack.size > 1 -> navigateBackFromDetail()
-            backStack.lastOrNull() == CollectionDestination.FavoriteDetail ||
-                backStack.lastOrNull() is CollectionDestination.TypeDetail -> {
-                navigateBackFromDetail()
-                backStack.add(CollectionDestination.Overview)
-            }
             else -> onNavigateBack()
         }
     }
