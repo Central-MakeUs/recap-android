@@ -200,6 +200,8 @@ class CollectionViewModel @Inject constructor(
                             }
                         }
                         publishState()
+                    } else {
+                        _events.emit(CollectionEvent.ShowFavoriteToast(isFavorite = nextFavorite))
                     }
                 }
             }

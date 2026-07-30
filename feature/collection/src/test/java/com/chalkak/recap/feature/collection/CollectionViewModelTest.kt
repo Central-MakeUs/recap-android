@@ -365,12 +365,45 @@ class CollectionViewModelTest {
         viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
         advanceUntilIdle()
 
+        val eventDeferred = async { viewModel.events.first() }
         viewModel.onAction(CollectionAction.ToggleFavorite(1L))
         advanceUntilIdle()
 
         coVerify(exactly = 1) {
             cardRepository.updateFavorite(captureId = 1L, isFavorite = true)
         }
+        assertEquals(
+            CollectionEvent.ShowFavoriteToast(isFavorite = true),
+            eventDeferred.await(),
+        )
+    }
+
+    @Test
+    fun `toggle favorite removal shows removed toast`() = runTest(testDispatcher) {
+        coEvery { cardRepository.updateFavorite(any(), any()) } returns Unit
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 1L,
+                    title = "Card",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    isFavorite = true,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
+
+        val eventDeferred = async { viewModel.events.first() }
+        viewModel.onAction(CollectionAction.ToggleFavorite(1L))
+        advanceUntilIdle()
+
+        assertEquals(
+            CollectionEvent.ShowFavoriteToast(isFavorite = false),
+            eventDeferred.await(),
+        )
     }
 
     @Test

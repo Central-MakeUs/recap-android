@@ -109,6 +109,7 @@ sealed interface CollectionAction {
 }
 
 sealed interface CollectionEvent {
+    data class ShowFavoriteToast(val isFavorite: Boolean) : CollectionEvent
     data class ShowDeleteSuccessToast(val deletedCount: Int) : CollectionEvent
     data class ShowDeletePartialFailureToast(
         val deletedCount: Int,
