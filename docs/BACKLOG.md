@@ -93,11 +93,6 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Context: 현재 `minSdk = 30`인데 `dev.chrisbanes.haze` glass/blur 효과가 API 30 기기에서 정상 적용되지 않음. `RecapBottomBar`, `RecapHazeFolderCard`, 홈/보관함 `hazeSource` 연동 등 Haze 사용 UI에 대체 렌더링(반투명 배경·단색 tint 등) fallback이 필요함
   - Handoff: not started
 
-- [ ] 2026-07-10 - 민감한 스크린샷·분석 데이터의 Android 백업 정책 강화
-  - Context: `allowBackup=true`이고 backup/data extraction rules에 제외 규칙이 없어 앱 내부 스크린샷 파일과 Room DB의 분석 결과가 클라우드 백업 및 기기 이전 대상이 될 수 있음
-  - Next: 제품 백업 정책을 확정한 뒤 민감 파일·DB를 명시적으로 제외하거나 앱 백업을 비활성화하고, 백업/복원 시나리오를 검증
-  - Handoff: not started
-
 - [ ] 2026-07-10 - Navigation3 entry별 ViewModel 수명 범위 구성
   - Context: 각 `NavDisplay`에 ViewModelStore entry decorator가 없어 화면의 Hilt ViewModel이 Activity 범위에 남고, pop 이후에도 화면 상태·Room Flow·대용량 이미지 목록이 유지되거나 재진입 시 재사용될 수 있음
   - Next: `lifecycle-viewmodel-navigation3`과 `rememberViewModelStoreNavEntryDecorator()`를 내비게이션 계층에 적용하고, 의도적으로 공유할 ViewModel만 상위 범위로 분리
@@ -125,6 +120,10 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 - 없음
 
 ## Done
+
+- [x] 2026-07-10 - 민감한 스크린샷·분석 데이터의 Android 백업 정책 강화
+  - Result: 서버 SoT 기준으로 `backup_rules.xml` / `data_extraction_rules.xml`(cloud + device-transfer)에서 `recap/` 이미지, `recap.db`, `user_preferences` DataStore를 exclude. 복원 후 재로그인·서버 재동기화가 정상 경로. `LOCAL_DATA.md`·`PROJECT.md`에 정책 문서화
+  - Validation: `assembleDebug` GREEN
 
 - [x] 2026-07-29 - 스크린샷 선행 압축 및 서버 분석 진행률 분리
   - Result: Confirmation 진입 시 PNG/JPEG/HEIC/HEIF를 JPEG 품질 75로 백그라운드 선행 압축하고, 시작 시 미완료 작업을 Progress 단계로 넘겨 최대 2회 안에서 완료하도록 구성함. 압축·업로드 진행률은 숨기고 서버 status polling만 progress bar에 반영하며, 공유 경로의 메모리 전용 one-shot 전달과 부분 준비 실패 처리를 유지함
