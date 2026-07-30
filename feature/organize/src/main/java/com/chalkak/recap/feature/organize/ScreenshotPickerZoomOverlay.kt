@@ -17,7 +17,6 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.window.DialogWindowProvider
@@ -27,7 +26,6 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.image.RecapPinchZoomAsyncImage
-import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray900
 
 @Composable
@@ -175,20 +173,4 @@ private fun Context.findActivity(): Activity? {
 
 private object ScreenshotPickerZoomTokens {
     const val ScrimAlpha = 0.72f
-}
-
-@Preview(
-    name = "Screenshot Picker Zoom Overlay",
-    showBackground = true,
-    widthDp = 393,
-    heightDp = 852,
-)
-@Composable
-private fun ScreenshotPickerZoomOverlayPreview() {
-    RECAPTheme(dynamicColor = false) {
-        ScreenshotPickerZoomOverlayContent(
-            imageModel = R.drawable.mock_home_screenshot_hotel,
-            onDismissRequest = {},
-        )
-    }
 }

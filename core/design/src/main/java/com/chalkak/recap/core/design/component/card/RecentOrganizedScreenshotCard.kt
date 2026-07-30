@@ -129,20 +129,6 @@ private object RecentOrganizedScreenshotCardTokens {
     const val ImageCrossfadeMillis = 150
 }
 
-@Preview(name = "Recent Organized Screenshot Card", showBackground = true, widthDp = 180)
-@Composable
-private fun RecentOrganizedScreenshotCardPreview() {
-    RECAPTheme(dynamicColor = false) {
-        RecentOrganizedScreenshotCard(
-            thumbnailModel = R.drawable.mock_home_screenshot_recipe,
-            title = stringResource(R.string.recent_organized_screenshot_card_preview_title),
-            categoryType = RecapCategoryType.InfoKnowledge,
-            onClick = {},
-            modifier = Modifier.padding(24.dp),
-        )
-    }
-}
-
 @Preview(
     name = "Recent Organized Screenshot Card placeholder",
     showBackground = true,

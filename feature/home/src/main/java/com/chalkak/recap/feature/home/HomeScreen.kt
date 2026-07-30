@@ -551,17 +551,6 @@ private object HomeScreenTokens {
     val LoadErrorRetryButtonMinWidth = 188.dp
 }
 
-@Preview(name = "Home Screen", showBackground = true, widthDp = 360, heightDp = 720)
-@Composable
-private fun HomeScreenPreview() {
-    RECAPTheme(dynamicColor = false) {
-        HomeScreen(
-            hazeState = rememberHazeState(),
-            uiState = HomePreviewUiState,
-        )
-    }
-}
-
 @Preview(name = "Home Screen - Empty", showBackground = true, widthDp = 360, heightDp = 720)
 @Composable
 private fun HomeScreenEmptyPreview() {
@@ -577,22 +566,6 @@ private fun HomeScreenLoadErrorPreview() {
         HomeScreen(
             hazeState = rememberHazeState(),
             uiState = HomeUiState(phase = HomeContentPhase.Error),
-        )
-    }
-}
-
-@Preview(
-    name = "Home Screen - Favorites Empty",
-    showBackground = true,
-    widthDp = 360,
-    heightDp = 720
-)
-@Composable
-private fun HomeScreenFavoritesEmptyPreview() {
-    RECAPTheme(dynamicColor = false) {
-        HomeScreen(
-            hazeState = rememberHazeState(),
-            uiState = HomePreviewUiState.copy(favoriteItems = emptyList()),
         )
     }
 }

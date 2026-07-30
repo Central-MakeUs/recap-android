@@ -7,7 +7,6 @@ import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.findViewTreeOnBackPressedDispatcherOwner
-import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -879,62 +878,7 @@ private fun View.performSoftLongPressHaptic() {
     performHapticFeedback(feedbackConstant)
 }
 
-private fun LocalImage.toSheetImageModel(): Any {
-    val drawableResId = uri.toPreviewDrawableResIdOrNull()
-    return drawableResId ?: uri.toUri()
-}
-
-private fun String.toPreviewDrawableResIdOrNull(): Int? {
-    if (!startsWith(PreviewDrawableUriPrefix)) return null
-    return removePrefix(PreviewDrawableUriPrefix)
-        .substringBefore('/')
-        .toIntOrNull()
-}
-
-private fun previewLocalImage(
-    @DrawableRes drawableResId: Int,
-    displayName: String,
-    dateAddedMillis: Long,
-): LocalImage = LocalImage(
-    uri = "$PreviewDrawableUriPrefix$drawableResId/$displayName",
-    displayName = displayName,
-    dateAddedMillis = dateAddedMillis,
-)
-
-private const val PreviewDrawableUriPrefix = "drawable://"
-
-val ScreenshotPickerPreviewScreenshots = listOf(
-    previewLocalImage(
-        drawableResId = R.drawable.mock_home_screenshot_return,
-        displayName = "screenshot-return",
-        dateAddedMillis = 6L,
-    ),
-    previewLocalImage(
-        drawableResId = R.drawable.mock_home_screenshot_hotel,
-        displayName = "screenshot-hotel",
-        dateAddedMillis = 5L,
-    ),
-    previewLocalImage(
-        drawableResId = R.drawable.mock_home_screenshot_recipe,
-        displayName = "screenshot-recipe",
-        dateAddedMillis = 4L,
-    ),
-    previewLocalImage(
-        drawableResId = R.drawable.mock_home_screenshot_tax,
-        displayName = "screenshot-tax",
-        dateAddedMillis = 3L,
-    ),
-    previewLocalImage(
-        drawableResId = R.drawable.mock_home_screenshot_restaurant,
-        displayName = "screenshot-restaurant",
-        dateAddedMillis = 2L,
-    ),
-    previewLocalImage(
-        drawableResId = R.drawable.mock_home_screenshot_return,
-        displayName = "screenshot-return-2",
-        dateAddedMillis = 1L,
-    ),
-)
+private fun LocalImage.toSheetImageModel(): Any = uri.toUri()
 
 private object ScreenshotPickerTokens {
     /** Expanded 상태 시트 높이. PartiallyExpanded(~50%)는 Material3 ModalBottomSheet가 처리한다. */
@@ -962,32 +906,6 @@ private object ScreenshotPickerTokens {
     val ToastHorizontalPadding = 24.dp
     val ToastBottomPadding = 16.dp
     val ToastAboveConfirmButtonSpacing = 15.dp
-}
-
-@Preview(
-    name = "Screenshot Picker - Populated",
-    showBackground = true,
-    widthDp = 393,
-    heightDp = 852,
-)
-@Composable
-private fun ScreenshotPickerPopulatedPreview() {
-    RECAPTheme(dynamicColor = false) {
-        ScreenshotPickerContent(
-            uiState = OrganizeUiState(
-                isLoading = false,
-                availableScreenshots = ScreenshotPickerPreviewScreenshots,
-                selectedUris = listOf(
-                    ScreenshotPickerPreviewScreenshots[0].uri,
-                    ScreenshotPickerPreviewScreenshots[1].uri,
-                    ScreenshotPickerPreviewScreenshots[2].uri,
-                ),
-            ),
-            onAction = {},
-            onCloseClick = {},
-            onConfirmClick = {},
-        )
-    }
 }
 
 @Preview(

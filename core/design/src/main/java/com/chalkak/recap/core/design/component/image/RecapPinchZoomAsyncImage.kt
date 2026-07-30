@@ -16,12 +16,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
-import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.theme.RECAPTheme
 
 /**
  * 스크린샷 확대 뷰 공통 정책:
@@ -97,16 +94,4 @@ object RecapPinchZoomImageTokens {
     const val EdgeInsetFraction = 0.1f
     const val MinScale = 1f
     const val MaxScale = 4f
-}
-
-@Preview(name = "Recap Pinch Zoom Image", showBackground = true, widthDp = 393, heightDp = 852)
-@Composable
-private fun RecapPinchZoomAsyncImagePreview() {
-    RECAPTheme(dynamicColor = false) {
-        RecapPinchZoomAsyncImage(
-            model = R.drawable.mock_home_screenshot_hotel,
-            contentDescription = "Preview",
-            modifier = Modifier.fillMaxSize(),
-        )
-    }
 }

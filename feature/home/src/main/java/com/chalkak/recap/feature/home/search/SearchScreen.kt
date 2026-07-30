@@ -43,7 +43,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
@@ -540,33 +539,6 @@ private fun SearchScreenIdlePreview() {
         SearchScreen(
             uiState = SearchUiState(
                 recentSearches = listOf("검색어", "검색어 01234", "검색검색검색"),
-            ),
-        )
-    }
-}
-
-@Preview(name = "Search Screen Results", showBackground = true, widthDp = 360, heightDp = 720)
-@Composable
-private fun SearchScreenResultsPreview() {
-    RECAPTheme {
-        SearchScreen(
-            uiState = SearchUiState(
-                query = "파스타",
-                phase = SearchContentPhase.Results,
-                resultCount = 1L,
-                results = listOf(
-                    SearchResultItemUiModel(
-                        captureId = 1L,
-                        thumbnailModel = R.drawable.mock_home_screenshot_recipe,
-                        categoryType = RecapCategoryType.InfoKnowledge,
-                        title = "파스타 레시피 저장",
-                        description = "한 줄 요약에 파스타가 포함됩니다",
-                        titleHighlightRange = 0..2,
-                        descriptionHighlightRange = 7..9,
-                        organizedAtMillis = 0L,
-                        isFavorite = false,
-                    ),
-                ),
             ),
         )
     }

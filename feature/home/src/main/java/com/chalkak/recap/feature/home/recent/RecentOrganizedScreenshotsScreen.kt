@@ -370,22 +370,6 @@ private object RecentOrganizedScreenshotsTokens {
 }
 
 @Preview(
-    name = "Recent Organized Screenshots",
-    showBackground = true,
-    widthDp = 360,
-    heightDp = 800,
-)
-@Composable
-private fun RecentOrganizedScreenshotsScreenPreview() {
-    RECAPTheme(dynamicColor = false) {
-        RecentOrganizedScreenshotsScreen(
-            uiState = RecentOrganizedScreenshotsPreviewUiState,
-            onAction = {},
-        )
-    }
-}
-
-@Preview(
     name = "Recent Organized Screenshots Empty",
     showBackground = true,
     widthDp = 360,
