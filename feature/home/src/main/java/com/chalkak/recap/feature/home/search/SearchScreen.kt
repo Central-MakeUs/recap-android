@@ -127,7 +127,7 @@ private fun SearchTopBar(
                 .height(SearchScreenTokens.TopBarHeight)
                 .padding(horizontal = SearchScreenTokens.HorizontalPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             RecapSearchBar(
                 value = query,
@@ -147,26 +147,17 @@ private fun SearchCloseButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-
-    Box(
-        modifier = modifier
-            .size(24.dp)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                role = Role.Button,
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_close_24),
-            contentDescription = stringResource(R.string.search_screen_close_content_description),
-            tint = RecapGray300,
-            modifier = Modifier.size(24.dp),
-        )
-    }
+    Text(
+        text = stringResource(R.string.search_screen_close),
+        style = RecapBody2,
+        color = RecapGray500,
+        modifier = modifier.clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            role = Role.Button,
+            onClick = onClick,
+        ),
+    )
 }
 
 @Composable
