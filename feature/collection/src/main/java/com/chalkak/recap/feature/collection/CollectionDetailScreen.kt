@@ -1,5 +1,10 @@
 package com.chalkak.recap.feature.collection
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -24,7 +29,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -62,6 +66,7 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading4
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+
 @Composable
 fun CollectionDetailScreen(
     detail: CollectionDetailUiModel,
@@ -89,23 +94,36 @@ fun CollectionDetailScreen(
         color = MaterialTheme.colorScheme.background,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            if (isSearchVisible) {
-                CollectionDetailSearchBar(
-                    query = searchQuery,
-                    onQueryChange = { query ->
-                        onAction(CollectionAction.UpdateDetailSearchQuery(query))
-                    },
-                    onSearch = { onAction(CollectionAction.SubmitDetailSearch) },
-                    onBackClick = { onAction(CollectionAction.HideDetailSearch) },
-                )
-            } else {
-                CollectionDetailTopBar(
-                    title = stringResource(detail.titleResId),
-                    leadingIconResId = categoryType?.iconResId,
-                    leadingIconTint = categoryType?.borderColor ?: RecapBlue500,
-                    onBackClick = onBackClick,
-                    onSearchClick = { onAction(CollectionAction.ShowDetailSearch) },
-                )
+            AnimatedContent(
+                targetState = isSearchVisible,
+                modifier = Modifier.fillMaxWidth(),
+                transitionSpec = {
+                    fadeIn(
+                        animationSpec = tween(CollectionDetailTokens.SearchToggleFadeMillis),
+                    ) togetherWith fadeOut(
+                        animationSpec = tween(CollectionDetailTokens.SearchToggleFadeMillis),
+                    )
+                },
+                label = "collectionDetailSearchToggle",
+            ) { searchVisible ->
+                if (searchVisible) {
+                    CollectionDetailSearchBar(
+                        query = searchQuery,
+                        onQueryChange = { query ->
+                            onAction(CollectionAction.UpdateDetailSearchQuery(query))
+                        },
+                        onSearch = { onAction(CollectionAction.SubmitDetailSearch) },
+                        onBackClick = { onAction(CollectionAction.HideDetailSearch) },
+                    )
+                } else {
+                    CollectionDetailTopBar(
+                        title = stringResource(detail.titleResId),
+                        leadingIconResId = categoryType?.iconResId,
+                        leadingIconTint = categoryType?.borderColor ?: RecapBlue500,
+                        onBackClick = onBackClick,
+                        onSearchClick = { onAction(CollectionAction.ShowDetailSearch) },
+                    )
+                }
             }
             CollectionDetailToolbar(
                 selectedSort = detail.sort,
@@ -221,47 +239,33 @@ private fun CollectionDetailSearchBar(
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp),
-    ) {
+    Column(modifier = modifier.fillMaxWidth()) {
         Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(CollectionDetailTokens.SearchBarHeight)
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = CollectionDetailTokens.HorizontalPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        role = Role.Button,
-                        onClick = onBackClick,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_chevron_left_24),
-                    contentDescription = stringResource(
-                        R.string.collection_back_content_description,
-                    ),
-                    tint = RecapGray900,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
             RecapSearchBar(
                 value = query,
                 onValueChange = onQueryChange,
                 onSearch = onSearch,
+                autoFocus = true,
                 modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = stringResource(R.string.search_screen_close),
+                style = RecapBody2,
+                color = RecapGray500,
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onBackClick,
+                ),
             )
         }
     }
@@ -377,6 +381,7 @@ private object CollectionDetailTokens {
     val RecapCountVerticalPadding = 12.dp
     val ListVerticalPadding = 4.dp
     val SearchBarHeight = 56.dp
+    const val SearchToggleFadeMillis = 150
     val EmptyCharacterWidth = 122.67.dp
     val EmptyCharacterHeight = 89.dp
     val EmptyCharacterOffsetX = 6.dp
