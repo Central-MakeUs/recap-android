@@ -7,7 +7,10 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import com.chalkak.recap.core.data.UserPreferencesDataStore
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -23,6 +26,11 @@ class SessionTokenStore @Inject constructor(
     @param:UserPreferencesDataStore private val dataStore: DataStore<Preferences>,
 ) {
     private val mutex = Mutex()
+
+    val refreshToken: Flow<String?> =
+        dataStore.data
+            .map { preferences -> preferences[REFRESH_TOKEN] }
+            .distinctUntilChanged()
 
     @Volatile
     private var cached: SessionTokens? = null

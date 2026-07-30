@@ -24,4 +24,16 @@ class SwitchingHomeRepository @Inject constructor(
             }
         }
     }
+
+    override suspend fun prefetchSummary(): Result<HomeSummary> {
+        return when (screenshotBackendModeStore.currentMode()) {
+            ScreenshotBackendMode.MOCK -> mockHomeRepository.prefetchSummary()
+            ScreenshotBackendMode.REMOTE -> remoteHomeRepository.prefetchSummary()
+        }
+    }
+
+    override fun refreshSummary() {
+        remoteHomeRepository.refreshSummary()
+        mockHomeRepository.refreshSummary()
+    }
 }
