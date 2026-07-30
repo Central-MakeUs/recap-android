@@ -52,7 +52,7 @@
 ## 프로젝트 컨벤션 요약
 
 - 현재 앱은 화이트모드 우선이다.
-- UI 텍스트는 `app/src/main/res/values/strings.xml`에 정의해 사용한다.
+- UI 텍스트는 하드코딩하지 않고 모두 `core/design/src/main/res/values/strings.xml`에 정의해 사용한다.
 - UI 컴포넌트와 화면 구현 시 필요한 Preview를 함께 작성한다.
 - Compose Preview는 실제 앱 테마와 동일하게 `RECAPTheme`로 감싼다.
 - 아이콘을 Canvas나 텍스트로 대체하지 않는다.
