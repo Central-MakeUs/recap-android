@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -335,26 +336,16 @@ private fun FavoriteItemsSection(
 private fun HomeFavoritesEmptyText(
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    Box(
         modifier = modifier
             .fillMaxWidth()
             .height(HomeScreenTokens.FavoriteGridHeight),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(
-            HomeScreenTokens.FavoritesEmptyTextSpacing,
-            Alignment.CenterVertically,
-        ),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             text = stringResource(R.string.home_favorites_empty),
             style = RecapBody2,
-            color = RecapGray500,
-            textAlign = TextAlign.Center,
-        )
-        Text(
-            text = stringResource(R.string.home_favorites_empty_hint),
-            style = RecapBody2,
-            color = RecapGray500,
+            color = RecapGray300,
             textAlign = TextAlign.Center,
         )
     }
@@ -510,7 +501,7 @@ private fun HomeSectionEmptyText(
     Text(
         text = text,
         style = RecapBody2,
-        color = RecapGray500,
+        color = RecapGray300,
         textAlign = TextAlign.Center,
         modifier = modifier
             .fillMaxWidth()
@@ -531,7 +522,6 @@ private object HomeScreenTokens {
         HomeFavoriteCardDefaults.Height * FavoriteGridRows +
             FavoriteCardSpacing * (FavoriteGridRows - 1)
     val EmptySectionTextVerticalPadding = 70.dp
-    val FavoritesEmptyTextSpacing = 4.dp
     const val FrequentSaveTypeSlotCount = 4
     val FrequentTypeLabelSpacing = 8.dp
     val EmptyCharacterWidth = 175.dp
