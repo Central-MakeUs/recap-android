@@ -347,7 +347,6 @@ private fun CollectionTypeGridItem(
         Text(
             text = stringResource(summary.labelResId),
             style = RecapHeading3,
-            fontWeight = FontWeight.Medium,
             color = RecapGray900,
             textAlign = TextAlign.Center,
             maxLines = 1,
@@ -552,7 +551,7 @@ private fun previewOverviewUiState(
                     contentType = ScreenshotContentType.ETC,
                     labelResId = R.string.category_type_other,
                     categoryType = RecapCategoryType.Other,
-                    count = 2,
+                    count = 1,
                     exampleTitles = listOf("미분류 메모"),
                     additionalExampleCount = 0,
                 ),
