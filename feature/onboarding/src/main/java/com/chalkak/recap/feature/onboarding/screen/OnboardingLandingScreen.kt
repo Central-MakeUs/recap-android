@@ -37,6 +37,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -49,6 +50,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.RecapLegalUrls
 import com.chalkak.recap.core.design.component.RecapLogo
 import com.chalkak.recap.core.design.component.RecapLogoAspectRatio
 import com.chalkak.recap.core.design.component.speechbubble.RecapSpeechBubble
@@ -153,9 +155,10 @@ fun OnboardingLandingScreen(
                 },
             )
             Spacer(modifier = Modifier.height(LandingLoginLegalGap))
+            val uriHandler = LocalUriHandler.current
             LandingLegalNotice(
-                onTermsClick = {},
-                onPrivacyClick = {},
+                onTermsClick = { uriHandler.openUri(RecapLegalUrls.TERMS_OF_SERVICE) },
+                onPrivacyClick = { uriHandler.openUri(RecapLegalUrls.PRIVACY_POLICY) },
             )
         }
 
