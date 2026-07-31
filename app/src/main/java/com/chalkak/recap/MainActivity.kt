@@ -21,6 +21,7 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.toast.RecapToastDuration
 import com.chalkak.recap.core.design.component.toast.RecapToastRequest
 import com.chalkak.recap.core.design.component.toast.RecapToastType
+import com.chalkak.recap.core.model.observability.OrganizeTraceEntry
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -72,7 +73,10 @@ class MainActivity : ComponentActivity() {
 
     private fun consumeSharedAnalysisIntent(intent: Intent) {
         val candidates = entryViewModel.consumeSharedAnalysisIntent(intent) ?: return
-        analysisProgressViewModel.startAnalysis(candidates)
+        analysisProgressViewModel.startAnalysis(
+            candidates = candidates,
+            entry = OrganizeTraceEntry.SHARE,
+        )
     }
 
     private fun consumeOnboardingSampleShareIntent(intent: Intent) {

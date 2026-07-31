@@ -8,6 +8,8 @@ import com.chalkak.recap.core.model.PreparedScreenshot
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.core.model.capture.OrganizeStatus
 import com.chalkak.recap.core.model.capture.OrganizeStatusDetail
+import com.chalkak.recap.core.model.observability.CrashReporter
+import com.chalkak.recap.core.model.observability.ObservabilityKeys
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -26,6 +28,7 @@ class RemoteScreenshotAnalysisRepository @Inject constructor(
     private val captureRepository: CaptureRepository,
     private val changeNotifier: RemoteCaptureChangeNotifier,
     private val screenshotUploadPreparer: ScreenshotUploadPreparer,
+    private val crashReporter: CrashReporter,
 ) : ScreenshotAnalysisRepository {
     override suspend fun analyze(input: ScreenshotAnalysisInput): ScreenshotAnalysisResult {
         throw UnsupportedOperationException("Remote analyze requires organize()")
@@ -54,11 +57,16 @@ class RemoteScreenshotAnalysisRepository @Inject constructor(
         // presigned URL 발급
         val uploadUrls = captureRepository.issueUploadUrls(count = total).getOrThrow()
         if (uploadUrls.uploads.size != total) {
-            throw RemoteApiException(
+            val mismatch = RemoteApiException(
                 code = "UPLOAD_URL_MISMATCH",
                 message = "Expected $total upload URLs but received ${uploadUrls.uploads.size}",
             )
+            crashReporter.setCustomKey(ObservabilityKeys.ORGANIZE_PHASE, "presign")
+            crashReporter.recordException(mismatch)
+            throw mismatch
         }
+
+        crashReporter.setCustomKey(ObservabilityKeys.ORGANIZE_PHASE, "upload")
 
         // Confirmation에서 준비된 항목을 먼저 업로드한다.
         val uploadedImageKeys = ArrayList<Pair<Int, String>>(total)
@@ -106,8 +114,10 @@ class RemoteScreenshotAnalysisRepository @Inject constructor(
         }
 
         // 분석 시작
+        crashReporter.setCustomKey(ObservabilityKeys.ORGANIZE_PHASE, "organize")
         val batch = captureRepository.organize(imageKeys).getOrThrow()
         // 1초 단위 status 폴링
+        crashReporter.setCustomKey(ObservabilityKeys.ORGANIZE_PHASE, "poll")
         val finalStatus = pollUntilTerminal(
             batchId = batch.batchId,
             fallbackTotal = batch.totalCount.coerceAtLeast(imageKeys.size),
@@ -119,9 +129,11 @@ class RemoteScreenshotAnalysisRepository @Inject constructor(
             OrganizeStatus.COMPLETED,
             OrganizeStatus.PARTIAL_FAILED,
             -> {
+                crashReporter.setCustomKey(ObservabilityKeys.ORGANIZE_PHASE, "ack")
                 captureRepository.ackOrganizeResult(finalStatus.batchId)
                     .onFailure { error ->
                         Timber.w(error, "Failed to ack organize result batchId=%s", finalStatus.batchId)
+                        crashReporter.recordException(error)
                     }
                 changeNotifier.notifyCaptureChanged()
                 return ScreenshotOrganizeOutcome.RemoteCompleted(
@@ -141,21 +153,27 @@ class RemoteScreenshotAnalysisRepository @Inject constructor(
             OrganizeStatus.FAILED,
             OrganizeStatus.CANCELLED,
             -> {
+                crashReporter.setCustomKey(ObservabilityKeys.ORGANIZE_PHASE, "ack")
                 captureRepository.ackOrganizeResult(finalStatus.batchId)
                     .onFailure { error ->
                         Timber.w(error, "Failed to ack organize result batchId=%s", finalStatus.batchId)
+                        crashReporter.recordException(error)
                     }
-                throw RemoteOrganizeFailedException(
+                val failed = RemoteOrganizeFailedException(
                     status = finalStatus.status,
                     message = "Remote organize finished with status=${finalStatus.status}",
                 )
+                crashReporter.recordException(failed)
+                throw failed
             }
 
             OrganizeStatus.PROCESSING -> {
-                throw RemoteOrganizeFailedException(
+                val failed = RemoteOrganizeFailedException(
                     status = OrganizeStatus.PROCESSING,
                     message = "Remote organize polling ended while still processing",
                 )
+                crashReporter.recordException(failed)
+                throw failed
             }
         }
     }

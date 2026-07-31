@@ -5,6 +5,7 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
 import com.chalkak.recap.core.data.UserPreferencesRepository
+import com.chalkak.recap.core.model.observability.CrashReporter
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -25,6 +26,7 @@ class OrganizeNotificationCoordinator @Inject constructor(
     private val progressTracker: OrganizeProgressTracker,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val notificationNotifier: OrganizeNotificationNotifier,
+    private val crashReporter: CrashReporter,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private val isAppInForeground = MutableStateFlow(true)
@@ -90,6 +92,7 @@ class OrganizeNotificationCoordinator @Inject constructor(
             OrganizeForegroundService.start(context)
         } catch (error: Exception) {
             Timber.w(error, "Failed to start organize foreground service")
+            crashReporter.recordException(error)
         }
     }
 
@@ -98,6 +101,7 @@ class OrganizeNotificationCoordinator @Inject constructor(
             OrganizeForegroundService.stop(context)
         } catch (error: Exception) {
             Timber.w(error, "Failed to stop organize foreground service")
+            crashReporter.recordException(error)
         } finally {
             notificationNotifier.cancelProgress()
         }

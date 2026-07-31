@@ -16,6 +16,7 @@ import com.chalkak.recap.feature.onboarding.OnboardingRoute
 import com.chalkak.recap.feature.organize.OrganizeAnalysisStatusRoute
 import com.chalkak.recap.feature.organize.OrganizeAnalysisStatusUiState
 import com.chalkak.recap.feature.organize.OrganizeRoute
+import com.chalkak.recap.core.model.observability.OrganizeTraceEntry
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 
@@ -87,7 +88,10 @@ fun OnboardingFirstOrganizeHost(
                         event = OnboardingFirstOrganizeEvent.StartAnalysis,
                     )
                     renderedAnalysisStatus = null
-                    analysisProgressViewModel.startAnalysis(candidates)
+                    analysisProgressViewModel.startAnalysis(
+                        candidates = candidates,
+                        entry = OrganizeTraceEntry.ONBOARDING_FIRST,
+                    )
                 },
             )
         }

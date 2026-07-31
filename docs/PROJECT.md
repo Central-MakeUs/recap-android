@@ -33,8 +33,8 @@
 - Persistence: DataStore, Room
 - Image loading: Coil
 - Logging: Timber
-- Analytics: Firebase Analytics
 - Crash reporting: Firebase Crashlytics
+- Performance: Firebase Performance Monitoring (auto + organize/share custom traces)
 
 ## 빌드 명령
 

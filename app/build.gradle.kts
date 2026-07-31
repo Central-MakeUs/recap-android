@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
+    alias(libs.plugins.firebase.perf)
     id("com.google.android.gms.oss-licenses-plugin")
 }
 
@@ -39,6 +40,13 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Skip Firebase Performance
+            configure<com.google.firebase.perf.plugin.FirebasePerfExtension> {
+                setInstrumentationEnabled(false)
+            }
+        }
+
         release {
             optimization {
                 enable = true
@@ -125,6 +133,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.perf)
 }

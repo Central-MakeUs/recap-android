@@ -47,6 +47,7 @@ class RemoteScreenshotAnalysisRepositoryTest {
             captureRepository = captureRepository,
             changeNotifier = changeNotifier,
             screenshotUploadPreparer = screenshotUploadPreparer,
+            crashReporter = com.chalkak.recap.core.model.observability.CrashReporter.NoOp,
         )
     }
 

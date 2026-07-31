@@ -44,6 +44,7 @@ import com.chalkak.recap.feature.onboarding.screen.OnboardingAddToFavoriteGuideS
 import com.chalkak.recap.feature.settings.guide.PrivacyGuideScreen
 import com.chalkak.recap.feature.settings.guide.UsageGuideScreen
 import com.chalkak.recap.feature.screenshot.ScreenshotRoute
+import com.chalkak.recap.core.model.observability.OrganizeTraceEntry
 import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.map
@@ -171,7 +172,10 @@ fun RecapNavHost(
                                 backStack.add(AppRoute.RecentOrganizedScreenshots)
                             },
                             onOrganizeComplete = { selectedScreenshots ->
-                                analysisProgressViewModel.startAnalysis(selectedScreenshots)
+                                analysisProgressViewModel.startAnalysis(
+                                    candidates = selectedScreenshots,
+                                    entry = OrganizeTraceEntry.HOME_ORGANIZE,
+                                )
                                 onRequestNavigateHome()
                             },
                             onNavigateToScreenshot = { captureId ->

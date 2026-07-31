@@ -49,6 +49,7 @@ class AuthRepositoryTest {
             authApi = authApi,
             deviceIdProvider = deviceIdProvider,
             sessionTokenStore = sessionTokenStore,
+            crashReporter = com.chalkak.recap.core.model.observability.CrashReporter.NoOp,
         )
     }
 
