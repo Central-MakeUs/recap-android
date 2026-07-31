@@ -8,7 +8,11 @@ import com.chalkak.recap.core.model.storage.StorageType
 import kotlinx.coroutines.flow.Flow
 
 interface StorageRepository {
-    fun observeOverview(searchQuery: String): Flow<StorageOverview>
+    fun observeOverview(searchQuery: String): Flow<Result<StorageOverview>>
+
+    suspend fun prefetchOverview(): Result<StorageOverview>
+
+    fun refreshOverview()
 
     fun observeCapturesByType(
         typeCode: ScreenshotContentType,

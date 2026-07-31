@@ -43,7 +43,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
@@ -128,7 +127,7 @@ private fun SearchTopBar(
                 .height(SearchScreenTokens.TopBarHeight)
                 .padding(horizontal = SearchScreenTokens.HorizontalPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             RecapSearchBar(
                 value = query,
@@ -148,26 +147,17 @@ private fun SearchCloseButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-
-    Box(
-        modifier = modifier
-            .size(24.dp)
-            .clickable(
-                interactionSource = interactionSource,
-                indication = null,
-                role = Role.Button,
-                onClick = onClick,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_close_24),
-            contentDescription = stringResource(R.string.search_screen_close_content_description),
-            tint = RecapGray300,
-            modifier = Modifier.size(24.dp),
-        )
-    }
+    Text(
+        text = stringResource(R.string.search_screen_close),
+        style = RecapBody2,
+        color = RecapGray500,
+        modifier = modifier.clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null,
+            role = Role.Button,
+            onClick = onClick,
+        ),
+    )
 }
 
 @Composable
@@ -540,33 +530,6 @@ private fun SearchScreenIdlePreview() {
         SearchScreen(
             uiState = SearchUiState(
                 recentSearches = listOf("검색어", "검색어 01234", "검색검색검색"),
-            ),
-        )
-    }
-}
-
-@Preview(name = "Search Screen Results", showBackground = true, widthDp = 360, heightDp = 720)
-@Composable
-private fun SearchScreenResultsPreview() {
-    RECAPTheme {
-        SearchScreen(
-            uiState = SearchUiState(
-                query = "파스타",
-                phase = SearchContentPhase.Results,
-                resultCount = 1L,
-                results = listOf(
-                    SearchResultItemUiModel(
-                        captureId = 1L,
-                        thumbnailModel = R.drawable.mock_home_screenshot_recipe,
-                        categoryType = RecapCategoryType.InfoKnowledge,
-                        title = "파스타 레시피 저장",
-                        description = "한 줄 요약에 파스타가 포함됩니다",
-                        titleHighlightRange = 0..2,
-                        descriptionHighlightRange = 7..9,
-                        organizedAtMillis = 0L,
-                        isFavorite = false,
-                    ),
-                ),
             ),
         )
     }

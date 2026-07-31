@@ -5,6 +5,7 @@ import com.chalkak.recap.core.model.ImageAccessLevel
 data class OnboardingUiState(
     val step: OnboardingStep = OnboardingStep.Landing,
     val imageAccessLevel: ImageAccessLevel = ImageAccessLevel.Denied,
+    val hasResolvedPermissionStep: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 )
@@ -14,6 +15,7 @@ sealed interface OnboardingAction {
     data object LoginWithKakao : OnboardingAction
     data object SelectFirstScreenshots : OnboardingAction
     data object OpenAddToFavoriteGuide : OnboardingAction
+    data object CompleteAddToFavorite : OnboardingAction
     data object SkipFirstOrganize : OnboardingAction
     data object GrantPermission : OnboardingAction
     data object OpenPhotoPermissionSettings : OnboardingAction

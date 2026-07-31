@@ -30,9 +30,17 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 
 @Composable
 fun OrganizedScreenshotSummaryCard(
-    organizedCount: Int,
+    organizedCount: Int?,
     modifier: Modifier = Modifier,
 ) {
+    val countText = if (organizedCount == null) {
+        stringResource(R.string.organized_screenshot_summary_card_count_checking)
+    } else {
+        stringResource(
+            R.string.organized_screenshot_summary_card_count,
+            organizedCount,
+        )
+    }
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(OrganizedScreenshotSummaryCardTokens.ContainerCornerRadius),
@@ -63,10 +71,7 @@ fun OrganizedScreenshotSummaryCard(
                         color = RecapGray900,
                     )
                     Text(
-                        text = stringResource(
-                            R.string.organized_screenshot_summary_card_count,
-                            organizedCount,
-                        ),
+                        text = countText,
                         style = RecapHeading1,
                         color = RecapBlue300,
                     )
@@ -108,6 +113,17 @@ private fun OrganizedScreenshotSummaryCardPreview() {
     RECAPTheme(dynamicColor = false) {
         OrganizedScreenshotSummaryCard(
             organizedCount = OrganizedScreenshotSummaryCardPreviewCount,
+            modifier = Modifier.padding(24.dp),
+        )
+    }
+}
+
+@Preview(name = "Organized Screenshot Summary Card Checking", showBackground = true, widthDp = 360)
+@Composable
+private fun OrganizedScreenshotSummaryCardCheckingPreview() {
+    RECAPTheme(dynamicColor = false) {
+        OrganizedScreenshotSummaryCard(
+            organizedCount = null,
             modifier = Modifier.padding(24.dp),
         )
     }

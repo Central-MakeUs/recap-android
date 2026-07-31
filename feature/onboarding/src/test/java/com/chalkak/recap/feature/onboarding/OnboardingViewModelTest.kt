@@ -23,6 +23,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -46,6 +47,16 @@ class OnboardingViewModelTest {
         advanceUntilIdle()
 
         viewModel.onAction(OnboardingAction.SkipFirstOrganize)
+        advanceUntilIdle()
+
+        assertEquals(OnboardingStep.StartFirstAnalyze, viewModel.uiState.value.step)
+    }
+
+    @Test
+    fun onAction_completeAddToFavoriteWinsOverInitialization() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(OnboardingAction.CompleteAddToFavorite)
         advanceUntilIdle()
 
         assertEquals(OnboardingStep.StartFirstAnalyze, viewModel.uiState.value.step)
@@ -111,6 +122,31 @@ class OnboardingViewModelTest {
     }
 
     @Test
+    fun createdViewModel_withSessionAndGrantedPermission_startsAtUploadMethodGuide() =
+        runTest(testDispatcher) {
+            val sessionTokenStore = mockk<SessionTokenStore>()
+            coEvery { sessionTokenStore.getRefreshToken() } returns "refresh"
+            val authRepository = mockk<AuthRepository>(relaxed = true)
+            coEvery { authRepository.refresh() } returns Result.success(
+                AuthSignInResult.Success(
+                    accessToken = "access",
+                    refreshToken = "refresh",
+                    accessTokenExpiresAt = "2026-07-10T13:00:00Z",
+                ),
+            )
+
+            val viewModel = createViewModel(
+                imageAccessLevel = ImageAccessLevel.Full,
+                authRepository = authRepository,
+                sessionTokenStore = sessionTokenStore,
+            )
+            advanceUntilIdle()
+
+            assertEquals(OnboardingStep.UploadMethodGuide, viewModel.uiState.value.step)
+            assertTrue(viewModel.uiState.value.hasResolvedPermissionStep)
+        }
+
+    @Test
     fun createdViewModel_withInvalidRefresh_clearsSessionAndStaysOnLanding() = runTest(testDispatcher) {
         val sessionTokenStore = mockk<SessionTokenStore>(relaxed = true)
         coEvery { sessionTokenStore.getRefreshToken() } returns "refresh"
@@ -147,9 +183,75 @@ class OnboardingViewModelTest {
         advanceUntilIdle()
 
         assertEquals(OnboardingStep.PermissionGuide, viewModel.uiState.value.step)
+        assertFalse(viewModel.uiState.value.hasResolvedPermissionStep)
         assertFalse(viewModel.uiState.value.isLoading)
         coVerify(exactly = 1) { authRepository.signInWithKakao(context) }
     }
+
+    @Test
+    fun loginWithKakao_movesToUploadMethodGuideWhenPermissionAlreadyGranted() =
+        runTest(testDispatcher) {
+            val context = mockk<Context>(relaxed = true)
+            val authRepository = mockk<AuthRepository>(relaxed = true)
+            coEvery { authRepository.signInWithKakao(context) } returns Result.success(
+                AuthSignInResult.Success(
+                    accessToken = "access",
+                    refreshToken = "refresh",
+                    accessTokenExpiresAt = "2026-07-10T13:00:00Z",
+                ),
+            )
+            val viewModel = createViewModel(
+                imageAccessLevel = ImageAccessLevel.Selected,
+                authRepository = authRepository,
+            )
+            advanceUntilIdle()
+
+            viewModel.loginWithKakao(context)
+            advanceUntilIdle()
+
+            assertEquals(OnboardingStep.UploadMethodGuide, viewModel.uiState.value.step)
+            assertTrue(viewModel.uiState.value.hasResolvedPermissionStep)
+            assertFalse(viewModel.uiState.value.isLoading)
+        }
+
+    @Test
+    fun onAction_skipPermission_movesToUploadMethodGuide() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onAction(OnboardingAction.SkipPermission)
+        advanceUntilIdle()
+
+        assertEquals(OnboardingStep.UploadMethodGuide, viewModel.uiState.value.step)
+        assertTrue(viewModel.uiState.value.hasResolvedPermissionStep)
+    }
+
+    @Test
+    fun onAction_skipPermission_keepsResolvedFlagWhenReturningToPermissionGuide() =
+        runTest(testDispatcher) {
+            val viewModel = createViewModel()
+            advanceUntilIdle()
+
+            viewModel.onAction(OnboardingAction.SkipPermission)
+            viewModel.onAction(OnboardingAction.Back)
+            advanceUntilIdle()
+
+            assertEquals(OnboardingStep.PermissionGuide, viewModel.uiState.value.step)
+            assertTrue(viewModel.uiState.value.hasResolvedPermissionStep)
+        }
+
+    @Test
+    fun refreshImagePermissionAndMoveToFirstOrganize_movesToUploadMethodGuide() =
+        runTest(testDispatcher) {
+            val viewModel = createViewModel(imageAccessLevel = ImageAccessLevel.Full)
+            advanceUntilIdle()
+
+            val accessLevel = viewModel.refreshImagePermissionAndMoveToFirstOrganize()
+            advanceUntilIdle()
+
+            assertEquals(ImageAccessLevel.Full, accessLevel)
+            assertEquals(OnboardingStep.UploadMethodGuide, viewModel.uiState.value.step)
+        }
 
     @Test
     fun loginWithKakao_staysOnLandingWhenCancelled() = runTest(testDispatcher) {

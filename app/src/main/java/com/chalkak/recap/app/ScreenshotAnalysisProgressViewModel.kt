@@ -8,6 +8,7 @@ import com.chalkak.recap.app.notification.OrganizeProgressTracker
 import com.chalkak.recap.app.notification.OrganizeTerminalResult
 import com.chalkak.recap.app.notification.OrganizeTerminalResultMapper
 import com.chalkak.recap.core.data.UserPreferencesRepository
+import com.chalkak.recap.core.data.screenshot.analysis.RemoteOrganizeFailedException
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisInput
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRepository
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRunState
@@ -18,6 +19,13 @@ import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardReposito
 import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.core.model.PreparedScreenshot
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
+import com.chalkak.recap.core.model.observability.CrashReporter
+import com.chalkak.recap.core.model.observability.ObservabilityKeys
+import com.chalkak.recap.core.model.observability.OrganizeTraceEntry
+import com.chalkak.recap.core.model.observability.PerformanceTrace
+import com.chalkak.recap.core.model.observability.PerformanceTraceNames
+import com.chalkak.recap.core.model.observability.PerformanceTracer
+import com.chalkak.recap.core.model.observability.imageCountBucket
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -57,6 +65,8 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
     private val screenshotAnalysisRunState: ScreenshotAnalysisRunState,
     private val organizeProgressTracker: OrganizeProgressTracker,
     private val userPreferencesRepository: UserPreferencesRepository,
+    private val crashReporter: CrashReporter,
+    private val performanceTracer: PerformanceTracer,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ScreenshotAnalysisProgressUiState())
     val uiState: StateFlow<ScreenshotAnalysisProgressUiState> = _uiState.asStateFlow()
@@ -70,6 +80,8 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
             )
 
     private var analysisJob: Job? = null
+    private var activeOrganizeTrace: PerformanceTrace? = null
+    private var activeOrganizeRunToken: Any? = null
 
     // 추후 Dispatcher DI로 개선 가능
     @VisibleForTesting
@@ -81,12 +93,28 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
         }
     }
 
-    fun startAnalysis(candidates: List<ScreenshotUploadCandidate>) {
+    fun startAnalysis(
+        candidates: List<ScreenshotUploadCandidate>,
+        entry: String = OrganizeTraceEntry.HOME_ORGANIZE,
+    ) {
         analysisJob?.cancel()
+        stopActiveOrganizeTrace(outcome = "cancel")
+        val runToken = Any()
+        activeOrganizeRunToken = runToken
         val totalCount = candidates.size
         analysisJob = viewModelScope.launch {
             screenshotAnalysisRunState.beginRun()
             val runId = organizeProgressTracker.onStarted(totalCount)
+            val bucket = imageCountBucket(totalCount)
+            crashReporter.setCustomKey(ObservabilityKeys.ORGANIZE_ACTIVE, true)
+            crashReporter.setCustomKey(ObservabilityKeys.IMAGE_COUNT_BUCKET, bucket)
+            crashReporter.setCustomKey(ObservabilityKeys.ORGANIZE_PHASE, "running")
+            val trace = performanceTracer.startTrace(
+                PerformanceTraceNames.ORGANIZE_REMOTE_END_TO_END,
+            )
+            activeOrganizeTrace = trace
+            trace.putAttribute(ObservabilityKeys.IMAGE_COUNT_BUCKET, bucket)
+            trace.putAttribute(ObservabilityKeys.ENTRY, entry)
             try {
                 _uiState.value = ScreenshotAnalysisProgressUiState(
                     isRunning = true,
@@ -106,6 +134,7 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                         runId = runId,
                         result = emptySuccess,
                     )
+                    finishOrganizeSuccess(trace, emptySuccess)
                     return@launch
                 }
 
@@ -147,12 +176,16 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                             if (!saved) {
                                 if (!isActive) {
                                     organizeProgressTracker.onCancelled(runId)
+                                    finishOrganizeCancelled(trace)
                                     return@launch
                                 }
                                 val terminal = OrganizeTerminalResultMapper.fromLocalPersisted(
                                     persistedCount = persisted.size,
                                     totalCount = totalCount,
                                     saveFailed = true,
+                                )
+                                crashReporter.recordException(
+                                    IllegalStateException(SAVE_ERROR_MESSAGE),
                                 )
                                 _uiState.value = _uiState.value.copy(
                                     isRunning = false,
@@ -164,12 +197,14 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                                     runId = runId,
                                     result = terminal,
                                 )
+                                finishOrganizeSuccess(trace, terminal)
                                 return@launch
                             }
                             persisted += result
                         }
                         if (!isActive) {
                             organizeProgressTracker.onCancelled(runId)
+                            finishOrganizeCancelled(trace)
                             return@launch
                         }
                         val terminal = when {
@@ -186,6 +221,13 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                                 saveFailed = false,
                             )
                         }
+                        if (outcome.preparationFailCount > 0) {
+                            crashReporter.recordException(
+                                IllegalStateException(
+                                    "Screenshot preparation failed count=${outcome.preparationFailCount}",
+                                ),
+                            )
+                        }
                         _uiState.value = _uiState.value.copy(
                             isRunning = false,
                             completedCount = (persisted.size + outcome.preparationFailCount)
@@ -198,6 +240,7 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                             runId = runId,
                             result = terminal,
                         )
+                        finishOrganizeSuccess(trace, terminal)
                     }
 
                     is ScreenshotOrganizeOutcome.RemoteCompleted -> {
@@ -215,13 +258,18 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                             runId = runId,
                             result = terminal,
                         )
+                        finishOrganizeSuccess(trace, terminal)
                     }
                 }
             } catch (cancellation: CancellationException) {
                 organizeProgressTracker.onCancelled(runId)
+                finishOrganizeCancelled(trace)
                 throw cancellation
             } catch (throwable: Exception) {
                 Timber.e(throwable, "Screenshot analysis failed")
+                if (throwable !is RemoteOrganizeFailedException) {
+                    crashReporter.recordException(throwable)
+                }
                 _uiState.value = _uiState.value.copy(
                     isRunning = false,
                     errorMessage = ANALYSIS_ERROR_MESSAGE,
@@ -231,8 +279,14 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                     runId = runId,
                     result = OrganizeTerminalResult.AllFailed,
                 )
+                finishOrganizeSuccess(trace, OrganizeTerminalResult.AllFailed)
             } finally {
                 screenshotAnalysisRunState.endRun()
+                if (activeOrganizeRunToken === runToken) {
+                    activeOrganizeRunToken = null
+                    crashReporter.setCustomKey(ObservabilityKeys.ORGANIZE_ACTIVE, false)
+                    crashReporter.setCustomKey(ObservabilityKeys.ORGANIZE_PHASE, "idle")
+                }
             }
         }
     }
@@ -240,12 +294,42 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
     fun cancelAnalysis() {
         analysisJob?.cancel()
         analysisJob = null
+        activeOrganizeRunToken = null
+        stopActiveOrganizeTrace(outcome = "cancel")
+        crashReporter.setCustomKey(ObservabilityKeys.ORGANIZE_ACTIVE, false)
+        crashReporter.setCustomKey(ObservabilityKeys.ORGANIZE_PHASE, "idle")
         _uiState.value = ScreenshotAnalysisProgressUiState()
     }
 
     fun dismissResult() {
         if (_uiState.value.isRunning) return
         _uiState.value = ScreenshotAnalysisProgressUiState()
+    }
+
+    private fun finishOrganizeSuccess(
+        trace: PerformanceTrace,
+        terminal: OrganizeTerminalResult,
+    ) {
+        stopOrganizeTrace(trace = trace, outcome = terminal.toOutcomeAttribute())
+    }
+
+    private fun finishOrganizeCancelled(trace: PerformanceTrace) {
+        stopOrganizeTrace(trace = trace, outcome = "cancel")
+    }
+
+    private fun stopActiveOrganizeTrace(outcome: String) {
+        val trace = activeOrganizeTrace ?: return
+        stopOrganizeTrace(trace = trace, outcome = outcome)
+    }
+
+    private fun stopOrganizeTrace(
+        trace: PerformanceTrace,
+        outcome: String,
+    ) {
+        if (activeOrganizeTrace !== trace) return
+        activeOrganizeTrace = null
+        trace.putAttribute(ObservabilityKeys.OUTCOME, outcome)
+        trace.stop()
     }
 
     private suspend fun persistAnalysisResult(
@@ -333,5 +417,12 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
     private companion object {
         const val SAVE_ERROR_MESSAGE = "Failed to save screenshot analysis result"
         const val ANALYSIS_ERROR_MESSAGE = "Failed to analyze screenshot"
+
+        fun OrganizeTerminalResult.toOutcomeAttribute(): String =
+            when (this) {
+                is OrganizeTerminalResult.AllSuccess -> "success"
+                is OrganizeTerminalResult.PartialSuccess -> "partial"
+                OrganizeTerminalResult.AllFailed -> "fail"
+            }
     }
 }

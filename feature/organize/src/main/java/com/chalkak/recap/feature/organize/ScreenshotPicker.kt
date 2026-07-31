@@ -7,7 +7,6 @@ import android.view.HapticFeedbackConstants
 import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.findViewTreeOnBackPressedDispatcherOwner
-import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -45,6 +44,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.ModalBottomSheetProperties
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.SheetValue
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -77,7 +77,9 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -100,12 +102,16 @@ import com.chalkak.recap.core.design.component.toast.RecapToastPresentation
 import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
+import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
+import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading4
+import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.LocalImage
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
@@ -129,11 +135,7 @@ fun rememberScreenshotPickerSheetState(
     return rememberModalBottomSheetState(
         skipPartiallyExpanded = skipPartiallyExpanded,
         confirmValueChange = { newValue ->
-            if (
-                newValue == SheetValue.Hidden &&
-                currentSelectionCount >= MIN_SELECTION_COUNT &&
-                !currentAllowHideWithoutConfirm()
-            ) {
+            if (newValue == SheetValue.Hidden && currentSelectionCount >= MIN_SELECTION_COUNT && !currentAllowHideWithoutConfirm()) {
                 currentOnAttemptDismiss()
                 false
             } else {
@@ -152,6 +154,8 @@ fun ScreenshotPicker(
     onCloseClick: () -> Unit,
     onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier,
+    imageAccessLevel: ImageAccessLevel = ImageAccessLevel.Full,
+    onRequestFullPhotoAccess: () -> Unit = {},
     sheetState: SheetState? = null,
     discardSelectionConfirmVisible: Boolean? = null,
     onDiscardSelectionConfirmVisibleChange: ((Boolean) -> Unit)? = null,
@@ -161,11 +165,10 @@ fun ScreenshotPicker(
     }
     val coroutineScope = rememberCoroutineScope()
     var internalShowDiscardSelectionConfirm by remember { mutableStateOf(false) }
-    val showDiscardSelectionConfirm = discardSelectionConfirmVisible
-        ?: internalShowDiscardSelectionConfirm
+    val showDiscardSelectionConfirm =
+        discardSelectionConfirmVisible ?: internalShowDiscardSelectionConfirm
     val setShowDiscardSelectionConfirm: (Boolean) -> Unit =
-        onDiscardSelectionConfirmVisibleChange
-            ?: { internalShowDiscardSelectionConfirm = it }
+        onDiscardSelectionConfirmVisibleChange ?: { internalShowDiscardSelectionConfirm = it }
     val resolvedSheetState = sheetState ?: rememberScreenshotPickerSheetState(
         selectionCount = uiState.selectionCount,
         onAttemptDismissWithSelection = { setShowDiscardSelectionConfirm(true) },
@@ -243,6 +246,8 @@ fun ScreenshotPicker(
             onAction = onAction,
             onCloseClick = requestExit,
             onConfirmClick = onConfirmClick,
+            imageAccessLevel = imageAccessLevel,
+            onRequestFullPhotoAccess = onRequestFullPhotoAccess,
             onImageLongClick = { imageModel -> zoomImageModel = imageModel },
             sheetState = resolvedSheetState,
             showGalleryBody = showGalleryBody,
@@ -282,9 +287,8 @@ fun ScreenshotPicker(
 @Composable
 private fun ScreenshotPickerDialogBackHandler(onBack: () -> Unit) {
     // CompositionLocal/NavigationEvent(Activity)가 아니라 Dialog 윈도우 ViewTree dispatcher를 쓴다.
-    val backDispatcher = LocalView.current
-        .findViewTreeOnBackPressedDispatcherOwner()
-        ?.onBackPressedDispatcher
+    val backDispatcher =
+        LocalView.current.findViewTreeOnBackPressedDispatcherOwner()?.onBackPressedDispatcher
     val currentOnBack by rememberUpdatedState(onBack)
 
     DisposableEffect(backDispatcher) {
@@ -308,6 +312,8 @@ fun ScreenshotPickerContent(
     onCloseClick: () -> Unit,
     onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier,
+    imageAccessLevel: ImageAccessLevel = ImageAccessLevel.Full,
+    onRequestFullPhotoAccess: () -> Unit = {},
     sheetState: SheetState? = null,
     showGalleryBody: Boolean = true,
     trackItemBounds: Boolean = true,
@@ -337,9 +343,7 @@ fun ScreenshotPickerContent(
     val currentOnAction by rememberUpdatedState(onAction)
 
     fun hitTestUri(positionInRoot: Offset): String? {
-        return itemBoundsInRoot.entries
-            .firstOrNull { (_, bounds) -> bounds.contains(positionInRoot) }
-            ?.key
+        return itemBoundsInRoot.entries.firstOrNull { (_, bounds) -> bounds.contains(positionInRoot) }?.key
     }
 
     fun applyDragSelectRange(endIndex: Int) {
@@ -379,8 +383,8 @@ fun ScreenshotPickerContent(
     }
 
     fun onDragSelectStart(uri: String) {
-        val startIndex = currentUiState.availableScreenshots
-            .indexOfFirst { screenshot -> screenshot.uri == uri }
+        val startIndex =
+            currentUiState.availableScreenshots.indexOfFirst { screenshot -> screenshot.uri == uri }
         if (startIndex < 0) return
 
         isDragSelecting = true
@@ -397,8 +401,8 @@ fun ScreenshotPickerContent(
     fun onDragSelectMove(positionInRoot: Offset) {
         if (!isDragSelecting) return
         val uri = hitTestUri(positionInRoot) ?: return
-        val endIndex = currentUiState.availableScreenshots
-            .indexOfFirst { screenshot -> screenshot.uri == uri }
+        val endIndex =
+            currentUiState.availableScreenshots.indexOfFirst { screenshot -> screenshot.uri == uri }
         if (endIndex < 0 || endIndex == dragSelectEndIndex) return
         applyDragSelectRange(endIndex)
     }
@@ -473,6 +477,18 @@ fun ScreenshotPickerContent(
                 modifier = Modifier.fillMaxWidth(),
             )
 
+            if (imageAccessLevel == ImageAccessLevel.Selected) {
+                PartialPhotoAccessCard(
+                    onRequestFullPhotoAccess = onRequestFullPhotoAccess,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = ScreenshotPickerTokens.PartialAccessCardHorizontalPadding,
+                            vertical = ScreenshotPickerTokens.PartialAccessCardVerticalPadding,
+                        ),
+                )
+            }
+
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -487,14 +503,20 @@ fun ScreenshotPickerContent(
                     }
 
                     uiState.availableScreenshots.isEmpty() -> {
+                        // PartiallyExpanded(~50%)에서도 보이도록 상단 배치.
+                        // Partial 권한 카드가 있으면 그 아래(Column 순서)에 온다.
                         Text(
                             text = stringResource(R.string.organize_selection_empty),
                             style = RecapBody2,
                             color = RecapGray300,
                             textAlign = TextAlign.Center,
                             modifier = Modifier
-                                .align(Alignment.Center)
-                                .padding(horizontal = ScreenshotPickerTokens.EmptyHorizontalPadding),
+                                .align(Alignment.TopCenter)
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = ScreenshotPickerTokens.EmptyHorizontalPadding,
+                                    vertical = ScreenshotPickerTokens.EmptyVerticalPadding,
+                                ),
                         )
                     }
 
@@ -579,17 +601,14 @@ fun ScreenshotPickerContent(
                         .graphicsLayer {
                             val progress = confirmAppearProgress.value
                             alpha = progress
-                            translationY =
-                                (1f - progress) * size.height + ctaHideSinkY
+                            translationY = (1f - progress) * size.height + ctaHideSinkY
                         },
                 )
             }
         }
 
         val toastBottomPadding = if (uiState.canProceed) {
-            ScreenshotPickerTokens.ConfirmButtonBottomPadding +
-                    RecapButtonSize.Large.height +
-                    ScreenshotPickerTokens.ToastAboveConfirmButtonSpacing
+            ScreenshotPickerTokens.ConfirmButtonBottomPadding + RecapButtonSize.Large.height + ScreenshotPickerTokens.ToastAboveConfirmButtonSpacing
         } else {
             ScreenshotPickerTokens.ToastBottomPadding
         }
@@ -646,6 +665,77 @@ private fun ScreenshotPickerToolbar(
             fontWeight = FontWeight.Bold,
             color = RecapBlue300,
         )
+    }
+}
+
+@Composable
+private fun PartialPhotoAccessCard(
+    onRequestFullPhotoAccess: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val message = stringResource(R.string.organize_partial_photo_access_message)
+    val actionLabel = stringResource(R.string.organize_partial_photo_access_button)
+    Surface(
+        onClick = onRequestFullPhotoAccess,
+        modifier = modifier.semantics {
+            role = Role.Button
+            contentDescription = "$message, $actionLabel"
+        },
+        shape = RoundedCornerShape(ScreenshotPickerTokens.PartialAccessCardCornerRadius),
+        color = RecapBlue50,
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    vertical = ScreenshotPickerTokens.PartialAccessCardContentVerticalPadding,
+                    horizontal = ScreenshotPickerTokens.PartialAccessCardContentHorizontalPadding
+                ),
+            horizontalArrangement = Arrangement.spacedBy(
+                ScreenshotPickerTokens.PartialAccessCardIconSpacing,
+            ),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_partial_photo_access_15),
+                contentDescription = null,
+                modifier = Modifier.size(ScreenshotPickerTokens.PartialAccessCardIconSize),
+                tint = Color.Unspecified,
+            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(
+                    ScreenshotPickerTokens.PartialAccessCardTextSpacing,
+                ),
+            ) {
+                Text(
+                    text = message,
+                    style = RecapHeading4,
+                    color = RecapGray700,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(
+                        ScreenshotPickerTokens.PartialAccessCardActionChevronSpacing,
+                    ),
+                ) {
+                    Text(
+                        text = actionLabel,
+                        style = RecapHeading4,
+                        color = RecapBlue300,
+                    )
+                    Icon(
+                        painter = painterResource(R.drawable.ic_chevron_right_24),
+                        contentDescription = null,
+                        modifier = Modifier.size(
+                            ScreenshotPickerTokens.PartialAccessCardActionChevronSize,
+                        ),
+                        tint = RecapBlue300,
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -879,62 +969,7 @@ private fun View.performSoftLongPressHaptic() {
     performHapticFeedback(feedbackConstant)
 }
 
-private fun LocalImage.toSheetImageModel(): Any {
-    val drawableResId = uri.toPreviewDrawableResIdOrNull()
-    return drawableResId ?: uri.toUri()
-}
-
-private fun String.toPreviewDrawableResIdOrNull(): Int? {
-    if (!startsWith(PreviewDrawableUriPrefix)) return null
-    return removePrefix(PreviewDrawableUriPrefix)
-        .substringBefore('/')
-        .toIntOrNull()
-}
-
-private fun previewLocalImage(
-    @DrawableRes drawableResId: Int,
-    displayName: String,
-    dateAddedMillis: Long,
-): LocalImage = LocalImage(
-    uri = "$PreviewDrawableUriPrefix$drawableResId/$displayName",
-    displayName = displayName,
-    dateAddedMillis = dateAddedMillis,
-)
-
-private const val PreviewDrawableUriPrefix = "drawable://"
-
-val ScreenshotPickerPreviewScreenshots = listOf(
-    previewLocalImage(
-        drawableResId = R.drawable.mock_home_screenshot_return,
-        displayName = "screenshot-return",
-        dateAddedMillis = 6L,
-    ),
-    previewLocalImage(
-        drawableResId = R.drawable.mock_home_screenshot_hotel,
-        displayName = "screenshot-hotel",
-        dateAddedMillis = 5L,
-    ),
-    previewLocalImage(
-        drawableResId = R.drawable.mock_home_screenshot_recipe,
-        displayName = "screenshot-recipe",
-        dateAddedMillis = 4L,
-    ),
-    previewLocalImage(
-        drawableResId = R.drawable.mock_home_screenshot_tax,
-        displayName = "screenshot-tax",
-        dateAddedMillis = 3L,
-    ),
-    previewLocalImage(
-        drawableResId = R.drawable.mock_home_screenshot_restaurant,
-        displayName = "screenshot-restaurant",
-        dateAddedMillis = 2L,
-    ),
-    previewLocalImage(
-        drawableResId = R.drawable.mock_home_screenshot_return,
-        displayName = "screenshot-return-2",
-        dateAddedMillis = 1L,
-    ),
-)
+private fun LocalImage.toSheetImageModel(): Any = uri.toUri()
 
 private object ScreenshotPickerTokens {
     /** Expanded 상태 시트 높이. PartiallyExpanded(~50%)는 Material3 ModalBottomSheet가 처리한다. */
@@ -948,10 +983,21 @@ private object ScreenshotPickerTokens {
     val ToolbarHorizontalPadding = 16.dp
     val TitleStartPadding = 4.dp
     val CountStartPadding = 8.dp
+    val PartialAccessCardHorizontalPadding = 16.dp
+    val PartialAccessCardVerticalPadding = 8.dp
+    val PartialAccessCardContentHorizontalPadding = 20.dp
+    val PartialAccessCardContentVerticalPadding = 15.5.dp
+    val PartialAccessCardCornerRadius = 12.dp
+    val PartialAccessCardIconSize = 15.dp
+    val PartialAccessCardIconSpacing = 10.dp
+    val PartialAccessCardTextSpacing = 12.dp
+    val PartialAccessCardActionChevronSize = 16.dp
+    val PartialAccessCardActionChevronSpacing = 2.dp
     val ControlMinSize = 48.dp
     val IconSize = 24.dp
     val GridSpacing = 2.dp
     val EmptyHorizontalPadding = 24.dp
+    val EmptyVerticalPadding = 48.dp
     val CheckIconSize = 24.dp
     val CheckHitSize = 40.dp
     const val SelectedScale = 0.95f
@@ -962,32 +1008,6 @@ private object ScreenshotPickerTokens {
     val ToastHorizontalPadding = 24.dp
     val ToastBottomPadding = 16.dp
     val ToastAboveConfirmButtonSpacing = 15.dp
-}
-
-@Preview(
-    name = "Screenshot Picker - Populated",
-    showBackground = true,
-    widthDp = 393,
-    heightDp = 852,
-)
-@Composable
-private fun ScreenshotPickerPopulatedPreview() {
-    RECAPTheme(dynamicColor = false) {
-        ScreenshotPickerContent(
-            uiState = OrganizeUiState(
-                isLoading = false,
-                availableScreenshots = ScreenshotPickerPreviewScreenshots,
-                selectedUris = listOf(
-                    ScreenshotPickerPreviewScreenshots[0].uri,
-                    ScreenshotPickerPreviewScreenshots[1].uri,
-                    ScreenshotPickerPreviewScreenshots[2].uri,
-                ),
-            ),
-            onAction = {},
-            onCloseClick = {},
-            onConfirmClick = {},
-        )
-    }
 }
 
 @Preview(
@@ -1004,6 +1024,26 @@ private fun ScreenshotPickerEmptyPreview() {
             onAction = {},
             onCloseClick = {},
             onConfirmClick = {},
+        )
+    }
+}
+
+@Preview(
+    name = "Screenshot Picker - Partial Access",
+    showBackground = true,
+    widthDp = 393,
+    heightDp = 852,
+)
+@Composable
+private fun ScreenshotPickerPartialAccessPreview() {
+    RECAPTheme(dynamicColor = false) {
+        ScreenshotPickerContent(
+            uiState = OrganizeUiState(isLoading = false),
+            onAction = {},
+            onCloseClick = {},
+            onConfirmClick = {},
+            imageAccessLevel = ImageAccessLevel.Selected,
+            onRequestFullPhotoAccess = {},
         )
     }
 }

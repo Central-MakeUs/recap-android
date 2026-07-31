@@ -1,6 +1,8 @@
 package com.chalkak.recap.app
 
 import android.annotation.SuppressLint
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,10 +17,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.chalkak.recap.BuildConfig
+import com.chalkak.recap.core.data.screenshot.permission.ImagePermissionRequestDestination
+import com.chalkak.recap.core.data.screenshot.permission.currentImageAccessLevel
+import com.chalkak.recap.core.data.screenshot.permission.imagePermissionRequestDestination
+import com.chalkak.recap.core.data.screenshot.permission.openPhotoAccessPermission
+import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBar
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDestination
+import com.chalkak.recap.core.design.component.popup.RecapPopup
+import com.chalkak.recap.core.design.theme.RecapBlue300
+import com.chalkak.recap.core.design.theme.White
+import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.feature.organize.OrganizeRoute
 import dev.chrisbanes.haze.HazePositionStrategy
@@ -38,6 +52,7 @@ fun RecapMainScreen(
     pendingOpenOrganize: Boolean = false,
     onPendingOpenOrganizeConsumed: () -> Unit = {},
 ) {
+    val context = LocalContext.current
     val backStack = rememberNavBackStack(MainTabRoute.Home)
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
     val hazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
@@ -45,11 +60,54 @@ fun RecapMainScreen(
     var openCollectionTypeDetailOnNextEnter by remember { mutableStateOf<String?>(null) }
     var collectionPredictiveBackProgress by remember { mutableFloatStateOf(0f) }
     var showOrganize by rememberSaveable { mutableStateOf(false) }
+    var showPhotoPermissionPopup by rememberSaveable { mutableStateOf(false) }
+    var photoAccessLevel by remember {
+        mutableStateOf(context.currentImageAccessLevel())
+    }
+    // 앱 설정 화면에서 돌아온 뒤에만 organize 오픈을 시도한다.
+    // 시스템 권한 다이얼로그는 pause/resume을 유발하므로 런처 콜백으로만 처리한다.
+    var awaitPermissionFromSettings by rememberSaveable { mutableStateOf(false) }
+
+    fun refreshPhotoAccessLevel() {
+        photoAccessLevel = context.currentImageAccessLevel()
+    }
+
+    fun attemptOpenOrganize() {
+        refreshPhotoAccessLevel()
+        if (photoAccessLevel == ImageAccessLevel.Denied) {
+            showPhotoPermissionPopup = true
+        } else {
+            showOrganize = true
+        }
+    }
+
+    fun finishPermissionRequest() {
+        refreshPhotoAccessLevel()
+        showPhotoPermissionPopup = false
+        awaitPermissionFromSettings = false
+        if (photoAccessLevel != ImageAccessLevel.Denied) {
+            showOrganize = true
+        }
+    }
+
+    LifecycleResumeEffect(Unit) {
+        refreshPhotoAccessLevel()
+        if (awaitPermissionFromSettings) {
+            finishPermissionRequest()
+        }
+        onPauseOrDispose { }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestMultiplePermissions(),
+    ) {
+        finishPermissionRequest()
+    }
 
     LaunchedEffect(pendingOpenOrganize) {
         if (pendingOpenOrganize) {
-            showOrganize = true
             onPendingOpenOrganizeConsumed()
+            attemptOpenOrganize()
         }
     }
 
@@ -112,7 +170,7 @@ fun RecapMainScreen(
                         navigateTo(destination.toMainTabRoute())
                     },
                     onOrganizeClick = {
-                        showOrganize = true
+                        attemptOpenOrganize()
                     },
                 )
             },
@@ -125,7 +183,7 @@ fun RecapMainScreen(
                 onNavigateToSearch = onNavigateToSearch,
                 onNavigateToRecentOrganizedScreenshots = onNavigateToRecentOrganizedScreenshots,
                 onNavigateToOrganize = {
-                    showOrganize = true
+                    attemptOpenOrganize()
                 },
                 onNavigateToCollectionFavorites = ::navigateToCollectionFavorites,
                 onNavigateToCollectionTypeDetail = ::navigateToCollectionTypeDetail,
@@ -158,6 +216,42 @@ fun RecapMainScreen(
                     },
                 )
             }
+        }
+
+        if (showPhotoPermissionPopup) {
+            RecapPopup(
+                title = stringResource(R.string.photo_access_permission_title),
+                description = stringResource(R.string.photo_access_permission_description),
+                confirmButtonText = stringResource(
+                    R.string.photo_access_permission_request_permission,
+                ),
+                cancelButtonText = stringResource(R.string.photo_access_permission_later_button),
+                onConfirmClick = {
+                    if (
+                        context.imagePermissionRequestDestination() ==
+                        ImagePermissionRequestDestination.ApplicationSettings
+                    ) {
+                        awaitPermissionFromSettings = true
+                    }
+                    openPhotoAccessPermission(
+                        context = context,
+                        photoAccessLevel = photoAccessLevel,
+                        onRequestPermissions = { permissions ->
+                            permissionLauncher.launch(permissions)
+                        },
+                    )
+                },
+                onCancelClick = {
+                    showPhotoPermissionPopup = false
+                    awaitPermissionFromSettings = false
+                },
+                onDismissRequest = {
+                    showPhotoPermissionPopup = false
+                    awaitPermissionFromSettings = false
+                },
+                confirmButtonColor = RecapBlue300,
+                confirmButtonContentColor = White,
+            )
         }
     }
 }

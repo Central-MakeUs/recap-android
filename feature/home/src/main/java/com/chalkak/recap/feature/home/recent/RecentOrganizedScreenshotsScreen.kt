@@ -36,7 +36,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -58,8 +57,8 @@ import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
-import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading4
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 
@@ -132,18 +131,20 @@ private fun RecentOrganizedScreenshotsContent(
     }
     val listState = rememberLazyListState()
     val displayCount = uiState.resultCount.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+    val countHeaderItemCount = if (displayCount > 0) 1 else 0
     var lastRequestedPage by remember { mutableIntStateOf(-1) }
 
     LaunchedEffect(
         listState,
         visibleItems.size,
+        countHeaderItemCount,
         uiState.hasNext,
         uiState.isLoadingMore,
         uiState.nextPage,
     ) {
         snapshotFlow {
-            val secondLastIndex = visibleItems.lastIndex - 1
-            secondLastIndex >= 0 &&
+            val secondLastIndex = countHeaderItemCount + visibleItems.lastIndex - 1
+            secondLastIndex >= countHeaderItemCount &&
                 listState.layoutInfo.visibleItemsInfo.any { item -> item.index == secondLastIndex }
         }
             .distinctUntilChanged()
@@ -160,86 +161,97 @@ private fun RecentOrganizedScreenshotsContent(
             }
     }
 
-    Column(modifier = modifier.fillMaxSize()) {
-        if (displayCount > 0) {
-            Text(
-                text = buildAnnotatedString {
-                    withStyle(SpanStyle(color = RecapGray700)) {
-                        append(displayCount.toString())
-                    }
-                    append(" ")
-                    withStyle(SpanStyle(color = RecapGray500)) {
-                        append(
-                            pluralStringResource(
-                                R.plurals.recap_haze_folder_card_recap_label,
-                                displayCount,
-                            ),
-                        )
-                    }
-                },
-                modifier = Modifier
-                    .padding(
-                        horizontal = RecentOrganizedScreenshotsTokens.HorizontalPadding,
-                        vertical = RecentOrganizedScreenshotsTokens.CountVerticalPadding,
-                    )
-                    .align(alignment = Alignment.End),
-                style = RecapCaption1,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        if (visibleItems.isEmpty()) {
+    if (visibleItems.isEmpty()) {
+        Column(modifier = modifier.fillMaxSize()) {
+            if (displayCount > 0) {
+                RecentOrganizedScreenshotsCountText(displayCount = displayCount)
+            }
             RecentOrganizedScreenshotsEmptyContent(
                 onImportClick = {
                     onAction(RecentOrganizedScreenshotsAction.StartImport)
                 },
             )
-        } else {
-            LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                state = listState,
-                contentPadding = PaddingValues(
-                    bottom = RecentOrganizedScreenshotsTokens.ListVerticalPadding +
-                        navigationBarBottomPadding,
-                ),
-            ) {
-                items(
-                    items = visibleItems,
-                    key = { item -> item.id },
-                ) { item ->
-                    ScreenshotCard(
-                        thumbnailModel = item.thumbnailModel,
-                        categoryType = item.categoryType,
-                        title = item.title,
-                        description = item.description,
-                        isFavorite = item.isFavorite,
-                        onClick = { onAction(RecentOrganizedScreenshotsAction.SelectItem(item.id)) },
-                        onFavoriteClick = {
-                            onAction(RecentOrganizedScreenshotsAction.ToggleFavorite(item.id))
-                        },
-                        horizontalContentPadding = RecentOrganizedScreenshotsTokens.HorizontalPadding,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+        }
+    } else {
+        LazyColumn(
+            modifier = modifier.fillMaxSize(),
+            state = listState,
+            contentPadding = PaddingValues(
+                bottom = RecentOrganizedScreenshotsTokens.ListVerticalPadding +
+                    navigationBarBottomPadding,
+            ),
+        ) {
+            if (displayCount > 0) {
+                item(key = "recent_organized_count") {
+                    RecentOrganizedScreenshotsCountText(displayCount = displayCount)
                 }
-                if (uiState.isLoadingMore) {
-                    item(key = "recent_loading_more") {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = RecapBlue500,
-                                strokeWidth = 2.dp,
-                            )
-                        }
+            }
+            items(
+                items = visibleItems,
+                key = { item -> item.id },
+            ) { item ->
+                ScreenshotCard(
+                    thumbnailModel = item.thumbnailModel,
+                    categoryType = item.categoryType,
+                    title = item.title,
+                    description = item.description,
+                    isFavorite = item.isFavorite,
+                    onClick = { onAction(RecentOrganizedScreenshotsAction.SelectItem(item.id)) },
+                    onFavoriteClick = {
+                        onAction(RecentOrganizedScreenshotsAction.ToggleFavorite(item.id))
+                    },
+                    horizontalContentPadding = RecentOrganizedScreenshotsTokens.HorizontalPadding,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            if (uiState.isLoadingMore) {
+                item(key = "recent_loading_more") {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            color = RecapBlue500,
+                            strokeWidth = 2.dp,
+                        )
                     }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun RecentOrganizedScreenshotsCountText(
+    displayCount: Int,
+    modifier: Modifier = Modifier,
+) {
+    Text(
+        text = buildAnnotatedString {
+            withStyle(RecapHeading4.toSpanStyle().copy(color = RecapGray700)) {
+                append(displayCount.toString())
+            }
+            append(" ")
+            withStyle(RecapBody2.toSpanStyle().copy(color = RecapGray500)) {
+                append(
+                    pluralStringResource(
+                        R.plurals.recap_haze_folder_card_recap_label,
+                        displayCount,
+                    ),
+                )
+            }
+        },
+        modifier = modifier.padding(
+            horizontal = RecentOrganizedScreenshotsTokens.HorizontalPadding,
+            vertical = RecentOrganizedScreenshotsTokens.CountVerticalPadding,
+        ),
+        style = RecapBody2,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+    )
 }
 
 @Composable
@@ -367,22 +379,6 @@ private object RecentOrganizedScreenshotsTokens {
     val ErrorDescriptionSpacing = 23.dp
     val ErrorRetryHorizontalPadding = 52.dp
     val ErrorRetryVerticalPadding = 12.5.dp
-}
-
-@Preview(
-    name = "Recent Organized Screenshots",
-    showBackground = true,
-    widthDp = 360,
-    heightDp = 800,
-)
-@Composable
-private fun RecentOrganizedScreenshotsScreenPreview() {
-    RECAPTheme(dynamicColor = false) {
-        RecentOrganizedScreenshotsScreen(
-            uiState = RecentOrganizedScreenshotsPreviewUiState,
-            onAction = {},
-        )
-    }
 }
 
 @Preview(

@@ -116,6 +116,7 @@ fun DataManagementScreen(
                 DataTransferConsentSection(
                     isConsented = uiState.isAiDataTransferConsented,
                     consentDate = uiState.aiDataTransferConsentDate,
+                    actionsEnabled = !uiState.hasFetchError,
                     onConsentActionClick = {
                         onAction(DataManagementAction.AiDataTransferConsentClick)
                     },
@@ -164,7 +165,7 @@ fun DataManagementScreen(
 
     if (uiState.showAiDataTransferConsentSheet) {
         DataManagementAiDataTransferConsentSheet(
-            isConsented = uiState.isAiDataTransferConsented,
+            isConsented = uiState.isAiDataTransferConsented == true,
             onAction = onAction,
         )
     }
@@ -209,8 +210,9 @@ private fun DataManagementAiDataTransferConsentSheet(
 
 @Composable
 private fun DataTransferConsentSection(
-    isConsented: Boolean,
+    isConsented: Boolean?,
     consentDate: String,
+    actionsEnabled: Boolean,
     onConsentActionClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -232,6 +234,7 @@ private fun DataTransferConsentSection(
         AiDataTransferConsentRow(
             isConsented = isConsented,
             consentDate = consentDate,
+            actionsEnabled = actionsEnabled,
             onActionClick = onConsentActionClick,
         )
     }
@@ -239,12 +242,16 @@ private fun DataTransferConsentSection(
 
 @Composable
 private fun AiDataTransferConsentRow(
-    isConsented: Boolean,
+    isConsented: Boolean?,
     consentDate: String,
+    actionsEnabled: Boolean,
     onActionClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val isLoading = isConsented == null
+    val isActionClickable = actionsEnabled && !isLoading
     val statusText = when {
+        isConsented == null -> null
         isConsented && consentDate.isNotBlank() -> {
             stringResource(
                 R.string.settings_data_management_ai_consent_agreed_format,
@@ -254,13 +261,17 @@ private fun AiDataTransferConsentRow(
         isConsented -> stringResource(R.string.settings_data_management_ai_consent_agreed)
         else -> stringResource(R.string.settings_data_management_ai_consent_not_agreed)
     }
-    val actionText = stringResource(
-        if (isConsented) {
-            R.string.settings_data_management_ai_consent_revoke
-        } else {
-            R.string.settings_data_management_ai_consent_agree
-        },
-    )
+    val actionText = if (isLoading) {
+        stringResource(R.string.settings_data_management_ai_consent_checking)
+    } else {
+        stringResource(
+            if (isConsented == true) {
+                R.string.settings_data_management_ai_consent_revoke
+            } else {
+                R.string.settings_data_management_ai_consent_agree
+            },
+        )
+    }
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -276,20 +287,26 @@ private fun AiDataTransferConsentRow(
                 style = RecapBody1,
                 color = RecapGray900,
             )
-            Text(
-                text = statusText,
-                style = RecapBody2,
-                color = RecapGray300,
-            )
+            if (statusText != null) {
+                Text(
+                    text = statusText,
+                    style = RecapBody2,
+                    color = RecapGray300,
+                )
+            }
         }
         Text(
             text = actionText,
-            modifier = Modifier.clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                role = Role.Button,
-                onClick = onActionClick,
-            ),
+            modifier = if (isActionClickable) {
+                Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onActionClick,
+                )
+            } else {
+                Modifier
+            },
             style = RecapBody2,
             color = RecapGray300,
         )
@@ -344,6 +361,49 @@ private fun DataManagementScreenPreview() {
                 aiDataTransferConsentDate = stringResource(
                     R.string.settings_data_management_ai_consent_preview_date,
                 ),
+            ),
+            onAction = {},
+        )
+    }
+}
+
+@Preview(name = "Data Management Count Checking", showBackground = true, widthDp = 360)
+@Composable
+private fun DataManagementScreenCountCheckingPreview() {
+    RECAPTheme(dynamicColor = false) {
+        DataManagementScreen(
+            uiState = DataManagementUiState(
+                organizedCount = null,
+                isAiDataTransferConsented = null,
+            ),
+            onAction = {},
+        )
+    }
+}
+
+@Preview(name = "Data Management Consent Checking", showBackground = true, widthDp = 360)
+@Composable
+private fun DataManagementScreenConsentCheckingPreview() {
+    RECAPTheme(dynamicColor = false) {
+        DataManagementScreen(
+            uiState = DataManagementUiState(
+                organizedCount = DataManagementScreenPreviewCount,
+                isAiDataTransferConsented = null,
+            ),
+            onAction = {},
+        )
+    }
+}
+
+@Preview(name = "Data Management Fetch Error", showBackground = true, widthDp = 360)
+@Composable
+private fun DataManagementScreenFetchErrorPreview() {
+    RECAPTheme(dynamicColor = false) {
+        DataManagementScreen(
+            uiState = DataManagementUiState(
+                organizedCount = null,
+                isAiDataTransferConsented = null,
+                hasFetchError = true,
             ),
             onAction = {},
         )

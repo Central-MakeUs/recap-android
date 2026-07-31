@@ -128,7 +128,9 @@ class MainActivityEntryViewModelTest {
         }
 
         assertTrue(viewModel.consumeOnboardingSampleShareSuccess(intent))
+        assertEquals(1, viewModel.pendingOnboardingSampleShareAdvanceRequestId.value)
         assertFalse(viewModel.consumeOnboardingSampleShareSuccess(intent))
+        assertEquals(1, viewModel.pendingOnboardingSampleShareAdvanceRequestId.value)
     }
 
     @Test
@@ -142,6 +144,35 @@ class MainActivityEntryViewModelTest {
         }
 
         assertFalse(viewModel.consumeOnboardingSampleShareSuccess(intent))
+        assertNull(viewModel.pendingOnboardingSampleShareAdvanceRequestId.value)
+    }
+
+    @Test
+    fun `completed onboarding sample share advance is not restored as pending`() {
+        val savedStateHandle = SavedStateHandle()
+        val viewModel = MainActivityEntryViewModel(savedStateHandle, store)
+        viewModel.requestOnboardingSampleShareAdvance()
+        val requestId = viewModel.pendingOnboardingSampleShareAdvanceRequestId.value!!
+
+        viewModel.completeOnboardingSampleShareAdvance(requestId)
+        val recreatedViewModel = MainActivityEntryViewModel(savedStateHandle, store)
+
+        assertNull(recreatedViewModel.pendingOnboardingSampleShareAdvanceRequestId.value)
+    }
+
+    @Test
+    fun `new onboarding sample share advance after completion uses a higher request id`() {
+        val viewModel = MainActivityEntryViewModel(SavedStateHandle(), store)
+        viewModel.requestOnboardingSampleShareAdvance()
+        val firstRequestId = viewModel.pendingOnboardingSampleShareAdvanceRequestId.value!!
+        viewModel.completeOnboardingSampleShareAdvance(firstRequestId)
+
+        viewModel.requestOnboardingSampleShareAdvance()
+
+        assertEquals(
+            firstRequestId + 1,
+            viewModel.pendingOnboardingSampleShareAdvanceRequestId.value,
+        )
     }
 
     private fun sampleRequest(requestId: String): SharedAnalysisRequest {

@@ -15,10 +15,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.RecapLegalUrls
 import com.chalkak.recap.core.design.component.divider.RecapSectionDivider
 import com.chalkak.recap.core.design.component.topbar.RecapTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
@@ -37,6 +39,8 @@ fun PrivacyGuideScreen(
     onTermsClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val uriHandler = LocalUriHandler.current
+
     Surface(
         modifier = modifier.fillMaxSize(),
         color = RecapBackground,
@@ -110,11 +114,17 @@ fun PrivacyGuideScreen(
                 )
                 SettingsNavRow(
                     titleResId = R.string.settings_service_info_privacy_title,
-                    onClick = onPrivacyPolicyClick,
+                    onClick = {
+                        uriHandler.openUri(RecapLegalUrls.PRIVACY_POLICY)
+                        onPrivacyPolicyClick()
+                    },
                 )
                 SettingsNavRow(
                     titleResId = R.string.settings_service_info_terms_title,
-                    onClick = onTermsClick,
+                    onClick = {
+                        uriHandler.openUri(RecapLegalUrls.TERMS_OF_SERVICE)
+                        onTermsClick()
+                    },
                 )
                 Spacer(modifier = Modifier.height(SettingsRowTokens.BottomSpacing))
             }

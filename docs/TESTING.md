@@ -30,6 +30,18 @@ PowerShell debug build:
 $env:GRADLE_USER_HOME="$env:USERPROFILE\.gradle"; .\gradlew.bat assembleDebug
 ```
 
+qa 빌드(Performance 플러그인 instrumentation 포함):
+
+```powershell
+$env:GRADLE_USER_HOME="$env:USERPROFILE\.gradle"; .\gradlew.bat assembleQa
+```
+
+Firebase Observability 수동 확인(qa/release 기기):
+
+- DEBUG: Crashlytics/Performance collection OFF
+- qa/release: Crashlytics·Performance ON
+- 강제 non-fatal / organize·share custom trace가 Firebase 콘솔에 보이는지 확인
+
 로컬 단위 테스트가 추가된 뒤 기본 test 명령:
 
 ```powershell

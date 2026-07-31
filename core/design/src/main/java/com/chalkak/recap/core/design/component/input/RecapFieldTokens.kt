@@ -8,6 +8,6 @@ internal object RecapFieldTokens {
     val ContentPadding = 13.dp
     val SingleLineMinHeight = 48.dp
     val MultiLineMinHeight = 120.dp
-    val BorderWidth = 1.5.dp
+    val BorderWidth = 1.dp
     val Shape = RoundedCornerShape(12.dp)
 }

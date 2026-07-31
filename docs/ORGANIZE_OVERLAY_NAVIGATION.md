@@ -18,8 +18,8 @@
 
 ## 시스템 구조 (현재)
 
-Organize는 루트 `AppRoute` destination이 **아니다**.  
-`RecapMainScreen` 위의 **조건부 오버레이**로 올라간다.
+Organize는 루트 AppRoute destination이 **아니다**.
+기본(Main) 경로에서는 RecapMainScreen 위의 **조건부 오버레이**로 올라간다.
 
 ```text
 RecapNavHost (AppRoute NavDisplay)
@@ -33,16 +33,42 @@ RecapNavHost (AppRoute NavDisplay)
             └── ScreenshotPicker (showScreenshotPicker, ModalBottomSheet Dialog)
 ```
 
+### 온보딩 첫 정리 예외 (Onboarding root host)
+
+온보딩 StartFirstAnalyze의 첫 정리는 Main overlay가 아니라
+RecapRootRoute.Onboarding entry가 같은 OrganizeRoute를 host한다.
+
+```text
+RecapRootRoute.Onboarding
+└── OnboardingFirstOrganizeHost
+    ├── OnboardingRoute (StartFirstAnalyze 배경)
+    ├── if (OrganizeOverlay) OrganizeRoute   ← 피커/확인
+    └── if (AnalysisSession) OrganizeAnalysisStatusRoute  ← 진행/결과
+```
+
+정책:
+
+- 피커 스크림 뒤에는 Home이 아니라 OnboardingStartFirstAnalyzeScreen이 보인다.
+- 피커/확인 취소(선택 없음 dismiss, 선택 폐기 확정, Confirmation back)는
+  Organize만 닫고 StartFirstAnalyze로 복귀한다. onboardingCompleted는 저장하지 않는다.
+- 분석 시작 후 진행/결과 화면도 온보딩 위에 표시한다. 진행 중 취소/back은
+  분석을 취소하고 StartFirstAnalyze로 돌아가며 완료 값을 저장하지 않는다.
+- terminal 결과의 시스템 back은 소비만 하고 화면에 머문다.
+  완료/닫기에서만 terminal state를 비우고 온보딩을 완료한 뒤 Main Home으로 간다.
+- Main의 Home/Collection Organize overlay와 AppRoute.OrganizeAnalysisStatus 동작은
+  변경하지 않는다.
+
 ### 계층별 역할
 
 | 계층 | 파일 | 역할 |
 |------|------|------|
-| 루트 Nav | `app/.../RecapNavHost.kt`, `AppRoute.kt` | MainTabs 등 앱 전역 route. **Organize route 없음** |
-| 메인 셸 | `app/.../RecapMainScreen.kt` | `showOrganize` 플래그로 Organize 오버레이 on/off. 탭 스택은 유지 |
-| Organize host | `feature/organize/.../OrganizeRoute.kt` | 시트/Confirmation 로컬 UI 상태, 전환, back, 선택 초기 |
-| 피커 | `.../ScreenshotPicker.kt` | Material3 `ModalBottomSheet` (별도 Dialog 윈도우) |
-| 확인 | `.../ScreenshotConfirmationScreen.kt` | 선택 확인 UI. 자체 Nav 없음 |
-| 상태 | `OrganizeViewModel` / `OrganizeAction` | 선택 목록. `ClearSelection`으로 초기화 |
+| 루트 Nav | app/.../RecapNavHost.kt, AppRoute.kt | MainTabs 등 앱 전역 route. **Organize route 없음** |
+| 메인 셸 | app/.../RecapMainScreen.kt | showOrganize 플래그로 Organize 오버레이 on/off. 탭 스택은 유지 |
+| 온보딩 host | app/.../OnboardingFirstOrganizeHost.kt | 온보딩 첫 정리 overlay/analysis session host |
+| Organize host | feature/organize/.../OrganizeRoute.kt | 시트/Confirmation 로컬 UI 상태, 전환, back, 선택 유지 |
+| 피커 | .../ScreenshotPicker.kt | Material3 ModalBottomSheet (별도 Dialog 윈도우) |
+| 확인 | .../ScreenshotConfirmationScreen.kt | 선택 확인 UI. 자체 Nav 없음 |
+| 상태 | OrganizeViewModel / OrganizeAction | 선택 목록. ClearSelection으로 초기화 |
 
 ### Organize 내부 상태 (NavDisplay 아님)
 
@@ -141,6 +167,7 @@ predictive back 시 Surface/`contentPredictiveBackScaling`이 서로 다른 scal
 ## 핵심 파일
 
 - `app/src/main/java/com/chalkak/recap/app/RecapMainScreen.kt` — `showOrganize` 오버레이 host
+- `app/src/main/java/com/chalkak/recap/app/OnboardingFirstOrganizeHost.kt` — 온보딩 첫 정리 overlay/analysis host
 - `app/src/main/java/com/chalkak/recap/app/RecapNavHost.kt` — Organize를 AppRoute에 두지 않음
 - `app/src/main/java/com/chalkak/recap/app/AppRoute.kt` — Organize object 없음
 - `feature/organize/.../OrganizeRoute.kt` — 전환/back/시트 생명주기

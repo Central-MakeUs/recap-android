@@ -1,5 +1,10 @@
 package com.chalkak.recap.feature.collection
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -24,7 +29,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -62,6 +66,7 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading4
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
+
 @Composable
 fun CollectionDetailScreen(
     detail: CollectionDetailUiModel,
@@ -89,23 +94,40 @@ fun CollectionDetailScreen(
         color = MaterialTheme.colorScheme.background,
     ) {
         Column(modifier = Modifier.fillMaxSize()) {
-            if (isSearchVisible) {
-                CollectionDetailSearchBar(
-                    query = searchQuery,
-                    onQueryChange = { query ->
-                        onAction(CollectionAction.UpdateDetailSearchQuery(query))
-                    },
-                    onSearch = { onAction(CollectionAction.SubmitDetailSearch) },
-                    onBackClick = { onAction(CollectionAction.HideDetailSearch) },
-                )
-            } else {
-                CollectionDetailTopBar(
-                    title = stringResource(detail.titleResId),
-                    leadingIconResId = categoryType?.iconResId,
-                    leadingIconTint = categoryType?.borderColor ?: RecapBlue500,
-                    onBackClick = onBackClick,
-                    onSearchClick = { onAction(CollectionAction.ShowDetailSearch) },
-                )
+            AnimatedContent(
+                targetState = isSearchVisible,
+                modifier = Modifier.fillMaxWidth(),
+                transitionSpec = {
+                    fadeIn(
+                        animationSpec = tween(CollectionDetailTokens.SearchToggleFadeMillis),
+                    ) togetherWith fadeOut(
+                        animationSpec = tween(CollectionDetailTokens.SearchToggleFadeMillis),
+                    )
+                },
+                label = "collectionDetailSearchToggle",
+            ) { searchVisible ->
+                if (searchVisible) {
+                    CollectionDetailSearchBar(
+                        query = searchQuery,
+                        onQueryChange = { query ->
+                            onAction(CollectionAction.UpdateDetailSearchQuery(query))
+                        },
+                        onSearch = { onAction(CollectionAction.SubmitDetailSearch) },
+                        onBackClick = { onAction(CollectionAction.HideDetailSearch) },
+                        placeholder = stringResource(
+                            R.string.collection_detail_search_placeholder,
+                            stringResource(detail.titleResId),
+                        ),
+                    )
+                } else {
+                    CollectionDetailTopBar(
+                        title = stringResource(detail.titleResId),
+                        leadingIconResId = categoryType?.iconResId,
+                        leadingIconTint = categoryType?.borderColor ?: RecapBlue500,
+                        onBackClick = onBackClick,
+                        onSearchClick = { onAction(CollectionAction.ShowDetailSearch) },
+                    )
+                }
             }
             CollectionDetailToolbar(
                 selectedSort = detail.sort,
@@ -219,49 +241,37 @@ private fun CollectionDetailSearchBar(
     onQueryChange: (String) -> Unit,
     onSearch: () -> Unit,
     onBackClick: () -> Unit,
+    placeholder: String,
     modifier: Modifier = Modifier,
 ) {
-    val interactionSource = remember { MutableInteractionSource() }
-
-    Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 8.dp),
-    ) {
+    Column(modifier = modifier.fillMaxWidth()) {
         Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(CollectionDetailTokens.SearchBarHeight)
-                .padding(horizontal = 8.dp),
+                .padding(horizontal = CollectionDetailTokens.HorizontalPadding),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(48.dp)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        role = Role.Button,
-                        onClick = onBackClick,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_chevron_left_24),
-                    contentDescription = stringResource(
-                        R.string.collection_back_content_description,
-                    ),
-                    tint = RecapGray900,
-                    modifier = Modifier.size(24.dp),
-                )
-            }
             RecapSearchBar(
                 value = query,
                 onValueChange = onQueryChange,
                 onSearch = onSearch,
+                autoFocus = true,
+                placeholder = placeholder,
                 modifier = Modifier.weight(1f),
+            )
+            Text(
+                text = stringResource(R.string.search_screen_close),
+                style = RecapBody2,
+                color = RecapGray500,
+                modifier = Modifier.clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onBackClick,
+                ),
             )
         }
     }
@@ -377,6 +387,7 @@ private object CollectionDetailTokens {
     val RecapCountVerticalPadding = 12.dp
     val ListVerticalPadding = 4.dp
     val SearchBarHeight = 56.dp
+    const val SearchToggleFadeMillis = 150
     val EmptyCharacterWidth = 122.67.dp
     val EmptyCharacterHeight = 89.dp
     val EmptyCharacterOffsetX = 6.dp
@@ -460,7 +471,7 @@ private fun CollectionDetailEmptyPreview() {
     RECAPTheme(dynamicColor = false) {
         CollectionDetailScreen(
             detail = CollectionDetailUiModel(
-                titleResId = R.string.collection_content_type_shopping_product,
+                titleResId = R.string.category_type_shopping_product,
                 count = 0,
                 sort = CollectionListSort.Latest,
                 categoryType = RecapCategoryType.ShoppingProduct,
@@ -477,7 +488,7 @@ private fun CollectionDetailEmptyPreview() {
 
 private fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
     return CollectionDetailUiModel(
-        titleResId = R.string.collection_content_type_shopping_product,
+        titleResId = R.string.category_type_shopping_product,
         count = 3,
         sort = CollectionListSort.Latest,
         categoryType = RecapCategoryType.ShoppingProduct,
@@ -487,7 +498,7 @@ private fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
                 captureId = 1L,
                 title = "여름 원피스 주문 내역",
                 summary = "가격과 배송 정보가 포함된 상품 캡처",
-                contentTypeLabelResId = R.string.collection_content_type_shopping_product,
+                contentTypeLabelResId = R.string.category_type_shopping_product,
                 categoryType = RecapCategoryType.ShoppingProduct,
                 organizedAtMillis = 1_719_446_400_000L,
                 isFavorite = true,
@@ -497,7 +508,7 @@ private fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
                 captureId = 2L,
                 title = "택배 반품 절차",
                 summary = "반품 신청 전 확인해야 할 체크리스트",
-                contentTypeLabelResId = R.string.collection_content_type_shopping_product,
+                contentTypeLabelResId = R.string.category_type_shopping_product,
                 categoryType = RecapCategoryType.ShoppingProduct,
                 organizedAtMillis = 1_718_208_000_000L,
                 isFavorite = false,
@@ -507,7 +518,7 @@ private fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
                 captureId = 3L,
                 title = "노트북 가격 비교",
                 summary = "쿠팡 · 컴퓨존 견적 캡처 비교",
-                contentTypeLabelResId = R.string.collection_content_type_shopping_product,
+                contentTypeLabelResId = R.string.category_type_shopping_product,
                 categoryType = RecapCategoryType.ShoppingProduct,
                 organizedAtMillis = 1_717_862_400_000L,
                 isFavorite = false,

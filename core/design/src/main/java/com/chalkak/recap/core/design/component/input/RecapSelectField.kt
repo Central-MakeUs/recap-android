@@ -28,6 +28,7 @@ import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 
 @Composable
 fun RecapSelectField(
@@ -47,7 +48,7 @@ fun RecapSelectField(
         if (label != null) {
             Text(
                 text = label,
-                style = RecapBody2,
+                style = RecapCaption1,
                 color = RecapGray900,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -88,7 +89,7 @@ fun RecapSelectField(
                         role = Role.Button,
                         onClick = onActionClick,
                     ),
-                    style = RecapBody2,
+                    style = RecapCaption1,
                     fontWeight = FontWeight.Medium,
                     color = if (enabled) {
                         RecapBlue500

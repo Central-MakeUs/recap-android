@@ -332,7 +332,7 @@ object RecapButtonDefaults {
     @Composable
     fun primaryColors(): RecapButtonColors = colors(
         containerColor = RecapBlue300,
-        contentColor = RecapGray100,
+        contentColor = White,
     )
 
     fun secondaryColors(): RecapButtonColors = colors(
@@ -569,7 +569,7 @@ private fun RecapButtonPressedPreview() {
         modifier = Modifier.fillMaxWidth(),
         colors = RecapButtonDefaults.colors(
             containerColor = RecapBlue300,
-            contentColor = RecapGray100,
+            contentColor = White,
             pressedContainerColor = RecapBlue500,
         ),
         interactionSource = interactionSource,

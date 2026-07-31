@@ -9,6 +9,7 @@ import com.chalkak.recap.core.data.storage.MockStorageRepository
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
+import com.chalkak.recap.core.model.storage.StorageOverview
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -80,7 +81,8 @@ class CollectionViewModelTest {
         assertFalse(state.isLoading)
         assertFalse(state.hasStoredScreenshots)
         assertEquals(0, state.overview.favoriteSummary.count)
-        assertTrue(state.overview.typeSummaries.isEmpty())
+        assertEquals(ExpectedOverviewCategoryOrder, state.overview.typeSummaries.map { it.contentType })
+        assertTrue(state.overview.typeSummaries.all { it.count == 0 })
     }
 
     @Test
@@ -100,7 +102,12 @@ class CollectionViewModelTest {
         val state = viewModel.uiState.value
         assertTrue(state.hasStoredScreenshots)
         assertEquals(0, state.overview.favoriteSummary.count)
-        assertEquals(1, state.overview.typeSummaries.single().count)
+        assertEquals(
+            1,
+            state.overview.typeSummaries
+                .single { it.contentType == ScreenshotContentType.SHOPPING }
+                .count,
+        )
     }
 
     @Test
@@ -152,7 +159,8 @@ class CollectionViewModelTest {
         )
         advanceUntilIdle()
 
-        val summary = viewModel.uiState.value.overview.typeSummaries.single()
+        val summary = viewModel.uiState.value.overview.typeSummaries
+            .single { it.contentType == ScreenshotContentType.SHOPPING }
         assertEquals(3, summary.count)
         assertEquals(
             listOf("택배 반품 절차", "노트북 가격 비교"),
@@ -188,18 +196,19 @@ class CollectionViewModelTest {
         advanceUntilIdle()
 
         val overview = viewModel.uiState.value.overview
+        assertEquals(ExpectedOverviewCategoryOrder, overview.typeSummaries.map { it.contentType })
         assertEquals(
-            listOf(
-                ScreenshotContentType.SHOPPING,
-                ScreenshotContentType.ETC,
-            ),
-            overview.typeSummaries.map { it.contentType },
+            1,
+            overview.typeSummaries.single { it.contentType == ScreenshotContentType.SHOPPING }.count,
         )
-        assertEquals(2, overview.typeSummaries.last().count)
+        assertEquals(
+            2,
+            overview.typeSummaries.single { it.contentType == ScreenshotContentType.ETC }.count,
+        )
     }
 
     @Test
-    fun `zero count categories are excluded from overview`() = runTest(testDispatcher) {
+    fun `zero count categories are included in overview`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
                 storedCard(
@@ -212,9 +221,16 @@ class CollectionViewModelTest {
         )
         advanceUntilIdle()
 
+        val typeSummaries = viewModel.uiState.value.overview.typeSummaries
+        assertEquals(ExpectedOverviewCategoryOrder, typeSummaries.map { it.contentType })
         assertEquals(
-            listOf(ScreenshotContentType.SHOPPING),
-            viewModel.uiState.value.overview.typeSummaries.map { it.contentType },
+            1,
+            typeSummaries.single { it.contentType == ScreenshotContentType.SHOPPING }.count,
+        )
+        assertTrue(
+            typeSummaries
+                .filter { it.contentType != ScreenshotContentType.SHOPPING }
+                .all { it.count == 0 },
         )
     }
 
@@ -251,13 +267,18 @@ class CollectionViewModelTest {
 
         val overview = viewModel.uiState.value.overview
         assertEquals(2, overview.favoriteSummary.count)
+        assertEquals(ExpectedOverviewCategoryOrder, overview.typeSummaries.map { it.contentType })
         assertEquals(
-            listOf(
-                ScreenshotContentType.SHOPPING,
-                ScreenshotContentType.PLACE,
-                ScreenshotContentType.ETC,
-            ),
-            overview.typeSummaries.map { it.contentType },
+            1,
+            overview.typeSummaries.single { it.contentType == ScreenshotContentType.SHOPPING }.count,
+        )
+        assertEquals(
+            1,
+            overview.typeSummaries.single { it.contentType == ScreenshotContentType.PLACE }.count,
+        )
+        assertEquals(
+            1,
+            overview.typeSummaries.single { it.contentType == ScreenshotContentType.ETC }.count,
         )
     }
 
@@ -345,12 +366,45 @@ class CollectionViewModelTest {
         viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
         advanceUntilIdle()
 
+        val eventDeferred = async { viewModel.events.first() }
         viewModel.onAction(CollectionAction.ToggleFavorite(1L))
         advanceUntilIdle()
 
         coVerify(exactly = 1) {
             cardRepository.updateFavorite(captureId = 1L, isFavorite = true)
         }
+        assertEquals(
+            CollectionEvent.ShowFavoriteToast(isFavorite = true),
+            eventDeferred.await(),
+        )
+    }
+
+    @Test
+    fun `toggle favorite removal shows removed toast`() = runTest(testDispatcher) {
+        coEvery { cardRepository.updateFavorite(any(), any()) } returns Unit
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 1L,
+                    title = "Card",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    isFavorite = true,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
+
+        val eventDeferred = async { viewModel.events.first() }
+        viewModel.onAction(CollectionAction.ToggleFavorite(1L))
+        advanceUntilIdle()
+
+        assertEquals(
+            CollectionEvent.ShowFavoriteToast(isFavorite = false),
+            eventDeferred.await(),
+        )
     }
 
     @Test
@@ -852,6 +906,93 @@ class CollectionViewModelTest {
         assertEquals(CollectionSelectionUiState(), viewModel.uiState.value.selection)
     }
 
+    @Test
+    fun `overview failure auto retries once then shows load error`() = runTest(testDispatcher) {
+        val overviewResults = MutableSharedFlow<Result<StorageOverview>>(extraBufferCapacity = 1)
+        val storageRepository = mockk<com.chalkak.recap.core.data.storage.StorageRepository>(relaxed = true)
+        every { storageRepository.observeOverview(any()) } returns overviewResults
+        every { storageRepository.refreshOverview() } just Runs
+
+        val failingViewModel = CollectionViewModel(
+            storageRepository = storageRepository,
+            searchRepository = searchRepository,
+            captureMutationRepository = captureMutations,
+        )
+        runCurrent()
+
+        overviewResults.emit(Result.failure(IllegalStateException("offline")))
+        advanceUntilIdle()
+
+        verify(exactly = 1) { storageRepository.refreshOverview() }
+        assertTrue(failingViewModel.uiState.value.isLoading)
+        assertFalse(failingViewModel.uiState.value.isLoadError)
+
+        overviewResults.emit(Result.failure(IllegalStateException("still offline")))
+        advanceUntilIdle()
+
+        assertFalse(failingViewModel.uiState.value.isLoading)
+        assertTrue(failingViewModel.uiState.value.isLoadError)
+        verify(exactly = 1) { storageRepository.refreshOverview() }
+    }
+
+    @Test
+    fun `overview success after auto retry clears pending error`() = runTest(testDispatcher) {
+        val overviewResults = MutableSharedFlow<Result<StorageOverview>>(extraBufferCapacity = 1)
+        val storageRepository = mockk<com.chalkak.recap.core.data.storage.StorageRepository>(relaxed = true)
+        every { storageRepository.observeOverview(any()) } returns overviewResults
+        every { storageRepository.refreshOverview() } just Runs
+
+        val recoveringViewModel = CollectionViewModel(
+            storageRepository = storageRepository,
+            searchRepository = searchRepository,
+            captureMutationRepository = captureMutations,
+        )
+        runCurrent()
+
+        overviewResults.emit(Result.failure(IllegalStateException("offline")))
+        advanceUntilIdle()
+        overviewResults.emit(
+            Result.success(
+                StorageOverview(
+                    hasAnyCapture = false,
+                    favoriteCount = 0,
+                    types = emptyList(),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+
+        assertFalse(recoveringViewModel.uiState.value.isLoading)
+        assertFalse(recoveringViewModel.uiState.value.isLoadError)
+        assertFalse(recoveringViewModel.uiState.value.hasStoredScreenshots)
+    }
+
+    @Test
+    fun `RetryLoad refreshes overview after load error`() = runTest(testDispatcher) {
+        val overviewResults = MutableSharedFlow<Result<StorageOverview>>(extraBufferCapacity = 1)
+        val storageRepository = mockk<com.chalkak.recap.core.data.storage.StorageRepository>(relaxed = true)
+        every { storageRepository.observeOverview(any()) } returns overviewResults
+        every { storageRepository.refreshOverview() } just Runs
+
+        val failingViewModel = CollectionViewModel(
+            storageRepository = storageRepository,
+            searchRepository = searchRepository,
+            captureMutationRepository = captureMutations,
+        )
+        runCurrent()
+
+        overviewResults.emit(Result.failure(IllegalStateException("offline")))
+        advanceUntilIdle()
+        overviewResults.emit(Result.failure(IllegalStateException("still offline")))
+        advanceUntilIdle()
+        assertTrue(failingViewModel.uiState.value.isLoadError)
+
+        failingViewModel.onAction(CollectionAction.RetryLoad)
+        advanceUntilIdle()
+
+        verify(exactly = 2) { storageRepository.refreshOverview() }
+    }
+
     private fun storedCard(
         captureId: Long,
         title: String = "title-$captureId",
@@ -876,3 +1017,15 @@ class CollectionViewModelTest {
         )
     }
 }
+
+private val ExpectedOverviewCategoryOrder = listOf(
+    ScreenshotContentType.SHOPPING,
+    ScreenshotContentType.PLACE,
+    ScreenshotContentType.SCHEDULE,
+    ScreenshotContentType.KNOWLEDGE,
+    ScreenshotContentType.CONTENT,
+    ScreenshotContentType.BENEFIT,
+    ScreenshotContentType.RECORD,
+    ScreenshotContentType.JOB,
+    ScreenshotContentType.ETC,
+)

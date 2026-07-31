@@ -82,7 +82,6 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.feature.organize.OrganizeAction
 import com.chalkak.recap.feature.organize.OrganizeUiState
 import com.chalkak.recap.feature.organize.ScreenshotPicker
-import com.chalkak.recap.feature.organize.ScreenshotPickerPreviewScreenshots
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -106,14 +105,7 @@ internal fun ComponentGardenScreen(
     var showConfirmPopupPrimary by remember { mutableStateOf(false) }
     var screenshotSelectionUiState by remember {
         mutableStateOf(
-            OrganizeUiState(
-                isLoading = false,
-                availableScreenshots = ScreenshotPickerPreviewScreenshots,
-                selectedUris = listOf(
-                    ScreenshotPickerPreviewScreenshots[0].uri,
-                    ScreenshotPickerPreviewScreenshots[1].uri,
-                ),
-            ),
+            OrganizeUiState(isLoading = false),
         )
     }
     var withdrawalConfirmationChecked by remember { mutableStateOf(false) }
@@ -162,13 +154,13 @@ internal fun ComponentGardenScreen(
                 )
                 ShareFavoriteGuideCard(onClick = {})
                 RecentOrganizedScreenshotCard(
-                    thumbnailModel = R.drawable.bid_landscape_24px,
-                    title = stringResource(R.string.home_recent_screenshot_return_title),
-                    categoryType = RecapCategoryType.ShoppingProduct,
+                    thumbnailModel = null,
+                    title = stringResource(R.string.recent_organized_screenshot_card_preview_title),
+                    categoryType = RecapCategoryType.InfoKnowledge,
                     onClick = {},
                 )
                 FrequentSaveTypeFolderCard(
-                    categoryLabel = stringResource(R.string.home_category_shopping_product),
+                    categoryLabel = stringResource(R.string.category_type_shopping_product),
                     recapCount = ComponentGardenFrequentSaveTypeCount,
                     onClick = {},
                 )

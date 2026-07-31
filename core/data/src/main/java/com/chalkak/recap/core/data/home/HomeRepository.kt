@@ -5,4 +5,8 @@ import kotlinx.coroutines.flow.Flow
 
 interface HomeRepository {
     fun observeSummary(): Flow<Result<HomeSummary>>
+
+    suspend fun prefetchSummary(): Result<HomeSummary>
+
+    fun refreshSummary()
 }

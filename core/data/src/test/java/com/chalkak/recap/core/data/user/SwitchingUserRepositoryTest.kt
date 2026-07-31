@@ -17,7 +17,7 @@ class SwitchingUserRepositoryTest {
         val modeStore = mockk<ScreenshotBackendModeStore>()
         coEvery { modeStore.currentMode() } returns ScreenshotBackendMode.MOCK
         val mock = mockk<MockUserRepository>()
-        coEvery { mock.getDataSummary() } returns Result.success(DataSummary(4))
+        coEvery { mock.prefetchDataSummary() } returns Result.success(DataSummary(4))
         val remote = mockk<RemoteUserRepository>()
 
         val repository = SwitchingUserRepository(
@@ -28,8 +28,28 @@ class SwitchingUserRepositoryTest {
 
         repository.getDataSummary()
 
-        coVerify(exactly = 1) { mock.getDataSummary() }
-        coVerify(exactly = 0) { remote.getDataSummary() }
+        coVerify(exactly = 1) { mock.prefetchDataSummary() }
+        coVerify(exactly = 0) { remote.prefetchDataSummary() }
+    }
+
+    @Test
+    fun `prefetchDataSummary delegates to remote in remote mode`() = runTest {
+        val modeStore = mockk<ScreenshotBackendModeStore>()
+        coEvery { modeStore.currentMode() } returns ScreenshotBackendMode.REMOTE
+        val mock = mockk<MockUserRepository>()
+        val remote = mockk<RemoteUserRepository>()
+        coEvery { remote.prefetchDataSummary() } returns Result.success(DataSummary(9))
+
+        val repository = SwitchingUserRepository(
+            screenshotBackendModeStore = modeStore,
+            mockUserRepository = mock,
+            remoteUserRepository = remote,
+        )
+
+        repository.prefetchDataSummary()
+
+        coVerify(exactly = 1) { remote.prefetchDataSummary() }
+        coVerify(exactly = 0) { mock.prefetchDataSummary() }
     }
 
     @Test
@@ -38,7 +58,7 @@ class SwitchingUserRepositoryTest {
         coEvery { modeStore.currentMode() } returns ScreenshotBackendMode.REMOTE
         val mock = mockk<MockUserRepository>()
         val remote = mockk<RemoteUserRepository>()
-        coEvery { remote.getConsentStatus() } returns Result.success(ConsentStatus(true))
+        coEvery { remote.prefetchConsentStatus() } returns Result.success(ConsentStatus(true))
         coEvery { remote.giveConsent() } returns Result.success(Unit)
         coEvery { remote.withdrawConsent() } returns Result.success(Unit)
         coEvery { remote.deleteAccountData() } returns Result.success(Unit)
@@ -54,11 +74,11 @@ class SwitchingUserRepositoryTest {
         repository.withdrawConsent()
         repository.deleteAccountData()
 
-        coVerify(exactly = 1) { remote.getConsentStatus() }
+        coVerify(exactly = 1) { remote.prefetchConsentStatus() }
         coVerify(exactly = 1) { remote.giveConsent() }
         coVerify(exactly = 1) { remote.withdrawConsent() }
         coVerify(exactly = 1) { remote.deleteAccountData() }
-        coVerify(exactly = 0) { mock.getConsentStatus() }
+        coVerify(exactly = 0) { mock.prefetchConsentStatus() }
         coVerify(exactly = 0) { mock.giveConsent() }
         coVerify(exactly = 0) { mock.withdrawConsent() }
         coVerify(exactly = 0) { mock.deleteAccountData() }

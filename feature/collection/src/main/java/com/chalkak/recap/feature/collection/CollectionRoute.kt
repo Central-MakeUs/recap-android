@@ -11,6 +11,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavBackStack
@@ -49,6 +50,9 @@ fun CollectionRoute(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val resources = LocalResources.current
     val toastDispatcher = LocalRecapToastDispatcher.current
+    val favoriteAddedToastMessage = stringResource(R.string.screenshot_detail_favorite_added_toast)
+    val favoriteRemovedToastMessage =
+        stringResource(R.string.screenshot_detail_favorite_removed_toast)
     val initialDestination = when {
         openCollectionFavoritesOnEnter -> CollectionDestination.FavoriteDetail
         openCollectionTypeDetailOnEnter != null ->
@@ -87,6 +91,17 @@ fun CollectionRoute(
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
+                is CollectionEvent.ShowFavoriteToast -> {
+                    toastDispatcher.showToast(
+                        message = if (event.isFavorite) {
+                            favoriteAddedToastMessage
+                        } else {
+                            favoriteRemovedToastMessage
+                        },
+                        type = RecapToastType.Success,
+                    )
+                }
+
                 is CollectionEvent.ShowDeleteSuccessToast -> {
                     toastDispatcher.showToast(
                         message = resources.getString(
@@ -178,12 +193,8 @@ fun CollectionRoute(
         when {
             uiState.selection.isActive -> viewModel.onAction(CollectionAction.CancelSelection)
             uiState.isDetailSearchVisible -> viewModel.onAction(CollectionAction.HideDetailSearch)
+            // Overview → Detail: pop within collection. Home deep-link (detail as root): back to Home.
             backStack.size > 1 -> navigateBackFromDetail()
-            backStack.lastOrNull() == CollectionDestination.FavoriteDetail ||
-                backStack.lastOrNull() is CollectionDestination.TypeDetail -> {
-                navigateBackFromDetail()
-                backStack.add(CollectionDestination.Overview)
-            }
             else -> onNavigateBack()
         }
     }

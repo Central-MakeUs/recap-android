@@ -1,8 +1,6 @@
 package com.chalkak.recap.feature.home.recent
 
-import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
-import java.util.concurrent.TimeUnit
 
 enum class RecentOrganizedScreenshotsPhase {
     Loading,
@@ -39,37 +37,4 @@ sealed interface RecentOrganizedScreenshotsAction {
     data class SelectItem(val id: Long) : RecentOrganizedScreenshotsAction
     data class ToggleFavorite(val id: Long) : RecentOrganizedScreenshotsAction
 }
-
-internal val RecentOrganizedScreenshotsPreviewUiState = RecentOrganizedScreenshotsUiState(
-    phase = RecentOrganizedScreenshotsPhase.Content,
-    resultCount = 3L,
-    items = listOf(
-        RecentOrganizedScreenshotUiModel(
-            id = 1L,
-            thumbnailModel = R.drawable.mock_home_screenshot_return,
-            categoryType = RecapCategoryType.RecordCapture,
-            title = "택배 반품 절차 정리",
-            description = "한 줄 요약 한 줄 요약 한 줄 요약 한 줄 요약 한 줄 요약",
-            organizedAtMillis = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(1),
-            isFavorite = false,
-        ),
-        RecentOrganizedScreenshotUiModel(
-            id = 2L,
-            thumbnailModel = R.drawable.mock_home_screenshot_hotel,
-            categoryType = RecapCategoryType.ScheduleReservation,
-            title = "제주 숙소 예약 정보",
-            description = "한 줄 요약 한 줄 요약 한 줄 요약 한 줄 요약 한 줄 요약",
-            organizedAtMillis = System.currentTimeMillis() - TimeUnit.HOURS.toMillis(2),
-            isFavorite = false,
-        ),
-        RecentOrganizedScreenshotUiModel(
-            id = 3L,
-            thumbnailModel = R.drawable.mock_home_screenshot_recipe,
-            categoryType = RecapCategoryType.InfoKnowledge,
-            title = "파스타 레시피 저장",
-            description = "한 줄 요약 한 줄 요약 한 줄 요약 한 줄 요약 한 줄 요약",
-            organizedAtMillis = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(1),
-            isFavorite = false,
-        ),
-    ),
-)
+

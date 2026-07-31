@@ -8,6 +8,7 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
+    alias(libs.plugins.firebase.perf)
     id("com.google.android.gms.oss-licenses-plugin")
 }
 
@@ -30,8 +31,8 @@ android {
         applicationId = "com.chalkak.recap"
         minSdk = 30
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 4
+        versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"${kakaoNativeAppKey.get()}\"")
@@ -39,9 +40,19 @@ android {
     }
 
     buildTypes {
+        debug {
+            // Skip Firebase Performance
+            configure<com.google.firebase.perf.plugin.FirebasePerfExtension> {
+                setInstrumentationEnabled(false)
+            }
+        }
+
         release {
             optimization {
-                enable = false
+                enable = true
+            }
+            ndk {
+                debugSymbolLevel = "FULL"
             }
         }
 
@@ -122,6 +133,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.perf)
 }

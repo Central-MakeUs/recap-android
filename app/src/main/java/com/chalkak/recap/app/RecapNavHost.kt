@@ -44,6 +44,7 @@ import com.chalkak.recap.feature.onboarding.screen.OnboardingAddToFavoriteGuideS
 import com.chalkak.recap.feature.settings.guide.PrivacyGuideScreen
 import com.chalkak.recap.feature.settings.guide.UsageGuideScreen
 import com.chalkak.recap.feature.screenshot.ScreenshotRoute
+import com.chalkak.recap.core.model.observability.OrganizeTraceEntry
 import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.map
@@ -56,8 +57,6 @@ private const val MainTabSlideFraction = 6
 fun RecapNavHost(
     modifier: Modifier = Modifier,
     onNavigateToDeveloper: () -> Unit,
-    pendingOpenOrganize: Boolean = false,
-    onPendingOpenOrganizeConsumed: () -> Unit = {},
     analysisProgressViewModel: ScreenshotAnalysisProgressViewModel,
     pendingHomeNavigationRequestId: Int?,
     onRequestNavigateHome: () -> Unit,
@@ -173,7 +172,10 @@ fun RecapNavHost(
                                 backStack.add(AppRoute.RecentOrganizedScreenshots)
                             },
                             onOrganizeComplete = { selectedScreenshots ->
-                                analysisProgressViewModel.startAnalysis(selectedScreenshots)
+                                analysisProgressViewModel.startAnalysis(
+                                    candidates = selectedScreenshots,
+                                    entry = OrganizeTraceEntry.HOME_ORGANIZE,
+                                )
                                 onRequestNavigateHome()
                             },
                             onNavigateToScreenshot = { captureId ->
@@ -186,13 +188,9 @@ fun RecapNavHost(
                                     backStack.lastOrNull() == AppRoute.MainTabs
                                 },
                             onHomeNavigationComplete = onHomeNavigationComplete,
-                            pendingOpenOrganize = pendingOpenOrganize || requestOpenOrganize,
+                            pendingOpenOrganize = requestOpenOrganize,
                             onPendingOpenOrganizeConsumed = {
-                                if (requestOpenOrganize) {
-                                    requestOpenOrganize = false
-                                } else {
-                                    onPendingOpenOrganizeConsumed()
-                                }
+                                requestOpenOrganize = false
                             },
                         )
                     }

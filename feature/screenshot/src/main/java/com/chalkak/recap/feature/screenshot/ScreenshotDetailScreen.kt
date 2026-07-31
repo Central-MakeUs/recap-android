@@ -370,7 +370,7 @@ private fun ScreenshotDetailHero(
             }
             Row {
                 ScreenshotIconButton(
-                    iconResId = R.drawable.ic_star_24,
+                    iconResId = R.drawable.ic_star_filled_24,
                     contentDescription = stringResource(
                         if (isFavorite) {
                             R.string.screenshot_detail_favorite_selected_content_description

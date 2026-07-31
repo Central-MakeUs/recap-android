@@ -1,6 +1,7 @@
 package com.chalkak.recap.core.design.component.card
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
@@ -10,6 +11,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,6 +46,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -60,12 +63,15 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChipDefaults
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
+import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray200
@@ -241,6 +247,7 @@ private fun ScreenshotCardThumbnail(
     onFavoriteClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val rectProgress by animateFloatAsState(
         targetValue = if (showFavoriteButton) 0f else 1f,
         animationSpec = if (showFavoriteButton) {
@@ -260,10 +267,7 @@ private fun ScreenshotCardThumbnail(
             height = ScreenshotCardTokens.ThumbnailHeight,
         ),
     ) {
-        AsyncImage(
-            model = thumbnailModel,
-            contentDescription = thumbnailContentDescription,
-            contentScale = ContentScale.Crop,
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .border(
@@ -271,8 +275,29 @@ private fun ScreenshotCardThumbnail(
                     color = RecapGray100,
                     shape = thumbnailShape,
                 )
-                .clip(thumbnailShape),
-        )
+                .clip(thumbnailShape)
+                .background(RecapGray100),
+        ) {
+            Image(
+                painter = painterResource(R.drawable.recap_placeholder_2),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(
+                        start = ScreenshotCardTokens.PlaceholderPaddingStart,
+                        bottom = ScreenshotCardTokens.PlaceholderPaddingBottom,
+                    ),
+            )
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(thumbnailModel)
+                    .crossfade(ScreenshotCardTokens.ImageCrossfadeMillis)
+                    .build(),
+                contentDescription = thumbnailContentDescription,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
         AnimatedVisibility(
             visible = showFavoriteButton,
             modifier = Modifier.offset(
@@ -307,9 +332,7 @@ private fun ScreenshotCardStarButton(
         },
     )
 
-    Icon(
-        painter = painterResource(R.drawable.ic_star_16),
-        contentDescription = favoriteContentDescription,
+    Box(
         modifier = modifier
             .size(ScreenshotCardTokens.FavoriteIconTouchSize)
             .clickable(
@@ -317,15 +340,31 @@ private fun ScreenshotCardStarButton(
                 indication = null,
                 role = Role.Button,
                 onClick = onClick,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Crossfade(
+            targetState = isFavorite,
+            animationSpec = tween(
+                durationMillis = ScreenshotCardTokens.FavoriteIconCrossfadeMillis,
+                easing = FastOutSlowInEasing,
+            ),
+            label = "screenshot_card_favorite_icon",
+        ) { favorite ->
+            Icon(
+                painter = painterResource(
+                    if (favorite) {
+                        R.drawable.ic_star_filled_24
+                    } else {
+                        R.drawable.ic_star_outlined_24
+                    },
+                ),
+                contentDescription = favoriteContentDescription,
+                modifier = Modifier.size(ScreenshotCardTokens.FavoriteIconSize),
+                tint = if (favorite) RecapBlue300 else RecapGray200,
             )
-            .padding(ScreenshotCardTokens.FavoriteIconPadding)
-            .size(ScreenshotCardTokens.FavoriteIconSize),
-        tint = if (isFavorite) {
-            RecapBlue500
-        } else {
-            RecapGray200
-        },
-    )
+        }
+    }
 }
 
 /**
@@ -438,15 +477,18 @@ private object ScreenshotCardTokens {
     val ThumbnailWidth = 62.dp
     val ThumbnailHeight = 80.dp
     val ThumbnailBorderWidth = 0.5.dp
+    val PlaceholderPaddingStart = 7.dp
+    val PlaceholderPaddingBottom = 5.dp
     val DividerThickness = 1.dp
     val DividerGap = 2.dp
     val FavoriteIconOffsetX = 35.dp
     val FavoriteIconOffsetY = (-2).dp
     val FavoriteIconTouchSize = 28.dp
-    val FavoriteIconPadding = 6.dp
-    val FavoriteIconSize = 16.dp
+    val FavoriteIconSize = 24.dp
     const val PressedScale = 0.9875f
     const val PressAnimationDurationMillis = 50
+    const val ImageCrossfadeMillis = 150
+    const val FavoriteIconCrossfadeMillis = 150
     val RowCornerRadius = 10.dp
     const val ThumbnailViewBoxWidth = 62f
     const val ThumbnailViewBoxHeight = 80f
@@ -508,6 +550,23 @@ private fun ScreenshotCardPreview() {
     RECAPTheme(dynamicColor = false) {
         ScreenshotCard(
             thumbnailModel = R.drawable.bid_landscape_24px,
+            categoryType = RecapCategoryType.InfoKnowledge,
+            title = ScreenshotCardPreviewTitle,
+            description = ScreenshotCardPreviewDescription,
+            isFavorite = false,
+            onClick = {},
+            onFavoriteClick = {},
+            modifier = Modifier.padding(24.dp),
+        )
+    }
+}
+
+@Preview(name = "Screenshot Card placeholder", showBackground = true, widthDp = 360)
+@Composable
+private fun ScreenshotCardPlaceholderPreview() {
+    RECAPTheme(dynamicColor = false) {
+        ScreenshotCard(
+            thumbnailModel = null,
             categoryType = RecapCategoryType.InfoKnowledge,
             title = ScreenshotCardPreviewTitle,
             description = ScreenshotCardPreviewDescription,

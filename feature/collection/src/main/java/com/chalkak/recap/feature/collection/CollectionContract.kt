@@ -75,6 +75,7 @@ data class CollectionSelectionUiState(
 
 data class CollectionUiState(
     val isLoading: Boolean = true,
+    val isLoadError: Boolean = false,
     val hasStoredScreenshots: Boolean = false,
     val searchQuery: String = "",
     val detailSearchQuery: String = "",
@@ -88,6 +89,7 @@ data class CollectionUiState(
 sealed interface CollectionAction {
     data class UpdateSearchQuery(val query: String) : CollectionAction
     data object OpenSearch : CollectionAction
+    data object RetryLoad : CollectionAction
     data object ShowDetailSearch : CollectionAction
     data object HideDetailSearch : CollectionAction
     data class UpdateDetailSearchQuery(val query: String) : CollectionAction
@@ -109,6 +111,7 @@ sealed interface CollectionAction {
 }
 
 sealed interface CollectionEvent {
+    data class ShowFavoriteToast(val isFavorite: Boolean) : CollectionEvent
     data class ShowDeleteSuccessToast(val deletedCount: Int) : CollectionEvent
     data class ShowDeletePartialFailureToast(
         val deletedCount: Int,

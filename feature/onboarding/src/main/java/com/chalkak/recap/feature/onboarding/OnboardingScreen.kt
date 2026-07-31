@@ -136,7 +136,7 @@ private fun OnboardingStepTransition(
 
             when (OnboardingProgressSteps[page]) {
                 OnboardingStep.PermissionGuide -> OnboardingPermissionGuideScreen(
-                    imageAccessLevel = uiState.imageAccessLevel,
+                    hasResolvedPermissionStep = uiState.hasResolvedPermissionStep,
                     onAction = onAction,
                     modifier = pageModifier,
                 )

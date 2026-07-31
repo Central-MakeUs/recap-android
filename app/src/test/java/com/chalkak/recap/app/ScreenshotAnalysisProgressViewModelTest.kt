@@ -15,6 +15,8 @@ import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.core.model.PreparedScreenshot
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.core.model.capture.OrganizeStatus
+import com.chalkak.recap.core.model.observability.PerformanceTrace
+import com.chalkak.recap.core.model.observability.PerformanceTracer
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import com.chalkak.recap.feature.organize.OrganizeAnalysisStatusUiState
@@ -50,6 +52,7 @@ class ScreenshotAnalysisProgressViewModelTest {
     private val screenshotAnalysisRunState = ScreenshotAnalysisRunState()
     private val userPreferencesRepository = mockk<UserPreferencesRepository>(relaxed = true)
     private val organizeCompleteNotificationEnabled = MutableStateFlow(false)
+    private lateinit var performanceTracer: RecordingPerformanceTracer
     private lateinit var viewModel: ScreenshotAnalysisProgressViewModel
 
     @BeforeEach
@@ -58,6 +61,7 @@ class ScreenshotAnalysisProgressViewModelTest {
         every {
             userPreferencesRepository.organizeCompleteNotificationEnabled
         } returns organizeCompleteNotificationEnabled
+        performanceTracer = RecordingPerformanceTracer()
         viewModel = ScreenshotAnalysisProgressViewModel(
             screenshotAnalysisRepository = repository,
             screenshotCardRepository = screenshotCardRepository,
@@ -65,6 +69,8 @@ class ScreenshotAnalysisProgressViewModelTest {
             screenshotAnalysisRunState = screenshotAnalysisRunState,
             organizeProgressTracker = OrganizeProgressTracker(),
             userPreferencesRepository = userPreferencesRepository,
+            crashReporter = com.chalkak.recap.core.model.observability.CrashReporter.NoOp,
+            performanceTracer = performanceTracer,
         ).apply {
             ioDispatcher = testDispatcher
         }
@@ -116,6 +122,35 @@ class ScreenshotAnalysisProgressViewModelTest {
         assertEquals(0, state.completedCount)
         assertEquals(0f, state.progress)
         assertTrue(screenshotAnalysisRunState.isRunning.value)
+    }
+
+    @Test
+    fun `restarting analysis only cancels the previous trace`() = runTest(testDispatcher) {
+        var invocation = 0
+        coEvery { repository.organize(any(), any()) } coAnswers {
+            invocation += 1
+            if (invocation == 1) {
+                kotlinx.coroutines.awaitCancellation()
+            }
+            ScreenshotOrganizeOutcome.RemoteCompleted(
+                successCount = 1,
+                failCount = 0,
+                status = OrganizeStatus.COMPLETED,
+            )
+        }
+
+        viewModel.startAnalysis(samplePrepared(count = 1))
+        runCurrent()
+        val firstTrace = performanceTracer.traces.single()
+
+        viewModel.startAnalysis(samplePrepared(count = 1))
+        runCurrent()
+
+        val secondTrace = performanceTracer.traces.last()
+        assertEquals("cancel", firstTrace.attributes["outcome"])
+        assertTrue(firstTrace.isStopped)
+        assertEquals("success", secondTrace.attributes["outcome"])
+        assertTrue(secondTrace.isStopped)
     }
 
     @Test
@@ -482,5 +517,25 @@ class ScreenshotAnalysisProgressViewModelTest {
             isFavorite = false,
             organizedAt = Instant.ofEpochMilli(1000L),
         )
+    }
+
+    private class RecordingPerformanceTracer : PerformanceTracer {
+        val traces = mutableListOf<RecordingPerformanceTrace>()
+
+        override fun startTrace(name: String): PerformanceTrace =
+            RecordingPerformanceTrace().also(traces::add)
+    }
+
+    private class RecordingPerformanceTrace : PerformanceTrace {
+        val attributes = mutableMapOf<String, String>()
+        var isStopped = false
+
+        override fun putAttribute(key: String, value: String) {
+            attributes[key] = value
+        }
+
+        override fun stop() {
+            isStopped = true
+        }
     }
 }

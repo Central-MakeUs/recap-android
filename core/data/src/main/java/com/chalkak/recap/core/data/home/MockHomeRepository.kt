@@ -9,6 +9,7 @@ import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 @Singleton
@@ -20,6 +21,10 @@ class MockHomeRepository @Inject constructor(
             Result.success(cards.toHomeSummary())
         }
     }
+
+    override suspend fun prefetchSummary(): Result<HomeSummary> = observeSummary().first()
+
+    override fun refreshSummary() = Unit
 }
 
 internal fun List<StoredScreenshotCard>.toHomeSummary(): HomeSummary {

@@ -15,6 +15,8 @@ import com.chalkak.recap.core.model.auth.AuthProvider
 import com.chalkak.recap.core.model.auth.AuthSignInResult
 import com.chalkak.recap.core.model.auth.KakaoUserProfile
 import com.chalkak.recap.core.model.auth.SocialAuthCredential
+import com.chalkak.recap.core.model.observability.CrashReporter
+import com.chalkak.recap.core.model.observability.ObservabilityKeys
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
@@ -25,15 +27,19 @@ class AuthRepository @Inject constructor(
     private val authApi: AuthApi,
     private val deviceIdProvider: DeviceIdProvider,
     private val sessionTokenStore: SessionTokenStore,
+    private val crashReporter: CrashReporter,
 ) {
     suspend fun signInWithKakao(context: Context): Result<AuthSignInResult> =
         kakaoLoginClient.login(context).fold(
-            onSuccess = { credential -> loginWithServer(credential) },
-            onFailure = { Result.failure(it) },
+            onSuccess = { credential -> loginWithServer(credential).alsoReportAuthFailure() },
+            onFailure = { error ->
+                reportAuthFailure(error)
+                Result.failure(error)
+            },
         )
 
     suspend fun getKakaoUserProfile(): Result<KakaoUserProfile> =
-        kakaoLoginClient.fetchUserProfile()
+        kakaoLoginClient.fetchUserProfile().alsoReportAuthFailure()
 
 
     suspend fun refresh(): Result<AuthSignInResult.Success> {
@@ -53,7 +59,7 @@ class AuthRepository @Inject constructor(
             Result.failure(AuthException(AuthError.Network))
         } catch (error: Throwable) {
             Result.failure(AuthException(AuthError.Unknown, error))
-        }
+        }.alsoReportAuthFailure()
     }
 
     suspend fun logout(): Result<Unit> {
@@ -92,7 +98,7 @@ class AuthRepository @Inject constructor(
         }
         // 서버 실패여도 로컬 세션은 비워 재로그인 가능하게 한다.
         sessionTokenStore.clear()
-        return result
+        return result.alsoReportAuthFailure()
     }
 
     private suspend fun loginWithServer(
@@ -119,6 +125,23 @@ class AuthRepository @Inject constructor(
             Result.failure(AuthException(AuthError.Network))
         } catch (error: Throwable) {
             Result.failure(AuthException(AuthError.Unknown, error))
+        }
+    }
+
+    private fun <T> Result<T>.alsoReportAuthFailure(): Result<T> {
+        exceptionOrNull()?.let(::reportAuthFailure)
+        return this
+    }
+
+    private fun reportAuthFailure(error: Throwable) {
+        val authError = (error as? AuthException)?.authError ?: return
+        when (authError) {
+            is AuthError.Server -> {
+                crashReporter.setCustomKey(ObservabilityKeys.AUTH_ERROR_CODE, authError.code)
+                crashReporter.recordException(error)
+            }
+            AuthError.Network -> crashReporter.recordException(error)
+            else -> Unit
         }
     }
 

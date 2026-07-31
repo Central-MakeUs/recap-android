@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.RecapLegalUrls
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.theme.RECAPTheme
@@ -145,11 +147,15 @@ fun AiDataTransferConsentBottomSheetContent(
             )
         )
 
+        val uriHandler = LocalUriHandler.current
         Text(
             text = stringResource(R.string.organize_ai_data_transfer_consent_privacy_policy),
             modifier = Modifier.clickable(
                 role = Role.Button,
-                onClick = onPrivacyPolicyClick,
+                onClick = {
+                    uriHandler.openUri(RecapLegalUrls.PRIVACY_POLICY)
+                    onPrivacyPolicyClick()
+                },
             ),
             color = RecapGray500,
             style = RecapBody2,

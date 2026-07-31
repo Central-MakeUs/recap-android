@@ -35,11 +35,15 @@ class OnboardingViewModel @Inject constructor(
         _illustrationSignals.asSharedFlow()
     private val _events = MutableSharedFlow<OnboardingEvent>(extraBufferCapacity = 1)
     val events: SharedFlow<OnboardingEvent> = _events.asSharedFlow()
+    private var hasStepTransitionRequest = false
 
     init {
         refreshImagePermissionLevel()
         viewModelScope.launch {
-            applyStep(resolveInitialStep())
+            val initialStep = resolveInitialStep()
+            if (!hasStepTransitionRequest) {
+                applyStep(initialStep)
+            }
         }
     }
 
@@ -65,6 +69,7 @@ class OnboardingViewModel @Inject constructor(
 
     fun refreshImagePermissionAndMoveToFirstOrganize(): ImageAccessLevel {
         val accessLevel = refreshImagePermissionLevel()
+        markPermissionStepResolved()
         moveTo(OnboardingStep.UploadMethodGuide)
         return accessLevel
     }
@@ -111,6 +116,7 @@ class OnboardingViewModel @Inject constructor(
                 )
             }
             OnboardingAction.OpenAddToFavoriteGuide -> Unit
+            OnboardingAction.CompleteAddToFavorite -> moveTo(OnboardingStep.StartFirstAnalyze)
             OnboardingAction.SkipFirstOrganize -> moveTo(OnboardingStep.StartFirstAnalyze)
 
             OnboardingAction.GrantPermission -> Unit
@@ -128,8 +134,7 @@ class OnboardingViewModel @Inject constructor(
     }
 
     private fun proceedAfterLogin() {
-        refreshImagePermissionLevel()
-        moveTo(OnboardingStep.PermissionGuide)
+        moveTo(stepAfterPermissionResolved(refreshImagePermissionLevel()))
     }
 
     private fun refreshImagePermissionLevel(): ImageAccessLevel {
@@ -144,6 +149,7 @@ class OnboardingViewModel @Inject constructor(
     }
 
     private fun moveTo(step: OnboardingStep) {
+        hasStepTransitionRequest = true
         applyStep(step)
     }
 
@@ -173,7 +179,22 @@ class OnboardingViewModel @Inject constructor(
             return OnboardingStep.Landing
         }
 
-        return OnboardingStep.PermissionGuide
+        return stepAfterPermissionResolved(refreshImagePermissionLevel())
+    }
+
+    private fun stepAfterPermissionResolved(accessLevel: ImageAccessLevel): OnboardingStep {
+        return if (accessLevel == ImageAccessLevel.Denied) {
+            OnboardingStep.PermissionGuide
+        } else {
+            markPermissionStepResolved()
+            OnboardingStep.UploadMethodGuide
+        }
+    }
+
+    private fun markPermissionStepResolved() {
+        _uiState.update { current ->
+            current.copy(hasResolvedPermissionStep = true)
+        }
     }
 
     private companion object {

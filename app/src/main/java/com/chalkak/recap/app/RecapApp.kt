@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,11 +39,12 @@ import com.chalkak.recap.core.design.component.toast.RecapToastHost
 import com.chalkak.recap.core.design.component.toast.RecapToastRequest
 import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.feature.developer.DeveloperRoute
-import com.chalkak.recap.feature.onboarding.OnboardingRoute
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import kotlinx.coroutines.flow.StateFlow
 
 private const val RecapSplashToAppFadeMillis = 300
 
@@ -53,6 +56,8 @@ fun RecapApp(
     pendingHomeNavigationRequestId: Int?,
     onRequestNavigateHome: () -> Unit,
     onHomeNavigationComplete: (Int) -> Unit,
+    pendingOnboardingSampleShareAdvanceRequestIds: StateFlow<Int?>,
+    onOnboardingSampleShareAdvanceComplete: (Int) -> Unit,
 ) {
     RECAPTheme {
         val uiState by startupViewModel.uiState.collectAsStateWithLifecycle()
@@ -83,6 +88,10 @@ fun RecapApp(
                         pendingHomeNavigationRequestId = pendingHomeNavigationRequestId,
                         onRequestNavigateHome = onRequestNavigateHome,
                         onHomeNavigationComplete = onHomeNavigationComplete,
+                        pendingOnboardingSampleShareAdvanceRequestIds =
+                            pendingOnboardingSampleShareAdvanceRequestIds,
+                        onOnboardingSampleShareAdvanceComplete =
+                            onOnboardingSampleShareAdvanceComplete,
                         onboardingSessionKey = onboardingSessionKey,
                         onOnboardingSessionKeyChange = { onboardingSessionKey = it },
                     )
@@ -112,10 +121,11 @@ private fun RecapAppReadyContent(
     pendingHomeNavigationRequestId: Int?,
     onRequestNavigateHome: () -> Unit,
     onHomeNavigationComplete: (Int) -> Unit,
+    pendingOnboardingSampleShareAdvanceRequestIds: StateFlow<Int?>,
+    onOnboardingSampleShareAdvanceComplete: (Int) -> Unit,
     onboardingSessionKey: Int,
     onOnboardingSessionKeyChange: (Int) -> Unit,
 ) {
-    val pendingOpenOrganize by startupViewModel.pendingOpenOrganize.collectAsStateWithLifecycle()
     val initialRoute = if (readyState.onboardingCompleted) {
         RecapRootRoute.Main
     } else {
@@ -185,6 +195,7 @@ private fun RecapAppReadyContent(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .background(RecapBackground)
                     .hazeSource(state = toastHazeState),
             ) {
                 RecapNavDisplay(
@@ -195,10 +206,17 @@ private fun RecapAppReadyContent(
                     entryProvider = { route ->
                         when (route) {
                             RecapRootRoute.Onboarding -> NavEntry(route) {
-                                OnboardingRoute(
-                                    onOnboardingComplete = startupViewModel::completeOnboarding,
-                                    viewModelKey = "onboarding-$onboardingSessionKey",
-                                )
+                                key(onboardingSessionKey) {
+                                    OnboardingFirstOrganizeHost(
+                                        analysisProgressViewModel = analysisProgressViewModel,
+                                        onCompleteOnboarding = startupViewModel::completeOnboarding,
+                                        onboardingSessionKey = onboardingSessionKey,
+                                        pendingSampleShareAdvanceRequestIds =
+                                            pendingOnboardingSampleShareAdvanceRequestIds,
+                                        onSampleShareAdvanceComplete =
+                                            onOnboardingSampleShareAdvanceComplete,
+                                    )
+                                }
                             }
 
                             RecapRootRoute.Main -> NavEntry(route) {
@@ -206,9 +224,6 @@ private fun RecapAppReadyContent(
                                     onNavigateToDeveloper = {
                                         rootBackStack.add(RecapRootRoute.Developer)
                                     },
-                                    pendingOpenOrganize = pendingOpenOrganize,
-                                    onPendingOpenOrganizeConsumed =
-                                        startupViewModel::consumePendingOpenOrganize,
                                     analysisProgressViewModel = analysisProgressViewModel,
                                     pendingHomeNavigationRequestId =
                                         pendingHomeNavigationRequestId.takeIf {

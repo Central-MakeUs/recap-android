@@ -26,8 +26,17 @@ class MainActivityEntryViewModel @Inject constructor(
     val pendingHomeNavigationRequestId: StateFlow<Int?> =
         _pendingHomeNavigationRequestId.asStateFlow()
 
+    private val _pendingOnboardingSampleShareAdvanceRequestId = MutableStateFlow(
+        savedStateHandle.get<Int>(PENDING_ONBOARDING_SAMPLE_SHARE_ADVANCE_REQUEST_ID_KEY),
+    )
+    val pendingOnboardingSampleShareAdvanceRequestId: StateFlow<Int?> =
+        _pendingOnboardingSampleShareAdvanceRequestId.asStateFlow()
+
     private var homeNavigationRequestCounter =
         savedStateHandle.get<Int>(HOME_NAVIGATION_REQUEST_COUNTER_KEY) ?: 0
+
+    private var onboardingSampleShareAdvanceRequestCounter =
+        savedStateHandle.get<Int>(ONBOARDING_SAMPLE_SHARE_ADVANCE_REQUEST_COUNTER_KEY) ?: 0
 
     fun consumeSharedAnalysisIntent(intent: Intent): List<ScreenshotUploadCandidate>? {
         val decoded = SharedAnalysisIntentContract.decode(intent) ?: return null
@@ -58,6 +67,7 @@ class MainActivityEntryViewModel @Inject constructor(
             return false
         }
         savedStateHandle[LAST_CONSUMED_ONBOARDING_SAMPLE_EVENT_ID_KEY] = eventId
+        requestOnboardingSampleShareAdvance()
         return true
     }
 
@@ -75,6 +85,21 @@ class MainActivityEntryViewModel @Inject constructor(
             _pendingHomeNavigationRequestId.value = null
         }
     }
+
+    fun requestOnboardingSampleShareAdvance() {
+        val requestId = onboardingSampleShareAdvanceRequestCounter + 1
+        onboardingSampleShareAdvanceRequestCounter = requestId
+        savedStateHandle[ONBOARDING_SAMPLE_SHARE_ADVANCE_REQUEST_COUNTER_KEY] = requestId
+        savedStateHandle[PENDING_ONBOARDING_SAMPLE_SHARE_ADVANCE_REQUEST_ID_KEY] = requestId
+        _pendingOnboardingSampleShareAdvanceRequestId.value = requestId
+    }
+
+    fun completeOnboardingSampleShareAdvance(requestId: Int) {
+        if (_pendingOnboardingSampleShareAdvanceRequestId.value == requestId) {
+            savedStateHandle.remove<Int>(PENDING_ONBOARDING_SAMPLE_SHARE_ADVANCE_REQUEST_ID_KEY)
+            _pendingOnboardingSampleShareAdvanceRequestId.value = null
+        }
+    }
 }
 
 private const val LAST_CONSUMED_REQUEST_ID_KEY = "last_consumed_shared_analysis_request_id"
@@ -82,3 +107,7 @@ private const val LAST_CONSUMED_ONBOARDING_SAMPLE_EVENT_ID_KEY =
     "last_consumed_onboarding_sample_event_id"
 private const val PENDING_HOME_NAVIGATION_REQUEST_ID_KEY = "pending_home_navigation_request_id"
 private const val HOME_NAVIGATION_REQUEST_COUNTER_KEY = "home_navigation_request_counter"
+private const val PENDING_ONBOARDING_SAMPLE_SHARE_ADVANCE_REQUEST_ID_KEY =
+    "pending_onboarding_sample_share_advance_request_id"
+private const val ONBOARDING_SAMPLE_SHARE_ADVANCE_REQUEST_COUNTER_KEY =
+    "onboarding_sample_share_advance_request_counter"

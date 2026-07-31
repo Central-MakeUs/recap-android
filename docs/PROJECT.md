@@ -16,7 +16,7 @@
 - targetSdk: 37
 - compileSdk: 37
 - versionCode: 1
-- versionName: `1.0`
+- versionName: `1.0.0`
 - MainActivity: `app/src/main/java/com/chalkak/recap/MainActivity.kt`
 - Application: `app/src/main/java/com/chalkak/recap/RecapApplication.kt`
 
@@ -33,8 +33,8 @@
 - Persistence: DataStore, Room
 - Image loading: Coil
 - Logging: Timber
-- Analytics: Firebase Analytics
 - Crash reporting: Firebase Crashlytics
+- Performance: Firebase Performance Monitoring (auto + organize/share custom traces)
 
 ## 빌드 명령
 
@@ -114,7 +114,7 @@ core.data.screenshot 하위:
   - Collection
   - Settings(설정) 및 하위 화면
 - Organize(스크린샷 피커 → 확인)는 AppRoute가 아니라 MainTabs 위 오버레이다. 구조·의도·back 동작은 `docs/ORGANIZE_OVERLAY_NAVIGATION.md`를 본다.
-- 온보딩 `StartFirstAnalyze`의 "스크린샷 선택하기"는 온보딩 완료 후 MainTabs로 이동하며 Organize 피커를 바로 연다. "나중에 하기"는 홈만 연다.
+- 온보딩 `StartFirstAnalyze`의 "스크린샷 선택하기"는 root `Onboarding`을 유지한 채 같은 entry 위에 `OrganizeRoute`(피커 → 확인)를 오버레이한다. 분석 진행/결과도 온보딩 위에서 표시하며, terminal 결과의 `완료/닫기` 이후에만 온보딩을 완료하고 Main Home으로 이동한다. "나중에 하기"는 분석 없이 즉시 온보딩을 완료하고 홈만 연다.
 
 ## 데이터 / 외부 연동
 
