@@ -108,6 +108,7 @@
     <string name="organized_capture_card_description">최근 정리된 캡처에서 확인하세요</string>
     <string name="organized_screenshot_summary_card_title">정리된 스크린샷</string>
     <string name="organized_screenshot_summary_card_count">%1$d개</string>
+    <string name="organized_screenshot_summary_card_count_checking">확인 중…</string>
     <string name="organized_screenshot_summary_card_description">제목, 요약, 본문 등 정리된 정보와 원본 이미지가 서버에 보관돼요.</string>
     <string name="organized_screenshot_summary_card_illustration_content_description">정리된 스크린샷 일러스트</string>
     <string name="recap_search_bar_placeholder_collection">제목, 요약, 이미지 속 내용으로 검색</string>
@@ -220,10 +221,13 @@
     <string name="settings_data_management_delete_confirm_cancel_button">취소</string>
     <string name="settings_data_management_delete_confirm_button">삭제하기</string>
     <string name="settings_data_management_delete_success_toast">%1$d 개의 스크린샷이 정리되었어요.</string>
+    <string name="settings_data_management_delete_empty_toast">삭제할 데이터가 없어요.</string>
+    <string name="settings_data_management_network_error_toast">네트워크 상태를 확인해 주세요</string>
     <string name="settings_data_management_note_account_kept">계정은 유지되며, 삭제 후에도 새로운 스크린샷을 정리할 수 있어요.</string>
     <string name="settings_data_management_note_irreversible">데이터를 삭제하면 정리된 스크린샷 정보와 서버에 저장된 원본 이미지가 모두 삭제되며, 복구할 수 없어요.</string>
     <string name="settings_data_management_transfer_section">데이터 전송 관리</string>
     <string name="settings_data_management_ai_consent_title">AI 데이터 전송 동의</string>
+    <string name="settings_data_management_ai_consent_checking">확인 중...</string>
     <string name="settings_data_management_ai_consent_agreed">동의함</string>
     <string name="settings_data_management_ai_consent_agreed_format">동의함 %1$s</string>
     <string name="settings_data_management_ai_consent_not_agreed">동의 안 함</string>

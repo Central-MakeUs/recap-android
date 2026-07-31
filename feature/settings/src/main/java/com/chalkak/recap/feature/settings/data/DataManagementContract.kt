@@ -1,12 +1,13 @@
 package com.chalkak.recap.feature.settings.data
 
 data class DataManagementUiState(
-    val organizedCount: Int = 0,
+    val organizedCount: Int? = null,
     val showDeleteConfirmDialog: Boolean = false,
     val showWithdrawConsentDialog: Boolean = false,
     val showAiDataTransferConsentSheet: Boolean = false,
-    val isAiDataTransferConsented: Boolean = false,
+    val isAiDataTransferConsented: Boolean? = null,
     val aiDataTransferConsentDate: String = "",
+    val hasFetchError: Boolean = false,
 )
 
 sealed interface DataManagementAction {
@@ -23,5 +24,6 @@ sealed interface DataManagementAction {
 
 sealed interface DataManagementEvent {
     data class ShowDeleteSuccessToast(val deletedCount: Int) : DataManagementEvent
+    data object ShowNoDataToDeleteToast : DataManagementEvent
     data object ShowConsentWithdrawnToast : DataManagementEvent
 }

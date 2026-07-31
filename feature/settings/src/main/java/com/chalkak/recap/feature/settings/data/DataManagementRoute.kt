@@ -33,6 +33,14 @@ fun DataManagementRoute(
                         type = RecapToastType.Success,
                     )
                 }
+                DataManagementEvent.ShowNoDataToDeleteToast -> {
+                    toastDispatcher.showToast(
+                        message = resources.getString(
+                            R.string.settings_data_management_delete_empty_toast,
+                        ),
+                        type = RecapToastType.Error,
+                    )
+                }
                 DataManagementEvent.ShowConsentWithdrawnToast -> {
                     toastDispatcher.showToast(
                         message = resources.getString(
@@ -43,6 +51,16 @@ fun DataManagementRoute(
                 }
             }
         }
+    }
+
+    LaunchedEffect(uiState.hasFetchError) {
+        if (!uiState.hasFetchError) return@LaunchedEffect
+        toastDispatcher.showToast(
+            message = resources.getString(
+                R.string.settings_data_management_network_error_toast,
+            ),
+            type = RecapToastType.Error,
+        )
     }
 
     DataManagementScreen(

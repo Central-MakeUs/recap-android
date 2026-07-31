@@ -3,12 +3,14 @@ package com.chalkak.recap.feature.settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.chalkak.recap.core.data.screenshot.permission.currentImageAccessLevel
 import com.chalkak.recap.core.data.screenshot.permission.openPhotoAccessPermission
@@ -17,10 +19,15 @@ import com.chalkak.recap.core.data.screenshot.permission.openPhotoAccessPermissi
 fun SettingsRoute(
     onAction: (SettingsAction) -> Unit,
     modifier: Modifier = Modifier,
+    viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     var photoAccessLevel by remember {
         mutableStateOf(context.currentImageAccessLevel())
+    }
+
+    LaunchedEffect(viewModel) {
+        viewModel.prefetchDataManagement()
     }
 
     LifecycleResumeEffect(Unit) {
