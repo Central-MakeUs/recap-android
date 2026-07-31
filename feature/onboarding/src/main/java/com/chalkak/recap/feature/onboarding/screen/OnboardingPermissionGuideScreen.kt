@@ -36,7 +36,6 @@ import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
-import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
 import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
@@ -44,12 +43,10 @@ import com.chalkak.recap.feature.onboarding.component.StepHeader
 
 @Composable
 fun OnboardingPermissionGuideScreen(
-    imageAccessLevel: ImageAccessLevel,
+    hasResolvedPermissionStep: Boolean,
     onAction: (OnboardingAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val isPermissionGranted = imageAccessLevel != ImageAccessLevel.Denied
-
     Column(
         modifier = modifier.fillMaxSize(),
     ) {
@@ -79,14 +76,14 @@ fun OnboardingPermissionGuideScreen(
         }
         RecapButton(
             text = stringResource(
-                if (isPermissionGranted) {
+                if (hasResolvedPermissionStep) {
                     R.string.onboarding_permission_granted_button
                 } else {
                     R.string.onboarding_permission_grant_button
                 },
             ),
             onClick = {
-                if (isPermissionGranted) {
+                if (hasResolvedPermissionStep) {
                     onAction(OnboardingAction.SkipPermission)
                 } else {
                     onAction(OnboardingAction.GrantPermission)
@@ -194,7 +191,7 @@ private fun PermissionInfoBullet(
 private fun OnboardingPermissionGuideScreenPreview() {
     OnboardingPreviewContainer {
         OnboardingPermissionGuideScreen(
-            imageAccessLevel = ImageAccessLevel.Denied,
+            hasResolvedPermissionStep = false,
             onAction = {},
         )
     }
@@ -202,10 +199,10 @@ private fun OnboardingPermissionGuideScreenPreview() {
 
 @OnboardingScreenPreview
 @Composable
-private fun OnboardingPermissionGuideScreenGrantedPreview() {
+private fun OnboardingPermissionGuideScreenResolvedPreview() {
     OnboardingPreviewContainer {
         OnboardingPermissionGuideScreen(
-            imageAccessLevel = ImageAccessLevel.Full,
+            hasResolvedPermissionStep = true,
             onAction = {},
         )
     }

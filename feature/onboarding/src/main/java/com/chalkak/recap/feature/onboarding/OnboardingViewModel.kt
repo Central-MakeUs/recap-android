@@ -69,6 +69,7 @@ class OnboardingViewModel @Inject constructor(
 
     fun refreshImagePermissionAndMoveToFirstOrganize(): ImageAccessLevel {
         val accessLevel = refreshImagePermissionLevel()
+        markPermissionStepResolved()
         moveTo(OnboardingStep.UploadMethodGuide)
         return accessLevel
     }
@@ -133,8 +134,7 @@ class OnboardingViewModel @Inject constructor(
     }
 
     private fun proceedAfterLogin() {
-        refreshImagePermissionLevel()
-        moveTo(OnboardingStep.PermissionGuide)
+        moveTo(stepAfterPermissionResolved(refreshImagePermissionLevel()))
     }
 
     private fun refreshImagePermissionLevel(): ImageAccessLevel {
@@ -179,7 +179,22 @@ class OnboardingViewModel @Inject constructor(
             return OnboardingStep.Landing
         }
 
-        return OnboardingStep.PermissionGuide
+        return stepAfterPermissionResolved(refreshImagePermissionLevel())
+    }
+
+    private fun stepAfterPermissionResolved(accessLevel: ImageAccessLevel): OnboardingStep {
+        return if (accessLevel == ImageAccessLevel.Denied) {
+            OnboardingStep.PermissionGuide
+        } else {
+            markPermissionStepResolved()
+            OnboardingStep.UploadMethodGuide
+        }
+    }
+
+    private fun markPermissionStepResolved() {
+        _uiState.update { current ->
+            current.copy(hasResolvedPermissionStep = true)
+        }
     }
 
     private companion object {

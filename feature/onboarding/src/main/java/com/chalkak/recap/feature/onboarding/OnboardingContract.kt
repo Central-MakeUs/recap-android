@@ -5,6 +5,7 @@ import com.chalkak.recap.core.model.ImageAccessLevel
 data class OnboardingUiState(
     val step: OnboardingStep = OnboardingStep.Landing,
     val imageAccessLevel: ImageAccessLevel = ImageAccessLevel.Denied,
+    val hasResolvedPermissionStep: Boolean = false,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
 )
