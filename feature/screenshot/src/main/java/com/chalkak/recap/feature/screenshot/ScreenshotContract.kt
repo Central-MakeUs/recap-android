@@ -73,6 +73,7 @@ sealed interface ScreenshotEvent {
 internal object ScreenshotLimits {
     const val TitleMaxLength = 30
     const val SummaryMaxLength = 80
+    const val BodyMaxLength = 1000
 }
 
 internal fun StoredScreenshotCard.toEditDraft(): ScreenshotEditDraft {

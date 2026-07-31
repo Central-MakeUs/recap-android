@@ -168,6 +168,7 @@ fun ScreenshotEditScreen(
                     enabled = fieldsEnabled,
                     singleLine = false,
                     minLines = 4,
+                    maxLength = ScreenshotLimits.BodyMaxLength,
                 )
             }
         }
