@@ -15,6 +15,11 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 
 ## Open
 
+- [ ] 2026-07-31 - 작은 기기·고배율·3버튼 내비에서 깨지는 고정 레이아웃/패딩 전역 대응
+  - Context: 화면·컴포넌트 간격이 ~6.7인치 기준 고정 `dp`로 맞춰져 있어, 작은 물리 화면 + 높은 디스플레이/폰트 배율 + 3버튼 내비게이션(inset) 조합에서 온보딩 등 풀뷰포트 화면의 CTA·일러스트·텍스트가 잘리거나 겹친다. `core/design`에 Spacing/compact 레이아웃 시스템이 없고, 로컬 `*Tokens` 고정값·스크롤 없는 Column·큰 고정 높이 일러스트(예: Landing `120/90/58.dp`, AddToFavorite `238.dp`)가 원인. Permission/Upload만 scroll+pinned CTA. insets도 화면마다 `safeDrawing`/`navigationBars` 제각각.
+  - Next: (1) `core/design`에 scrollable body + pinned bottom actions + compact 시 일러스트 축소/숨김용 화면 템플릿 (2) 풀스크린 플로우 insets 계약 통일 (3) `RecapSpacing` 시맨틱 토큰 + compact/fontScale에서 여유 간격만 축소. 온보딩을 첫 적용·레퍼런스로 두고 이후 화면은 점진 적용. 고정 padding 일괄 축소만으로는 부족.
+  - Handoff: not started
+
 - [ ] 2026-07-25 - 정리 알림 클릭 딥링크
   - Context: 정리 진행/완료 알림 클릭은 현재 MainActivity 실행만 한다. 확인 화면의 NotificationPermissionRequestBottomSheet → POST_NOTIFICATIONS 요청 및 `organizeCompleteNotificationEnabled` 동기화는 완료.
   - Next: 완료/부분실패 결과 화면으로 PendingIntent 딥링크

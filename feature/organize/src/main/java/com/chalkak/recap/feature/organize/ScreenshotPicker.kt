@@ -77,7 +77,9 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -104,11 +106,11 @@ import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
-import com.chalkak.recap.core.design.theme.RecapGray500
+import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
-import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading4
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.LocalImage
 import dev.chrisbanes.haze.HazePositionStrategy
@@ -133,11 +135,7 @@ fun rememberScreenshotPickerSheetState(
     return rememberModalBottomSheetState(
         skipPartiallyExpanded = skipPartiallyExpanded,
         confirmValueChange = { newValue ->
-            if (
-                newValue == SheetValue.Hidden &&
-                currentSelectionCount >= MIN_SELECTION_COUNT &&
-                !currentAllowHideWithoutConfirm()
-            ) {
+            if (newValue == SheetValue.Hidden && currentSelectionCount >= MIN_SELECTION_COUNT && !currentAllowHideWithoutConfirm()) {
                 currentOnAttemptDismiss()
                 false
             } else {
@@ -167,11 +165,10 @@ fun ScreenshotPicker(
     }
     val coroutineScope = rememberCoroutineScope()
     var internalShowDiscardSelectionConfirm by remember { mutableStateOf(false) }
-    val showDiscardSelectionConfirm = discardSelectionConfirmVisible
-        ?: internalShowDiscardSelectionConfirm
+    val showDiscardSelectionConfirm =
+        discardSelectionConfirmVisible ?: internalShowDiscardSelectionConfirm
     val setShowDiscardSelectionConfirm: (Boolean) -> Unit =
-        onDiscardSelectionConfirmVisibleChange
-            ?: { internalShowDiscardSelectionConfirm = it }
+        onDiscardSelectionConfirmVisibleChange ?: { internalShowDiscardSelectionConfirm = it }
     val resolvedSheetState = sheetState ?: rememberScreenshotPickerSheetState(
         selectionCount = uiState.selectionCount,
         onAttemptDismissWithSelection = { setShowDiscardSelectionConfirm(true) },
@@ -290,9 +287,8 @@ fun ScreenshotPicker(
 @Composable
 private fun ScreenshotPickerDialogBackHandler(onBack: () -> Unit) {
     // CompositionLocal/NavigationEvent(Activity)가 아니라 Dialog 윈도우 ViewTree dispatcher를 쓴다.
-    val backDispatcher = LocalView.current
-        .findViewTreeOnBackPressedDispatcherOwner()
-        ?.onBackPressedDispatcher
+    val backDispatcher =
+        LocalView.current.findViewTreeOnBackPressedDispatcherOwner()?.onBackPressedDispatcher
     val currentOnBack by rememberUpdatedState(onBack)
 
     DisposableEffect(backDispatcher) {
@@ -347,9 +343,7 @@ fun ScreenshotPickerContent(
     val currentOnAction by rememberUpdatedState(onAction)
 
     fun hitTestUri(positionInRoot: Offset): String? {
-        return itemBoundsInRoot.entries
-            .firstOrNull { (_, bounds) -> bounds.contains(positionInRoot) }
-            ?.key
+        return itemBoundsInRoot.entries.firstOrNull { (_, bounds) -> bounds.contains(positionInRoot) }?.key
     }
 
     fun applyDragSelectRange(endIndex: Int) {
@@ -389,8 +383,8 @@ fun ScreenshotPickerContent(
     }
 
     fun onDragSelectStart(uri: String) {
-        val startIndex = currentUiState.availableScreenshots
-            .indexOfFirst { screenshot -> screenshot.uri == uri }
+        val startIndex =
+            currentUiState.availableScreenshots.indexOfFirst { screenshot -> screenshot.uri == uri }
         if (startIndex < 0) return
 
         isDragSelecting = true
@@ -407,8 +401,8 @@ fun ScreenshotPickerContent(
     fun onDragSelectMove(positionInRoot: Offset) {
         if (!isDragSelecting) return
         val uri = hitTestUri(positionInRoot) ?: return
-        val endIndex = currentUiState.availableScreenshots
-            .indexOfFirst { screenshot -> screenshot.uri == uri }
+        val endIndex =
+            currentUiState.availableScreenshots.indexOfFirst { screenshot -> screenshot.uri == uri }
         if (endIndex < 0 || endIndex == dragSelectEndIndex) return
         applyDragSelectRange(endIndex)
     }
@@ -509,14 +503,20 @@ fun ScreenshotPickerContent(
                     }
 
                     uiState.availableScreenshots.isEmpty() -> {
+                        // PartiallyExpanded(~50%)에서도 보이도록 상단 배치.
+                        // Partial 권한 카드가 있으면 그 아래(Column 순서)에 온다.
                         Text(
                             text = stringResource(R.string.organize_selection_empty),
                             style = RecapBody2,
                             color = RecapGray300,
                             textAlign = TextAlign.Center,
                             modifier = Modifier
-                                .align(Alignment.Center)
-                                .padding(horizontal = ScreenshotPickerTokens.EmptyHorizontalPadding),
+                                .align(Alignment.TopCenter)
+                                .fillMaxWidth()
+                                .padding(
+                                    horizontal = ScreenshotPickerTokens.EmptyHorizontalPadding,
+                                    vertical = ScreenshotPickerTokens.EmptyVerticalPadding,
+                                ),
                         )
                     }
 
@@ -601,17 +601,14 @@ fun ScreenshotPickerContent(
                         .graphicsLayer {
                             val progress = confirmAppearProgress.value
                             alpha = progress
-                            translationY =
-                                (1f - progress) * size.height + ctaHideSinkY
+                            translationY = (1f - progress) * size.height + ctaHideSinkY
                         },
                 )
             }
         }
 
         val toastBottomPadding = if (uiState.canProceed) {
-            ScreenshotPickerTokens.ConfirmButtonBottomPadding +
-                    RecapButtonSize.Large.height +
-                    ScreenshotPickerTokens.ToastAboveConfirmButtonSpacing
+            ScreenshotPickerTokens.ConfirmButtonBottomPadding + RecapButtonSize.Large.height + ScreenshotPickerTokens.ToastAboveConfirmButtonSpacing
         } else {
             ScreenshotPickerTokens.ToastBottomPadding
         }
@@ -676,31 +673,68 @@ private fun PartialPhotoAccessCard(
     onRequestFullPhotoAccess: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val message = stringResource(R.string.organize_partial_photo_access_message)
+    val actionLabel = stringResource(R.string.organize_partial_photo_access_button)
     Surface(
-        modifier = modifier,
+        onClick = onRequestFullPhotoAccess,
+        modifier = modifier.semantics {
+            role = Role.Button
+            contentDescription = "$message, $actionLabel"
+        },
         shape = RoundedCornerShape(ScreenshotPickerTokens.PartialAccessCardCornerRadius),
         color = RecapBlue50,
-        shadowElevation = 2.dp
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(ScreenshotPickerTokens.PartialAccessCardContentPadding),
-            verticalArrangement = Arrangement.spacedBy(
-                ScreenshotPickerTokens.PartialAccessCardSpacing,
+                .padding(
+                    vertical = ScreenshotPickerTokens.PartialAccessCardContentVerticalPadding,
+                    horizontal = ScreenshotPickerTokens.PartialAccessCardContentHorizontalPadding
+                ),
+            horizontalArrangement = Arrangement.spacedBy(
+                ScreenshotPickerTokens.PartialAccessCardIconSpacing,
             ),
+            verticalAlignment = Alignment.Top,
         ) {
-            Text(
-                text = stringResource(R.string.organize_partial_photo_access_message),
-                style = RecapCaption1,
-                color = RecapGray500,
-                modifier = Modifier.fillMaxWidth(),
+            Icon(
+                painter = painterResource(R.drawable.ic_partial_photo_access_15),
+                contentDescription = null,
+                modifier = Modifier.size(ScreenshotPickerTokens.PartialAccessCardIconSize),
+                tint = Color.Unspecified,
             )
-            RecapButton(
-                text = stringResource(R.string.organize_partial_photo_access_button),
-                onClick = onRequestFullPhotoAccess,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(
+                    ScreenshotPickerTokens.PartialAccessCardTextSpacing,
+                ),
+            ) {
+                Text(
+                    text = message,
+                    style = RecapHeading4,
+                    color = RecapGray700,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(
+                        ScreenshotPickerTokens.PartialAccessCardActionChevronSpacing,
+                    ),
+                ) {
+                    Text(
+                        text = actionLabel,
+                        style = RecapHeading4,
+                        color = RecapBlue300,
+                    )
+                    Icon(
+                        painter = painterResource(R.drawable.ic_chevron_right_24),
+                        contentDescription = null,
+                        modifier = Modifier.size(
+                            ScreenshotPickerTokens.PartialAccessCardActionChevronSize,
+                        ),
+                        tint = RecapBlue300,
+                    )
+                }
+            }
         }
     }
 }
@@ -951,13 +985,19 @@ private object ScreenshotPickerTokens {
     val CountStartPadding = 8.dp
     val PartialAccessCardHorizontalPadding = 16.dp
     val PartialAccessCardVerticalPadding = 8.dp
-    val PartialAccessCardContentPadding = 12.dp
+    val PartialAccessCardContentHorizontalPadding = 20.dp
+    val PartialAccessCardContentVerticalPadding = 15.5.dp
     val PartialAccessCardCornerRadius = 12.dp
-    val PartialAccessCardSpacing = 12.dp
+    val PartialAccessCardIconSize = 15.dp
+    val PartialAccessCardIconSpacing = 10.dp
+    val PartialAccessCardTextSpacing = 12.dp
+    val PartialAccessCardActionChevronSize = 16.dp
+    val PartialAccessCardActionChevronSpacing = 2.dp
     val ControlMinSize = 48.dp
     val IconSize = 24.dp
     val GridSpacing = 2.dp
     val EmptyHorizontalPadding = 24.dp
+    val EmptyVerticalPadding = 48.dp
     val CheckIconSize = 24.dp
     val CheckHitSize = 40.dp
     const val SelectedScale = 0.95f

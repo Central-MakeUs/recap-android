@@ -479,8 +479,8 @@
     <string name="organize_partial_failed_close">닫기</string>
     <string name="organize_add_more_content_description">스크린샷 추가</string>
     <string name="organize_selection_empty">앨범에서 스크린샷을 찾지 못했어요.</string>
-    <string name="organize_partial_photo_access_message">사진 접근이 일부만 허용되어 전체 이미지가 보이지 않아요.</string>
-    <string name="organize_partial_photo_access_button">권한 허용하기</string>
+    <string name="organize_partial_photo_access_message">사진 접근 권한이 일부만 허용되어있어요.</string>
+    <string name="organize_partial_photo_access_button">전체 권한 허용하기</string>
     <string name="organize_max_selection_message">최대 %1$d장까지 선택할 수 있어요.</string>
     <string name="share_non_image_removed">이미지가 아닌 파일 %1$d개가 삭제되었어요.</string>
     <string name="share_max_selection_message">최대 %1$d개까지 선택할 수 있어요.</string>
