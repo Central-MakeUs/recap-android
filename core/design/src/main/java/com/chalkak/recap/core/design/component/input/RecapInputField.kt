@@ -28,10 +28,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.theme.Black
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapBlue500
@@ -76,7 +80,7 @@ fun RecapInputField(
             Text(
                 text = label,
                 style = RecapBody2,
-                color = RecapGray900,
+                color = Black,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -116,7 +120,7 @@ fun RecapInputField(
                 minLines = resolvedMinLines,
                 maxLines = resolvedMaxLines,
                 textStyle = RecapBody2.copy(
-                    color = RecapGray900,
+                    color = Black,
                 ),
                 cursorBrush = SolidColor(RecapBlue500),
                 keyboardOptions = keyboardOptions,
@@ -159,20 +163,45 @@ fun RecapInputField(
                 } else {
                     Spacer(modifier = Modifier.weight(1f))
                 }
-                if (showCounter) {
-                    Text(
-                        text = stringResource(
-                            R.string.recap_input_field_character_counter,
-                            value.length,
-                            maxLength,
-                        ),
-                        style = RecapCaption2,
-                        color = RecapGray300,
+                if (showCounter && maxLength != null) {
+                    RecapInputFieldCharacterCounter(
+                        currentLength = value.length,
+                        maxLength = maxLength,
                     )
                 }
             }
         }
     }
+}
+
+@Composable
+private fun RecapInputFieldCharacterCounter(
+    currentLength: Int,
+    maxLength: Int,
+) {
+    val counterText = stringResource(
+        R.string.recap_input_field_character_counter,
+        currentLength,
+        maxLength,
+    )
+    val currentLengthText = currentLength.toString()
+    Text(
+        text = buildAnnotatedString {
+            if (currentLength == 0) {
+                withStyle(SpanStyle(color = RecapGray300)) {
+                    append(counterText)
+                }
+            } else {
+                withStyle(SpanStyle(color = RecapGray900)) {
+                    append(counterText.take(currentLengthText.length))
+                }
+                withStyle(SpanStyle(color = RecapGray300)) {
+                    append(counterText.drop(currentLengthText.length))
+                }
+            }
+        },
+        style = RecapCaption2,
+    )
 }
 
 @Composable
@@ -266,6 +295,21 @@ private fun RecapInputFieldMultilinePreview() {
             singleLine = false,
             minLines = 4,
             maxLength = 300,
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+}
+
+@Preview(name = "RecapInputField counter empty", showBackground = showRecapInputFieldBackground, widthDp = 360)
+@Composable
+private fun RecapInputFieldCounterEmptyPreview() {
+    RECAPTheme(dynamicColor = false) {
+        RecapInputField(
+            value = "",
+            onValueChange = {},
+            label = stringResource(R.string.recap_input_field_preview_label),
+            placeholder = stringResource(R.string.recap_input_field_preview_placeholder),
+            maxLength = 40,
             modifier = Modifier.padding(16.dp),
         )
     }
