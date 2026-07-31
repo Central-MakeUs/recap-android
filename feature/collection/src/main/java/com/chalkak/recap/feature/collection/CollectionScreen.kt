@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -33,6 +34,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -45,7 +47,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -109,6 +110,12 @@ fun CollectionScreen(
                     }
                 }
 
+                uiState.isLoadError -> {
+                    CollectionLoadErrorContent(
+                        onRetryClick = { onAction(CollectionAction.RetryLoad) },
+                    )
+                }
+
                 !uiState.hasStoredScreenshots -> {
                     CollectionEmptyContent(onNavigateToOrganize = onNavigateToOrganize)
                 }
@@ -121,6 +128,57 @@ fun CollectionScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CollectionLoadErrorContent(
+    onRetryClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = CollectionScreenTokens.HorizontalPadding),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Image(
+            painter = painterResource(R.drawable.ic_error_circle_60),
+            contentDescription = stringResource(
+                R.string.collection_load_error_character_content_description,
+            ),
+            modifier = Modifier.size(CollectionScreenTokens.ErrorIconSize),
+            contentScale = ContentScale.Fit,
+        )
+        Spacer(modifier = Modifier.height(CollectionScreenTokens.EmptyCharacterSpacing))
+        Text(
+            text = stringResource(R.string.collection_load_error_title),
+            style = RecapHeading3,
+            color = RecapGray300,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(CollectionScreenTokens.EmptyTitleSpacing))
+        Text(
+            text = stringResource(R.string.collection_load_error_description),
+            style = RecapBody2,
+            color = RecapGray300,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(CollectionScreenTokens.EmptyDescriptionSpacing))
+        RecapButton(
+            text = stringResource(R.string.collection_load_error_retry),
+            onClick = onRetryClick,
+            colors = RecapButtonDefaults.secondaryColors(),
+            modifier = Modifier.widthIn(min = CollectionScreenTokens.ErrorRetryButtonMinWidth),
+            leadingIcon = {
+                Icon(
+                    painter = painterResource(R.drawable.recap_arrow_retry_24),
+                    contentDescription = null,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            },
+        )
     }
 }
 
@@ -459,6 +517,10 @@ private object CollectionScreenTokens {
     val EmptyCharacterSpacing = 20.dp
     val EmptyTitleSpacing = 13.dp
     val EmptyDescriptionSpacing = 23.dp
+    val ErrorIconSize = 60.dp
+    val ErrorRetryButtonMinWidth = 188.dp
+    val ErrorRetryHorizontalPadding = 52.dp
+    val ErrorRetryVerticalPadding = 12.5.dp
 }
 
 @Preview(name = "Collection Empty", showBackground = true, widthDp = 360, heightDp = 800)
@@ -469,6 +531,21 @@ private fun CollectionEmptyPreview() {
             uiState = CollectionUiState(
                 isLoading = false,
                 hasStoredScreenshots = false,
+            ),
+            onAction = {},
+            onNavigateToOrganize = {},
+        )
+    }
+}
+
+@Preview(name = "Collection Load Error", showBackground = true, widthDp = 360, heightDp = 800)
+@Composable
+private fun CollectionLoadErrorPreview() {
+    RECAPTheme(dynamicColor = false) {
+        CollectionScreen(
+            uiState = CollectionUiState(
+                isLoading = false,
+                isLoadError = true,
             ),
             onAction = {},
             onNavigateToOrganize = {},

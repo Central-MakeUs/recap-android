@@ -5,6 +5,7 @@ import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
 import com.chalkak.recap.core.data.capture.remote.toCardTypeDto
 import com.chalkak.recap.core.data.capture.remote.toDomain
 import com.chalkak.recap.core.data.capture.sortedByOrganizedAt
+import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.data.network.mapApiResponse
 import com.chalkak.recap.core.data.network.runRemoteCatchingSuspend
 import com.chalkak.recap.core.data.storage.remote.StorageApi
@@ -16,31 +17,87 @@ import com.chalkak.recap.core.model.storage.StorageOverview
 import com.chalkak.recap.core.model.storage.StorageType
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.shareIn
 
 @Singleton
-class RemoteStorageRepository @Inject constructor(
+class RemoteStorageRepository(
     private val storageApi: StorageApi,
     private val thumbnailCache: RemoteCaptureThumbnailCache,
     private val changeNotifier: RemoteCaptureChangeNotifier,
+    private val sessionTokenStore: SessionTokenStore,
+    repositoryScope: CoroutineScope,
 ) : StorageRepository {
+    @Inject
+    constructor(
+        storageApi: StorageApi,
+        thumbnailCache: RemoteCaptureThumbnailCache,
+        changeNotifier: RemoteCaptureChangeNotifier,
+        sessionTokenStore: SessionTokenStore,
+    ) : this(
+        storageApi = storageApi,
+        thumbnailCache = thumbnailCache,
+        changeNotifier = changeNotifier,
+        sessionTokenStore = sessionTokenStore,
+        repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+    )
+
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun observeOverview(searchQuery: String): Flow<StorageOverview> {
-        // Remote search is deferred; searchQuery is intentionally ignored.
-        return changeNotifier.changes
-            .onStart { emit(Unit) }
-            .mapLatest {
-                fetchOverview().getOrElse {
-                    StorageOverview(
-                        hasAnyCapture = false,
-                        favoriteCount = 0,
-                        types = emptyList(),
+    private val sharedOverview =
+        sessionTokenStore.refreshToken
+            .flatMapLatest { sessionKey ->
+                if (sessionKey == null) {
+                    flowOf(
+                        SessionStorageOverview(
+                            sessionKey = null,
+                            result = Result.failure(MissingStorageSessionException()),
+                        ),
                     )
+                } else {
+                    changeNotifier.changes
+                        .onStart { emit(Unit) }
+                        .mapLatest {
+                            SessionStorageOverview(
+                                sessionKey = sessionKey,
+                                result = fetchOverview(),
+                            )
+                        }
                 }
             }
+            .shareIn(
+                scope = repositoryScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                replay = 1,
+            )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun observeOverview(searchQuery: String): Flow<Result<StorageOverview>> {
+        // Remote search is deferred; searchQuery is intentionally ignored.
+        return sessionTokenStore.refreshToken
+            .flatMapLatest { sessionKey ->
+                sharedOverview
+                    .filter { overview -> overview.sessionKey == sessionKey }
+                    .map { overview -> overview.result }
+            }
+    }
+
+    override suspend fun prefetchOverview(): Result<StorageOverview> =
+        observeOverview(searchQuery = "").first()
+
+    override fun refreshOverview() {
+        changeNotifier.notifyCaptureChanged()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -131,4 +188,13 @@ class RemoteStorageRepository @Inject constructor(
             CaptureSort.Latest -> "latest"
             CaptureSort.Oldest -> "oldest"
         }
+
+    private data class SessionStorageOverview(
+        val sessionKey: String?,
+        val result: Result<StorageOverview>,
+    )
+
+    private class MissingStorageSessionException : IllegalStateException(
+        "A session is required to load the storage overview",
+    )
 }

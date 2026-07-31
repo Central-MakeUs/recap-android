@@ -21,11 +21,16 @@ import kotlinx.coroutines.flow.map
 class MockStorageRepository @Inject constructor(
     private val screenshotCardRepository: ScreenshotCardRepository,
 ) : StorageRepository {
-    override fun observeOverview(searchQuery: String): Flow<StorageOverview> {
+    override fun observeOverview(searchQuery: String): Flow<Result<StorageOverview>> {
         return screenshotCardRepository.observeStoredCards().map { cards ->
-            cards.toStorageOverview(searchQuery = searchQuery)
+            Result.success(cards.toStorageOverview(searchQuery = searchQuery))
         }
     }
+
+    override suspend fun prefetchOverview(): Result<StorageOverview> =
+        observeOverview(searchQuery = "").first()
+
+    override fun refreshOverview() = Unit
 
     override fun observeCapturesByType(
         typeCode: ScreenshotContentType,

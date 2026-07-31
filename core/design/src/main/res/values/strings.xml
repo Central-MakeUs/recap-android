@@ -139,6 +139,10 @@
     <string name="collection_empty_description">정리할 스크린샷을 불러오거나\n갤러리에서 공유해주세요</string>
     <string name="collection_empty_organize_button">스크린샷 불러오기</string>
     <string name="collection_empty_character_content_description">컬렉션 빈 상태 안내 캐릭터</string>
+    <string name="collection_load_error_title">스크린샷을 불러오지 못했어요</string>
+    <string name="collection_load_error_description">네트워크 상태를 확인 한 뒤\n다시 시도해주세요</string>
+    <string name="collection_load_error_character_content_description">스크린샷 불러오기 실패 안내 아이콘</string>
+    <string name="collection_load_error_retry">다시 불러오기</string>
     <string name="collection_favorites_section_title">즐겨찾기</string>
     <string name="collection_favorites_entry_content_description">즐겨찾기, %1$d recaps</string>
     <string name="collection_types_section_title">유형별 보기</string>

@@ -9,6 +9,7 @@ import com.chalkak.recap.core.data.storage.MockStorageRepository
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
+import com.chalkak.recap.core.model.storage.StorageOverview
 import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -903,6 +904,93 @@ class CollectionViewModelTest {
 
         assertNull(viewModel.uiState.value.detail)
         assertEquals(CollectionSelectionUiState(), viewModel.uiState.value.selection)
+    }
+
+    @Test
+    fun `overview failure auto retries once then shows load error`() = runTest(testDispatcher) {
+        val overviewResults = MutableSharedFlow<Result<StorageOverview>>(extraBufferCapacity = 1)
+        val storageRepository = mockk<com.chalkak.recap.core.data.storage.StorageRepository>(relaxed = true)
+        every { storageRepository.observeOverview(any()) } returns overviewResults
+        every { storageRepository.refreshOverview() } just Runs
+
+        val failingViewModel = CollectionViewModel(
+            storageRepository = storageRepository,
+            searchRepository = searchRepository,
+            captureMutationRepository = captureMutations,
+        )
+        runCurrent()
+
+        overviewResults.emit(Result.failure(IllegalStateException("offline")))
+        advanceUntilIdle()
+
+        verify(exactly = 1) { storageRepository.refreshOverview() }
+        assertTrue(failingViewModel.uiState.value.isLoading)
+        assertFalse(failingViewModel.uiState.value.isLoadError)
+
+        overviewResults.emit(Result.failure(IllegalStateException("still offline")))
+        advanceUntilIdle()
+
+        assertFalse(failingViewModel.uiState.value.isLoading)
+        assertTrue(failingViewModel.uiState.value.isLoadError)
+        verify(exactly = 1) { storageRepository.refreshOverview() }
+    }
+
+    @Test
+    fun `overview success after auto retry clears pending error`() = runTest(testDispatcher) {
+        val overviewResults = MutableSharedFlow<Result<StorageOverview>>(extraBufferCapacity = 1)
+        val storageRepository = mockk<com.chalkak.recap.core.data.storage.StorageRepository>(relaxed = true)
+        every { storageRepository.observeOverview(any()) } returns overviewResults
+        every { storageRepository.refreshOverview() } just Runs
+
+        val recoveringViewModel = CollectionViewModel(
+            storageRepository = storageRepository,
+            searchRepository = searchRepository,
+            captureMutationRepository = captureMutations,
+        )
+        runCurrent()
+
+        overviewResults.emit(Result.failure(IllegalStateException("offline")))
+        advanceUntilIdle()
+        overviewResults.emit(
+            Result.success(
+                StorageOverview(
+                    hasAnyCapture = false,
+                    favoriteCount = 0,
+                    types = emptyList(),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+
+        assertFalse(recoveringViewModel.uiState.value.isLoading)
+        assertFalse(recoveringViewModel.uiState.value.isLoadError)
+        assertFalse(recoveringViewModel.uiState.value.hasStoredScreenshots)
+    }
+
+    @Test
+    fun `RetryLoad refreshes overview after load error`() = runTest(testDispatcher) {
+        val overviewResults = MutableSharedFlow<Result<StorageOverview>>(extraBufferCapacity = 1)
+        val storageRepository = mockk<com.chalkak.recap.core.data.storage.StorageRepository>(relaxed = true)
+        every { storageRepository.observeOverview(any()) } returns overviewResults
+        every { storageRepository.refreshOverview() } just Runs
+
+        val failingViewModel = CollectionViewModel(
+            storageRepository = storageRepository,
+            searchRepository = searchRepository,
+            captureMutationRepository = captureMutations,
+        )
+        runCurrent()
+
+        overviewResults.emit(Result.failure(IllegalStateException("offline")))
+        advanceUntilIdle()
+        overviewResults.emit(Result.failure(IllegalStateException("still offline")))
+        advanceUntilIdle()
+        assertTrue(failingViewModel.uiState.value.isLoadError)
+
+        failingViewModel.onAction(CollectionAction.RetryLoad)
+        advanceUntilIdle()
+
+        verify(exactly = 2) { storageRepository.refreshOverview() }
     }
 
     private fun storedCard(

@@ -20,10 +20,22 @@ class SwitchingStorageRepository @Inject constructor(
     private val remoteStorageRepository: RemoteStorageRepository,
 ) : StorageRepository {
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun observeOverview(searchQuery: String): Flow<StorageOverview> {
+    override fun observeOverview(searchQuery: String): Flow<Result<StorageOverview>> {
         return screenshotBackendModeStore.mode.flatMapLatest { mode ->
             resolve(mode).observeOverview(searchQuery)
         }
+    }
+
+    override suspend fun prefetchOverview(): Result<StorageOverview> {
+        return when (screenshotBackendModeStore.currentMode()) {
+            ScreenshotBackendMode.MOCK -> mockStorageRepository.prefetchOverview()
+            ScreenshotBackendMode.REMOTE -> remoteStorageRepository.prefetchOverview()
+        }
+    }
+
+    override fun refreshOverview() {
+        remoteStorageRepository.refreshOverview()
+        mockStorageRepository.refreshOverview()
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

@@ -58,6 +58,8 @@ class CollectionViewModel @Inject constructor(
     private var detailCaptureIds: Set<Long> = emptySet()
     private var favoriteStates: Map<Long, Boolean> = emptyMap()
     private var hasReceivedFirstOverview = false
+    private var overviewLoadFailed = false
+    private var pendingAutoRetryOnFailure = true
 
     private var isDetailSearchMode = false
     private var detailSubmittedQuery = ""
@@ -72,10 +74,26 @@ class CollectionViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             // Overview search is intentionally non-functional; always observe unfiltered.
-            storageRepository.observeOverview(searchQuery = "").collect { overview ->
-                hasReceivedFirstOverview = true
-                latestOverview = overview
-                publishState()
+            storageRepository.observeOverview(searchQuery = "").collect { result ->
+                result.fold(
+                    onSuccess = { overview ->
+                        pendingAutoRetryOnFailure = false
+                        overviewLoadFailed = false
+                        hasReceivedFirstOverview = true
+                        latestOverview = overview
+                        publishState()
+                    },
+                    onFailure = {
+                        if (pendingAutoRetryOnFailure) {
+                            pendingAutoRetryOnFailure = false
+                            storageRepository.refreshOverview()
+                        } else {
+                            overviewLoadFailed = true
+                            hasReceivedFirstOverview = true
+                            publishState()
+                        }
+                    },
+                )
             }
         }
 
@@ -107,6 +125,8 @@ class CollectionViewModel @Inject constructor(
             }
 
             CollectionAction.OpenSearch -> Unit
+
+            CollectionAction.RetryLoad -> storageRepository.refreshOverview()
 
             CollectionAction.ShowDetailSearch -> {
                 isDetailSearchVisible.value = true
@@ -513,6 +533,7 @@ class CollectionViewModel @Inject constructor(
         _uiState.update {
             CollectionUiState(
                 isLoading = !hasReceivedFirstOverview,
+                isLoadError = overviewLoadFailed,
                 hasStoredScreenshots = latestOverview.hasAnyCapture,
                 searchQuery = searchQuery.value,
                 detailSearchQuery = detailSearchQuery.value,

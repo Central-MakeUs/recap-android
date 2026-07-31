@@ -4,7 +4,9 @@ import app.cash.turbine.test
 import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.home.HomeRepository
 import com.chalkak.recap.core.data.network.SessionTokenStore
+import com.chalkak.recap.core.data.storage.StorageRepository
 import com.chalkak.recap.core.model.home.HomeSummary
+import com.chalkak.recap.core.model.storage.StorageOverview
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -28,6 +30,7 @@ class RecapStartupViewModelTest {
     private val userPreferencesRepository = mockk<UserPreferencesRepository>()
     private val sessionTokenStore = mockk<SessionTokenStore>(relaxed = true)
     private val homeRepository = mockk<HomeRepository>()
+    private val storageRepository = mockk<StorageRepository>()
     private val onboardingCompleted = MutableStateFlow(false)
 
     @BeforeEach
@@ -45,6 +48,13 @@ class RecapStartupViewModelTest {
                 hasAnyCapture = false,
             ),
         )
+        coEvery { storageRepository.prefetchOverview() } returns Result.success(
+            StorageOverview(
+                hasAnyCapture = false,
+                favoriteCount = 0,
+                types = emptyList(),
+            ),
+        )
     }
 
     @AfterEach
@@ -53,12 +63,13 @@ class RecapStartupViewModelTest {
     }
 
     @Test
-    fun `prefetches home summary when onboarding is completed`() = runTest(testDispatcher) {
+    fun `prefetches home and collection when onboarding is completed`() = runTest(testDispatcher) {
         onboardingCompleted.value = true
         val viewModel = RecapStartupViewModel(
             userPreferencesRepository = userPreferencesRepository,
             sessionTokenStore = sessionTokenStore,
             homeRepository = homeRepository,
+            storageRepository = storageRepository,
         )
 
         viewModel.uiState.test {
@@ -72,15 +83,17 @@ class RecapStartupViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { homeRepository.prefetchSummary() }
+        coVerify(exactly = 1) { storageRepository.prefetchOverview() }
     }
 
     @Test
-    fun `does not prefetch home summary when onboarding is incomplete`() = runTest(testDispatcher) {
+    fun `does not prefetch home or collection when onboarding is incomplete`() = runTest(testDispatcher) {
         onboardingCompleted.value = false
         val viewModel = RecapStartupViewModel(
             userPreferencesRepository = userPreferencesRepository,
             sessionTokenStore = sessionTokenStore,
             homeRepository = homeRepository,
+            storageRepository = storageRepository,
         )
 
         viewModel.uiState.test {
@@ -94,6 +107,7 @@ class RecapStartupViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 0) { homeRepository.prefetchSummary() }
+        coVerify(exactly = 0) { storageRepository.prefetchOverview() }
     }
 
     @Test
@@ -102,6 +116,7 @@ class RecapStartupViewModelTest {
             userPreferencesRepository = userPreferencesRepository,
             sessionTokenStore = sessionTokenStore,
             homeRepository = homeRepository,
+            storageRepository = storageRepository,
         )
 
         viewModel.completeOnboarding()
@@ -120,6 +135,7 @@ class RecapStartupViewModelTest {
             userPreferencesRepository = userPreferencesRepository,
             sessionTokenStore = sessionTokenStore,
             homeRepository = homeRepository,
+            storageRepository = storageRepository,
         )
 
         viewModel.resetOnboarding()

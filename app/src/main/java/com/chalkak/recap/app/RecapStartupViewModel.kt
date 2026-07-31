@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.home.HomeRepository
 import com.chalkak.recap.core.data.network.SessionTokenStore
+import com.chalkak.recap.core.data.storage.StorageRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -20,12 +21,13 @@ class RecapStartupViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val sessionTokenStore: SessionTokenStore,
     private val homeRepository: HomeRepository,
+    private val storageRepository: StorageRepository,
 ) : ViewModel() {
     val uiState: StateFlow<RecapStartupUiState> =
         userPreferencesRepository.onboardingCompleted
             .onEach { onboardingCompleted ->
                 if (onboardingCompleted) {
-                    prefetchHomeSummary()
+                    prefetchMainTabs()
                 }
             }
             .map { onboardingCompleted ->
@@ -50,11 +52,25 @@ class RecapStartupViewModel @Inject constructor(
         }
     }
 
+    private fun prefetchMainTabs() {
+        prefetchHomeSummary()
+        prefetchCollectionOverview()
+    }
+
     private fun prefetchHomeSummary() {
         viewModelScope.launch {
             homeRepository.prefetchSummary()
                 .onFailure { error ->
                     Timber.w(error, "Home summary prefetch failed")
+                }
+        }
+    }
+
+    private fun prefetchCollectionOverview() {
+        viewModelScope.launch {
+            storageRepository.prefetchOverview()
+                .onFailure { error ->
+                    Timber.w(error, "Collection overview prefetch failed")
                 }
         }
     }
