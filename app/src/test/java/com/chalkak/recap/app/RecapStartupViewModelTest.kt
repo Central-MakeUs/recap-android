@@ -34,6 +34,9 @@ class RecapStartupViewModelTest {
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         every { userPreferencesRepository.onboardingCompleted } returns onboardingCompleted
+        coEvery { userPreferencesRepository.setOnboardingCompleted(any()) } coAnswers {
+            onboardingCompleted.value = firstArg()
+        }
         coEvery { homeRepository.prefetchSummary() } returns Result.success(
             HomeSummary(
                 recentCaptures = emptyList(),
@@ -91,5 +94,41 @@ class RecapStartupViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 0) { homeRepository.prefetchSummary() }
+    }
+
+    @Test
+    fun `completeOnboarding stores completed true`() = runTest(testDispatcher) {
+        val viewModel = RecapStartupViewModel(
+            userPreferencesRepository = userPreferencesRepository,
+            sessionTokenStore = sessionTokenStore,
+            homeRepository = homeRepository,
+        )
+
+        viewModel.completeOnboarding()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            userPreferencesRepository.setOnboardingCompleted(true)
+        }
+        assertEquals(true, onboardingCompleted.value)
+    }
+
+    @Test
+    fun `resetOnboarding clears session token and completed state`() = runTest(testDispatcher) {
+        onboardingCompleted.value = true
+        val viewModel = RecapStartupViewModel(
+            userPreferencesRepository = userPreferencesRepository,
+            sessionTokenStore = sessionTokenStore,
+            homeRepository = homeRepository,
+        )
+
+        viewModel.resetOnboarding()
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { sessionTokenStore.clear() }
+        coVerify(exactly = 1) {
+            userPreferencesRepository.setOnboardingCompleted(false)
+        }
+        assertEquals(false, onboardingCompleted.value)
     }
 }

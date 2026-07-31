@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,7 +41,6 @@ import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.feature.developer.DeveloperRoute
-import com.chalkak.recap.feature.onboarding.OnboardingRoute
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -126,7 +126,6 @@ private fun RecapAppReadyContent(
     onboardingSessionKey: Int,
     onOnboardingSessionKeyChange: (Int) -> Unit,
 ) {
-    val pendingOpenOrganize by startupViewModel.pendingOpenOrganize.collectAsStateWithLifecycle()
     val initialRoute = if (readyState.onboardingCompleted) {
         RecapRootRoute.Main
     } else {
@@ -207,14 +206,17 @@ private fun RecapAppReadyContent(
                     entryProvider = { route ->
                         when (route) {
                             RecapRootRoute.Onboarding -> NavEntry(route) {
-                                OnboardingRoute(
-                                    onOnboardingComplete = startupViewModel::completeOnboarding,
-                                    viewModelKey = "onboarding-$onboardingSessionKey",
-                                    pendingSampleShareAdvanceRequestIds =
-                                        pendingOnboardingSampleShareAdvanceRequestIds,
-                                    onSampleShareAdvanceComplete =
-                                        onOnboardingSampleShareAdvanceComplete,
-                                )
+                                key(onboardingSessionKey) {
+                                    OnboardingFirstOrganizeHost(
+                                        analysisProgressViewModel = analysisProgressViewModel,
+                                        onCompleteOnboarding = startupViewModel::completeOnboarding,
+                                        onboardingSessionKey = onboardingSessionKey,
+                                        pendingSampleShareAdvanceRequestIds =
+                                            pendingOnboardingSampleShareAdvanceRequestIds,
+                                        onSampleShareAdvanceComplete =
+                                            onOnboardingSampleShareAdvanceComplete,
+                                    )
+                                }
                             }
 
                             RecapRootRoute.Main -> NavEntry(route) {
@@ -222,9 +224,6 @@ private fun RecapAppReadyContent(
                                     onNavigateToDeveloper = {
                                         rootBackStack.add(RecapRootRoute.Developer)
                                     },
-                                    pendingOpenOrganize = pendingOpenOrganize,
-                                    onPendingOpenOrganizeConsumed =
-                                        startupViewModel::consumePendingOpenOrganize,
                                     analysisProgressViewModel = analysisProgressViewModel,
                                     pendingHomeNavigationRequestId =
                                         pendingHomeNavigationRequestId.takeIf {

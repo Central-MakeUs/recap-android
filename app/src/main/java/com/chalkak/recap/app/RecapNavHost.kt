@@ -56,8 +56,6 @@ private const val MainTabSlideFraction = 6
 fun RecapNavHost(
     modifier: Modifier = Modifier,
     onNavigateToDeveloper: () -> Unit,
-    pendingOpenOrganize: Boolean = false,
-    onPendingOpenOrganizeConsumed: () -> Unit = {},
     analysisProgressViewModel: ScreenshotAnalysisProgressViewModel,
     pendingHomeNavigationRequestId: Int?,
     onRequestNavigateHome: () -> Unit,
@@ -186,13 +184,9 @@ fun RecapNavHost(
                                     backStack.lastOrNull() == AppRoute.MainTabs
                                 },
                             onHomeNavigationComplete = onHomeNavigationComplete,
-                            pendingOpenOrganize = pendingOpenOrganize || requestOpenOrganize,
+                            pendingOpenOrganize = requestOpenOrganize,
                             onPendingOpenOrganizeConsumed = {
-                                if (requestOpenOrganize) {
-                                    requestOpenOrganize = false
-                                } else {
-                                    onPendingOpenOrganizeConsumed()
-                                }
+                                requestOpenOrganize = false
                             },
                         )
                     }

@@ -31,7 +31,8 @@ private val NoPendingSampleShareAdvanceRequestIds: StateFlow<Int?> = MutableStat
 
 @Composable
 fun OnboardingRoute(
-    onOnboardingComplete: (openOrganize: Boolean) -> Unit,
+    onOnboardingComplete: () -> Unit,
+    onOpenScreenshotPicker: () -> Unit = {},
     viewModelKey: String? = null,
     pendingSampleShareAdvanceRequestIds: StateFlow<Int?> = NoPendingSampleShareAdvanceRequestIds,
     onSampleShareAdvanceComplete: (Int) -> Unit = {},
@@ -126,7 +127,7 @@ fun OnboardingRoute(
 
                                 OnboardingAction.OpenScreenshotPicker -> {
                                     viewModel.onAction(action)
-                                    onOnboardingComplete(true)
+                                    onOpenScreenshotPicker()
                                 }
 
                                 OnboardingAction.OpenAddToFavoriteGuide -> {
@@ -140,7 +141,7 @@ fun OnboardingRoute(
                                 }
 
                                 OnboardingAction.SkipStartFirstAnalyze -> {
-                                    onOnboardingComplete(false)
+                                    onOnboardingComplete()
                                 }
 
                                 else -> viewModel.onAction(action)
