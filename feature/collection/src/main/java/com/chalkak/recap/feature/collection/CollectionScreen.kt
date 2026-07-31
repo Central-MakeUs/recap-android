@@ -519,8 +519,6 @@ private object CollectionScreenTokens {
     val EmptyDescriptionSpacing = 23.dp
     val ErrorIconSize = 60.dp
     val ErrorRetryButtonMinWidth = 188.dp
-    val ErrorRetryHorizontalPadding = 52.dp
-    val ErrorRetryVerticalPadding = 12.5.dp
 }
 
 @Preview(name = "Collection Empty", showBackground = true, widthDp = 360, heightDp = 800)
