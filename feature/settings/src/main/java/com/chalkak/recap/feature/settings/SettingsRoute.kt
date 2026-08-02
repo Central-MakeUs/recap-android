@@ -10,10 +10,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.chalkak.recap.core.data.screenshot.permission.currentImageAccessLevel
 import com.chalkak.recap.core.data.screenshot.permission.openPhotoAccessPermission
+import com.chalkak.recap.core.design.RecapLegalUrls
 
 @Composable
 fun SettingsRoute(
@@ -22,6 +24,7 @@ fun SettingsRoute(
     viewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     var photoAccessLevel by remember {
         mutableStateOf(context.currentImageAccessLevel())
     }
@@ -54,6 +57,10 @@ fun SettingsRoute(
                             permissionLauncher.launch(permissions)
                         },
                     )
+                }
+
+                SettingsAction.OpenContact -> {
+                    uriHandler.openUri(RecapLegalUrls.CUSTOMER_SUPPORT)
                 }
 
                 else -> onAction(action)
