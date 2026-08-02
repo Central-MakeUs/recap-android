@@ -1,5 +1,10 @@
 package com.chalkak.recap.feature.onboarding
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +39,8 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
 
+private const val LandingStepFadeMillis = 150
+
 @Composable
 fun OnboardingScreen(
     uiState: OnboardingUiState,
@@ -43,6 +50,7 @@ fun OnboardingScreen(
     illustrationSignalFlow: Flow<OnboardingIllustrationSignal> = emptyFlow(),
 ) {
     val resolvedSnackbarHostState = snackbarHostState ?: remember { SnackbarHostState() }
+    val showLanding = uiState.step == OnboardingStep.Landing
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -54,24 +62,38 @@ fun OnboardingScreen(
                 .background(MaterialTheme.colorScheme.background)
                 .safeDrawingPadding(),
         ) {
-            when (uiState.step) {
-                OnboardingStep.Landing -> OnboardingLandingScreen(
-                    onAction = onAction,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(OnboardingLayoutDefaults.LandingScreenPadding),
-                    isLoading = uiState.isLoading,
-                    illustrationSignalFlow = illustrationSignalFlow,
-                )
-
-                OnboardingStep.PermissionGuide,
-                OnboardingStep.UploadMethodGuide,
-                OnboardingStep.AddToFavorite,
-                OnboardingStep.StartFirstAnalyze -> OnboardingStepTransition(
-                    uiState = uiState,
-                    onAction = onAction,
-                    modifier = Modifier.fillMaxSize(),
-                )
+            AnimatedContent(
+                targetState = showLanding,
+                modifier = Modifier.fillMaxSize(),
+                transitionSpec = {
+                    // clean fade
+                    fadeIn(
+                        animationSpec = tween(
+                            durationMillis = LandingStepFadeMillis,
+                            delayMillis = LandingStepFadeMillis,
+                        ),
+                    ) togetherWith fadeOut(
+                        animationSpec = tween(durationMillis = LandingStepFadeMillis),
+                    )
+                },
+                label = "onboardingLandingStepFade",
+            ) { isLanding ->
+                if (isLanding) {
+                    OnboardingLandingScreen(
+                        onAction = onAction,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(OnboardingLayoutDefaults.LandingScreenPadding),
+                        isLoading = uiState.isLoading,
+                        illustrationSignalFlow = illustrationSignalFlow,
+                    )
+                } else {
+                    OnboardingStepTransition(
+                        uiState = uiState,
+                        onAction = onAction,
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
             }
             SnackbarHost(
                 hostState = resolvedSnackbarHostState,
