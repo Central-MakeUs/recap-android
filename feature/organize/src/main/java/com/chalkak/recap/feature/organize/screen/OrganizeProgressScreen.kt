@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.organize
+package com.chalkak.recap.feature.organize.screen
 
 import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.animateFloatAsState
