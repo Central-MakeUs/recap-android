@@ -3,7 +3,7 @@ package com.chalkak.recap.core.design.animation
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import org.junit.jupiter.api.Assertions.assertEquals
+import androidx.navigationevent.NavigationEvent
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -11,21 +11,25 @@ import org.junit.jupiter.api.Test
 class RecapNavigationMotionTest {
 
     @Test
-    fun `predictivePop uses the same transform family as pop`() {
+    fun `predictivePop on edge gesture uses pop transform family`() {
         val pop = RecapNavigationMotion.pop()
-        val predictive = RecapNavigationMotion.predictivePop()
+        val left = RecapNavigationMotion.predictivePop(NavigationEvent.EDGE_LEFT)
+        val right = RecapNavigationMotion.predictivePop(NavigationEvent.EDGE_RIGHT)
         assertFalse(pop.isNoneTransform())
-        assertFalse(predictive.isNoneTransform())
+        assertFalse(left.isNoneTransform())
+        assertFalse(right.isNoneTransform())
+    }
+
+    @Test
+    fun `predictivePop on EDGE_NONE is none`() {
+        assertTrue(
+            RecapNavigationMotion.predictivePop(NavigationEvent.EDGE_NONE).isNoneTransform(),
+        )
     }
 
     @Test
     fun `none is a none transform`() {
         assertTrue(RecapNavigationMotion.none().isNoneTransform())
-    }
-
-    @Test
-    fun `predictive max fraction is thirty five percent`() {
-        assertEquals(0.35f, RecapNavigationMotion.PredictiveMaxFraction)
     }
 
     private fun ContentTransform.isNoneTransform(): Boolean =

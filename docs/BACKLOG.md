@@ -127,9 +127,9 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Handoff: not started
 
 - [ ] 2026-07-24 - RecapNavDisplay OverlayScene/공유 요소 lifecycle 패리티
-  - Context: predictive back 저항 preview + commit 연속성을 위해 single-pane `RecapNavDisplay`(progress remapping + custom commit completion)를 재도입함. 공식 `NavDisplay`의 OverlayScene/shared-element/일부 interrupted-transition 패리티는 없음. Main tab Home-Collection은 공식 `NavDisplay` 예외를 유지함
-  - Next: OverlayScene/공유 요소가 필요해지면 공식 `NavDisplay` 확장 훅 또는 라이브러리 remapping API를 재평가하고, 없으면 패리티 범위를 명시적으로 문서화
-  - Note: 2026-07-23 공식 NavDisplay 기반 공통 navigation motion 안정화 Done 항목의 순수주의 방향과 상충하며, progress remapping 목표를 위해 의도적으로 재전환함
+  - Context: `feature/033-navigaion-3-animation`에서 `RecapNavDisplay`를 공식 `NavDisplay` thin wrapper로 되돌림. OverlayScene/shared-element 패리티는 회복 가능 방향. 대신 저항 preview(`PredictiveMaxFraction` remapping), custom commit completion, interrupted-transition planner/back commit queue는 포기하고 edge full-range predictive + `EDGE_NONE` None으로 단순화함
+  - Next: OverlayScene/공유 요소가 실제로 필요해지면 공식 `NavDisplay` 확장 훅을 사용하고, 빠른 역전 입력 레이어 회귀가 나면 planner 재도입 여부를 재평가
+  - Note: 2026-07-23 공식 NavDisplay 복원 방향과 다시 정렬. Main tab Home↔Collection은 계속 공식 `NavDisplay` + predictive None
   - Handoff: not started
 
 - [ ] 2026-07-10 - DataStore 읽기·손상 오류에도 앱 시작 복구 경로 추가

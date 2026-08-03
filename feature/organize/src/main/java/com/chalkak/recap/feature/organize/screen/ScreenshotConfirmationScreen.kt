@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.organize
+package com.chalkak.recap.feature.organize.screen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -59,6 +59,9 @@ import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.feature.organize.MAX_SELECTION_COUNT
+import com.chalkak.recap.feature.organize.OrganizeAction
+import com.chalkak.recap.feature.organize.OrganizeUiState
 
 @Composable
 fun ScreenshotConfirmationScreen(

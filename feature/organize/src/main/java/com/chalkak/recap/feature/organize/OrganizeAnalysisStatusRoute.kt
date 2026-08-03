@@ -28,6 +28,10 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.feature.organize.screen.OrganizeFailedContent
+import com.chalkak.recap.feature.organize.screen.OrganizePartialFailedContent
+import com.chalkak.recap.feature.organize.screen.OrganizeProgressContent
+import com.chalkak.recap.feature.organize.screen.OrganizeSuccessContent
 
 @Composable
 fun OrganizeAnalysisStatusRoute(
