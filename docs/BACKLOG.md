@@ -30,17 +30,6 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Next (차선): 결과 전달을 막지 않는 범위에서 `async` + semaphore 등 bounded parallel caching으로 다운로드 대기 시간을 줄이거나, 로컬 hit만 동기 resolve하고 miss는 remote URL을 즉시 반환한 뒤 백그라운드 캐시. Search만이 아니라 공유 cache API/`withCachedThumbnails` 호출부 일괄 검토
   - Handoff: not started
 
-- [ ] 2026-07-25 - Remote 스크린샷 상세 content 편집 API 연결
-  - Context: Remote 상세 로드(`ScreenshotDetailRepository` + `CaptureRepository.getDetail`)와 삭제/즐겨찾기는 연결됐지만 `CaptureApi`에 title/summary/body/type PATCH가 없어 편집 저장은 Room `updateCardContent`만 호출한다. Remote에서는 저장이 실패(save error)한다.
-  - Next: 서버 content update API 확정 후 `CaptureMutationRepository`에 updateContent를 추가하고 `ScreenshotViewModel.saveEdit`을 Switching mutation으로 위임
-  - Handoff: not started
-
-- [ ] 2026-07-22 - `ScreenshotAnalysisProgressViewModel` 부분 실패·상태 불일치 처리
-  - Context: (1) `RemoteCompleted`가 `PARTIAL_FAILED`여도 `successCount + failCount`를 완료 수로 기록하고 오류 없이 종료함. `outcome.status`/`failCount`를 검사하지 않아 진행 UI가 사라지면 사용자는 누락 사실을 알 수 없음. (2) Local 경로에서 `organize` 콜백이 이미 `completedCount`/`progress`를 2/2로 올린 뒤 Room 저장이 실패하면 `errorMessage`만 설정되고 완료 수는 그대로라 실제 저장 결과와 모순됨. 작업 완료 UI가 전체 성공만 전제하고 단계별·부분 성공 outcome을 구분하지 않음
-  - Next: Remote는 `PARTIAL_FAILED`/`failCount`를 검사해 부분 실패 상태 또는 복구 가능한 오류 노출. Local 저장 실패 분기에서 `persisted.size` 기준으로 `completedCount`/`progress` 동기화. 상위 progress 역행 이슈와 함께 단계별 outcome 모델 정리
-  - Blocked by: 백엔드 organize/status poll 실환경 분석 파이프라인 가용 (Remote 부분 실패 UX 확정)
-  - Handoff: not started
-
 - [ ] 2026-07-22 (updated 2026-07-31) - 세션 유효성·온보딩·오프라인을 통합한 앱 진입 라우팅과 계정 전환 시 로컬 데이터 격리
   - Problem: 현재 루트 라우팅은 `onboardingCompleted`만 보고 세션 상태를 관찰하지 않는다. 토큰이 없거나 refresh token이 서버에서 만료·폐기되어도 Main에 남을 수 있고, 반대로 네트워크 단절·timeout처럼 유효성을 일시적으로 확인할 수 없는 상태를 세션 무효로 오판하면 불필요한 로그아웃과 데이터 손실이 발생한다. 세션 만료 후 재로그인 성공 시 온보딩 완료 여부와 무관하게 가이드로 이동하는 흐름도 재방문 사용자 요구와 맞지 않는다.
   - Current implementation:
@@ -85,11 +74,6 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Next: 공통 텍스트 overflow 규칙(줄 수, ellipsis, textWrap, 버튼 compactText)을 정한 뒤 design/feature 컴포넌트에 일괄 적용
   - Handoff: not started
 
-- [ ] 2026-07-15 - 설정 하위 화면(계정 관리, 문의하기)
-  - Context: 설정 top-level UI/명칭과 Gradle 모듈은 `:feature:settings`로 통일됨. 계정 관리·문의하기는 stub. 이용 안내·공유 즐겨찾기 가이드는 `AppRoute`로 연결됨
-  - Next: 계정 관리/문의하기 전용 화면 스펙 후 구현
-  - Handoff: not started
-
 - [ ] 2026-07-14 - 카카오 로그인 SDK 예외 처리 보강
   - Context: `KakaoLoginClient`는 `ClientErrorCause.Cancelled`만 `AuthError.Cancelled`로 매핑하고, 그 외 Talk 실패는 무조건 Account fallback 또는 `ProviderUnavailable`/`Unknown`으로 뭉개짐. 카카오 문서 예외 플로우(`AccessDenied`, 계정 미로그인 `Unknown` 등)와 케이스별 UX 분기·메시지가 없고, 온보딩 UI도 아직 `signInWithKakao`를 호출하지 않음
   - Next: Kakao SDK `AuthError`/`AuthErrorCause`를 `AuthError` 도메인으로 세분화하고, Cancelled 시 Account fallback 금지·AccessDenied/Unknown별 사용자 메시지·재시도 정책을 정의한 뒤 ViewModel 연동
@@ -107,10 +91,6 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 
 - [ ] 2026-07-08 - 정리 플로우 스크린샷 그리드 스크롤 시 이미지 재로딩 체감 개선
   - Context: `feature/organize` 선택/확인 화면이 Coil 3 `AsyncImage` + MediaStore `content://` URI를 기본 `ImageLoader`로 렌더링함. 메모리 캐시 miss·재디코딩·placeholder 부재로 스크롤 복귀 시 이미지가 다시 불러와지는 것처럼 보일 수 있음
-  - Handoff: not started
-
-- [ ] 2026-07-08 - 정리 화면에서 이미지 권한 없음과 실제 빈 목록 상태 구분
-  - Context: `OrganizeViewModel`이 `LocalScreenshotDataSource.queryAllScreenshots()` 결과만 보고 상태를 구성해, 이미지 권한이 거부된 사용자도 "스크린샷 없음" 빈 상태로 보임. 권한 요청/설정 이동 경로가 정리 플로우 안에 필요함
   - Handoff: not started
 
 - [ ] 2026-07-08 - Coroutine dispatcher DI 패턴 도입
@@ -148,6 +128,23 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 - 없음
 
 ## Done
+
+- [x] 2026-07-22 - `ScreenshotAnalysisProgressViewModel` 부분 실패·상태 불일치 처리
+  - Result: `OrganizeTerminalResultMapper`가 Remote `PARTIAL_FAILED`/`failCount`와 Local 저장 실패 시 `persisted.size`를 `AllSuccess`/`PartialSuccess`/`AllFailed`로 매핑한다. `ScreenshotAnalysisProgressViewModel`은 `terminalResult`를 설정하고 `OrganizePartialFailedScreen` 등 단계별 완료 UI로 연결되며 관련 단위 테스트가 있다
+  - Closed: 2026-08-03 (이미 구현된 상태로 Open에서 Done으로 이동)
+
+- [x] 2026-07-15 - 설정 하위 화면(계정 관리, 문의하기)
+  - Result: 계정 관리는 `AccountManagementRoute`/`ViewModel`(로그아웃·회원탈퇴)로 구현됨. 문의하기는 전용 stub 화면 대신 `RecapLegalUrls.CUSTOMER_SUPPORT` 외부 URL을 연다
+  - Closed: 2026-08-03 (이미 구현된 상태로 Open에서 Done으로 이동)
+
+- [x] 2026-07-08 - 정리 화면에서 이미지 권한 없음과 실제 빈 목록 상태 구분
+  - Result: Main에서 `ImageAccessLevel.Denied` 시 정리 진입 전 권한 팝업을 띄우고, Organize는 Partial 접근 카드·권한 요청/설정 이동 경로를 제공한다. 빈 목록은 권한이 있을 때의 empty UI로 구분된다
+  - Closed: 2026-08-03 (이미 구현된 상태로 Open에서 Done으로 이동)
+
+- [x] 2026-07-25 - Remote 스크린샷 상세 content 편집 API 연결
+  - Context: Remote 상세 로드(`ScreenshotDetailRepository` + `CaptureRepository.getDetail`)와 삭제/즐겨찾기는 연결됐지만 `CaptureApi`에 title/summary/body/type PATCH가 없어 편집 저장은 Room `updateCardContent`만 호출한다. Remote에서는 저장이 실패(save error)한다.
+  - Next: 서버 content update API 확정 후 `CaptureMutationRepository`에 updateContent를 추가하고 `ScreenshotViewModel.saveEdit`을 Switching mutation으로 위임
+  - Handoff: not started
 
 - [x] 2026-07-30 - 빠른 전역 navigation push/pop 역전의 화면 레이어 안정화
   - Result: 실제 initial/target scene pair에 방향과 z-index를 고정하는 transition planner를 도입하고, 취소/재타기팅/idle 정규화 및 post-splash 흰색 window/root fallback 배경을 적용
