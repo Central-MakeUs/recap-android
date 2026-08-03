@@ -12,6 +12,7 @@ import com.chalkak.recap.core.model.capture.CaptureSummary
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.take
@@ -40,7 +41,7 @@ class RemoteRecentCapturesRepositoryTest {
                 items = listOf(summaryDto(1L), summaryDto(2L)),
             ),
         )
-        coEvery { thumbnailCache.resolveThumbnailSources(any()) } answers {
+        every { thumbnailCache.resolveThumbnailSources(any()) } answers {
             firstArg<List<Pair<Long, String?>>>().associate { (id, url) -> id to url }
         }
 
@@ -86,7 +87,7 @@ class RemoteRecentCapturesRepositoryTest {
                 ),
             ),
         )
-        coEvery { thumbnailCache.resolveThumbnailSources(any()) } answers {
+        every { thumbnailCache.resolveThumbnailSources(any()) } answers {
             firstArg<List<Pair<Long, String?>>>().associate { (id, url) -> id to url }
         }
 

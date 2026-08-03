@@ -3,6 +3,7 @@ package com.chalkak.recap.feature.home.search
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
+import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
 import com.chalkak.recap.core.data.search.RecentSearchStore
 import com.chalkak.recap.core.data.search.SearchRepository
 import com.chalkak.recap.core.model.search.SearchScope
@@ -20,6 +21,7 @@ class SearchViewModel @Inject constructor(
     private val searchRepository: SearchRepository,
     private val captureMutationRepository: CaptureMutationRepository,
     private val recentSearchStore: RecentSearchStore,
+    private val thumbnailUpdates: CaptureThumbnailUpdates,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
@@ -32,6 +34,11 @@ class SearchViewModel @Inject constructor(
         viewModelScope.launch {
             recentSearchStore.recentSearches.collect { terms ->
                 _uiState.update { state -> state.copy(recentSearches = terms) }
+            }
+        }
+        viewModelScope.launch {
+            thumbnailUpdates.thumbnailReady.collect { ready ->
+                applyThumbnailReady(ready.captureId, ready.localPath)
             }
         }
     }
@@ -160,6 +167,7 @@ class SearchViewModel @Inject constructor(
                             isLoadingMore = false,
                         )
                     }
+                    reconcileThumbnails(items.map { item -> item.captureId })
                 },
                 onFailure = {
                     _uiState.update { state ->
@@ -216,10 +224,36 @@ class SearchViewModel @Inject constructor(
                             isLoadingMore = false,
                         )
                     }
+                    reconcileThumbnails(newItems.map { item -> item.captureId })
                 },
                 onFailure = {
                     _uiState.update { current ->
                         current.copy(isLoadingMore = false)
+                    }
+                },
+            )
+        }
+    }
+
+    private fun reconcileThumbnails(captureIds: Iterable<Long>) {
+        captureIds.forEach { captureId ->
+            thumbnailUpdates.resolveLocalPath(captureId)?.let { path ->
+                applyThumbnailReady(captureId, path)
+            }
+        }
+    }
+
+    private fun applyThumbnailReady(
+        captureId: Long,
+        localPath: String,
+    ) {
+        _uiState.update { state ->
+            state.copy(
+                results = state.results.map { item ->
+                    if (item.captureId == captureId) {
+                        item.copy(thumbnailModel = localPath)
+                    } else {
+                        item
                     }
                 },
             )

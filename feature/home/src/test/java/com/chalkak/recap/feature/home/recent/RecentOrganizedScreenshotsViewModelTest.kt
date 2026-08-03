@@ -1,6 +1,7 @@
 package com.chalkak.recap.feature.home.recent
 
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
+import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
 import com.chalkak.recap.core.data.home.RecentCapturesRepository
 import com.chalkak.recap.core.model.capture.CapturePage
 import com.chalkak.recap.core.model.capture.CaptureSummary
@@ -29,6 +30,7 @@ class RecentOrganizedScreenshotsViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val recentCapturesRepository = mockk<RecentCapturesRepository>()
     private val captureMutationRepository = mockk<CaptureMutationRepository>()
+    private val thumbnailUpdates = mockk<CaptureThumbnailUpdates>()
     private val firstPageFlow = MutableSharedFlow<Result<CapturePage>>(replay = 1)
 
     @Before
@@ -37,6 +39,8 @@ class RecentOrganizedScreenshotsViewModelTest {
         every {
             recentCapturesRepository.observeRecentCaptures(page = 0)
         } returns firstPageFlow
+        every { thumbnailUpdates.thumbnailReady } returns MutableSharedFlow()
+        every { thumbnailUpdates.resolveLocalPath(any()) } returns null
     }
 
     @After
@@ -284,6 +288,7 @@ class RecentOrganizedScreenshotsViewModelTest {
         RecentOrganizedScreenshotsViewModel(
             recentCapturesRepository = recentCapturesRepository,
             captureMutationRepository = captureMutationRepository,
+            thumbnailUpdates = thumbnailUpdates,
         )
 
     private fun captureSummary(

@@ -3,6 +3,7 @@ package com.chalkak.recap.feature.home.recent
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
+import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
 import com.chalkak.recap.core.data.home.RecentCapturesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -19,6 +20,7 @@ import kotlinx.coroutines.launch
 class RecentOrganizedScreenshotsViewModel @Inject constructor(
     private val recentCapturesRepository: RecentCapturesRepository,
     private val captureMutationRepository: CaptureMutationRepository,
+    private val thumbnailUpdates: CaptureThumbnailUpdates,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RecentOrganizedScreenshotsUiState())
     val uiState: StateFlow<RecentOrganizedScreenshotsUiState> = _uiState.asStateFlow()
@@ -28,6 +30,11 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
 
     init {
         observeFirstPage()
+        viewModelScope.launch {
+            thumbnailUpdates.thumbnailReady.collect { ready ->
+                applyThumbnailReady(ready.captureId, ready.localPath)
+            }
+        }
     }
 
     fun onAction(action: RecentOrganizedScreenshotsAction) {
@@ -65,6 +72,7 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
                                     isLoadingMore = false,
                                 )
                             }
+                            reconcileThumbnails(items.map { item -> item.id })
                         },
                         onFailure = {
                             _uiState.update { state ->
@@ -136,10 +144,36 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
                             isLoadingMore = false,
                         )
                     }
+                    reconcileThumbnails(newItems.map { item -> item.id })
                 },
                 onFailure = {
                     _uiState.update { current ->
                         current.copy(isLoadingMore = false)
+                    }
+                },
+            )
+        }
+    }
+
+    private fun reconcileThumbnails(captureIds: Iterable<Long>) {
+        captureIds.forEach { captureId ->
+            thumbnailUpdates.resolveLocalPath(captureId)?.let { path ->
+                applyThumbnailReady(captureId, path)
+            }
+        }
+    }
+
+    private fun applyThumbnailReady(
+        captureId: Long,
+        localPath: String,
+    ) {
+        _uiState.update { state ->
+            state.copy(
+                items = state.items.map { item ->
+                    if (item.id == captureId) {
+                        item.copy(thumbnailModel = localPath)
+                    } else {
+                        item
                     }
                 },
             )

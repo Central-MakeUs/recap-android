@@ -1,6 +1,8 @@
 package com.chalkak.recap.feature.home.search
 
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
+import com.chalkak.recap.core.data.capture.CaptureThumbnailReady
+import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
 import com.chalkak.recap.core.data.search.RecentSearchStore
 import com.chalkak.recap.core.data.search.SearchRepository
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
@@ -13,6 +15,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -34,11 +37,15 @@ class SearchViewModelTest {
     private val captureMutationRepository = mockk<CaptureMutationRepository>()
     private val recentSearchesFlow = MutableStateFlow<List<String>>(emptyList())
     private val recentSearchStore = mockk<RecentSearchStore>(relaxed = true)
+    private val thumbnailReadyFlow = MutableSharedFlow<CaptureThumbnailReady>(extraBufferCapacity = 1)
+    private val thumbnailUpdates = mockk<CaptureThumbnailUpdates>()
     private lateinit var viewModel: SearchViewModel
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        every { thumbnailUpdates.thumbnailReady } returns thumbnailReadyFlow
+        every { thumbnailUpdates.resolveLocalPath(any()) } returns null
         every { recentSearchStore.recentSearches } returns recentSearchesFlow
         coEvery { recentSearchStore.remember(any()) } coAnswers {
             val term = firstArg<String>().trim()
@@ -61,6 +68,7 @@ class SearchViewModelTest {
             searchRepository = searchRepository,
             captureMutationRepository = captureMutationRepository,
             recentSearchStore = recentSearchStore,
+            thumbnailUpdates = thumbnailUpdates,
         )
     }
 
@@ -123,6 +131,94 @@ class SearchViewModelTest {
                 size = 20,
             )
         }
+    }
+
+    @Test
+    fun `thumbnailReady patches matching result thumbnailModel`() = runTest {
+        coEvery {
+            searchRepository.search(
+                query = "숙소",
+                scope = SearchScope.ALL,
+                typeCode = null,
+                page = 0,
+                size = 20,
+            )
+        } returns Result.success(
+            SearchPage(
+                count = 1L,
+                hasNext = false,
+                items = listOf(
+                    SearchResult(
+                        captureId = 7L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "제주 숙소 예약",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-19T00:00:00Z",
+                    ),
+                ),
+            ),
+        )
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        assertNull(viewModel.uiState.value.results.single().thumbnailModel)
+
+        thumbnailReadyFlow.emit(
+            CaptureThumbnailReady(
+                captureId = 7L,
+                localPath = "/cache/7.jpg",
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals(
+            "/cache/7.jpg",
+            viewModel.uiState.value.results.single().thumbnailModel,
+        )
+    }
+
+    @Test
+    fun `reconcile applies local path after page install when prefetch finished early`() = runTest {
+        every { thumbnailUpdates.resolveLocalPath(7L) } returns "/cache/7.jpg"
+        coEvery {
+            searchRepository.search(
+                query = "숙소",
+                scope = SearchScope.ALL,
+                typeCode = null,
+                page = 0,
+                size = 20,
+            )
+        } returns Result.success(
+            SearchPage(
+                count = 1L,
+                hasNext = false,
+                items = listOf(
+                    SearchResult(
+                        captureId = 7L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "제주 숙소 예약",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-19T00:00:00Z",
+                    ),
+                ),
+            ),
+        )
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+
+        assertEquals(
+            "/cache/7.jpg",
+            viewModel.uiState.value.results.single().thumbnailModel,
+        )
     }
 
     @Test

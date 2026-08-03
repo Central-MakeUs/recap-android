@@ -25,11 +25,6 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Next: 완료/부분실패 결과 화면으로 PendingIntent 딥링크
   - Handoff: not started
 
-- [ ] 2026-07-25 - Remote 목록 썸네일 캐싱이 검색/목록 응답을 직렬 차단하지 않도록 개선
-  - Context: `RemoteCaptureThumbnailCache.resolveThumbnailSources`가 `associate`로 uncached download를 순차 await함. `RemoteSearchRepository`(및 Home/Storage remote 목록)가 이 호출을 응답 enrichment에 두어, 캐시 미스 시 페이지 전체 썸네일 다운로드가 끝날 때까지 결과 전달이 지연됨. UI는 Coil로 remote URL 비동기 로드가 가능함
-  - Next (차선): 결과 전달을 막지 않는 범위에서 `async` + semaphore 등 bounded parallel caching으로 다운로드 대기 시간을 줄이거나, 로컬 hit만 동기 resolve하고 miss는 remote URL을 즉시 반환한 뒤 백그라운드 캐시. Search만이 아니라 공유 cache API/`withCachedThumbnails` 호출부 일괄 검토
-  - Handoff: not started
-
 - [ ] 2026-07-22 (updated 2026-07-31) - 세션 유효성·온보딩·오프라인을 통합한 앱 진입 라우팅과 계정 전환 시 로컬 데이터 격리
   - Problem: 현재 루트 라우팅은 `onboardingCompleted`만 보고 세션 상태를 관찰하지 않는다. 토큰이 없거나 refresh token이 서버에서 만료·폐기되어도 Main에 남을 수 있고, 반대로 네트워크 단절·timeout처럼 유효성을 일시적으로 확인할 수 없는 상태를 세션 무효로 오판하면 불필요한 로그아웃과 데이터 손실이 발생한다. 세션 만료 후 재로그인 성공 시 온보딩 완료 여부와 무관하게 가이드로 이동하는 흐름도 재방문 사용자 요구와 맞지 않는다.
   - Current implementation:
@@ -128,6 +123,10 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 - 없음
 
 ## Done
+
+- [x] 2026-07-25 - Remote 목록 썸네일 캐싱이 검색/목록 응답을 직렬 차단하지 않도록 개선
+  - Result: `resolveThumbnailSources`는 hit→로컬 path, miss→null을 즉시 반환하고 Semaphore(4) 백그라운드 prefetch로 디스크 캐시를 채운 뒤 `thumbnailReady`를 emit한다. Search/Home/Collection/Recent ViewModel이 path로 UiState를 패치하며, Coil은 remote URL을 받지 않아 첫 miss 네트워크는 앱 캐시 한 경로만 탄다
+  - Closed: 2026-08-03
 
 - [x] 2026-07-22 - `ScreenshotAnalysisProgressViewModel` 부분 실패·상태 불일치 처리
   - Result: `OrganizeTerminalResultMapper`가 Remote `PARTIAL_FAILED`/`failCount`와 Local 저장 실패 시 `persisted.size`를 `AllSuccess`/`PartialSuccess`/`AllFailed`로 매핑한다. `ScreenshotAnalysisProgressViewModel`은 `terminalResult`를 설정하고 `OrganizePartialFailedScreen` 등 단계별 완료 UI로 연결되며 관련 단위 테스트가 있다

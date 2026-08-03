@@ -173,12 +173,12 @@ class RemoteStorageRepository(
             )
         }
 
-    private suspend fun CaptureList.withCachedThumbnails(): CaptureList {
+    private fun CaptureList.withCachedThumbnails(): CaptureList {
         val resolved = thumbnailCache.resolveThumbnailSources(
             items.map { summary -> summary.captureId to summary.thumbnailUrl },
         )
         val enriched = items.map { summary ->
-            summary.copy(thumbnailUrl = resolved[summary.captureId] ?: summary.thumbnailUrl)
+            summary.copy(thumbnailUrl = resolved[summary.captureId])
         }
         return copy(items = enriched)
     }

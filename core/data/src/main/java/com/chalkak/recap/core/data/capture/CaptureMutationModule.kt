@@ -14,4 +14,10 @@ abstract class CaptureMutationModule {
     abstract fun bindCaptureMutationRepository(
         repository: SwitchingCaptureMutationRepository,
     ): CaptureMutationRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindCaptureThumbnailUpdates(
+        cache: RemoteCaptureThumbnailCache,
+    ): CaptureThumbnailUpdates
 }

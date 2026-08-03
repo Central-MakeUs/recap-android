@@ -1,5 +1,6 @@
 package com.chalkak.recap.feature.collection
 
+import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
 import com.chalkak.recap.core.data.capture.MockCaptureMutationRepository
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
@@ -45,6 +46,7 @@ class CollectionViewModelTest {
     private val cardRepository = mockk<ScreenshotCardRepository>()
     private val imageStorage = mockk<ScreenshotImageStorage>()
     private val searchRepository = mockk<com.chalkak.recap.core.data.search.SearchRepository>(relaxed = true)
+    private val thumbnailUpdates = mockk<CaptureThumbnailUpdates>()
     private val cardsFlow = MutableSharedFlow<List<StoredScreenshotCard>>(replay = 1)
     private lateinit var captureMutations: MockCaptureMutationRepository
     private lateinit var viewModel: CollectionViewModel
@@ -54,6 +56,8 @@ class CollectionViewModelTest {
         Dispatchers.setMain(testDispatcher)
         every { cardRepository.observeStoredCards() } returns cardsFlow
         every { imageStorage.deleteStoredImages(any()) } just Runs
+        every { thumbnailUpdates.thumbnailReady } returns MutableSharedFlow()
+        every { thumbnailUpdates.resolveLocalPath(any()) } returns null
         captureMutations = MockCaptureMutationRepository(
             screenshotCardRepository = cardRepository,
             screenshotImageStorage = imageStorage,
@@ -64,6 +68,7 @@ class CollectionViewModelTest {
             storageRepository = MockStorageRepository(cardRepository),
             searchRepository = searchRepository,
             captureMutationRepository = captureMutations,
+            thumbnailUpdates = thumbnailUpdates,
         )
     }
 
@@ -635,6 +640,7 @@ class CollectionViewModelTest {
             storageRepository = MockStorageRepository(cardRepository),
             searchRepository = searchRepository,
             captureMutationRepository = captureMutationRepository,
+            thumbnailUpdates = thumbnailUpdates,
         )
         cardsFlow.emit(
             listOf(
@@ -917,6 +923,7 @@ class CollectionViewModelTest {
             storageRepository = storageRepository,
             searchRepository = searchRepository,
             captureMutationRepository = captureMutations,
+            thumbnailUpdates = thumbnailUpdates,
         )
         runCurrent()
 
@@ -946,6 +953,7 @@ class CollectionViewModelTest {
             storageRepository = storageRepository,
             searchRepository = searchRepository,
             captureMutationRepository = captureMutations,
+            thumbnailUpdates = thumbnailUpdates,
         )
         runCurrent()
 
@@ -978,6 +986,7 @@ class CollectionViewModelTest {
             storageRepository = storageRepository,
             searchRepository = searchRepository,
             captureMutationRepository = captureMutations,
+            thumbnailUpdates = thumbnailUpdates,
         )
         runCurrent()
 

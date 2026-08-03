@@ -36,12 +36,12 @@ class RemoteSearchRepository @Inject constructor(
             ) { it.toDomain() }.getOrThrow().withCachedThumbnails()
         }
 
-    private suspend fun SearchPage.withCachedThumbnails(): SearchPage {
+    private fun SearchPage.withCachedThumbnails(): SearchPage {
         val resolved = thumbnailCache.resolveThumbnailSources(
             items.map { result -> result.captureId to result.thumbnailUrl },
         )
         val enriched = items.map { result ->
-            result.copy(thumbnailUrl = resolved[result.captureId] ?: result.thumbnailUrl)
+            result.copy(thumbnailUrl = resolved[result.captureId])
         }
         return copy(items = enriched)
     }

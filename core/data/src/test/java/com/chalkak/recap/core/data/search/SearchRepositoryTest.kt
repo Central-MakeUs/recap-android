@@ -13,6 +13,7 @@ import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import com.chalkak.recap.core.model.search.SearchScope
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import java.io.IOException
 import kotlinx.coroutines.test.runTest
@@ -30,8 +31,8 @@ class SearchRepositoryTest {
 
     @BeforeEach
     fun setUp() {
-        coEvery { thumbnailCache.resolveThumbnailSources(any()) } answers {
-            firstArg<List<Pair<Long, String?>>>().associate { (id, url) -> id to url }
+        every { thumbnailCache.resolveThumbnailSources(any()) } answers {
+            firstArg<List<Pair<Long, String?>>>().associate { (id, _) -> id to "/cache/$id.jpg" }
         }
         repository = RemoteSearchRepository(
             searchApi = searchApi,
@@ -83,7 +84,7 @@ class SearchRepositoryTest {
         val item = page.items.single()
         assertEquals(42L, item.captureId)
         assertEquals(ScreenshotContentType.KNOWLEDGE, item.typeCode)
-        assertEquals("https://example.com/t.png", item.thumbnailUrl)
+        assertEquals("/cache/42.jpg", item.thumbnailUrl)
         assertEquals("<mark>카드</mark>", item.titleHighlighted)
         assertEquals("요약", item.summaryHighlighted)
         assertEquals("OCR <mark>카드</mark>", item.ocrExcerptHighlighted)
