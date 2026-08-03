@@ -37,6 +37,7 @@ import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
+import com.chalkak.recap.feature.organize.screen.ScreenshotConfirmationScreen
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -362,5 +363,5 @@ private enum class OrganizeDestination {
 }
 
 private object OrganizeTransitionTokens {
-    const val ConfirmationFadeMs = 280
+    const val ConfirmationFadeMs = 350
 }
