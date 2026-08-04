@@ -64,11 +64,6 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Next: LOCAL_DATA.md의 screenshot_cards / repository / image storage 섹션을 현재 구현과 맞추고 레거시 migration 문서 제거
   - Handoff: not started
 
-- [ ] 2026-07-16 - 한국어 텍스트 overflow 대응
-  - Context: 설정·계정 관리 등 UI에서 긴 한국어 라벨/이메일/버튼 문구가 잘리거나 레이아웃을 깨뜨릴 수 있음. `RecapButton`·설정 row·계정 관리 화면 등 maxLines/ellipsis/가변 폭 정책이 통일되어 있지 않음
-  - Next: 공통 텍스트 overflow 규칙(줄 수, ellipsis, textWrap, 버튼 compactText)을 정한 뒤 design/feature 컴포넌트에 일괄 적용
-  - Handoff: not started
-
 - [ ] 2026-07-14 - 카카오 로그인 SDK 예외 처리 보강
   - Context: `KakaoLoginClient`는 `ClientErrorCause.Cancelled`만 `AuthError.Cancelled`로 매핑하고, 그 외 Talk 실패는 무조건 Account fallback 또는 `ProviderUnavailable`/`Unknown`으로 뭉개짐. 카카오 문서 예외 플로우(`AccessDenied`, 계정 미로그인 `Unknown` 등)와 케이스별 UX 분기·메시지가 없고, 온보딩 UI도 아직 `signInWithKakao`를 호출하지 않음
   - Next: Kakao SDK `AuthError`/`AuthErrorCause`를 `AuthError` 도메인으로 세분화하고, Cancelled 시 Account fallback 금지·AccessDenied/Unknown별 사용자 메시지·재시도 정책을 정의한 뒤 ViewModel 연동
@@ -118,6 +113,10 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 - 없음
 
 ## Done
+
+- [x] 2026-07-16 - 한국어 텍스트 overflow 대응
+  - Result: `Type.kt` `recapTextStyle()`에 `localeList = LocaleList("ko")`와 `LineBreak.Paragraph` + `WordBreak.Phrase`를 적용해, 시스템 언어와 무관하게 `RecapTypography` 텍스트가 한국어 phrase 단위 줄바꿈을 사용하도록 함
+  - Closed: 2026-08-04
 
 - [x] 2026-07-10 - DataStore 읽기·손상 오류에도 앱 시작 복구 경로 추가
   - Result: 확정된 Preferences corruption만 recovery marker로 교체하고 앱 시작 전에 Room·원본 이미지·썸네일·세션·최근 검색·온보딩 상태를 멱등 초기화한다. 일반 읽기 `IOException`은 100ms/300ms 간격으로 최대 2회 재수집하며, 소진 시 데이터를 삭제하지 않고 dismiss 불가능한 단일 액션 `RecapPopup`에서 재시도를 제공한다.

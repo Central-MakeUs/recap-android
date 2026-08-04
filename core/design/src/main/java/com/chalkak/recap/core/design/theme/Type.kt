@@ -5,6 +5,8 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.intl.LocaleList
+import androidx.compose.ui.text.style.LineBreak
 import androidx.compose.ui.unit.sp
 import com.chalkak.recap.core.design.R
 
@@ -68,5 +70,9 @@ private fun recapTextStyle(
         fontSize = size.sp,
         lineHeight = (size * 1.4f).sp,
         letterSpacing = (size * -0.02f).sp,
+        localeList = LocaleList("ko"),
+        lineBreak = LineBreak.Paragraph.copy(
+            wordBreak = LineBreak.WordBreak.Phrase,
+        ),
     )
 }
