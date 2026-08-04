@@ -1,8 +1,8 @@
 package com.chalkak.recap.core.data
 
+import androidx.datastore.core.CorruptionException
 import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
-import androidx.datastore.preferences.core.emptyPreferences
 import java.io.File
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -17,38 +17,42 @@ class UserPreferencesCorruptionHandlerTest {
     lateinit var tempDir: File
 
     @Test
-    fun `corrupted preferences file is replaced with empty preferences`() = runTest {
-        val file = File(tempDir, "user_preferences.preferences_pb")
-        file.writeText("this is not a valid preferences protobuf")
+    fun `corruption handler produceNewData returns recovery marker`() = runTest {
+        val handler = ReplaceFileCorruptionHandler {
+            UserPreferencesRecoveryMarker.createReplacementPreferences()
+        }
 
-        val dataStore = PreferenceDataStoreFactory.create(
-            corruptionHandler = ReplaceFileCorruptionHandler {
-                emptyPreferences()
-            },
-            scope = backgroundScope,
-            produceFile = { file },
-        )
+        val preferences = handler.handleCorruption(CorruptionException("corrupted"))
 
-        val preferences = dataStore.data.first()
-
-        assertTrue(preferences.asMap().isEmpty())
-        assertEquals(emptyPreferences(), preferences)
+        assertTrue(UserPreferencesRecoveryMarker.isRequired(preferences))
+        assertEquals(true, preferences[UserPreferencesRecoveryMarker.KEY])
     }
 
     @Test
-    fun `repository reads defaults after corruption recovery`() = runTest {
-        val file = File(tempDir, "user_preferences_repo.preferences_pb")
-        file.writeText("corrupted")
-
+    fun `recovery marker round trips through DataStore file`() = runTest {
+        val file = File(tempDir, "user_preferences_marker.preferences_pb")
         val dataStore = PreferenceDataStoreFactory.create(
-            corruptionHandler = ReplaceFileCorruptionHandler {
-                emptyPreferences()
-            },
             scope = backgroundScope,
             produceFile = { file },
         )
+
+        dataStore.updateData { UserPreferencesRecoveryMarker.createReplacementPreferences() }
+
+        val preferences = dataStore.data.first()
+        assertTrue(UserPreferencesRecoveryMarker.isRequired(preferences))
+    }
+
+    @Test
+    fun `repository reads defaults when only recovery marker is present`() = runTest {
+        val file = File(tempDir, "user_preferences_repo.preferences_pb")
+        val dataStore = PreferenceDataStoreFactory.create(
+            scope = backgroundScope,
+            produceFile = { file },
+        )
+        dataStore.updateData { UserPreferencesRecoveryMarker.createReplacementPreferences() }
         val repository = UserPreferencesRepository(dataStore)
 
+        assertTrue(UserPreferencesRecoveryMarker.isRequired(dataStore.data.first()))
         assertFalse(repository.onboardingCompleted.first())
         assertFalse(repository.organizeCompleteNotificationEnabled.first())
     }

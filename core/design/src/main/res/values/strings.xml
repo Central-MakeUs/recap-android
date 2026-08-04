@@ -328,6 +328,9 @@
     <string name="component_garden_confirm_popup_primary_button">삭제 확인 팝업 보기 (Primary)</string>
     <string name="recap_popup_preview_title">스크린샷을 삭제할까요?</string>
     <string name="recap_popup_preview_description">삭제한 스크린샷 정보는\n되돌릴 수 없어요.</string>
+    <string name="startup_read_error_title">데이터를 불러오지 못했어요</string>
+    <string name="startup_read_error_description">로컬 데이터를 읽는 중 문제가 발생했어요.\n다시 시도해주세요.</string>
+    <string name="startup_read_error_retry">다시 시도</string>
     <string name="recap_toast_success_icon_content_description">성공</string>
     <string name="recap_toast_error_icon_content_description">오류</string>
     <string name="recap_toast_preview_login_failed_message">로그인에 실패했어요. 잠시 후 다시 시도해주세요.</string>

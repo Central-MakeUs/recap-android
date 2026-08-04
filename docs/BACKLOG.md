@@ -120,7 +120,9 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 ## Done
 
 - [x] 2026-07-10 - DataStore 읽기·손상 오류에도 앱 시작 복구 경로 추가
-  - Result: `ReplaceFileCorruptionHandler`로 손상 파일을 `emptyPreferences()`로 교체하고, `safeData()`가 읽기 `IOException`을 즉시 기본값으로 폴백한다(재시도·startup Error UI 없음). 5개 DataStore 소비처에 적용, corruption/`safeData` 단위 테스트 추가
+  - Result: 확정된 Preferences corruption만 recovery marker로 교체하고 앱 시작 전에 Room·원본 이미지·썸네일·세션·최근 검색·온보딩 상태를 멱등 초기화한다. 일반 읽기 `IOException`은 100ms/300ms 간격으로 최대 2회 재수집하며, 소진 시 데이터를 삭제하지 않고 dismiss 불가능한 단일 액션 `RecapPopup`에서 재시도를 제공한다.
+  - Handoff: `docs/handoff/archive/2026-08-04-datastore-startup-corruption-recovery.md`
+  - Validation: `:core:data:testDebugUnitTest :app:testDebugUnitTest` GREEN, `assembleDebug` GREEN, `git diff --check` GREEN
   - Closed: 2026-08-04
 
 - [x] 2026-07-25 - Remote 목록 썸네일 캐싱이 검색/목록 응답을 직렬 차단하지 않도록 개선

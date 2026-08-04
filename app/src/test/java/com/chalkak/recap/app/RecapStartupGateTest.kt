@@ -54,4 +54,14 @@ class RecapStartupGateTest {
             ),
         )
     }
+
+    @Test
+    fun `animation complete and startup read error blocks entry`() {
+        assertFalse(
+            canEnterRecapApp(
+                lottieSplashComplete = true,
+                startupUiState = RecapStartupUiState.ReadError,
+            ),
+        )
+    }
 }

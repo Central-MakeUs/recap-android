@@ -24,13 +24,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.rememberNavBackStack
+import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.animation.RecapNavDisplay
 import com.chalkak.recap.core.design.animation.RecapNavigationMotion
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
+import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.systembar.RecapNavigationBarGradientScrim
 import com.chalkak.recap.core.design.component.toast.ProvideRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToastDispatcher
@@ -40,6 +44,7 @@ import com.chalkak.recap.core.design.component.toast.RecapToastRequest
 import com.chalkak.recap.core.design.component.toast.RecapToastType
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
+import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.feature.developer.DeveloperRoute
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
@@ -65,6 +70,8 @@ fun RecapApp(
         var showSplashOverlay by rememberSaveable { mutableStateOf(true) }
         var onboardingSessionKey by rememberSaveable { mutableIntStateOf(0) }
         val canEnterApp = canEnterRecapApp(lottieSplashComplete, uiState)
+        val showStartupReadError =
+            lottieSplashComplete && uiState is RecapStartupUiState.ReadError
 
         LaunchedEffect(canEnterApp) {
             if (canEnterApp) {
@@ -99,7 +106,7 @@ fun RecapApp(
             }
 
             AnimatedVisibility(
-                visible = showSplashOverlay || !canEnterApp,
+                visible = (showSplashOverlay || !canEnterApp) && !showStartupReadError,
                 exit = fadeOut(animationSpec = tween(RecapSplashToAppFadeMillis)),
                 modifier = Modifier.fillMaxSize(),
             ) {
@@ -107,6 +114,28 @@ fun RecapApp(
                     skipAnimation = lottieSplashComplete,
                     onSplashFinished = { lottieSplashComplete = true },
                 )
+            }
+
+            if (showStartupReadError) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(RecapBackground),
+                ) {
+                    RecapPopup(
+                        title = stringResource(R.string.startup_read_error_title),
+                        description = stringResource(R.string.startup_read_error_description),
+                        confirmButtonText = stringResource(R.string.startup_read_error_retry),
+                        onConfirmClick = startupViewModel::retryStartup,
+                        onDismissRequest = {},
+                        confirmButtonColor = RecapBlue300,
+                        properties = DialogProperties(
+                            dismissOnBackPress = false,
+                            dismissOnClickOutside = false,
+                            usePlatformDefaultWidth = false,
+                        ),
+                    )
+                }
             }
         }
     }
