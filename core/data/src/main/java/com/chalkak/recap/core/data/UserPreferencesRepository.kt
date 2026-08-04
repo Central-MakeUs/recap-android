@@ -15,7 +15,7 @@ class UserPreferencesRepository @Inject constructor(
     @param:UserPreferencesDataStore private val dataStore: DataStore<Preferences>,
 ) {
     val onboardingCompleted: Flow<Boolean> =
-        dataStore.data.map { preferences ->
+        dataStore.safeData().map { preferences ->
             preferences[ONBOARDING_COMPLETED] ?: false
         }
 
@@ -26,7 +26,7 @@ class UserPreferencesRepository @Inject constructor(
     }
 
     val organizeCompleteNotificationEnabled: Flow<Boolean> =
-        dataStore.data.map { preferences ->
+        dataStore.safeData().map { preferences ->
             preferences[ORGANIZE_COMPLETE_NOTIFICATION_ENABLED]
                 ?: preferences[LEGACY_ORGANIZE_COMPLETE_ENABLED]
                 ?: false
@@ -40,7 +40,7 @@ class UserPreferencesRepository @Inject constructor(
     }
 
     suspend fun getAiDataTransferConsentStatus(): ConsentStatus {
-        val preferences = dataStore.data.first()
+        val preferences = dataStore.safeData().first()
         return ConsentStatus(
             consented = preferences[AI_DATA_TRANSFER_CONSENTED] ?: false,
             consentedAt = preferences[AI_DATA_TRANSFER_CONSENTED_AT],

@@ -166,6 +166,13 @@
 역할:
 - `Context.userPreferencesDataStore` delegate의 단일 owner다.
 - DataStore name은 `user_preferences`다.
+- `ReplaceFileCorruptionHandler`로 파일 손상 시 `emptyPreferences()`로 교체한다. 온보딩·세션·deviceId·검색·backend mode가 함께 리셋된다.
+
+### `PreferencesDataStoreExt`
+
+역할:
+- `DataStore<Preferences>.safeData()`가 읽기 `IOException`을 catch하고 `emptyPreferences()`를 emit한다. 재시도는 하지 않는다.
+- `UserPreferencesRepository`, `SessionTokenStore`, `DeviceIdProvider`, `RecentSearchStore`, `DataStoreScreenshotBackendModeStore`가 이 경로로 읽는다.
 
 ### `UserPreferencesModule`
 

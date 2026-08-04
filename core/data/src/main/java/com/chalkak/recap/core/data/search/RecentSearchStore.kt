@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.chalkak.recap.core.data.UserPreferencesDataStore
+import com.chalkak.recap.core.data.safeData
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -15,7 +16,7 @@ class RecentSearchStore @Inject constructor(
     @param:UserPreferencesDataStore private val dataStore: DataStore<Preferences>,
 ) {
     val recentSearches: Flow<List<String>> =
-        dataStore.data.map { preferences ->
+        dataStore.safeData().map { preferences ->
             decode(preferences[RECENT_SEARCHES])
         }
 

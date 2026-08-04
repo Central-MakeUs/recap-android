@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.chalkak.recap.core.data.BuildConfig
 import com.chalkak.recap.core.data.UserPreferencesDataStore
+import com.chalkak.recap.core.data.safeData
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
@@ -21,7 +22,7 @@ class DataStoreScreenshotBackendModeStore @Inject constructor(
     internal var isDebugBuild: Boolean = BuildConfig.DEBUG
 
     override val mode: Flow<ScreenshotBackendMode> =
-        dataStore.data.map { preferences ->
+        dataStore.safeData().map { preferences ->
             resolveEffectiveMode(readStoredValue(preferences))
         }
 

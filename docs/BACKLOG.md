@@ -107,11 +107,6 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Note: 2026-07-23 공식 NavDisplay 복원 방향과 다시 정렬. Main tab Home↔Collection은 계속 공식 `NavDisplay` + predictive None
   - Handoff: not started
 
-- [ ] 2026-07-10 - DataStore 읽기·손상 오류에도 앱 시작 복구 경로 추가
-  - Context: `UserPreferencesRepository`의 `dataStore.data`에 오류 복구가 없고 startup state가 `Loading`에서 시작해, 파일 손상이나 읽기 실패 시 프로세스 crash 또는 splash 고착으로 앱 진입이 불가능할 수 있음
-  - Next: `IOException` 기본값 복구, `ReplaceFileCorruptionHandler`, 명시적인 startup error/fallback 상태와 관련 테스트를 추가
-  - Handoff: not started
-
 - [ ] 2026-07-12 - `:core:design` → `:core:model` 의존성 재검토
   - Context: `ScreenshotContentType` 라벨과 `RecapCategoryType` 매핑을 공통화하면서 `:core:design`이 도메인 모델에 의존함. 현재는 관련 로직이 작아 별도 모듈 대신 실용적인 구조로 허용
   - Next: 카테고리 매핑이 늘거나 다른 도메인 모델 의존성이 추가될 때 presentation/UI mapping 계층 분리 또는 feature별 매핑 재배치를 검토
@@ -123,6 +118,10 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 - 없음
 
 ## Done
+
+- [x] 2026-07-10 - DataStore 읽기·손상 오류에도 앱 시작 복구 경로 추가
+  - Result: `ReplaceFileCorruptionHandler`로 손상 파일을 `emptyPreferences()`로 교체하고, `safeData()`가 읽기 `IOException`을 즉시 기본값으로 폴백한다(재시도·startup Error UI 없음). 5개 DataStore 소비처에 적용, corruption/`safeData` 단위 테스트 추가
+  - Closed: 2026-08-04
 
 - [x] 2026-07-25 - Remote 목록 썸네일 캐싱이 검색/목록 응답을 직렬 차단하지 않도록 개선
   - Result: `resolveThumbnailSources`는 hit→로컬 path, miss→null을 즉시 반환하고 Semaphore(4) 백그라운드 prefetch로 디스크 캐시를 채운 뒤 `thumbnailReady`를 emit한다. Search/Home/Collection/Recent ViewModel이 path로 UiState를 패치하며, Coil은 remote URL을 받지 않아 첫 miss 네트워크는 앱 캐시 한 경로만 탄다
