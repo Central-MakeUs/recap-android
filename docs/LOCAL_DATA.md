@@ -14,8 +14,8 @@
 ├── UserPreferencesRepository.kt        # 사용자 설정 repository
 └── screenshot/
     ├── permission/                     # 이미지 권한 인터페이스/모듈
-    ├── analysis/                       # 분석 repository (mock/remote/switching)
-    ├── backend/                        # Mock/Remote 백엔드 모드 전환
+    ├── analysis/                       # 분석 repository (mock/remote, BuildConfig 선택)
+    ├── backend/                        # MockScreenshotDataResetter 등
     ├── image/                          # 앱 private 이미지 경로 관리
     └── persistence/                    # 분석 카드 Room 저장
 ```
@@ -166,13 +166,13 @@
 역할:
 - `Context.userPreferencesDataStore` delegate의 단일 owner다.
 - DataStore name은 `user_preferences`다.
-- `ReplaceFileCorruptionHandler`로 파일 손상 시 `emptyPreferences()`로 교체한다. 온보딩·세션·deviceId·검색·backend mode가 함께 리셋된다.
+- `ReplaceFileCorruptionHandler`로 파일 손상 시 `emptyPreferences()`로 교체한다. 온보딩·세션·deviceId·검색 설정이 함께 리셋된다.
 
 ### `PreferencesDataStoreExt`
 
 역할:
 - `DataStore<Preferences>.safeData()`가 읽기 `IOException`을 catch하고 `emptyPreferences()`를 emit한다. 재시도는 하지 않는다.
-- `UserPreferencesRepository`, `SessionTokenStore`, `DeviceIdProvider`, `RecentSearchStore`, `DataStoreScreenshotBackendModeStore`가 이 경로로 읽는다.
+- `UserPreferencesRepository`, `SessionTokenStore`, `DeviceIdProvider`, `RecentSearchStore`가 이 경로로 읽는다.
 
 ### `UserPreferencesModule`
 
@@ -199,21 +199,9 @@
 - `ai_data_transfer_consented` / `ai_data_transfer_consented_at` (MOCK consent SoT)
 
 주의사항:
-- 스크린샷 backend 모드는 `ScreenshotBackendModeStore`가 같은 `user_preferences` DataStore에서 관리한다.
 - 새 설정을 추가할 때는 같은 `user_preferences` DataStore를 사용하고, 별도 DataStore 파일을 만들지 않는다.
 - AI 동의 DataStore 값은 MOCK backend에서만 사용한다. REMOTE는 서버 consent API가 SoT다.
-
-### `ScreenshotBackendModeStore`
-
-역할:
-- 전역 스크린샷 backend 모드(`MOCK` / `REMOTE`)를 관찰·저장한다.
-- Debug에서만 저장값을 사용하고, non-debug(release)는 항상 `REMOTE`이다.
-
-저장 key:
-- `screenshot_backend_mode` (신규, 우선)
-- `analysis_data_source_mode` (legacy fallback, `setMode` 시 제거)
-
-자세한 전환 구조는 `docs/ANALYSIS_DATA_SOURCE.md`를 본다.
+- 스크린샷 backend(Mock/Remote)는 DataStore가 아니라 `:core:data` `BuildConfig.USE_MOCK_BACKEND`로 빌드 시 고정된다. 자세한 선택은 `docs/ANALYSIS_DATA_SOURCE.md`를 본다.
 
 ## Mock backend vs Remote backend 저장 SoT
 
@@ -228,7 +216,8 @@
 | Mock 구현 | `MockHomeRepository`, `MockStorageRepository`, `MockCaptureMutationRepository`, `MockUserRepository` 등 | — |
 | Remote 구현 | — | `RemoteHomeRepository`, `RemoteStorageRepository`, `RemoteCaptureMutationRepository`, `RemoteScreenshotDetailRepository`, `RemoteUserRepository` 등 |
 
-모드 전환 시 `MockScreenshotDataResetter`가 Mock Room 카드와 private 원본/썸네일만 삭제한다. session token·onboarding·MOCK consent·일반 사용자 설정은 유지한다.
+개발자 옵션의 스크린샷 데이터 초기화와 Mock `deleteAccountData`는 `MockScreenshotDataResetter`로 Mock Room 카드와 private 원본/썸네일만 삭제한다. session token·onboarding·MOCK consent·일반 사용자 설정은 유지한다. Remote 빌드에서도 이 액션은 서버 데이터 삭제로 바뀌지 않는다.
+BuildConfig backend 선택 자체는 resetter와 무관하며, 런타임 모드 전환(및 전환 시 wipe)은 없다.
 
 ## 현재 연결되지 않은 부분
 

@@ -1,8 +1,9 @@
 package com.chalkak.recap.app.observability
 
+import com.chalkak.recap.core.data.BuildConfig
 import com.chalkak.recap.core.data.UserPreferencesRepository
+import com.chalkak.recap.core.data.backend.BackendSelection
 import com.chalkak.recap.core.data.network.SessionTokenStore
-import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendModeStore
 import com.chalkak.recap.core.model.observability.CrashReporter
 import com.chalkak.recap.core.model.observability.ObservabilityKeys
 import javax.inject.Inject
@@ -20,21 +21,22 @@ class ObservabilityBootstrap @Inject constructor(
     private val crashReporter: CrashReporter,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val sessionTokenStore: SessionTokenStore,
-    private val screenshotBackendModeStore: ScreenshotBackendModeStore,
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     fun start() {
+        crashReporter.setCustomKey(
+            ObservabilityKeys.BACKEND_MODE,
+            BackendSelection.backendModeLabel(BuildConfig.USE_MOCK_BACKEND),
+        )
         scope.launch {
             combine(
                 userPreferencesRepository.onboardingCompleted,
                 sessionTokenStore.refreshToken.map { token -> !token.isNullOrBlank() },
-                screenshotBackendModeStore.mode,
-            ) { onboardingCompleted, loggedIn, backendMode ->
+            ) { onboardingCompleted, loggedIn ->
                 SessionKeys(
                     onboardingCompleted = onboardingCompleted,
                     loggedIn = loggedIn,
-                    backendMode = backendMode.name.lowercase(),
                 )
             }
                 .distinctUntilChanged()
@@ -44,7 +46,6 @@ class ObservabilityBootstrap @Inject constructor(
                         keys.onboardingCompleted,
                     )
                     crashReporter.setCustomKey(ObservabilityKeys.LOGGED_IN, keys.loggedIn)
-                    crashReporter.setCustomKey(ObservabilityKeys.BACKEND_MODE, keys.backendMode)
                 }
         }
     }
@@ -52,6 +53,5 @@ class ObservabilityBootstrap @Inject constructor(
     private data class SessionKeys(
         val onboardingCompleted: Boolean,
         val loggedIn: Boolean,
-        val backendMode: String,
     )
 }

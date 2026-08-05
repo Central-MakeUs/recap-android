@@ -122,13 +122,14 @@ core.data.screenshot 하위:
 - `RecapDatabase`: Room database (`screenshot_cards` 등)
 - 스크린샷 분석/저장:
   - `ScreenshotCardRepository`
-  - `ScreenshotAnalysisRepository` (Debug에서 Mock/Remote 런타임 전환 가능, 구조는 `docs/ANALYSIS_DATA_SOURCE.md`)
-  - 현재 스위치는 분석뿐 아니라 Home/Storage/Capture command 등 스크린샷 도메인 전역 backend 선택이다.
+  - `ScreenshotAnalysisRepository` (build-time Mock/Remote 선택, 요약 `docs/ANALYSIS_DATA_SOURCE.md`, 과거 런타임 전환 스냅샷 `docs/MOCK_REMOTE_CHANGE.md`)
+  - 동일 기준이 분석뿐 아니라 Home/Storage/Capture command 등 스크린샷 도메인 전역 backend에 적용된다.
   - `LocalScreenshotDataSource` / `ImagePermissionRepository`
 - OCR/AI 분석은 서버에서 수행한다. 로컬 ML Kit OCR 및 Firebase AI 클라이언트는 사용하지 않는다.
-- `ScreenshotBackendModeStore`: Debug 런타임 Mock/Remote 전역 스크린샷 backend 모드 (DataStore `user_preferences`)
-- `ScreenshotBackendSwitcher`: 모드 전환 정책(분석 중 거부, Mock 데이터 초기화 후 저장, 직렬화)
-- Switching repository(`SwitchingScreenshotAnalysisRepository`, `SwitchingHomeRepository`, `SwitchingStorageRepository` 등)가 동일 Store를 기준으로 Mock/Remote delegate를 선택한다.
+- 스크린샷 도메인 backend는 `:core:data`의 `BuildConfig.USE_MOCK_BACKEND`로 프로세스 수명 동안 고정된다.
+  - 기본값: debug `true`, qa/release `false` (qa/release는 Remote 고정)
+  - Gradle project property `USE_MOCK_BACKEND=true|false`는 **debug에만** 적용된다. release/qa는 `-P`로도 Mock으로 바뀌지 않는다.
+  - Hilt 모듈이 Mock 또는 Remote concrete repository를 한 번 선택해 제공한다.
 
 외부 API, Firebase, local.properties, google-services 파일, API key 등 시크릿은 커밋하지 않는다.
 
@@ -160,5 +161,5 @@ UI 색상·타이포는 `MaterialTheme.colorScheme` / `MaterialTheme.typography`
 - `docs/BACKLOG.md`: 두 에이전트가 공유해야 하는 후속 항목
 - `docs/TESTING.md`: 테스트/검증 정책
 - `docs/LOCAL_DATA.md`: 로컬 데이터 구현체와 저장 정책
-- `docs/ANALYSIS_DATA_SOURCE.md`: 스크린샷 분석 Mock/Remote 런타임 스위치
+- `docs/ANALYSIS_DATA_SOURCE.md`: 스크린샷 Mock/Remote build-time (`USE_MOCK_BACKEND`) 선택
 - `docs/handoff/HANDOFF.md`: Codex가 작성하고 Cursor가 구현할 작업 스펙

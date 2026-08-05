@@ -114,6 +114,12 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 
 ## Done
 
+- [x] 2026-08-04 - 런타임 Mock/Remote 전환 계층을 BuildConfig 고정 선택으로 교체
+  - Result: DataStore mode·Switcher·8개 Switching repository와 개발자 전환 UI를 제거하고, `:core:data`의 `BuildConfig.USE_MOCK_BACKEND` 및 lazy Provider 기반 Hilt 선택으로 교체했다. debug도 `-PUSE_MOCK_BACKEND=false`로 Remote를 선택할 수 있으며 Mock User의 계정 조회·탈퇴는 Remote 위임을 유지한다.
+  - Handoff: `docs/handoff/archive/2026-08-04-buildconfig-backend-selection.md`
+  - Validation: 관련 전체 unit test GREEN, debug Mock/Remote assemble GREEN, qa assemble GREEN, invalid property expected failure, debug Mock/Remote `:core:data:testDebugUnitTest` GREEN, 잔존 참조 및 `git diff --check` GREEN
+  - Closed: 2026-08-04
+
 - [x] 2026-07-16 - 한국어 텍스트 overflow 대응
   - Result: `Type.kt` `recapTextStyle()`에 `localeList = LocaleList("ko")`와 `LineBreak.Paragraph` + `WordBreak.Phrase`를 적용해, 시스템 언어와 무관하게 `RecapTypography` 텍스트가 한국어 phrase 단위 줄바꿈을 사용하도록 함
   - Closed: 2026-08-04

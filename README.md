@@ -78,7 +78,6 @@ Recap은 `:app`을 중심으로 재사용 계층인 `:core:*`와 화면 단위 �
 - UI 상태는 immutable `UiState`로 표현하고 사용자 입력은 sealed `Action`으로 명시합니다.
 - ViewModel은 상태 생성과 action 처리에 집중합니다.
 - Repository가 로컬 저장소와 외부 연동의 세부 구현을 감춥니다.
-- OCR·AI 분석은 서버에서 수행하며, Debug 빌드에서는 Mock/Remote backend를 런타임 중 전환할 수 있습니다.
 
 ## 앱 정보
 

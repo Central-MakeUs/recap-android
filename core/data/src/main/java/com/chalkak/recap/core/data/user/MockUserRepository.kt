@@ -24,11 +24,12 @@ class MockUserRepository @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val mockScreenshotDataResetter: MockScreenshotDataResetter,
     private val changeNotifier: RemoteCaptureChangeNotifier,
+    private val remoteAuthRepository: RemoteUserRepository,
 ) : UserRepository {
     private val consentRefresh = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     override suspend fun getAccountInfo(): Result<AccountInfo> =
-        Result.failure(UnsupportedOperationException("Auth is remote-only"))
+        remoteAuthRepository.getAccountInfo()
 
     override fun observeDataSummary(): Flow<Result<DataSummary>> =
         screenshotCardRepository.observeStoredCards().map { cards ->
@@ -90,7 +91,7 @@ class MockUserRepository @Inject constructor(
     }
 
     override suspend fun withdraw(): Result<Unit> =
-        Result.failure(UnsupportedOperationException("Auth is remote-only"))
+        remoteAuthRepository.withdraw()
 
     override suspend fun deleteAccountData(): Result<Unit> =
         runCatching {
