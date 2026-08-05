@@ -363,6 +363,9 @@
     <string name="onboarding_email_login_button">이메일로 로그인</string>
     <string name="onboarding_login_failed_message">로그인에 실패했어요. 잠시 후 다시 시도해주세요.</string>
     <string name="onboarding_login_cancelled_message">로그인이 취소되었어요.</string>
+    <string name="no_internet_popup_title">인터넷에 연결되어 있지 않아요</string>
+    <string name="no_internet_popup_description">네트워크 상태를 확인한 뒤 다시 시도해주세요.</string>
+    <string name="no_internet_popup_confirm">확인</string>
     <string name="onboarding_kakao_login_full">카카오톡 계정으로 로그인</string>
     <string name="onboarding_kakao_login_short">로그인</string>
     <string name="onboarding_splash_tagline_highlight">내 앨범에 쌓인</string>

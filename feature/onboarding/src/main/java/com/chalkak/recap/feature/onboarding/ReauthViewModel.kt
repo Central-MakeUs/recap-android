@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.auth.AuthException
 import com.chalkak.recap.core.data.auth.AuthRepository
+import com.chalkak.recap.core.data.network.NetworkConnectivityMonitor
 import com.chalkak.recap.core.model.auth.AuthError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -23,6 +24,7 @@ data class ReauthUiState(
 
 sealed interface ReauthEvent {
     data class ShowLoginError(val isCancelled: Boolean) : ReauthEvent
+    data object ShowNoInternet : ReauthEvent
 }
 
 /**
@@ -34,6 +36,7 @@ sealed interface ReauthEvent {
 @HiltViewModel
 class ReauthViewModel @Inject constructor(
     private val authRepository: AuthRepository,
+    private val networkConnectivityMonitor: NetworkConnectivityMonitor,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ReauthUiState())
     val uiState: StateFlow<ReauthUiState> = _uiState.asStateFlow()
@@ -45,6 +48,11 @@ class ReauthViewModel @Inject constructor(
         if (_uiState.value.isLoading) return
 
         viewModelScope.launch {
+            if (!networkConnectivityMonitor.isInternetValidated()) {
+                _events.emit(ReauthEvent.ShowNoInternet)
+                return@launch
+            }
+
             _uiState.update { current -> current.copy(isLoading = true) }
 
             authRepository.signInWithKakao(context).fold(
@@ -54,13 +62,16 @@ class ReauthViewModel @Inject constructor(
                 onFailure = { error ->
                     val authError = (error as? AuthException)?.authError ?: AuthError.Unknown
                     _uiState.update { current -> current.copy(isLoading = false) }
-                    _events.emit(
-                        ReauthEvent.ShowLoginError(
-                            isCancelled = authError == AuthError.Cancelled,
-                        ),
-                    )
+                    _events.emit(loginFailureEvent(authError))
                 },
             )
         }
     }
+
+    private fun loginFailureEvent(authError: AuthError): ReauthEvent =
+        when (authError) {
+            AuthError.Network -> ReauthEvent.ShowNoInternet
+            AuthError.Cancelled -> ReauthEvent.ShowLoginError(isCancelled = true)
+            else -> ReauthEvent.ShowLoginError(isCancelled = false)
+        }
 }

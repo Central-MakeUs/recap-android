@@ -12,14 +12,17 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 import javax.inject.Provider
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 import kotlin.time.Duration.Companion.milliseconds
 
 class TokenRefreshCoordinatorTest {
@@ -193,6 +196,21 @@ class TokenRefreshCoordinatorTest {
     }
 
     @Test
+    fun `refreshIfNeeded does not clear tokens on non-invalid server error`() = runTest {
+        coEvery { sessionTokenStore.getTokens() } returns tokens(
+            accessTokenExpiresAt = fixedNow.plusSeconds(30).toString(),
+        )
+        coEvery { authRepository.refresh() } returns Result.failure(
+            AuthException(AuthError.Server(code = "INTERNAL_ERROR", message = "5xx")),
+        )
+
+        val result = coordinator.refreshIfNeeded(force = false)
+
+        assertFalse(result)
+        coVerify(exactly = 0) { sessionTokenStore.clear() }
+    }
+
+    @Test
     fun `refreshIfNeeded returns false when no tokens are stored`() = runTest {
         coEvery { sessionTokenStore.getTokens() } returns null
 
@@ -200,6 +218,66 @@ class TokenRefreshCoordinatorTest {
 
         assertFalse(result)
         coVerify(exactly = 0) { authRepository.refresh() }
+    }
+
+    @Test
+    fun `refreshIfNeeded does not clear tokens on unknown and plain failures`() = runTest {
+        coEvery { sessionTokenStore.getTokens() } returns tokens(
+            accessTokenExpiresAt = fixedNow.plusSeconds(30).toString(),
+        )
+        coEvery { authRepository.refresh() } returnsMany listOf(
+            Result.failure(AuthException(AuthError.Unknown)),
+            Result.failure(IllegalStateException("unexpected")),
+        )
+
+        repeat(2) {
+            assertFalse(coordinator.refreshIfNeeded(force = true))
+        }
+        coVerify(exactly = 0) { sessionTokenStore.clear() }
+    }
+
+    @Test
+    fun `refreshIfNeeded does not clear tokens on local auth failures`() = runTest {
+        coEvery { sessionTokenStore.getTokens() } returns tokens(
+            accessTokenExpiresAt = fixedNow.plusSeconds(30).toString(),
+        )
+        coEvery { authRepository.refresh() } returnsMany listOf(
+            Result.failure(AuthException(AuthError.Cancelled)),
+            Result.failure(AuthException(AuthError.ProviderUnavailable)),
+            Result.failure(AuthException(AuthError.MissingKakaoNativeAppKey)),
+        )
+
+        repeat(3) {
+            assertFalse(coordinator.refreshIfNeeded(force = true))
+        }
+        coVerify(exactly = 0) { sessionTokenStore.clear() }
+    }
+
+    @Test
+    fun `cancellation is rethrown and releases the single flight lock`() = runTest {
+        coEvery { sessionTokenStore.getTokens() } returns tokens(
+            accessTokenExpiresAt = fixedNow.plusSeconds(30).toString(),
+        )
+        var refreshCalls = 0
+        coEvery { authRepository.refresh() } coAnswers {
+            if (refreshCalls++ == 0) {
+                throw CancellationException("cancelled")
+            }
+            Result.success(
+                AuthSignInResult.Success(
+                    accessToken = "new-access",
+                    refreshToken = "new-refresh",
+                    accessTokenExpiresAt = fixedNow.plusSeconds(3600).toString(),
+                ),
+            )
+        }
+
+        assertThrows<CancellationException> {
+            runBlocking { coordinator.refreshIfNeeded(force = true) }
+        }
+
+        assertTrue(coordinator.refreshIfNeeded(force = true))
+        coVerify(exactly = 2) { authRepository.refresh() }
     }
 
     @Test

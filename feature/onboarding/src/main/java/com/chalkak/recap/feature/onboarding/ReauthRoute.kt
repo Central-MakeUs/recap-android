@@ -11,6 +11,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -19,6 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToastType
+import com.chalkak.recap.feature.onboarding.component.NoInternetPopup
 import com.chalkak.recap.feature.onboarding.component.OnboardingLayoutDefaults
 import com.chalkak.recap.feature.onboarding.screen.OnboardingLandingScreen
 
@@ -38,6 +42,7 @@ fun ReauthRoute(
     val toastDispatcher = LocalRecapToastDispatcher.current
     val loginFailedMessage = stringResource(R.string.onboarding_login_failed_message)
     val loginCancelledMessage = stringResource(R.string.onboarding_login_cancelled_message)
+    var showNoInternetPopup by rememberSaveable { mutableStateOf(false) }
 
     // 재로그인 전에는 돌아갈 화면이 없으므로 back은 앱을 종료한다.
     BackHandler { onExitApp() }
@@ -54,6 +59,9 @@ fun ReauthRoute(
                         },
                         type = RecapToastType.Error,
                     )
+                }
+                ReauthEvent.ShowNoInternet -> {
+                    showNoInternetPopup = true
                 }
             }
         }
@@ -80,6 +88,10 @@ fun ReauthRoute(
                     .padding(OnboardingLayoutDefaults.LandingScreenPadding),
                 isLoading = uiState.isLoading,
             )
+
+            if (showNoInternetPopup) {
+                NoInternetPopup(onDismissRequest = { showNoInternetPopup = false })
+            }
         }
     }
 }

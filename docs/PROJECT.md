@@ -104,7 +104,7 @@ core.data.screenshot 하위:
 
 - `MainActivity`가 splash 유지 조건과 edge-to-edge 설정을 담당한다.
 - `RecapApp`이 `RECAPTheme`로 앱을 감싸고 root route를 결정한다.
-- `RecapStartupViewModel`이 `onboardingCompleted`와 `AuthSessionStateProvider.hasSession`을 합쳐 `RecapEntryMode`(`Onboarding` / `Reauth` / `Main`)를 파생한다. 세션 판정은 refresh token 보유 여부만 보며, 네트워크 실패·timeout·5xx에서는 `TokenRefreshCoordinator`가 토큰을 지우지 않으므로 `Main`이 유지된다.
+- `RecapStartupViewModel`이 `onboardingCompleted`와 `AuthSessionStateProvider.hasSession`(refresh token 보유 여부)을 합쳐 `RecapEntryMode`(`Onboarding` / `Reauth` / `Main`)를 파생한다. 네트워크 상태는 entry 입력이 아니며, refresh token이 서버에서 무효/만료로 확정되어 clear될 때만 세션 없음으로 전환한다. 온보딩·Reauth 로그인 전 오프라인은 `NetworkConnectivityMonitor.isInternetValidated()` + `RecapPopup`으로 안내한다.
 - root route:
   - `Onboarding`
   - `Reauth` (온보딩 완료 사용자가 세션을 잃었을 때. `OnboardingLandingScreen`을 그대로 재사용해 로그인만 처리하고, 성공 시 튜토리얼 없이 Main으로 복귀한다. 로그인 시 카카오 user.id 해시가 없으면/다르면 로컬 계정 데이터를 wipe한다)

@@ -3,10 +3,12 @@ package com.chalkak.recap.feature.onboarding
 import android.content.Context
 import com.chalkak.recap.core.data.auth.AuthException
 import com.chalkak.recap.core.data.auth.AuthRepository
+import com.chalkak.recap.core.data.network.NetworkConnectivityMonitor
 import com.chalkak.recap.core.model.auth.AuthError
 import com.chalkak.recap.core.model.auth.AuthSignInResult
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,11 +29,13 @@ import org.junit.Test
 class ReauthViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val authRepository = mockk<AuthRepository>()
+    private val networkConnectivityMonitor = mockk<NetworkConnectivityMonitor>()
     private val context = mockk<Context>()
 
     @Before
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        every { networkConnectivityMonitor.isInternetValidated() } returns true
     }
 
     @After
@@ -48,7 +52,7 @@ class ReauthViewModelTest {
                 accessTokenExpiresAt = "2026-08-05T00:00:00Z",
             ),
         )
-        val viewModel = ReauthViewModel(authRepository)
+        val viewModel = ReauthViewModel(authRepository, networkConnectivityMonitor)
 
         viewModel.loginWithKakao(context)
         advanceUntilIdle()
@@ -62,7 +66,7 @@ class ReauthViewModelTest {
         coEvery { authRepository.signInWithKakao(context) } returns Result.failure(
             AuthException(AuthError.Unknown),
         )
-        val viewModel = ReauthViewModel(authRepository)
+        val viewModel = ReauthViewModel(authRepository, networkConnectivityMonitor)
         val event = async { viewModel.events.first() }
         advanceUntilIdle()
 
@@ -78,7 +82,7 @@ class ReauthViewModelTest {
         coEvery { authRepository.signInWithKakao(context) } returns Result.failure(
             AuthException(AuthError.Cancelled),
         )
-        val viewModel = ReauthViewModel(authRepository)
+        val viewModel = ReauthViewModel(authRepository, networkConnectivityMonitor)
         val event = async { viewModel.events.first() }
         advanceUntilIdle()
 
@@ -86,5 +90,36 @@ class ReauthViewModelTest {
         advanceUntilIdle()
 
         assertEquals(ReauthEvent.ShowLoginError(isCancelled = true), event.await())
+    }
+
+    @Test
+    fun `offline login emits no internet without calling auth`() = runTest(testDispatcher) {
+        every { networkConnectivityMonitor.isInternetValidated() } returns false
+        val viewModel = ReauthViewModel(authRepository, networkConnectivityMonitor)
+        val event = async { viewModel.events.first() }
+        advanceUntilIdle()
+
+        viewModel.loginWithKakao(context)
+        advanceUntilIdle()
+
+        assertEquals(ReauthEvent.ShowNoInternet, event.await())
+        assertFalse(viewModel.uiState.value.isLoading)
+        coVerify(exactly = 0) { authRepository.signInWithKakao(any()) }
+    }
+
+    @Test
+    fun `network failure emits no internet`() = runTest(testDispatcher) {
+        coEvery { authRepository.signInWithKakao(context) } returns Result.failure(
+            AuthException(AuthError.Network),
+        )
+        val viewModel = ReauthViewModel(authRepository, networkConnectivityMonitor)
+        val event = async { viewModel.events.first() }
+        advanceUntilIdle()
+
+        viewModel.loginWithKakao(context)
+        advanceUntilIdle()
+
+        assertEquals(ReauthEvent.ShowNoInternet, event.await())
+        assertFalse(viewModel.uiState.value.isLoading)
     }
 }
