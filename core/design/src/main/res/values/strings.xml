@@ -376,6 +376,7 @@
     <string name="onboarding_landing_privacy">개인정보 처리방침</string>
     <string name="onboarding_landing_legal_agreement_notice">로그인 시 만 18세 이상이며 이용약관 및 개인정보처리방침에 동의하는 것으로 간주됩니다</string>
     <string name="onboarding_kakao_login_content_description">카카오 로그인</string>
+    <string name="reauth_session_expired_notice">로그인이 만료되어 다시 로그인이 필요해요.</string>
     <string name="onboarding_brand_mark_initial">R</string>
     <string name="onboarding_brand_mark_name">RE-CAP</string>
     <string name="onboarding_screenshot_label">스크린샷</string>

@@ -310,7 +310,7 @@ class ShareIntakeViewModel @Inject constructor(
             null
         }
         if (refreshToken.isNullOrBlank()) {
-            userPreferencesRepository.setOnboardingCompleted(false)
+            // 온보딩 완료 플래그는 건드리지 않는다. 재로그인 사용자는 Reauth로 보내야 한다.
             return ShareEntryGate.LoginRequired
         }
         val onboardingCompleted = try {

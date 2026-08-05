@@ -6,6 +6,7 @@ import com.chalkak.recap.core.data.user.UserRepository
 import com.chalkak.recap.core.model.user.AccountInfo
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.coVerifyOrder
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,6 +38,7 @@ class AccountManagementViewModelTest {
                 createdAt = "2026-06-12T00:00:00Z",
             ),
         )
+        coEvery { localAppDataResetter.prepareSignOut() } returns Unit
         coEvery { localAppDataResetter.resetDatabaseAndOnboarding() } returns Unit
     }
 
@@ -126,6 +128,34 @@ class AccountManagementViewModelTest {
 
         coVerify(exactly = 1) { userRepository.withdraw() }
         coVerify(exactly = 1) { localAppDataResetter.resetDatabaseAndOnboarding() }
+    }
+
+    @Test
+    fun confirmLogout_clearsOnboardingFlagBeforeSessionIsDropped() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(AccountManagementAction.ConfirmLogout)
+        advanceUntilIdle()
+
+        coVerifyOrder {
+            localAppDataResetter.prepareSignOut()
+            authRepository.logout()
+            localAppDataResetter.resetDatabaseAndOnboarding()
+        }
+    }
+
+    @Test
+    fun confirmWithdraw_clearsOnboardingFlagBeforeSessionIsDropped() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+
+        viewModel.onAction(AccountManagementAction.ConfirmWithdraw)
+        advanceUntilIdle()
+
+        coVerifyOrder {
+            localAppDataResetter.prepareSignOut()
+            userRepository.withdraw()
+            localAppDataResetter.resetDatabaseAndOnboarding()
+        }
     }
 
     @Test

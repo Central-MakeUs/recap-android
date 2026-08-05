@@ -25,7 +25,9 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Next: 완료/부분실패 결과 화면으로 PendingIntent 딥링크
   - Handoff: not started
 
-- [ ] 2026-07-22 (updated 2026-07-31) - 세션 유효성·온보딩·오프라인을 통합한 앱 진입 라우팅과 계정 전환 시 로컬 데이터 격리
+- [ ] 2026-07-22 (updated 2026-08-05) - 세션 유효성·온보딩·오프라인을 통합한 앱 진입 라우팅과 계정 전환 시 로컬 데이터 격리
+  - Done (2026-08-05): 세션 X + 온보딩 완료 → `Reauth` 라우팅을 구현했다. `AuthSessionStateProvider.hasSession`(singleton, refresh token 관찰)과 `onboardingCompleted`로 `RecapEntryMode`를 파생해 콜드스타트와 런타임 전환을 같은 경로로 처리하고, refresh token이 서버에서 무효/만료 확정되어 clear될 때만 `Reauth`로 전환한다(네트워크 실패·timeout·5xx는 토큰 유지). `Reauth`는 `OnboardingLandingScreen`을 문구 변경 없이 그대로 재사용하고 back은 앱 종료, 진입 시 back stack clear·진행 중 분석 폐기·만료 안내 토스트를 수행하며, 로그인 성공 시 튜토리얼 없이 Main으로 복귀한다. 공유 진입의 `LoginRequired`가 `onboardingCompleted`를 지우던 문제와 로그아웃/탈퇴 시 `Reauth`를 거치는 순서 문제도 함께 정리했다.
+  - Remaining: 아래 상태 모델링(`TemporarilyUnverified` 등), 오프라인 제한 모드와 `NET_CAPABILITY_VALIDATED` 판정, 계정 소유자 ID 기반 wipe, `Reauth`의 deep link/상세 화면 복원 정책. 현재 `Reauth`는 Room·이미지·검색 기록을 유지한다.
   - Problem: 현재 루트 라우팅은 `onboardingCompleted`만 보고 세션 상태를 관찰하지 않는다. 토큰이 없거나 refresh token이 서버에서 만료·폐기되어도 Main에 남을 수 있고, 반대로 네트워크 단절·timeout처럼 유효성을 일시적으로 확인할 수 없는 상태를 세션 무효로 오판하면 불필요한 로그아웃과 데이터 손실이 발생한다. 세션 만료 후 재로그인 성공 시 온보딩 완료 여부와 무관하게 가이드로 이동하는 흐름도 재방문 사용자 요구와 맞지 않는다.
   - Current implementation:
     - `RecapStartupViewModel`은 로컬 `onboardingCompleted`만으로 splash 종료와 `Onboarding`/`Main`을 결정하고, 세션 유효성 확인 때문에 splash를 유지하지는 않는다.

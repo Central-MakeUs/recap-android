@@ -1,5 +1,6 @@
 package com.chalkak.recap.app
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -46,6 +47,7 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.feature.developer.DeveloperRoute
+import com.chalkak.recap.feature.onboarding.ReauthRoute
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -155,12 +157,8 @@ private fun RecapAppReadyContent(
     onboardingSessionKey: Int,
     onOnboardingSessionKeyChange: (Int) -> Unit,
 ) {
-    val initialRoute = if (readyState.onboardingCompleted) {
-        RecapRootRoute.Main
-    } else {
-        RecapRootRoute.Onboarding
-    }
-    val rootBackStack = rememberNavBackStack(initialRoute)
+    val rootBackStack = rememberNavBackStack(readyState.entryMode.toRootRoute())
+    val activity = LocalActivity.current
     val context = LocalContext.current
     val toastDispatcher = remember(toastViewModel, context) {
         object : RecapToastDispatcher {
@@ -193,25 +191,35 @@ private fun RecapAppReadyContent(
         8.dp
     val toastBottomPadding = maxOf(defaultToastBottomPadding, imeBottomPadding + 8.dp)
 
-    LaunchedEffect(readyState.onboardingCompleted) {
-        val targetRoute = if (readyState.onboardingCompleted) {
-            RecapRootRoute.Main
-        } else {
-            RecapRootRoute.Onboarding
+    val sessionExpiredMessage = stringResource(R.string.reauth_session_expired_notice)
+
+    LaunchedEffect(readyState.entryMode) {
+        val targetRoute = readyState.entryMode.toRootRoute()
+        val currentRoute = rootBackStack.lastOrNull()
+
+        if (targetRoute == RecapRootRoute.Reauth) {
+            // 세션이 폐기된 뒤에는 남은 업로드/분석을 이어갈 수 없다.
+            analysisProgressViewModel.cancelAnalysis()
+            toastDispatcher.showToast(
+                message = sessionExpiredMessage,
+                type = RecapToastType.Error,
+            )
         }
-        if (!readyState.onboardingCompleted &&
-            rootBackStack.lastOrNull() == RecapRootRoute.Main
+        if (currentRoute == targetRoute) return@LaunchedEffect
+
+        if (targetRoute == RecapRootRoute.Onboarding &&
+            (currentRoute == RecapRootRoute.Main || currentRoute == RecapRootRoute.Reauth)
         ) {
             onOnboardingSessionKeyChange(onboardingSessionKey + 1)
         }
-        if (rootBackStack.lastOrNull() != targetRoute) {
-            rootBackStack.clear()
-            rootBackStack.add(targetRoute)
-        }
+        rootBackStack.clear()
+        rootBackStack.add(targetRoute)
     }
 
-    LaunchedEffect(pendingHomeNavigationRequestId, readyState.onboardingCompleted) {
-        if (pendingHomeNavigationRequestId != null && readyState.onboardingCompleted) {
+    LaunchedEffect(pendingHomeNavigationRequestId, readyState.entryMode) {
+        if (pendingHomeNavigationRequestId != null &&
+            readyState.entryMode == RecapEntryMode.Main
+        ) {
             if (rootBackStack.lastOrNull() != RecapRootRoute.Main) {
                 rootBackStack.clear()
                 rootBackStack.add(RecapRootRoute.Main)
@@ -246,6 +254,12 @@ private fun RecapAppReadyContent(
                                             onOnboardingSampleShareAdvanceComplete,
                                     )
                                 }
+                            }
+
+                            RecapRootRoute.Reauth -> NavEntry(route) {
+                                ReauthRoute(
+                                    onExitApp = { activity?.finish() },
+                                )
                             }
 
                             RecapRootRoute.Main -> NavEntry(route) {
