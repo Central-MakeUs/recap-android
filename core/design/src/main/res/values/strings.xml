@@ -280,10 +280,13 @@
     <string name="developer_options_title">개발자 옵션</string>
     <string name="developer_options_component_garden_button">컴포넌트 가든</string>
     <string name="developer_options_reset_onboarding_button">온보딩 초기화</string>
+    <string name="developer_options_invalidate_session_button">세션 무효화</string>
     <string name="developer_options_reset_screenshot_data_button">스크린샷 정리 데이터 초기화</string>
     <string name="developer_options_test_crash_button">테스트 크래시</string>
     <string name="developer_options_reset_screenshot_data_success">스크린샷 정리 데이터를 초기화했어요.</string>
     <string name="developer_options_reset_screenshot_data_failure">초기화에 실패했어요. 다시 시도해주세요.</string>
+    <string name="developer_options_invalidate_session_success">세션을 무효화했어요.</string>
+    <string name="developer_options_invalidate_session_failure">세션 무효화에 실패했어요. 다시 시도해주세요.</string>
     <string name="component_garden_title">컴포넌트 가든</string>
     <string name="component_garden_home_cards_section_title">홈 카드</string>
     <string name="component_garden_haze_folder_cards_section_title">헤이즈 폴더 카드</string>
