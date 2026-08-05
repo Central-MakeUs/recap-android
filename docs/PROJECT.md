@@ -162,4 +162,5 @@ UI 색상·타이포는 `MaterialTheme.colorScheme` / `MaterialTheme.typography`
 - `docs/TESTING.md`: 테스트/검증 정책
 - `docs/LOCAL_DATA.md`: 로컬 데이터 구현체와 저장 정책
 - `docs/ANALYSIS_DATA_SOURCE.md`: 스크린샷 Mock/Remote build-time (`USE_MOCK_BACKEND`) 선택
+- `docs/MOCK_REMOTE_CHANGE.md`: 제거된 런타임 Mock/Remote 전환 계층 역사 스냅샷
 - `docs/handoff/HANDOFF.md`: Codex가 작성하고 Cursor가 구현할 작업 스펙

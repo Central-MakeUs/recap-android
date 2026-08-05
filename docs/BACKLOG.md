@@ -148,7 +148,7 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 
 - [x] 2026-07-25 - Remote 스크린샷 상세 content 편집 API 연결
   - Context: Remote 상세 로드(`ScreenshotDetailRepository` + `CaptureRepository.getDetail`)와 삭제/즐겨찾기는 연결됐지만 `CaptureApi`에 title/summary/body/type PATCH가 없어 편집 저장은 Room `updateCardContent`만 호출한다. Remote에서는 저장이 실패(save error)한다.
-  - Next: 서버 content update API 확정 후 `CaptureMutationRepository`에 updateContent를 추가하고 `ScreenshotViewModel.saveEdit`을 Switching mutation으로 위임
+  - Next: 서버 content update API 확정 후 `CaptureMutationRepository`에 updateContent를 추가하고 `ScreenshotViewModel.saveEdit`을 ~~Switching mutation으로 위임~~ `CaptureMutationRepository`(BuildConfig로 선택된 Mock/Remote)로 위임
   - Handoff: not started
 
 - [x] 2026-07-30 - 빠른 전역 navigation push/pop 역전의 화면 레이어 안정화
