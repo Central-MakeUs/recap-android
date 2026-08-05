@@ -16,8 +16,8 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 ## Open
 
 - [ ] 2026-08-05 - 카카오 `me()` 실패가 로그인 전체를 막는 실패 경로의 UX 정리
-  - Context: 소유자 해시 판정을 위해 `signInWithKakao`가 `kakaoLoginClient.fetchUserProfile()`을 새로 호출한다. 일시적 네트워크 오류로 `me()`가 실패하면 카카오 로그인 자체는 성공했는데도 `AuthError.ProviderUnavailable`로 로그인이 실패하고, 일반 로그인 실패 토스트만 노출되어 원인·재시도 안내가 없다. 서버 불변 `userId`로 소유자 키를 옮기면 이 호출 자체가 사라질 수 있다.
-  - Next: `me()` 실패 전용 안내/재시도 UX를 둘지, 소유자 키 이전 때 함께 제거할지 결정
+  - Context: 소유자 해시 판정을 위해 `signInWithKakao`가 `kakaoLoginClient.fetchUserProfile()`을 새로 호출한다. 일시적 네트워크 오류로 `me()`가 실패하면 카카오 로그인 자체는 성공했는데도 `AuthError.ProviderUnavailable`로 로그인이 실패하고, 일반 로그인 실패 토스트만 노출되어 원인·재시도 안내가 없다.
+  - Next: `me()` 실패 전용 안내/재시도 UX를 둘지 결정
   - Handoff: not started
 
 - [ ] 2026-07-31 - 작은 기기·고배율·3버튼 내비에서 깨지는 고정 레이아웃/패딩 전역 대응
@@ -31,10 +31,10 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Handoff: not started
 
 - [ ] 2026-07-22 (updated 2026-08-05) - 세션 유효성·온보딩·오프라인을 통합한 앱 진입 라우팅과 계정 전환 시 로컬 데이터 격리
-  - Done (2026-08-05): 세션 X + 온보딩 완료 → `Reauth` 라우팅을 구현했다. `AuthSessionStateProvider.hasSession`(singleton, refresh token 관찰)과 `onboardingCompleted`로 `RecapEntryMode`를 파생해 콜드스타트와 런타임 전환을 같은 경로로 처리하고, refresh token이 서버에서 무효/만료 확정되어 clear될 때만 `Reauth`로 전환한다(네트워크 실패·timeout·5xx는 토큰 유지). `Reauth`는 `OnboardingLandingScreen`을 문구 변경 없이 그대로 재사용하고 back은 앱 종료, 진입 시 back stack clear·진행 중 분석 폐기·만료 안내 토스트를 수행하며, 로그인 성공 시 튜토리얼 없이 Main으로 복귀한다. 공유 진입의 `LoginRequired`가 `onboardingCompleted`를 지우던 문제와 로그아웃/탈퇴 시 `Reauth`를 거치는 순서 문제도 함께 정리했다.
+  - Done (2026-08-05): 세션 X + 온보딩 완료 → `Reauth` 라우팅을 구현했다. `AuthSessionStateProvider.hasSession`(singleton, refresh token 관찰)과 `onboardingCompleted`로 `RecapEntryMode`를 파생해 콜드스타트와 런타임 전환을 같은 경로로 처리하고, refresh token이 서버에서 무효/만료 확정되어 clear될 때만 `Reauth`로 전환한다(네트워크 실패·timeout·5xx는 토큰 유지). `Reauth`는 `OnboardingLandingScreen`을 문구 변경 없이 그대로 재사용하고 back은 앱 종료, 진입 시 back stack clear·진행 중 분석 폐기·만료 안내 토스트를 수행하며, 로그인 성공 시 튜토리얼 없이 Main Home으로 이동한다. 공유 진입의 `LoginRequired`가 `onboardingCompleted`를 지우던 문제와 로그아웃/탈퇴 시 `Reauth`를 거치는 순서 문제도 함께 정리했다.
   - Done (2026-08-05): 카카오 `user.id`를 기기 로컬 salt와 함께 SHA-256 해시해 별도 `account_owner` DataStore에 저장하고, `AuthRepository.signInWithKakao`에서 서버 토큰 저장 직전에 비교한다. 해시 없음/불일치면 `wipeAndRebindOwner(hash)`(Room·썸네일 캐시·최근 검색·계정 종속 preference wipe 후 해시 확정, onboarding·deviceId 유지)를 호출한다. wipe는 fail-closed라 이미지 삭제가 끝나지 않으면 해시를 갱신하지 않고 다음 로그인에서 재시도한다. reconcile 경로의 모든 예외는 `Result.failure`로 매핑해 `signInWithKakao`가 throw하지 않는다. 세션 만료 시점에는 wipe하지 않으며, 로그아웃/탈퇴의 `resetDatabaseAndOnboarding()`에서 owner hash와 salt를 clear한다. `account_owner.preferences_pb`는 백업/기기 전송에서 제외한다.
   - Done (2026-08-05): 진입 라우팅은 `onboardingCompleted × refresh token 존재`로 단순화했다. access token 갱신 필요 여부는 `TokenRefreshCoordinator` 내부에서만 처리하고, 서버가 refresh token 무효/만료를 명시한 경우에만 토큰을 clear한다. 네트워크·timeout·5xx는 토큰과 entry를 유지한다. Connectivity는 세션 상태로 모델링하지 않고 온보딩/Reauth 로그인 직전 `NET_CAPABILITY_VALIDATED` 동기 게이트에만 사용한다.
-  - Remaining: Main의 캐시 데이터 유지 범위·쓰기 차단/작업 큐, 서버 `userId`로의 소유자 키 이전(현재는 카카오 user.id 해시), `Reauth`의 deep link/상세 화면 복원 정책, foreground/네트워크 복구 시 자동 refresh 트리거·재시도 budget.
+  - Remaining: Main의 캐시 데이터 유지 범위·쓰기 차단/작업 큐, foreground/네트워크 복구 시 자동 refresh 트리거·재시도 budget.
   - Session/routing policy (확정):
     - 세션 보유 — non-blank refresh token 존재. 네트워크 상태와 access token 만료 임박은 entry 입력이 아니다.
     - 세션 없음 — refresh token 없음. 온보딩 완료면 `Reauth`, 미완료면 `Onboarding`.
@@ -52,10 +52,9 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
     - Main Home/Collection/Search는 로딩 실패 안내와 수동 재시도를 제공한다.
     - 캐시 데이터 유지 범위와 오프라인 쓰기 차단/작업 큐는 후속이다.
   - Account isolation/wipe:
-    - 현재 구현: 기기 로컬 salt + 카카오 `user.id` SHA-256 해시. 서버 불변 RECAP `userId` 이전은 후속.
-  - Decisions still open: (1) 서버 불변 `userId` 계약 (2) Main 오프라인 읽기/쓰기·작업 큐 (3) 자동 재시도 budget (4) `Reauth` deep link/공유/분석 복원 (5) 계정별 vs 기기 공통 설정 추가 분류
-  - Next: Main 캐시/쓰기 정책, 서버 userId 소유자 키, Reauth deep link 복원, 네트워크 복구 시 refresh 트리거를 별 handoff로 분리한다.
-  - Depends: 서버 user identity 계약(소유자 키 이전 시)
+    - 현재 구현: 기기 로컬 salt + 카카오 `user.id` SHA-256 해시.
+  - Decisions still open: (1) Main 오프라인 읽기·쓰기·작업 큐 (2) 자동 재시도 budget (3) 계정별 vs 기기 공통 설정 추가 분류
+  - Next: Main 캐시/쓰기 정책과 네트워크 복구 시 refresh 트리거를 별 handoff로 분리한다.
   - Handoff: not started (진입 라우팅·로그인 Connectivity gate·온보딩 popup은 backlog 직접 구현)
 
 - [ ] 2026-07-18 - `docs/LOCAL_DATA.md`를 CaptureDetailResponse 동기화 스키마에 맞게 갱신
