@@ -4,6 +4,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.chalkak.recap.core.data.USER_PREFERENCES_DATASTORE_NAME
 import com.chalkak.recap.core.data.UserPreferencesDataStore
 import com.chalkak.recap.core.data.safeData
 import javax.inject.Inject
@@ -29,7 +30,7 @@ class SessionTokenStore @Inject constructor(
     private val mutex = Mutex()
 
     val refreshToken: Flow<String?> =
-        dataStore.safeData()
+        dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME)
             .map { preferences -> preferences[REFRESH_TOKEN] }
             .distinctUntilChanged()
 
@@ -79,7 +80,7 @@ class SessionTokenStore @Inject constructor(
         if (hydrated) return
         mutex.withLock {
             if (hydrated) return
-            val preferences = dataStore.safeData().first()
+            val preferences = dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).first()
             val accessToken = preferences[ACCESS_TOKEN]
             val refreshToken = preferences[REFRESH_TOKEN]
             val expiresAt = preferences[ACCESS_TOKEN_EXPIRES_AT]

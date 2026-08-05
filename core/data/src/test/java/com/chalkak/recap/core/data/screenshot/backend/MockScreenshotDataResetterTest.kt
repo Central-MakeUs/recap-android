@@ -5,9 +5,7 @@ import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardReposito
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
-import io.mockk.just
 import io.mockk.mockk
-import io.mockk.Runs
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
@@ -19,7 +17,7 @@ class MockScreenshotDataResetterTest {
         val cardRepository = mockk<ScreenshotCardRepository>()
         val imageStorage = mockk<ScreenshotImageStorage>()
         coEvery { cardRepository.deleteAllCards() } returns Unit
-        every { imageStorage.clearStoredImages() } just Runs
+        every { imageStorage.clearStoredImages() } returns true
         val resetter = MockScreenshotDataResetter(cardRepository, imageStorage)
 
         resetter.reset()

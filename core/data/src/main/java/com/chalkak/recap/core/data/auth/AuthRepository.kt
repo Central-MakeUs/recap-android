@@ -1,6 +1,9 @@
 package com.chalkak.recap.core.data.auth
 
 import android.content.Context
+import com.chalkak.recap.core.data.LocalAppDataResetter
+import com.chalkak.recap.core.data.account.AccountOwnerHasher
+import com.chalkak.recap.core.data.account.AccountOwnerStore
 import com.chalkak.recap.core.data.auth.remote.AuthApi
 import com.chalkak.recap.core.data.auth.remote.AuthPlatformDto
 import com.chalkak.recap.core.data.auth.remote.AuthTokenApiResponse
@@ -27,11 +30,22 @@ class AuthRepository @Inject constructor(
     private val authApi: AuthApi,
     private val deviceIdProvider: DeviceIdProvider,
     private val sessionTokenStore: SessionTokenStore,
+    private val accountOwnerStore: AccountOwnerStore,
+    private val accountOwnerHasher: AccountOwnerHasher,
+    private val localAppDataResetter: LocalAppDataResetter,
     private val crashReporter: CrashReporter,
 ) {
     suspend fun signInWithKakao(context: Context): Result<AuthSignInResult> =
         kakaoLoginClient.login(context).fold(
-            onSuccess = { credential -> loginWithServer(credential).alsoReportAuthFailure() },
+            onSuccess = { credential ->
+                reconcileAccountOwner().fold(
+                    onSuccess = { loginWithServer(credential).alsoReportAuthFailure() },
+                    onFailure = { error ->
+                        reportAuthFailure(error)
+                        Result.failure(error)
+                    },
+                )
+            },
             onFailure = { error ->
                 reportAuthFailure(error)
                 Result.failure(error)
@@ -41,6 +55,27 @@ class AuthRepository @Inject constructor(
     suspend fun getKakaoUserProfile(): Result<KakaoUserProfile> =
         kakaoLoginClient.fetchUserProfile().alsoReportAuthFailure()
 
+    /**
+     * 카카오 user.id 해시로 로컬 데이터 소유자를 맞춘다.
+     * 해시 없음/불일치면 계정 종속 로컬 데이터를 wipe한 뒤에만 새 해시를 저장한다.
+     *
+     * DataStore 읽기/쓰기와 wipe 실패는 모두 [Result.failure]로 돌려준다.
+     * 호출 측이 `Result`만 다루므로 이 경로에서 예외가 새어 나가면 안 된다.
+     */
+    private suspend fun reconcileAccountOwner(): Result<Unit> {
+        val profile = kakaoLoginClient.fetchUserProfile().getOrElse { return Result.failure(it) }
+        return try {
+            val hash = accountOwnerHasher.hashKakaoUserId(profile.id)
+            if (accountOwnerStore.getHash() != hash) {
+                localAppDataResetter.wipeAndRebindOwner(hash)
+            }
+            Result.success(Unit)
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (error: Throwable) {
+            Result.failure(AuthException(AuthError.Unknown, error))
+        }
+    }
 
     suspend fun refresh(): Result<AuthSignInResult.Success> {
         val refreshToken = sessionTokenStore.getRefreshToken()

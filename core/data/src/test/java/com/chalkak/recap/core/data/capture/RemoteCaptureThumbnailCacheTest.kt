@@ -39,7 +39,7 @@ class RemoteCaptureThumbnailCacheTest {
 
     @BeforeEach
     fun setUp() {
-        every { imageStorage.clearStoredImages() } just Runs
+        every { imageStorage.clearStoredImages() } returns true
         every { imageStorage.deleteStoredImages(any()) } just Runs
         cache = RemoteCaptureThumbnailCache(
             imageStorage = imageStorage,

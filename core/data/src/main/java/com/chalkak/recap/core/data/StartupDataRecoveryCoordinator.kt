@@ -18,7 +18,7 @@ class StartupDataRecoveryCoordinator @Inject constructor(
     private val localAppDataResetter: LocalAppDataResetter,
 ) {
     suspend fun recoverIfNeeded() {
-        val preferences = dataStore.safeData().first()
+        val preferences = dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).first()
         if (!UserPreferencesRecoveryMarker.isRequired(preferences)) {
             return
         }

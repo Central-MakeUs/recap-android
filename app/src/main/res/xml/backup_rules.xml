@@ -9,6 +9,8 @@
     <exclude domain="file" path="recap/" />
     <!-- Session tokens and user prefs (same DataStore file) -->
     <exclude domain="file" path="datastore/user_preferences.preferences_pb" />
+    <!-- Local account owner marker; must not follow the app to another device -->
+    <exclude domain="file" path="datastore/account_owner.preferences_pb" />
     <!-- Room DB; sidecars (-journal/-shm/-wal) follow the basename -->
     <exclude domain="database" path="recap.db" />
 </full-backup-content>

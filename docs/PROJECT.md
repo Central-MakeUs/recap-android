@@ -107,7 +107,7 @@ core.data.screenshot 하위:
 - `RecapStartupViewModel`이 `onboardingCompleted`와 `AuthSessionStateProvider.hasSession`을 합쳐 `RecapEntryMode`(`Onboarding` / `Reauth` / `Main`)를 파생한다. 세션 판정은 refresh token 보유 여부만 보며, 네트워크 실패·timeout·5xx에서는 `TokenRefreshCoordinator`가 토큰을 지우지 않으므로 `Main`이 유지된다.
 - root route:
   - `Onboarding`
-  - `Reauth` (온보딩 완료 사용자가 세션을 잃었을 때. `OnboardingLandingScreen`을 그대로 재사용해 로그인만 처리하고, 성공 시 튜토리얼 없이 Main으로 복귀한다)
+  - `Reauth` (온보딩 완료 사용자가 세션을 잃었을 때. `OnboardingLandingScreen`을 그대로 재사용해 로그인만 처리하고, 성공 시 튜토리얼 없이 Main으로 복귀한다. 로그인 시 카카오 user.id 해시가 없으면/다르면 로컬 계정 데이터를 wipe한다)
   - `Main`
   - `Developer`
 - main route:
