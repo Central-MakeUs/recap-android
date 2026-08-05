@@ -4,13 +4,22 @@ import android.content.Context
 import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
+import app.cash.turbine.test
 import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.Runs
+import io.mockk.slot
+import io.mockk.verify
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class NetworkConnectivityMonitorTest {
     private val context = mockk<Context>()
     private val connectivityManager = mockk<ConnectivityManager>()
@@ -53,6 +62,40 @@ class NetworkConnectivityMonitorTest {
         )
 
         assertTrue(monitor.isInternetValidated())
+    }
+
+    @Test
+    fun `validatedInternet emits current value and capability changes`() = runTest {
+        every { connectivityManager.activeNetwork } returns network
+        every { connectivityManager.getNetworkCapabilities(network) } returns capabilities(
+            internet = true,
+            validated = false,
+        )
+        val callbackSlot = slot<ConnectivityManager.NetworkCallback>()
+        every { connectivityManager.registerDefaultNetworkCallback(capture(callbackSlot)) } just Runs
+        every {
+            connectivityManager.unregisterNetworkCallback(any<ConnectivityManager.NetworkCallback>())
+        } just Runs
+
+        monitor.validatedInternet.test {
+            assertEquals(false, awaitItem())
+
+            every { connectivityManager.getNetworkCapabilities(network) } returns capabilities(
+                internet = true,
+                validated = true,
+            )
+            callbackSlot.captured.onCapabilitiesChanged(
+                network,
+                capabilities(internet = true, validated = true),
+            )
+            assertEquals(true, awaitItem())
+
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        verify(exactly = 1) {
+            connectivityManager.unregisterNetworkCallback(any<ConnectivityManager.NetworkCallback>())
+        }
     }
 
     private fun capabilities(

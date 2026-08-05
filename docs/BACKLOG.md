@@ -30,32 +30,10 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Next: 완료/부분실패 결과 화면으로 PendingIntent 딥링크
   - Handoff: not started
 
-- [ ] 2026-07-22 (updated 2026-08-05) - 세션 유효성·온보딩·오프라인을 통합한 앱 진입 라우팅과 계정 전환 시 로컬 데이터 격리
-  - Done (2026-08-05): 세션 X + 온보딩 완료 → `Reauth` 라우팅을 구현했다. `AuthSessionStateProvider.hasSession`(singleton, refresh token 관찰)과 `onboardingCompleted`로 `RecapEntryMode`를 파생해 콜드스타트와 런타임 전환을 같은 경로로 처리하고, refresh token이 서버에서 무효/만료 확정되어 clear될 때만 `Reauth`로 전환한다(네트워크 실패·timeout·5xx는 토큰 유지). `Reauth`는 `OnboardingLandingScreen`을 문구 변경 없이 그대로 재사용하고 back은 앱 종료, 진입 시 back stack clear·진행 중 분석 폐기·만료 안내 토스트를 수행하며, 로그인 성공 시 튜토리얼 없이 Main Home으로 이동한다. 공유 진입의 `LoginRequired`가 `onboardingCompleted`를 지우던 문제와 로그아웃/탈퇴 시 `Reauth`를 거치는 순서 문제도 함께 정리했다.
-  - Done (2026-08-05): 카카오 `user.id`를 기기 로컬 salt와 함께 SHA-256 해시해 별도 `account_owner` DataStore에 저장하고, `AuthRepository.signInWithKakao`에서 서버 토큰 저장 직전에 비교한다. 해시 없음/불일치면 `wipeAndRebindOwner(hash)`(Room·썸네일 캐시·최근 검색·계정 종속 preference wipe 후 해시 확정, onboarding·deviceId 유지)를 호출한다. wipe는 fail-closed라 이미지 삭제가 끝나지 않으면 해시를 갱신하지 않고 다음 로그인에서 재시도한다. reconcile 경로의 모든 예외는 `Result.failure`로 매핑해 `signInWithKakao`가 throw하지 않는다. 세션 만료 시점에는 wipe하지 않으며, 로그아웃/탈퇴의 `resetDatabaseAndOnboarding()`에서 owner hash와 salt를 clear한다. `account_owner.preferences_pb`는 백업/기기 전송에서 제외한다.
-  - Done (2026-08-05): 진입 라우팅은 `onboardingCompleted × refresh token 존재`로 단순화했다. access token 갱신 필요 여부는 `TokenRefreshCoordinator` 내부에서만 처리하고, 서버가 refresh token 무효/만료를 명시한 경우에만 토큰을 clear한다. 네트워크·timeout·5xx는 토큰과 entry를 유지한다. Connectivity는 세션 상태로 모델링하지 않고 온보딩/Reauth 로그인 직전 `NET_CAPABILITY_VALIDATED` 동기 게이트에만 사용한다.
-  - Remaining: Main의 캐시 데이터 유지 범위·쓰기 차단/작업 큐, foreground/네트워크 복구 시 자동 refresh 트리거·재시도 budget.
-  - Session/routing policy (확정):
-    - 세션 보유 — non-blank refresh token 존재. 네트워크 상태와 access token 만료 임박은 entry 입력이 아니다.
-    - 세션 없음 — refresh token 없음. 온보딩 완료면 `Reauth`, 미완료면 `Onboarding`.
-    - refresh token 무효/만료 — coordinator가 token을 clear해 세션 없음으로 전환한다.
-    - 네트워크·timeout·5xx·기타 refresh 실패 — token을 보존하고 현재 entry를 유지한다.
-    - Connectivity — `NetworkConnectivityMonitor.isInternetValidated()`를 로그인 시점 게이트로만 사용한다.
-  - Routing matrix (`hasSession` × `onboardingCompleted`):
-    - 세션 X + 온보딩 미완료 → Landing부터 전체 온보딩
-    - 세션 O + 온보딩 미완료 → 저장된 온보딩 단계 복원. 강제 refresh가 실패해도 token이 남아 있으면 진행하고, 무효 확정(clear)이면 Landing
-    - 세션 X + 온보딩 완료 → `Reauth`. 로그인 후 튜토리얼 없이 Main
-    - 세션 O + 온보딩 완료 → splash 원격 대기 없이 Main. 무효 확정으로 token이 clear되면 `Reauth`
-  - Offline UX/data policy:
-    - splash에 붙잡지 않는다.
-    - 온보딩/Reauth 로그인: validated 실패 또는 `AuthError.Network` 시 `RecapPopup`으로 인터넷 연결 없음 안내.
-    - Main Home/Collection/Search는 로딩 실패 안내와 수동 재시도를 제공한다.
-    - 캐시 데이터 유지 범위와 오프라인 쓰기 차단/작업 큐는 후속이다.
-  - Account isolation/wipe:
-    - 현재 구현: 기기 로컬 salt + 카카오 `user.id` SHA-256 해시.
-  - Decisions still open: (1) Main 오프라인 읽기·쓰기·작업 큐 (2) 자동 재시도 budget (3) 계정별 vs 기기 공통 설정 추가 분류
-  - Next: Main 캐시/쓰기 정책과 네트워크 복구 시 refresh 트리거를 별 handoff로 분리한다.
-  - Handoff: not started (진입 라우팅·로그인 Connectivity gate·온보딩 popup은 backlog 직접 구현)
+- [ ] 2026-08-05 - 계정별 vs 기기 공통 설정 추가 분류
+  - Context: 세션·계정 격리 작업에서 owner wipe 시 유지/삭제할 preference 분류는 현재 salt·onboarding·deviceId·알림 설정 유지로 확정됐지만, 이후 추가 설정 키의 계정 종속 여부는 아직 정책이 없다.
+  - Next: 새 preference 추가 시 계정 종속/기기 공통 분류 기준을 문서화
+  - Handoff: not started
 
 - [ ] 2026-07-18 - `docs/LOCAL_DATA.md`를 CaptureDetailResponse 동기화 스키마에 맞게 갱신
   - Context: 스크린샷 mock 계약이 `captureId: Long` / `typeCode` / `organizedAt` / Room v1로 리셋되었지만 `LOCAL_DATA.md`는 여전히 imageId·key_fields·migration 설명을 담고 있음
@@ -111,6 +89,12 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 - 없음
 
 ## Done
+
+- [x] 2026-07-22 (updated 2026-08-05) - 세션 유효성·온보딩·오프라인을 통합한 앱 진입 라우팅과 계정 전환 시 로컬 데이터 격리
+  - Result: `hasSession`(refresh token) × `onboardingCompleted`로 `RecapEntryMode` 파생, Reauth, 카카오 owner hash wipe, 로그인 Connectivity gate, Main 오프라인은 캐시 읽기/쓰기 큐 없이 Error+수동 재시도, foreground·validated 복구 시 Error만 자동 refresh 1회(`MainContentRecoveryTrigger`).
+  - Validation: 관련 unit test GREEN, `assembleDebug` GREEN
+  - Closed: 2026-08-05
+  - Handoff: not started (backlog 직접 구현)
 
 - [x] 2026-08-04 - 런타임 Mock/Remote 전환 계층을 BuildConfig 고정 선택으로 교체
   - Result: DataStore mode·Switcher·8개 Switching repository와 개발자 전환 UI를 제거하고, `:core:data`의 `BuildConfig.USE_MOCK_BACKEND` 및 lazy Provider 기반 Hilt 선택으로 교체했다. debug도 `-PUSE_MOCK_BACKEND=false`로 Remote를 선택할 수 있으며 Mock User의 계정 조회·탈퇴는 Remote 위임을 유지한다.

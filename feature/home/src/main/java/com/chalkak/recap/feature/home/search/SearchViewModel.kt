@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
+import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.search.RecentSearchStore
 import com.chalkak.recap.core.data.search.SearchRepository
 import com.chalkak.recap.core.model.search.SearchScope
@@ -22,6 +23,7 @@ class SearchViewModel @Inject constructor(
     private val captureMutationRepository: CaptureMutationRepository,
     private val recentSearchStore: RecentSearchStore,
     private val thumbnailUpdates: CaptureThumbnailUpdates,
+    private val mainContentRecoveryTrigger: MainContentRecoveryTrigger,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
@@ -39,6 +41,17 @@ class SearchViewModel @Inject constructor(
         viewModelScope.launch {
             thumbnailUpdates.thumbnailReady.collect { ready ->
                 applyThumbnailReady(ready.captureId, ready.localPath)
+            }
+        }
+        viewModelScope.launch {
+            mainContentRecoveryTrigger.recoveries.collect {
+                val state = _uiState.value
+                if (
+                    state.phase == SearchContentPhase.Error &&
+                    state.submittedQuery.isNotBlank()
+                ) {
+                    submitSearch(reset = true)
+                }
             }
         }
     }

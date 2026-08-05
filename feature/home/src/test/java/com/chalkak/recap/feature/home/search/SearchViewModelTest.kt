@@ -3,6 +3,7 @@ package com.chalkak.recap.feature.home.search
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.capture.CaptureThumbnailReady
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
+import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.search.RecentSearchStore
 import com.chalkak.recap.core.data.search.SearchRepository
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
@@ -39,6 +40,8 @@ class SearchViewModelTest {
     private val recentSearchStore = mockk<RecentSearchStore>(relaxed = true)
     private val thumbnailReadyFlow = MutableSharedFlow<CaptureThumbnailReady>(extraBufferCapacity = 1)
     private val thumbnailUpdates = mockk<CaptureThumbnailUpdates>()
+    private val recoveryFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val mainContentRecoveryTrigger = mockk<MainContentRecoveryTrigger>()
     private lateinit var viewModel: SearchViewModel
 
     @Before
@@ -47,6 +50,7 @@ class SearchViewModelTest {
         every { thumbnailUpdates.thumbnailReady } returns thumbnailReadyFlow
         every { thumbnailUpdates.resolveLocalPath(any()) } returns null
         every { recentSearchStore.recentSearches } returns recentSearchesFlow
+        every { mainContentRecoveryTrigger.recoveries } returns recoveryFlow
         coEvery { recentSearchStore.remember(any()) } coAnswers {
             val term = firstArg<String>().trim()
             recentSearchesFlow.value = (
@@ -69,6 +73,7 @@ class SearchViewModelTest {
             captureMutationRepository = captureMutationRepository,
             recentSearchStore = recentSearchStore,
             thumbnailUpdates = thumbnailUpdates,
+            mainContentRecoveryTrigger = mainContentRecoveryTrigger,
         )
     }
 
@@ -264,6 +269,42 @@ class SearchViewModelTest {
         assertEquals(SearchContentPhase.Error, viewModel.uiState.value.phase)
         assertTrue(viewModel.uiState.value.results.isEmpty())
         assertEquals(listOf("숙소"), viewModel.uiState.value.recentSearches)
+    }
+
+    @Test
+    fun `recovery signal retries search only while Error with submitted query`() = runTest {
+        coEvery {
+            searchRepository.search(any(), any(), any(), any(), any())
+        } returns Result.failure(IllegalStateException("offline"))
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        assertEquals(SearchContentPhase.Error, viewModel.uiState.value.phase)
+        coVerify(exactly = 1) {
+            searchRepository.search(query = "숙소", scope = SearchScope.ALL, typeCode = null, page = 0, size = 20)
+        }
+
+        recoveryFlow.emit(Unit)
+        advanceUntilIdle()
+        coVerify(exactly = 2) {
+            searchRepository.search(query = "숙소", scope = SearchScope.ALL, typeCode = null, page = 0, size = 20)
+        }
+
+        coEvery {
+            searchRepository.search(any(), any(), any(), any(), any())
+        } returns Result.success(
+            SearchPage(count = 0L, hasNext = false, items = emptyList()),
+        )
+        viewModel.onAction(SearchAction.RetrySearch)
+        advanceUntilIdle()
+        assertEquals(SearchContentPhase.Empty, viewModel.uiState.value.phase)
+
+        recoveryFlow.emit(Unit)
+        advanceUntilIdle()
+        coVerify(exactly = 3) {
+            searchRepository.search(query = "숙소", scope = SearchScope.ALL, typeCode = null, page = 0, size = 20)
+        }
     }
 
     @Test
