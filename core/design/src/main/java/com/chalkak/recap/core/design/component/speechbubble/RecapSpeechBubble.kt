@@ -1,5 +1,11 @@
 package com.chalkak.recap.core.design.component.speechbubble
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
@@ -31,6 +38,8 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
+import kotlin.math.PI
+import kotlin.math.sin
 
 
 enum class RecapSpeechBubbleArrowDirection {
@@ -52,6 +61,8 @@ object RecapSpeechBubbleDefaults {
     val ArrowHeight = 8.dp
     val BorderWidth = 1.5.dp
     val Elevation = 1.dp
+    val FloatAmplitude = 2.dp
+    const val FloatDurationMillis = 2_000
     val TextStyle: TextStyle = RecapCaption1
 
     fun colors(
@@ -74,6 +85,22 @@ fun RecapSpeechBubble(
     textStyle: TextStyle = RecapSpeechBubbleDefaults.TextStyle,
 ) {
     val density = LocalDensity.current
+    val floatAmplitudePx = with(density) { RecapSpeechBubbleDefaults.FloatAmplitude.toPx() }
+    val infiniteTransition = rememberInfiniteTransition(label = "speechBubbleFloat")
+    // Linear 0→1 + sine로 양끝 속도가 자연스럽게 0이 되게 해 Reverse easing 이음매 끊김을 피한다.
+    // 한 주기(올라가기+내려가기) = FloatDurationMillis * 2 이므로 방향당 FloatDurationMillis.
+    val floatProgress = infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(
+                durationMillis = RecapSpeechBubbleDefaults.FloatDurationMillis * 2,
+                easing = LinearEasing,
+            ),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "speechBubbleFloatProgress",
+    )
     val shape = with(density) {
         val arrowHeightPx = RecapSpeechBubbleDefaults.ArrowHeight.toPx()
         SpeechBubbleShape(
@@ -97,6 +124,9 @@ fun RecapSpeechBubble(
     Box(
         modifier = modifier
             .wrapContentSize()
+            .graphicsLayer {
+                translationY = sin(floatProgress.value * 2f * PI).toFloat() * floatAmplitudePx
+            }
             .shadow(
                 elevation = RecapSpeechBubbleDefaults.Elevation,
                 shape = shape,
