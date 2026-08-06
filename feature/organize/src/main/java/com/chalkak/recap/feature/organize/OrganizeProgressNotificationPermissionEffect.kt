@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import com.chalkak.recap.core.data.notification.NotificationPermissionRequestDestination
 import com.chalkak.recap.core.data.notification.areAppNotificationsEnabled
@@ -33,6 +34,8 @@ fun OrganizeProgressNotificationPermissionEffect(
     organizeCompleteNotificationEnabled: Boolean?,
     onOrganizeCompleteNotificationEnabledChange: (Boolean) -> Unit,
 ) {
+    if (LocalInspectionMode.current) return
+
     val context = LocalContext.current
     var showNotificationPermissionSheet by rememberSaveable { mutableStateOf(false) }
     var hasEvaluatedPrompt by rememberSaveable { mutableStateOf(false) }

@@ -1,20 +1,18 @@
-package com.chalkak.recap.feature.organize.screen
+package com.chalkak.recap.feature.organize.content
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,6 +22,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -37,7 +37,6 @@ import com.airbnb.lottie.compose.LottieCompositionSpec
 import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.theme.Black
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray500
@@ -47,41 +46,31 @@ import com.chalkak.recap.feature.organize.R as OrganizeR
 import kotlinx.coroutines.delay
 
 @Composable
-fun OrganizeSuccessScreen(
-    successCount: Int,
-    onDoneClick: () -> Unit,
+fun OrganizeSuccessBackgroundGradient(
     modifier: Modifier = Modifier,
-    checkLottiePlayDelayMillis: Long = OrganizeSuccessTokens.CheckLottiePlayDelayMillis,
 ) {
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding()
-                .padding(horizontal = OrganizeSuccessTokens.HorizontalPadding),
-        ) {
-            OrganizeSuccessContent(
-                successCount = successCount,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .fillMaxWidth()
-                    .offset(y = (-44).dp),
-                checkLottiePlayDelayMillis = checkLottiePlayDelayMillis,
-            )
-            RecapButton(
-                text = stringResource(R.string.organize_success_done),
-                onClick = onDoneClick,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(bottom = OrganizeSuccessTokens.BottomPadding),
-                contentPadding = PaddingValues(vertical = 15.dp),
-            )
-        }
+    val gradientAlpha = remember { Animatable(0f) }
+    LaunchedEffect(Unit) {
+        gradientAlpha.animateTo(
+            targetValue = OrganizeSuccessTokens.BackgroundGradientAlpha,
+            animationSpec = tween(
+                durationMillis = OrganizeSuccessTokens.BackgroundGradientFadeDurationMillis,
+            ),
+        )
     }
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .fillMaxHeight(OrganizeSuccessTokens.BackgroundGradientHeightFraction)
+            .background(
+                brush = Brush.verticalGradient(
+                    0f to OrganizeSuccessTokens.BackgroundGradientColor.copy(alpha = 0f),
+                    1f to OrganizeSuccessTokens.BackgroundGradientColor.copy(
+                        alpha = gradientAlpha.value,
+                    ),
+                ),
+            ),
+    )
 }
 
 @Composable
@@ -163,8 +152,6 @@ private fun OrganizeSuccessCheckLottie(
 }
 
 private object OrganizeSuccessTokens {
-    val HorizontalPadding = 24.dp
-    val BottomPadding = 24.dp
     val IconSize = 45.dp
     val IllustrationWidth = 195.09.dp
     val IllustrationHeight = 177.43.dp
@@ -172,15 +159,16 @@ private object OrganizeSuccessTokens {
     val TitleToIllustrationSpacing = 28.dp
     val IllustrationToDescriptionSpacing = 21.dp
     const val CheckLottiePlayDelayMillis = 200L
+    const val BackgroundGradientHeightFraction = 0.54f
+    const val BackgroundGradientAlpha = 0.4f
+    const val BackgroundGradientFadeDurationMillis = 750
+    val BackgroundGradientColor = Color(0xFF8FA4FF)
 }
 
-@Preview(name = "Organize Success Screen", showBackground = true, widthDp = 360, heightDp = 780)
+@Preview(name = "Organize Success Content", showBackground = true, widthDp = 360, heightDp = 780)
 @Composable
-private fun OrganizeSuccessScreenPreview() {
+private fun OrganizeSuccessContentPreview() {
     RECAPTheme {
-        OrganizeSuccessScreen(
-            successCount = 5,
-            onDoneClick = {},
-        )
+        OrganizeSuccessContent(successCount = 5)
     }
 }

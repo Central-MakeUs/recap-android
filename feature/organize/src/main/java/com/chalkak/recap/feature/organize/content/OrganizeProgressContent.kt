@@ -1,23 +1,15 @@
-package com.chalkak.recap.feature.organize.screen
+package com.chalkak.recap.feature.organize.content
 
 import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.LinearProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,11 +35,8 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import com.chalkak.recap.core.data.notification.areAppNotificationsEnabled
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.component.button.RecapButton
-import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.speechbubble.RecapSpeechBubble
 import com.chalkak.recap.core.design.component.speechbubble.RecapSpeechBubbleArrowDirection
-import com.chalkak.recap.core.design.theme.Black
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapCategoryOther500
 import com.chalkak.recap.core.design.theme.RecapGray500
@@ -56,43 +45,6 @@ import com.chalkak.recap.core.design.theme.RecapOnboardingBlue
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 import com.chalkak.recap.feature.organize.R as OrganizeR
-
-@Composable
-fun OrganizeProgressScreen(
-    progress: Float,
-    onCancelClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier.fillMaxSize(),
-        color = MaterialTheme.colorScheme.background,
-    ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding()
-                .padding(horizontal = OrganizeProgressTokens.HorizontalPadding),
-        ) {
-            OrganizeProgressContent(
-                progress = progress,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .fillMaxWidth()
-                    .offset(y = (-20).dp),
-            )
-            RecapButton(
-                text = stringResource(R.string.organize_progress_cancel),
-                onClick = onCancelClick,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(bottom = OrganizeProgressTokens.BottomPadding),
-                colors = RecapButtonDefaults.secondaryColors(),
-                contentPadding = PaddingValues(vertical = 15.dp),
-            )
-        }
-    }
-}
 
 @Composable
 fun OrganizeProgressContent(
@@ -193,8 +145,6 @@ private fun rememberAreAppNotificationsEnabled(): Boolean {
 }
 
 private object OrganizeProgressTokens {
-    val HorizontalPadding = 24.dp
-    val BottomPadding = 24.dp
     val IllustrationSize = 240.dp
     val ProgressHeight = 6.dp
     val TitleToDescriptionSpacing = 11.dp
@@ -211,7 +161,7 @@ private object OrganizeProgressTokens {
     heightDp = 780,
 )
 @Composable
-private fun OrganizeProgressScreenNotificationOnPreview() {
+private fun OrganizeProgressContentNotificationOnPreview() {
     RECAPTheme {
         OrganizeProgressContent(
             progress = 0.65f,
@@ -227,7 +177,7 @@ private fun OrganizeProgressScreenNotificationOnPreview() {
     heightDp = 780,
 )
 @Composable
-private fun OrganizeProgressScreenNotificationOffPreview() {
+private fun OrganizeProgressContentNotificationOffPreview() {
     RECAPTheme {
         OrganizeProgressContent(
             progress = 0.65f,

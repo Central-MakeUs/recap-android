@@ -1,4 +1,4 @@
-package com.chalkak.recap.feature.organize.screen
+package com.chalkak.recap.feature.organize
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
