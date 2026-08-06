@@ -15,8 +15,10 @@ private val SafeDataRetryDelaysMs = longArrayOf(100L, 300L)
 /**
  * Reads [DataStore.data] with up to two automatic re-collections on [IOException]
  * (3 attempts total). Non-IO failures and cancellation are not swallowed.
+ *
+ * [name] is only used for logs so failures can be traced to the right DataStore file.
  */
-internal fun DataStore<Preferences>.safeData(): Flow<Preferences> = flow {
+internal fun DataStore<Preferences>.safeData(name: String): Flow<Preferences> = flow {
     var attempt = 0
     while (true) {
         try {
@@ -27,14 +29,16 @@ internal fun DataStore<Preferences>.safeData(): Flow<Preferences> = flow {
             if (attempt >= SafeDataMaxAttempts) {
                 Timber.e(
                     exception,
-                    "user_preferences DataStore read failed after %d attempts",
+                    "%s DataStore read failed after %d attempts",
+                    name,
                     SafeDataMaxAttempts,
                 )
                 throw exception
             }
             Timber.w(
                 exception,
-                "user_preferences DataStore read failed; retrying (%d/%d)",
+                "%s DataStore read failed; retrying (%d/%d)",
+                name,
                 attempt,
                 SafeDataMaxAttempts,
             )

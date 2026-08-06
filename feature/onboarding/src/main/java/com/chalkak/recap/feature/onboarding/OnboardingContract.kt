@@ -31,6 +31,8 @@ sealed interface OnboardingEvent {
     data class ShowLoginError(
         val isCancelled: Boolean,
     ) : OnboardingEvent
+
+    data object ShowNoInternet : OnboardingEvent
 }
 
 enum class OnboardingStep {

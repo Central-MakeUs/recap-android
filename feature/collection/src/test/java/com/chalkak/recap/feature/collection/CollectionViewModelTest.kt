@@ -2,6 +2,7 @@ package com.chalkak.recap.feature.collection
 
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
 import com.chalkak.recap.core.data.capture.MockCaptureMutationRepository
+import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
@@ -47,6 +48,8 @@ class CollectionViewModelTest {
     private val imageStorage = mockk<ScreenshotImageStorage>()
     private val searchRepository = mockk<com.chalkak.recap.core.data.search.SearchRepository>(relaxed = true)
     private val thumbnailUpdates = mockk<CaptureThumbnailUpdates>()
+    private val recoveryFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val mainContentRecoveryTrigger = mockk<MainContentRecoveryTrigger>()
     private val cardsFlow = MutableSharedFlow<List<StoredScreenshotCard>>(replay = 1)
     private lateinit var captureMutations: MockCaptureMutationRepository
     private lateinit var viewModel: CollectionViewModel
@@ -58,6 +61,7 @@ class CollectionViewModelTest {
         every { imageStorage.deleteStoredImages(any()) } just Runs
         every { thumbnailUpdates.thumbnailReady } returns MutableSharedFlow()
         every { thumbnailUpdates.resolveLocalPath(any()) } returns null
+        every { mainContentRecoveryTrigger.recoveries } returns recoveryFlow
         captureMutations = MockCaptureMutationRepository(
             screenshotCardRepository = cardRepository,
             screenshotImageStorage = imageStorage,
@@ -69,6 +73,7 @@ class CollectionViewModelTest {
             searchRepository = searchRepository,
             captureMutationRepository = captureMutations,
             thumbnailUpdates = thumbnailUpdates,
+            mainContentRecoveryTrigger = mainContentRecoveryTrigger,
         )
     }
 
@@ -641,6 +646,7 @@ class CollectionViewModelTest {
             searchRepository = searchRepository,
             captureMutationRepository = captureMutationRepository,
             thumbnailUpdates = thumbnailUpdates,
+            mainContentRecoveryTrigger = mainContentRecoveryTrigger,
         )
         cardsFlow.emit(
             listOf(
@@ -924,6 +930,7 @@ class CollectionViewModelTest {
             searchRepository = searchRepository,
             captureMutationRepository = captureMutations,
             thumbnailUpdates = thumbnailUpdates,
+            mainContentRecoveryTrigger = mainContentRecoveryTrigger,
         )
         runCurrent()
 
@@ -954,6 +961,7 @@ class CollectionViewModelTest {
             searchRepository = searchRepository,
             captureMutationRepository = captureMutations,
             thumbnailUpdates = thumbnailUpdates,
+            mainContentRecoveryTrigger = mainContentRecoveryTrigger,
         )
         runCurrent()
 
@@ -987,6 +995,7 @@ class CollectionViewModelTest {
             searchRepository = searchRepository,
             captureMutationRepository = captureMutations,
             thumbnailUpdates = thumbnailUpdates,
+            mainContentRecoveryTrigger = mainContentRecoveryTrigger,
         )
         runCurrent()
 
@@ -999,6 +1008,50 @@ class CollectionViewModelTest {
         failingViewModel.onAction(CollectionAction.RetryLoad)
         advanceUntilIdle()
 
+        verify(exactly = 2) { storageRepository.refreshOverview() }
+    }
+
+    @Test
+    fun `recovery signal refreshes overview only while load error`() = runTest(testDispatcher) {
+        val overviewResults = MutableSharedFlow<Result<StorageOverview>>(extraBufferCapacity = 1)
+        val storageRepository = mockk<com.chalkak.recap.core.data.storage.StorageRepository>(relaxed = true)
+        every { storageRepository.observeOverview(any()) } returns overviewResults
+        every { storageRepository.refreshOverview() } just Runs
+
+        val failingViewModel = CollectionViewModel(
+            storageRepository = storageRepository,
+            searchRepository = searchRepository,
+            captureMutationRepository = captureMutations,
+            thumbnailUpdates = thumbnailUpdates,
+            mainContentRecoveryTrigger = mainContentRecoveryTrigger,
+        )
+        runCurrent()
+
+        overviewResults.emit(Result.failure(IllegalStateException("offline")))
+        advanceUntilIdle()
+        overviewResults.emit(Result.failure(IllegalStateException("still offline")))
+        advanceUntilIdle()
+        assertTrue(failingViewModel.uiState.value.isLoadError)
+        verify(exactly = 1) { storageRepository.refreshOverview() }
+
+        recoveryFlow.emit(Unit)
+        advanceUntilIdle()
+        verify(exactly = 2) { storageRepository.refreshOverview() }
+
+        overviewResults.emit(
+            Result.success(
+                StorageOverview(
+                    hasAnyCapture = false,
+                    favoriteCount = 0,
+                    types = emptyList(),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        assertFalse(failingViewModel.uiState.value.isLoadError)
+
+        recoveryFlow.emit(Unit)
+        advanceUntilIdle()
         verify(exactly = 2) { storageRepository.refreshOverview() }
     }
 

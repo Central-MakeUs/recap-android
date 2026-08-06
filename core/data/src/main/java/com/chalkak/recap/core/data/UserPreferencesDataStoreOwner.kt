@@ -5,8 +5,10 @@ import androidx.datastore.core.handlers.ReplaceFileCorruptionHandler
 import androidx.datastore.preferences.preferencesDataStore
 import timber.log.Timber
 
+internal const val USER_PREFERENCES_DATASTORE_NAME = "user_preferences"
+
 internal val Context.userPreferencesDataStore by preferencesDataStore(
-    name = "user_preferences",
+    name = USER_PREFERENCES_DATASTORE_NAME,
     corruptionHandler = ReplaceFileCorruptionHandler { exception ->
         Timber.e(
             exception,

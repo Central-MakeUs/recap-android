@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
+import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.search.SearchRepository
 import com.chalkak.recap.core.data.storage.StorageRepository
 import com.chalkak.recap.core.design.component.topbar.CollectionTypeViewMode
@@ -35,6 +36,7 @@ class CollectionViewModel @Inject constructor(
     private val searchRepository: SearchRepository,
     private val captureMutationRepository: CaptureMutationRepository,
     private val thumbnailUpdates: CaptureThumbnailUpdates,
+    private val mainContentRecoveryTrigger: MainContentRecoveryTrigger,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CollectionUiState())
     val uiState: StateFlow<CollectionUiState> = _uiState.asStateFlow()
@@ -77,6 +79,14 @@ class CollectionViewModel @Inject constructor(
         viewModelScope.launch {
             thumbnailUpdates.thumbnailReady.collect { ready ->
                 applyThumbnailReady(ready.captureId, ready.localPath)
+            }
+        }
+
+        viewModelScope.launch {
+            mainContentRecoveryTrigger.recoveries.collect {
+                if (overviewLoadFailed) {
+                    storageRepository.refreshOverview()
+                }
             }
         }
 

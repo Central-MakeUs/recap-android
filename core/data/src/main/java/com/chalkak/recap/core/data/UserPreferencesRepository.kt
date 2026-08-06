@@ -15,7 +15,7 @@ class UserPreferencesRepository @Inject constructor(
     @param:UserPreferencesDataStore private val dataStore: DataStore<Preferences>,
 ) {
     val onboardingCompleted: Flow<Boolean> =
-        dataStore.safeData().map { preferences ->
+        dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).map { preferences ->
             preferences[ONBOARDING_COMPLETED] ?: false
         }
 
@@ -26,7 +26,7 @@ class UserPreferencesRepository @Inject constructor(
     }
 
     val organizeCompleteNotificationEnabled: Flow<Boolean> =
-        dataStore.safeData().map { preferences ->
+        dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).map { preferences ->
             preferences[ORGANIZE_COMPLETE_NOTIFICATION_ENABLED]
                 ?: preferences[LEGACY_ORGANIZE_COMPLETE_ENABLED]
                 ?: false
@@ -40,7 +40,7 @@ class UserPreferencesRepository @Inject constructor(
     }
 
     suspend fun getAiDataTransferConsentStatus(): ConsentStatus {
-        val preferences = dataStore.safeData().first()
+        val preferences = dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).first()
         return ConsentStatus(
             consented = preferences[AI_DATA_TRANSFER_CONSENTED] ?: false,
             consentedAt = preferences[AI_DATA_TRANSFER_CONSENTED_AT],
@@ -55,6 +55,17 @@ class UserPreferencesRepository @Inject constructor(
             } else {
                 preferences[AI_DATA_TRANSFER_CONSENTED_AT] = consentedAt
             }
+        }
+    }
+
+    /**
+     * 계정에 종속된 설정만 지운다. 온보딩 완료 플래그·deviceId·알림 설정처럼
+     * 기기 공통으로 유지할 값은 건드리지 않는다.
+     */
+    suspend fun clearAccountScopedPreferences() {
+        dataStore.edit { preferences ->
+            preferences.remove(AI_DATA_TRANSFER_CONSENTED)
+            preferences.remove(AI_DATA_TRANSFER_CONSENTED_AT)
         }
     }
 

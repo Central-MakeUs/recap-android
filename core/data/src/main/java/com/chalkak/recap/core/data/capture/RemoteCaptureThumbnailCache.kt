@@ -90,11 +90,16 @@ class RemoteCaptureThumbnailCache @VisibleForTesting constructor(
         imageStorage.deleteStoredImages(captureIds)
     }
 
-    fun clearAll() {
+    /**
+     * in-flight prefetch를 취소하고 디스크 images/thumbnails를 비운다.
+     *
+     * @return 디스크 파일까지 완전히 지웠으면 true
+     */
+    fun clearAll(): Boolean {
         cacheGeneration.incrementAndGet()
         invalidatedIds.clear()
         cancelAllInFlight()
-        imageStorage.clearStoredImages()
+        return imageStorage.clearStoredImages()
     }
 
     private fun ensureDownload(

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
 import com.chalkak.recap.core.data.home.HomeRepository
+import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +19,7 @@ class HomeViewModel @Inject constructor(
     private val homeRepository: HomeRepository,
     private val captureMutationRepository: CaptureMutationRepository,
     private val thumbnailUpdates: CaptureThumbnailUpdates,
+    private val mainContentRecoveryTrigger: MainContentRecoveryTrigger,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
@@ -27,6 +29,13 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             thumbnailUpdates.thumbnailReady.collect { ready ->
                 applyThumbnailReady(ready.captureId, ready.localPath)
+            }
+        }
+        viewModelScope.launch {
+            mainContentRecoveryTrigger.recoveries.collect {
+                if (_uiState.value.phase == HomeContentPhase.Error) {
+                    homeRepository.refreshSummary()
+                }
             }
         }
     }

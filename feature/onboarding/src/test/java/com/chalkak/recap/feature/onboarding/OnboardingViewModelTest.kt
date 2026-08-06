@@ -3,13 +3,16 @@ package com.chalkak.recap.feature.onboarding
 import android.content.Context
 import com.chalkak.recap.core.data.auth.AuthException
 import com.chalkak.recap.core.data.auth.AuthRepository
+import com.chalkak.recap.core.data.network.NetworkConnectivityMonitor
 import com.chalkak.recap.core.data.network.SessionTokenStore
+import com.chalkak.recap.core.data.network.TokenRefreshCoordinator
 import com.chalkak.recap.core.data.screenshot.permission.ImagePermissionRepository
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.auth.AuthError
 import com.chalkak.recap.core.model.auth.AuthSignInResult
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -103,18 +106,12 @@ class OnboardingViewModelTest {
     fun createdViewModel_withSession_startsAtPermissionGuide() = runTest(testDispatcher) {
         val sessionTokenStore = mockk<SessionTokenStore>()
         coEvery { sessionTokenStore.getRefreshToken() } returns "refresh"
-        val authRepository = mockk<AuthRepository>(relaxed = true)
-        coEvery { authRepository.refresh() } returns Result.success(
-            AuthSignInResult.Success(
-                accessToken = "access",
-                refreshToken = "refresh",
-                accessTokenExpiresAt = "2026-07-10T13:00:00Z",
-            ),
-        )
+        val tokenRefreshCoordinator = mockk<TokenRefreshCoordinator>()
+        coEvery { tokenRefreshCoordinator.refreshIfNeeded(force = true) } returns true
 
         val viewModel = createViewModel(
-            authRepository = authRepository,
             sessionTokenStore = sessionTokenStore,
+            tokenRefreshCoordinator = tokenRefreshCoordinator,
         )
         advanceUntilIdle()
 
@@ -126,19 +123,13 @@ class OnboardingViewModelTest {
         runTest(testDispatcher) {
             val sessionTokenStore = mockk<SessionTokenStore>()
             coEvery { sessionTokenStore.getRefreshToken() } returns "refresh"
-            val authRepository = mockk<AuthRepository>(relaxed = true)
-            coEvery { authRepository.refresh() } returns Result.success(
-                AuthSignInResult.Success(
-                    accessToken = "access",
-                    refreshToken = "refresh",
-                    accessTokenExpiresAt = "2026-07-10T13:00:00Z",
-                ),
-            )
+            val tokenRefreshCoordinator = mockk<TokenRefreshCoordinator>()
+            coEvery { tokenRefreshCoordinator.refreshIfNeeded(force = true) } returns true
 
             val viewModel = createViewModel(
                 imageAccessLevel = ImageAccessLevel.Full,
-                authRepository = authRepository,
                 sessionTokenStore = sessionTokenStore,
+                tokenRefreshCoordinator = tokenRefreshCoordinator,
             )
             advanceUntilIdle()
 
@@ -147,23 +138,43 @@ class OnboardingViewModelTest {
         }
 
     @Test
-    fun createdViewModel_withInvalidRefresh_clearsSessionAndStaysOnLanding() = runTest(testDispatcher) {
+    fun createdViewModel_withFailedRefreshAndClearedToken_staysOnLanding() = runTest(testDispatcher) {
         val sessionTokenStore = mockk<SessionTokenStore>(relaxed = true)
-        coEvery { sessionTokenStore.getRefreshToken() } returns "refresh"
-        val authRepository = mockk<AuthRepository>(relaxed = true)
-        coEvery { authRepository.refresh() } returns Result.failure(
-            AuthException(AuthError.Server(code = "INVALID_REFRESH_TOKEN", message = "expired")),
-        )
+        var storedRefresh: String? = "refresh"
+        coEvery { sessionTokenStore.getRefreshToken() } answers { storedRefresh }
+        val tokenRefreshCoordinator = mockk<TokenRefreshCoordinator>()
+        coEvery { tokenRefreshCoordinator.refreshIfNeeded(force = true) } coAnswers {
+            storedRefresh = null
+            false
+        }
 
         val viewModel = createViewModel(
-            authRepository = authRepository,
             sessionTokenStore = sessionTokenStore,
+            tokenRefreshCoordinator = tokenRefreshCoordinator,
         )
         advanceUntilIdle()
 
         assertEquals(OnboardingStep.Landing, viewModel.uiState.value.step)
-        coVerify { sessionTokenStore.clear() }
+        coVerify(exactly = 1) { tokenRefreshCoordinator.refreshIfNeeded(force = true) }
+        coVerify(exactly = 2) { sessionTokenStore.getRefreshToken() }
     }
+
+    @Test
+    fun createdViewModel_withTransientRefreshFailure_keepsSessionAndAdvances() =
+        runTest(testDispatcher) {
+            val sessionTokenStore = mockk<SessionTokenStore>()
+            coEvery { sessionTokenStore.getRefreshToken() } returns "refresh"
+            val tokenRefreshCoordinator = mockk<TokenRefreshCoordinator>()
+            coEvery { tokenRefreshCoordinator.refreshIfNeeded(force = true) } returns false
+
+            val viewModel = createViewModel(
+                sessionTokenStore = sessionTokenStore,
+                tokenRefreshCoordinator = tokenRefreshCoordinator,
+            )
+            advanceUntilIdle()
+
+            assertEquals(OnboardingStep.PermissionGuide, viewModel.uiState.value.step)
+        }
 
     @Test
     fun loginWithKakao_movesToPermissionGuideOnSuccess() = runTest(testDispatcher) {
@@ -292,10 +303,52 @@ class OnboardingViewModelTest {
         assertEquals(false, errorEvent.isCancelled)
     }
 
+    @Test
+    fun loginWithKakao_emitsNoInternetWhenOffline() = runTest(testDispatcher) {
+        val context = mockk<Context>(relaxed = true)
+        val authRepository = mockk<AuthRepository>(relaxed = true)
+        val networkConnectivityMonitor = mockk<NetworkConnectivityMonitor>()
+        every { networkConnectivityMonitor.isInternetValidated() } returns false
+        val viewModel = createViewModel(
+            authRepository = authRepository,
+            networkConnectivityMonitor = networkConnectivityMonitor,
+        )
+        advanceUntilIdle()
+        val eventDeferred = async { viewModel.events.first() }
+
+        viewModel.loginWithKakao(context)
+        advanceUntilIdle()
+
+        assertEquals(OnboardingEvent.ShowNoInternet, eventDeferred.await())
+        assertFalse(viewModel.uiState.value.isLoading)
+        coVerify(exactly = 0) { authRepository.signInWithKakao(any()) }
+    }
+
+    @Test
+    fun loginWithKakao_emitsNoInternetOnNetworkFailure() = runTest(testDispatcher) {
+        val context = mockk<Context>(relaxed = true)
+        val authRepository = mockk<AuthRepository>(relaxed = true)
+        coEvery { authRepository.signInWithKakao(context) } returns Result.failure(
+            AuthException(AuthError.Network),
+        )
+        val viewModel = createViewModel(authRepository = authRepository)
+        advanceUntilIdle()
+        val eventDeferred = async { viewModel.events.first() }
+
+        viewModel.loginWithKakao(context)
+        advanceUntilIdle()
+
+        assertEquals(OnboardingEvent.ShowNoInternet, eventDeferred.await())
+        assertFalse(viewModel.uiState.value.isLoading)
+    }
+
     private fun createViewModel(
         imageAccessLevel: ImageAccessLevel = ImageAccessLevel.Denied,
         authRepository: AuthRepository = mockk(relaxed = true),
         sessionTokenStore: SessionTokenStore? = null,
+        tokenRefreshCoordinator: TokenRefreshCoordinator = mockk(relaxed = true),
+        networkConnectivityMonitor: NetworkConnectivityMonitor = mockk<NetworkConnectivityMonitor>()
+            .also { every { it.isInternetValidated() } returns true },
     ): OnboardingViewModel {
         val resolvedSessionTokenStore = sessionTokenStore ?: mockk<SessionTokenStore>(relaxed = true).also {
             coEvery { it.getRefreshToken() } returns null
@@ -304,6 +357,8 @@ class OnboardingViewModelTest {
             imagePermissionRepository = FakeImagePermissionRepository(imageAccessLevel),
             authRepository = authRepository,
             sessionTokenStore = resolvedSessionTokenStore,
+            tokenRefreshCoordinator = tokenRefreshCoordinator,
+            networkConnectivityMonitor = networkConnectivityMonitor,
         )
     }
 }

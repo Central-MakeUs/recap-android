@@ -79,6 +79,10 @@ internal enum class DeveloperOption(
         labelResId = R.string.developer_options_reset_onboarding_button,
         action = DeveloperOptionAction.ResetOnboarding,
     ),
+    InvalidateSession(
+        labelResId = R.string.developer_options_invalidate_session_button,
+        action = DeveloperOptionAction.InvalidateSession,
+    ),
     ResetScreenshotData(
         labelResId = R.string.developer_options_reset_screenshot_data_button,
         action = DeveloperOptionAction.ResetScreenshotData,
@@ -92,6 +96,7 @@ internal enum class DeveloperOption(
 internal sealed interface DeveloperOptionAction {
     data object OpenComponentGarden : DeveloperOptionAction
     data object ResetOnboarding : DeveloperOptionAction
+    data object InvalidateSession : DeveloperOptionAction
     data object ResetScreenshotData : DeveloperOptionAction
     data object ForceTestCrash : DeveloperOptionAction
 }

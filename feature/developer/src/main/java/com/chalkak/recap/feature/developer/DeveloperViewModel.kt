@@ -3,7 +3,9 @@ package com.chalkak.recap.feature.developer
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.data.screenshot.backend.MockScreenshotDataResetter
+import com.chalkak.recap.core.design.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +21,7 @@ data class DeveloperOptionsUiState(
 @HiltViewModel
 class DeveloperViewModel @Inject constructor(
     private val mockScreenshotDataResetter: MockScreenshotDataResetter,
+    private val sessionTokenStore: SessionTokenStore,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DeveloperOptionsUiState())
     val uiState: StateFlow<DeveloperOptionsUiState> = _uiState.asStateFlow()
@@ -29,9 +32,27 @@ class DeveloperViewModel @Inject constructor(
             DeveloperOptionAction.ResetOnboarding,
                 -> Unit
 
+            DeveloperOptionAction.InvalidateSession -> invalidateSession()
             DeveloperOptionAction.ResetScreenshotData -> resetScreenshotData()
             DeveloperOptionAction.ForceTestCrash -> {
                 throw RuntimeException("Test Crash")
+            }
+        }
+    }
+
+    fun invalidateSession() {
+        viewModelScope.launch {
+            val result = runCatching {
+                sessionTokenStore.clear()
+            }
+            _uiState.update {
+                it.copy(
+                    feedbackMessageResId = if (result.isSuccess) {
+                        R.string.developer_options_invalidate_session_success
+                    } else {
+                        R.string.developer_options_invalidate_session_failure
+                    },
+                )
             }
         }
     }
@@ -44,9 +65,9 @@ class DeveloperViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     feedbackMessageResId = if (result.isSuccess) {
-                        com.chalkak.recap.core.design.R.string.developer_options_reset_screenshot_data_success
+                        R.string.developer_options_reset_screenshot_data_success
                     } else {
-                        com.chalkak.recap.core.design.R.string.developer_options_reset_screenshot_data_failure
+                        R.string.developer_options_reset_screenshot_data_failure
                     },
                 )
             }

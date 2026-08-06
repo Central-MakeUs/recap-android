@@ -280,10 +280,13 @@
     <string name="developer_options_title">개발자 옵션</string>
     <string name="developer_options_component_garden_button">컴포넌트 가든</string>
     <string name="developer_options_reset_onboarding_button">온보딩 초기화</string>
+    <string name="developer_options_invalidate_session_button">세션 무효화</string>
     <string name="developer_options_reset_screenshot_data_button">스크린샷 정리 데이터 초기화</string>
     <string name="developer_options_test_crash_button">테스트 크래시</string>
     <string name="developer_options_reset_screenshot_data_success">스크린샷 정리 데이터를 초기화했어요.</string>
     <string name="developer_options_reset_screenshot_data_failure">초기화에 실패했어요. 다시 시도해주세요.</string>
+    <string name="developer_options_invalidate_session_success">세션을 무효화했어요.</string>
+    <string name="developer_options_invalidate_session_failure">세션 무효화에 실패했어요. 다시 시도해주세요.</string>
     <string name="component_garden_title">컴포넌트 가든</string>
     <string name="component_garden_home_cards_section_title">홈 카드</string>
     <string name="component_garden_haze_folder_cards_section_title">헤이즈 폴더 카드</string>
@@ -363,6 +366,9 @@
     <string name="onboarding_email_login_button">이메일로 로그인</string>
     <string name="onboarding_login_failed_message">로그인에 실패했어요. 잠시 후 다시 시도해주세요.</string>
     <string name="onboarding_login_cancelled_message">로그인이 취소되었어요.</string>
+    <string name="no_internet_popup_title">인터넷에 연결되어 있지 않아요</string>
+    <string name="no_internet_popup_description">네트워크 상태를 확인한 뒤 다시 시도해주세요.</string>
+    <string name="no_internet_popup_confirm">확인</string>
     <string name="onboarding_kakao_login_full">카카오톡 계정으로 로그인</string>
     <string name="onboarding_kakao_login_short">로그인</string>
     <string name="onboarding_splash_tagline_highlight">내 앨범에 쌓인</string>
@@ -376,6 +382,7 @@
     <string name="onboarding_landing_privacy">개인정보 처리방침</string>
     <string name="onboarding_landing_legal_agreement_notice">로그인 시 만 18세 이상이며 이용약관 및 개인정보처리방침에 동의하는 것으로 간주됩니다</string>
     <string name="onboarding_kakao_login_content_description">카카오 로그인</string>
+    <string name="reauth_session_expired_notice">로그인이 만료되어 다시 로그인이 필요해요.</string>
     <string name="onboarding_brand_mark_initial">R</string>
     <string name="onboarding_brand_mark_name">RE-CAP</string>
     <string name="onboarding_screenshot_label">스크린샷</string>

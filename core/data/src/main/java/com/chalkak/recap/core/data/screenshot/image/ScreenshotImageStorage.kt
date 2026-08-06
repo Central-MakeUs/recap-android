@@ -140,9 +140,16 @@ class ScreenshotImageStorage @Inject constructor(
         }
     }
 
-    fun clearStoredImages() {
-        clearDirectory(resolveImagesDirectory())
-        clearDirectory(resolveThumbnailsDirectory())
+    /**
+     * 저장된 원본/썸네일을 모두 지운다.
+     * 계정 전환 wipe가 남은 파일을 새 소유자에게 넘기지 않도록, 삭제 실패를 삼키지 않고 알린다.
+     *
+     * @return 두 디렉터리를 완전히 비웠으면 true
+     */
+    fun clearStoredImages(): Boolean {
+        val imagesCleared = clearDirectory(resolveImagesDirectory())
+        val thumbnailsCleared = clearDirectory(resolveThumbnailsDirectory())
+        return imagesCleared && thumbnailsCleared
     }
 
     fun deleteStoredImages(captureIds: Set<Long>) {
@@ -338,15 +345,25 @@ class ScreenshotImageStorage @Inject constructor(
         }
     }
 
-    private fun clearDirectory(directory: File) {
+    private fun clearDirectory(directory: File): Boolean =
         runCatching {
-            directory.listFiles()?.forEach { file ->
-                if (file.isFile) {
-                    file.delete()
+            val files = directory.listFiles()
+            if (files == null) {
+                Timber.w("Unable to list a managed screenshot directory for clearing")
+                return@runCatching false
+            }
+            files.fold(true) { cleared, file ->
+                if (file.isFile && !file.delete()) {
+                    Timber.w("Failed to delete a stored screenshot file while clearing")
+                    false
+                } else {
+                    cleared
                 }
             }
+        }.getOrElse { throwable ->
+            Timber.w(throwable, "Failed to clear a managed screenshot directory")
+            false
         }
-    }
 
     private companion object {
         const val IMAGES_DIRECTORY = "recap/images"

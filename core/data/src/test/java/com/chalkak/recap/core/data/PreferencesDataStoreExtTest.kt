@@ -20,7 +20,7 @@ class PreferencesDataStoreExtTest {
         val expected = mutablePreferencesOf()
         val dataStore = SequencePreferencesDataStore(listOf { expected })
 
-        dataStore.safeData().test {
+        dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).test {
             assertEquals(expected, awaitItem())
             awaitComplete()
         }
@@ -36,7 +36,7 @@ class PreferencesDataStoreExtTest {
             ),
         )
 
-        dataStore.safeData().test {
+        dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).test {
             assertEquals(expected, awaitItem())
             awaitComplete()
         }
@@ -53,7 +53,7 @@ class PreferencesDataStoreExtTest {
             ),
         )
 
-        dataStore.safeData().test {
+        dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).test {
             assertEquals(expected, awaitItem())
             awaitComplete()
         }
@@ -70,7 +70,7 @@ class PreferencesDataStoreExtTest {
         )
 
         val error = assertThrows<IOException> {
-            dataStore.safeData().first()
+            dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).first()
         }
         assertEquals("fail 3", error.message)
     }
@@ -82,7 +82,7 @@ class PreferencesDataStoreExtTest {
         )
 
         val error = assertThrows<IllegalStateException> {
-            dataStore.safeData().first()
+            dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).first()
         }
         assertEquals("boom", error.message)
     }

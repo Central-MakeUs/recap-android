@@ -15,6 +15,11 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 
 ## Open
 
+- [ ] 2026-08-05 - 카카오 `me()` 실패가 로그인 전체를 막는 실패 경로의 UX 정리
+  - Context: 소유자 해시 판정을 위해 `signInWithKakao`가 `kakaoLoginClient.fetchUserProfile()`을 새로 호출한다. 일시적 네트워크 오류로 `me()`가 실패하면 카카오 로그인 자체는 성공했는데도 `AuthError.ProviderUnavailable`로 로그인이 실패하고, 일반 로그인 실패 토스트만 노출되어 원인·재시도 안내가 없다.
+  - Next: `me()` 실패 전용 안내/재시도 UX를 둘지 결정
+  - Handoff: not started
+
 - [ ] 2026-07-31 - 작은 기기·고배율·3버튼 내비에서 깨지는 고정 레이아웃/패딩 전역 대응
   - Context: 화면·컴포넌트 간격이 ~6.7인치 기준 고정 `dp`로 맞춰져 있어, 작은 물리 화면 + 높은 디스플레이/폰트 배율 + 3버튼 내비게이션(inset) 조합에서 온보딩 등 풀뷰포트 화면의 CTA·일러스트·텍스트가 잘리거나 겹친다. `core/design`에 Spacing/compact 레이아웃 시스템이 없고, 로컬 `*Tokens` 고정값·스크롤 없는 Column·큰 고정 높이 일러스트(예: Landing `120/90/58.dp`, AddToFavorite `238.dp`)가 원인. Permission/Upload만 scroll+pinned CTA. insets도 화면마다 `safeDrawing`/`navigationBars` 제각각.
   - Next: (1) `core/design`에 scrollable body + pinned bottom actions + compact 시 일러스트 축소/숨김용 화면 템플릿 (2) 풀스크린 플로우 insets 계약 통일 (3) `RecapSpacing` 시맨틱 토큰 + compact/fontScale에서 여유 간격만 축소. 온보딩을 첫 적용·레퍼런스로 두고 이후 화면은 점진 적용. 고정 padding 일괄 축소만으로는 부족.
@@ -25,38 +30,9 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Next: 완료/부분실패 결과 화면으로 PendingIntent 딥링크
   - Handoff: not started
 
-- [ ] 2026-07-22 (updated 2026-07-31) - 세션 유효성·온보딩·오프라인을 통합한 앱 진입 라우팅과 계정 전환 시 로컬 데이터 격리
-  - Problem: 현재 루트 라우팅은 `onboardingCompleted`만 보고 세션 상태를 관찰하지 않는다. 토큰이 없거나 refresh token이 서버에서 만료·폐기되어도 Main에 남을 수 있고, 반대로 네트워크 단절·timeout처럼 유효성을 일시적으로 확인할 수 없는 상태를 세션 무효로 오판하면 불필요한 로그아웃과 데이터 손실이 발생한다. 세션 만료 후 재로그인 성공 시 온보딩 완료 여부와 무관하게 가이드로 이동하는 흐름도 재방문 사용자 요구와 맞지 않는다.
-  - Current implementation:
-    - `RecapStartupViewModel`은 로컬 `onboardingCompleted`만으로 splash 종료와 `Onboarding`/`Main`을 결정하고, 세션 유효성 확인 때문에 splash를 유지하지는 않는다.
-    - `TokenRefreshCoordinator`는 액세스 토큰 만료 임박 또는 401에서 갱신하며, 서버가 `INVALID_REFRESH_TOKEN`/`EXPIRED_REFRESH_TOKEN`을 명시한 경우에만 토큰을 지우고 네트워크 실패에서는 보존한다. 그러나 이 결과가 앱 전역 인증/라우팅 상태로 노출되지 않는다.
-    - `NetworkConnectivityMonitor`는 active network 존재만 확인하므로 Wi-Fi 연결 후 실제 인터넷 접근 불가 상태를 구분하지 못한다.
-    - `LocalAppDataResetter`는 Room·저장 이미지·최근 검색·세션·온보딩 상태 전체 초기화를 지원하지만, 동일 계정 재인증과 다른 계정 전환을 구분하는 소유자 ID 및 선택적 wipe 정책은 없다.
-  - Required auth state: 토큰 존재 여부만 사용하지 말고 최소 `SignedOut`, `Usable`, `RefreshNeeded`, `TemporarilyUnverified`(오프라인/timeout/5xx), `ReauthRequired`(refresh token 만료·폐기 확정)를 앱 범위의 observable state로 모델링한다. `TemporarilyUnverified`에서는 토큰과 온보딩 완료 상태를 보존하고, 서버의 명시적인 인증 거부에서만 `ReauthRequired`로 전환한다.
-  - Desired routing matrix (`hasSession` × `onboardingCompleted`, 세션 유효성 판정은 별도 상태):
-    - 세션 X + 온보딩 미완료 → 최초 사용자로 보고 Landing부터 전체 온보딩
-    - 세션 O + 온보딩 미완료 → 유효하면 저장된 온보딩 단계 복원. 오프라인이면 유효성 판정을 보류하고 서버 작업 전까지 진행. 무효 확정이면 Landing
-    - 세션 X + 온보딩 완료 → 재방문 사용자용 `Reauth` 로그인 모드. 로그인 후 튜토리얼을 건너뛰고 Main
-    - 세션 O + 온보딩 완료 → splash에서 원격 검증을 기다리지 않고 Main 진입. 유효/갱신 성공이면 일반 사용, 오프라인·timeout이면 캐시 기반 제한 모드, 무효 확정이면 `Reauth`로 전환
-  - Refresh policy:
-    - 고정 간격 timeout 10회 반복은 사용하지 않는다. 앱 foreground 진입, `NET_CAPABILITY_VALIDATED` 네트워크 복구, 인증 요청의 401, 토큰 만료 임박, 홈/컬렉션의 사용자 `다시 시도`를 갱신 트리거로 사용한다.
-    - 일시 실패를 자동 재시도한다면 exponential backoff+jitter와 foreground 단위 상한을 두고, 네트워크 복구 또는 사용자 수동 갱신에서 횟수를 초기화한다. refresh token 무효/만료가 확정되면 재시도 없이 `ReauthRequired`로 전환한다.
-    - 동시 API의 중복 refresh는 기존 single-flight를 유지하고, foreground/background 전환 및 프로세스 재생성 후에도 라우팅 결과가 일관되어야 한다.
-  - Offline UX/data policy:
-    - 인터넷 연결 확인 불가를 이유로 splash에 사용자를 잡아두지 않는다.
-    - 홈/컬렉션은 공통 인터넷 연결 없음 안내와 수동 새로고침을 제공하고, 캐시 데이터가 있으면 계속 표시한다. 조회 외 업로드·분석·수정·삭제를 차단할지, 재연결 후 실행할 작업 큐를 둘지는 별도 확정한다.
-    - 빈 데이터와 오프라인으로 불러오지 못한 상태를 구분하고 raw exception 또는 세션 내부 정보를 노출하지 않는다.
-  - Reauthentication policy:
-    - 인증 손실은 온보딩 초기화가 아니다. `onboardingCompleted`를 유지한 채 Landing UI를 재사용하는 별도 `Reauth` 모드를 두고, 로그인 성공 후 튜토리얼 없이 Main으로 이동한다.
-    - 재인증 중 back 동작, 기존 상세/deep link/공유 intent/진행 중 분석의 보존·폐기, 로그아웃과 강제 재인증의 UX 차이를 확정해야 한다.
-  - Account isolation/wipe:
-    - 서버가 발급하는 불변 RECAP `userId`를 로컬 데이터 소유자 ID로 저장하는 방식을 우선한다. Kakao ID는 서버 계정 병합·다중 provider 정책과 충돌할 수 있어 서버 ID가 없을 때만 대안으로 검토한다.
-    - 재로그인 후 이전 소유자 ID와 동일하면 로컬 DB·이미지·검색 기록을 유지하고, 다르면 새 계정 데이터를 노출하기 전에 Room·저장 이미지·최근 검색·계정 종속 캐시를 원자적으로 wipe한다. 온보딩 완료 플래그와 앱 공통 설정의 유지 범위를 데이터별로 명시한다.
-    - wipe 실패 시 Main 진입을 막고 복구 가능한 오류를 제공한다. 소유자 ID가 없는 기존 설치 데이터의 최초 마이그레이션은 안전 우선 wipe 또는 1회 계정 귀속 중 하나로 결정한다.
-  - Decisions needed: (1) 다른 계정 재로그인 허용 여부 (2) 서버 불변 `userId` 계약 (3) 오프라인에서 허용할 읽기/쓰기 범위와 작업 큐 여부 (4) 자동 재시도 횟수·총 시간 budget (5) `Reauth`의 back/deep link/공유/분석 복원 정책 (6) 계정별 데이터와 기기 공통 설정의 분류 (7) 로그아웃·회원 탈퇴·세션 만료 각각의 wipe 범위
-  - Validation scope: 위 상태별 콜드스타트와 런타임 전환, offline→online 복구, timeout/5xx/401/invalid refresh, 동일·다른 계정 로그인, wipe 실패, 프로세스 재생성을 단위/통합 테스트 행렬로 검증한다. 실제 네트워크 복구와 화면 전환은 에뮬레이터 또는 실기기 런타임 검증을 포함한다.
-  - Next: 서버 인증 오류 코드와 user identity 계약을 먼저 확정한 뒤 `AuthSessionManager` 역할, root navigation state, 재인증 화면, 계정 소유권 저장/wipe transaction, 홈·컬렉션 수동 갱신 순으로 handoff를 분리한다.
-  - Depends: 서버 refresh/user identity 계약
+- [ ] 2026-08-05 - 계정별 vs 기기 공통 설정 추가 분류
+  - Context: 세션·계정 격리 작업에서 owner wipe 시 유지/삭제할 preference 분류는 현재 salt·onboarding·deviceId·알림 설정 유지로 확정됐지만, 이후 추가 설정 키의 계정 종속 여부는 아직 정책이 없다.
+  - Next: 새 preference 추가 시 계정 종속/기기 공통 분류 기준을 문서화
   - Handoff: not started
 
 - [ ] 2026-07-18 - `docs/LOCAL_DATA.md`를 CaptureDetailResponse 동기화 스키마에 맞게 갱신
@@ -113,6 +89,12 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 - 없음
 
 ## Done
+
+- [x] 2026-07-22 (updated 2026-08-05) - 세션 유효성·온보딩·오프라인을 통합한 앱 진입 라우팅과 계정 전환 시 로컬 데이터 격리
+  - Result: `hasSession`(refresh token) × `onboardingCompleted`로 `RecapEntryMode` 파생, Reauth, 카카오 owner hash wipe, 로그인 Connectivity gate, Main 오프라인은 캐시 읽기/쓰기 큐 없이 Error+수동 재시도, foreground·validated 복구 시 Error만 자동 refresh 1회(`MainContentRecoveryTrigger`).
+  - Validation: 관련 unit test GREEN, `assembleDebug` GREEN
+  - Closed: 2026-08-05
+  - Handoff: not started (backlog 직접 구현)
 
 - [x] 2026-08-04 - 런타임 Mock/Remote 전환 계층을 BuildConfig 고정 선택으로 교체
   - Result: DataStore mode·Switcher·8개 Switching repository와 개발자 전환 UI를 제거하고, `:core:data`의 `BuildConfig.USE_MOCK_BACKEND` 및 lazy Provider 기반 Hilt 선택으로 교체했다. debug도 `-PUSE_MOCK_BACKEND=false`로 Remote를 선택할 수 있으며 Mock User의 계정 조회·탈퇴는 Remote 위임을 유지한다.

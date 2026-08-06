@@ -11,10 +11,19 @@ sealed interface RecapRootRoute : NavKey {
     data object Onboarding : RecapRootRoute
 
     @Serializable
+    data object Reauth : RecapRootRoute
+
+    @Serializable
     data object Main : RecapRootRoute
 
     @Serializable
     data object Developer : RecapRootRoute
+}
+
+fun RecapEntryMode.toRootRoute(): RecapRootRoute = when (this) {
+    RecapEntryMode.Onboarding -> RecapRootRoute.Onboarding
+    RecapEntryMode.Reauth -> RecapRootRoute.Reauth
+    RecapEntryMode.Main -> RecapRootRoute.Main
 }
 
 sealed interface AppRoute : NavKey {
