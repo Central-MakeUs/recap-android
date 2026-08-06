@@ -48,9 +48,10 @@ class SearchViewModel @Inject constructor(
                 val state = _uiState.value
                 if (
                     state.phase == SearchContentPhase.Error &&
-                    state.submittedQuery.isNotBlank()
+                    state.submittedQuery.isNotBlank() &&
+                    state.query.trim() == state.submittedQuery
                 ) {
-                    submitSearch(reset = true)
+                    submitSearch(reset = true, queryOverride = state.submittedQuery)
                 }
             }
         }
@@ -136,8 +137,11 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    private fun submitSearch(reset: Boolean) {
-        val query = _uiState.value.query.trim()
+    private fun submitSearch(
+        reset: Boolean,
+        queryOverride: String? = null,
+    ) {
+        val query = (queryOverride ?: _uiState.value.query).trim()
         if (query.isEmpty()) {
             return
         }

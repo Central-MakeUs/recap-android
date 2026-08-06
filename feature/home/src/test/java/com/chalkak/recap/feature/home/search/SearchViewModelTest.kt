@@ -308,6 +308,62 @@ class SearchViewModelTest {
     }
 
     @Test
+    fun `recovery signal skips retry when draft query changed`() = runTest {
+        coEvery {
+            searchRepository.search(any(), any(), any(), any(), any())
+        } returns Result.failure(IllegalStateException("offline"))
+
+        viewModel.onAction(SearchAction.UpdateQuery("cat"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        assertEquals(SearchContentPhase.Error, viewModel.uiState.value.phase)
+        assertEquals("cat", viewModel.uiState.value.submittedQuery)
+        assertEquals(listOf("cat"), viewModel.uiState.value.recentSearches)
+
+        viewModel.onAction(SearchAction.UpdateQuery("dog"))
+        assertEquals("dog", viewModel.uiState.value.query)
+        assertEquals("cat", viewModel.uiState.value.submittedQuery)
+
+        recoveryFlow.emit(Unit)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            searchRepository.search(query = "cat", scope = SearchScope.ALL, typeCode = null, page = 0, size = 20)
+        }
+        coVerify(exactly = 0) {
+            searchRepository.search(query = "dog", scope = SearchScope.ALL, typeCode = null, page = 0, size = 20)
+        }
+        assertEquals("dog", viewModel.uiState.value.query)
+        assertEquals("cat", viewModel.uiState.value.submittedQuery)
+        assertEquals(listOf("cat"), viewModel.uiState.value.recentSearches)
+    }
+
+    @Test
+    fun `RetrySearch submits current draft query when changed`() = runTest {
+        coEvery {
+            searchRepository.search(any(), any(), any(), any(), any())
+        } returns Result.failure(IllegalStateException("offline"))
+
+        viewModel.onAction(SearchAction.UpdateQuery("cat"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+
+        viewModel.onAction(SearchAction.UpdateQuery("dog"))
+        viewModel.onAction(SearchAction.RetrySearch)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) {
+            searchRepository.search(query = "cat", scope = SearchScope.ALL, typeCode = null, page = 0, size = 20)
+        }
+        coVerify(exactly = 1) {
+            searchRepository.search(query = "dog", scope = SearchScope.ALL, typeCode = null, page = 0, size = 20)
+        }
+        assertEquals("dog", viewModel.uiState.value.query)
+        assertEquals("dog", viewModel.uiState.value.submittedQuery)
+        assertEquals(listOf("dog", "cat"), viewModel.uiState.value.recentSearches)
+    }
+
+    @Test
     fun `load more appends next page`() = runTest {
         coEvery {
             searchRepository.search(query = "숙소", scope = SearchScope.ALL, typeCode = null, page = 0, size = 20)
