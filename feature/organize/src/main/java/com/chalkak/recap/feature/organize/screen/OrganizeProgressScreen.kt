@@ -3,7 +3,6 @@ package com.chalkak.recap.feature.organize.screen
 import androidx.compose.animation.core.EaseInOut
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,12 +29,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.chalkak.recap.core.data.notification.areAppNotificationsEnabled
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.button.RecapButton
@@ -46,9 +51,11 @@ import com.chalkak.recap.core.design.theme.Black
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapCategoryOther500
 import com.chalkak.recap.core.design.theme.RecapGray500
+import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapOnboardingBlue
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
+import com.chalkak.recap.feature.organize.R as OrganizeR
 
 @Composable
 fun OrganizeProgressScreen(
@@ -113,21 +120,22 @@ fun OrganizeProgressContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        RecapSpeechBubble(
-            text = stringResource(R.string.organize_progress_speech_bubble),
-            arrowDirection = RecapSpeechBubbleArrowDirection.Down,
+        Text(
+            text = stringResource(R.string.organize_progress_title),
+            style = RecapHeading2,
+            color = RecapGray900,
+            textAlign = TextAlign.Center,
         )
-        Spacer(modifier = Modifier.height(OrganizeProgressTokens.BubbleToIllustrationSpacing))
-        Image(
-            painter = painterResource(R.drawable.recap_organize_ongoing),
-            contentDescription = stringResource(
-                R.string.organize_progress_illustration_content_description,
-            ),
-            modifier = Modifier.size(
-                width = OrganizeProgressTokens.IllustrationWidth,
-                height = OrganizeProgressTokens.IllustrationHeight,
-            ),
-            contentScale = ContentScale.Fit,
+        Spacer(modifier = Modifier.height(OrganizeProgressTokens.TitleToDescriptionSpacing))
+        Text(
+            text = stringResource(descriptionRes),
+            style = RecapBody1,
+            color = RecapGray500,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(modifier = Modifier.height(OrganizeProgressTokens.DescriptionToIllustrationSpacing))
+        OrganizeProgressAnalyzingLottie(
+            modifier = Modifier.size(OrganizeProgressTokens.IllustrationSize),
         )
         Spacer(modifier = Modifier.height(OrganizeProgressTokens.IllustrationToProgressSpacing))
         LinearProgressIndicator(
@@ -141,21 +149,34 @@ fun OrganizeProgressContent(
             gapSize = -OrganizeProgressTokens.ProgressHeight,
             drawStopIndicator = {},
         )
-        Spacer(modifier = Modifier.height(OrganizeProgressTokens.ProgressToTitleSpacing))
-        Text(
-            text = stringResource(R.string.organize_progress_title),
-            style = RecapHeading2,
-            color = Black,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(modifier = Modifier.height(OrganizeProgressTokens.TitleToDescriptionSpacing))
-        Text(
-            text = stringResource(descriptionRes),
-            style = RecapBody1,
-            color = RecapGray500,
-            textAlign = TextAlign.Center,
+        Spacer(modifier = Modifier.height(OrganizeProgressTokens.ProgressToBubbleSpacing))
+        RecapSpeechBubble(
+            text = stringResource(R.string.organize_progress_speech_bubble),
+            arrowDirection = RecapSpeechBubbleArrowDirection.Up,
         )
     }
+}
+
+@Composable
+private fun OrganizeProgressAnalyzingLottie(
+    modifier: Modifier = Modifier,
+) {
+    val illustrationDescription = stringResource(
+        R.string.organize_progress_illustration_content_description,
+    )
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(OrganizeR.raw.analyzing),
+    )
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever,
+    )
+    LottieAnimation(
+        composition = composition,
+        progress = { progress },
+        modifier = modifier.semantics { contentDescription = illustrationDescription },
+        contentScale = ContentScale.Fit,
+    )
 }
 
 @Composable
@@ -174,13 +195,12 @@ private fun rememberAreAppNotificationsEnabled(): Boolean {
 private object OrganizeProgressTokens {
     val HorizontalPadding = 24.dp
     val BottomPadding = 24.dp
-    val IllustrationWidth = 173.dp
-    val IllustrationHeight = 161.dp
+    val IllustrationSize = 240.dp
     val ProgressHeight = 6.dp
-    val BubbleToIllustrationSpacing = 8.dp
-    val IllustrationToProgressSpacing = 32.dp
-    val ProgressToTitleSpacing = 29.dp
-    val TitleToDescriptionSpacing = 6.dp
+    val TitleToDescriptionSpacing = 11.dp
+    val DescriptionToIllustrationSpacing = 22.dp
+    val IllustrationToProgressSpacing = 29.dp
+    val ProgressToBubbleSpacing = 27.dp
     const val ProgressAnimationDurationMillis = 500
 }
 
@@ -215,4 +235,3 @@ private fun OrganizeProgressScreenNotificationOffPreview() {
         )
     }
 }
-
