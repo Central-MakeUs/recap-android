@@ -2,7 +2,6 @@ package com.chalkak.recap.feature.organize.content
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,7 +24,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -44,6 +42,7 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 import com.chalkak.recap.feature.organize.R as OrganizeR
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun OrganizeSuccessBackgroundGradient(
@@ -96,18 +95,13 @@ fun OrganizeSuccessContent(
             textAlign = TextAlign.Center,
         )
         Spacer(modifier = Modifier.height(OrganizeSuccessTokens.TitleToIllustrationSpacing))
-        Image(
-            painter = painterResource(R.drawable.recap_organize_success),
-            contentDescription = stringResource(
-                R.string.organize_success_illustration_content_description,
-            ),
+        OrganizeSuccessCharacterLottie(
             modifier = Modifier
                 .size(
                     width = OrganizeSuccessTokens.IllustrationWidth,
                     height = OrganizeSuccessTokens.IllustrationHeight,
                 )
                 .offset(x = (-9).dp),
-            contentScale = ContentScale.Fit,
         )
         Spacer(modifier = Modifier.height(OrganizeSuccessTokens.IllustrationToDescriptionSpacing))
         Text(
@@ -135,7 +129,7 @@ private fun OrganizeSuccessCheckLottie(
         if (composition == null || playDelayMillis <= 0L) {
             return@LaunchedEffect
         }
-        delay(playDelayMillis)
+        delay(playDelayMillis.milliseconds)
         isPlaying = true
     }
     val progress by animateLottieCompositionAsState(
@@ -147,6 +141,29 @@ private fun OrganizeSuccessCheckLottie(
         composition = composition,
         progress = { progress },
         modifier = modifier.semantics { contentDescription = iconDescription },
+        contentScale = ContentScale.Fit,
+    )
+}
+
+@Composable
+private fun OrganizeSuccessCharacterLottie(
+    modifier: Modifier = Modifier,
+) {
+    val illustrationDescription = stringResource(
+        R.string.organize_success_illustration_content_description,
+    )
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(OrganizeR.raw.complete_character),
+    )
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = 1,
+        isPlaying = composition != null,
+    )
+    LottieAnimation(
+        composition = composition,
+        progress = { progress },
+        modifier = modifier.semantics { contentDescription = illustrationDescription },
         contentScale = ContentScale.Fit,
     )
 }
