@@ -93,8 +93,8 @@ fun OrganizeProgressContent(
     modifier: Modifier = Modifier,
     notificationsEnabled: Boolean? = null,
 ) {
-    val observedNotificationsEnabled = rememberAreAppNotificationsEnabled()
-    val resolvedNotificationsEnabled = notificationsEnabled ?: observedNotificationsEnabled
+    val resolvedNotificationsEnabled = notificationsEnabled
+        ?: rememberAreAppNotificationsEnabled()
     val animatedProgress by animateFloatAsState(
         targetValue = progress.coerceIn(0f, 1f),
         animationSpec = tween(
