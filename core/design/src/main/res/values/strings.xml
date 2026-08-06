@@ -410,6 +410,7 @@
     <string name="onboarding_start_first_analyze_title">첫 정리를 시작해볼까요?</string>
     <string name="onboarding_start_first_analyze_description">쌓아둔 스크린샷을 골라 첫 정리를 시작해보세요!</string>
     <string name="onboarding_start_first_analyze_character_content_description">첫 정리 안내 캐릭터</string>
+    <string name="onboarding_start_first_analyze_guide_content_description">스크린샷 정리 안내 애니메이션</string>
     <string name="onboarding_start_first_analyze_select_button">스크린샷 선택하기</string>
     <string name="onboarding_start_first_analyze_later_button">나중에 하기</string>
     <string name="onboarding_full_access_permission_title">사진 및 동영상 전체 권한이 필요해요</string>
