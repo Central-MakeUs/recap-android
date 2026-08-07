@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -494,6 +495,7 @@ fun ScreenshotPickerContent(
                     .weight(1f)
                     .fillMaxWidth(),
             ) {
+                val gridState = rememberLazyGridState()
                 when {
                     uiState.isLoading -> {
                         CircularProgressIndicator(
@@ -533,46 +535,54 @@ fun ScreenshotPickerContent(
                         } else {
                             0.dp
                         }
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(ScreenshotPickerTokens.GridColumns),
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = gridBottomPadding),
-                            horizontalArrangement = Arrangement.spacedBy(
-                                ScreenshotPickerTokens.GridSpacing,
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(
-                                ScreenshotPickerTokens.GridSpacing,
-                            ),
-                            userScrollEnabled = !isDragSelecting,
-                        ) {
-                            itemsIndexed(
-                                items = uiState.availableScreenshots,
-                                key = { _, screenshot -> screenshot.uri },
-                            ) { index, screenshot ->
-                                val imageModel = screenshot.toSheetImageModel()
-                                ScreenshotPickerGridItem(
-                                    imageModel = imageModel,
-                                    itemIndex = index + 1,
-                                    selectionOrder = uiState.selectionOrder(screenshot.uri),
-                                    onClick = {
-                                        onAction(OrganizeAction.ToggleSelection(screenshot.uri))
-                                    },
-                                    onImageLongClick = {
-                                        onImageLongClick(imageModel)
-                                    },
-                                    onCheckLongPressStart = {
-                                        onDragSelectStart(screenshot.uri)
-                                    },
-                                    onCheckLongPressDrag = { positionInRoot ->
-                                        onDragSelectMove(positionInRoot)
-                                    },
-                                    onCheckLongPressEnd = ::onDragSelectEnd,
-                                    trackItemBounds = trackItemBounds,
-                                    onBoundsChanged = { bounds ->
-                                        itemBoundsInRoot[screenshot.uri] = bounds
-                                    },
-                                )
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(ScreenshotPickerTokens.GridColumns),
+                                modifier = Modifier.fillMaxSize(),
+                                state = gridState,
+                                contentPadding = PaddingValues(bottom = gridBottomPadding),
+                                horizontalArrangement = Arrangement.spacedBy(
+                                    ScreenshotPickerTokens.GridSpacing,
+                                ),
+                                verticalArrangement = Arrangement.spacedBy(
+                                    ScreenshotPickerTokens.GridSpacing,
+                                ),
+                                userScrollEnabled = !isDragSelecting,
+                            ) {
+                                itemsIndexed(
+                                    items = uiState.availableScreenshots,
+                                    key = { _, screenshot -> screenshot.uri },
+                                ) { index, screenshot ->
+                                    val imageModel = screenshot.toSheetImageModel()
+                                    ScreenshotPickerGridItem(
+                                        imageModel = imageModel,
+                                        itemIndex = index + 1,
+                                        selectionOrder = uiState.selectionOrder(screenshot.uri),
+                                        onClick = {
+                                            onAction(OrganizeAction.ToggleSelection(screenshot.uri))
+                                        },
+                                        onImageLongClick = {
+                                            onImageLongClick(imageModel)
+                                        },
+                                        onCheckLongPressStart = {
+                                            onDragSelectStart(screenshot.uri)
+                                        },
+                                        onCheckLongPressDrag = { positionInRoot ->
+                                            onDragSelectMove(positionInRoot)
+                                        },
+                                        onCheckLongPressEnd = ::onDragSelectEnd,
+                                        trackItemBounds = trackItemBounds,
+                                        onBoundsChanged = { bounds ->
+                                            itemBoundsInRoot[screenshot.uri] = bounds
+                                        },
+                                    )
+                                }
                             }
+                            ScreenshotPickerScrollIndicator(
+                                gridState = gridState,
+                                columnCount = ScreenshotPickerTokens.GridColumns,
+                                modifier = Modifier.align(Alignment.CenterEnd),
+                            )
                         }
                     }
                 }
