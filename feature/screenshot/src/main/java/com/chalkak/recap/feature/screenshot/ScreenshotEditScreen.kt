@@ -1,5 +1,6 @@
 package com.chalkak.recap.feature.screenshot
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -53,12 +54,11 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapError
-import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray200
-import com.chalkak.recap.core.design.theme.RecapGray500
+import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapImagePlaceholderBackground
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
-import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption3
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
@@ -123,7 +123,7 @@ fun ScreenshotEditScreen(
                         formatOrganizedDate(content.card.analysisResult.organizedAt.toEpochMilli()),
                     ),
                     style = RecapCaption2,
-                    color = RecapGray500,
+                    color = RecapGray300,
                 )
                 Spacer(modifier = Modifier.height(7.dp))
                 ScreenshotEditImagePreview(
@@ -255,7 +255,7 @@ private fun ScreenshotTextAction(
             color = if (enabled) {
                 color
             } else {
-                RecapGray900.copy(alpha = 0.38f)
+                RecapGray200
             },
             fontWeight = fontWeight,
         )
@@ -285,31 +285,31 @@ private fun ScreenshotEditImagePreview(
                 onClick = onOpenFullscreen,
             ),
     ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = RecapGray100,
-        ) {
-            if (showPlaceholder) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = stringResource(R.string.screenshot_image_load_error),
-                        style = RecapCaption1,
-                        color = RecapGray500,
-                        modifier = Modifier.padding(ScreenshotTokens.HorizontalPadding),
-                    )
-                }
-            } else {
-                AsyncImage(
-                    model = imageModel,
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                    onError = { imageLoadFailed = true },
+        if (showPlaceholder) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(RecapImagePlaceholderBackground),
+                contentAlignment = Alignment.Center,
+            ) {
+                Image(
+                    painter = painterResource(R.drawable.recap_placeholder_1),
+                    contentDescription = stringResource(
+                        R.string.screenshot_image_placeholder_content_description,
+                    ),
+                    modifier = Modifier.size(width = 24.dp, height = 21.dp),
                 )
             }
+        } else {
+            AsyncImage(
+                model = imageModel,
+                contentDescription = stringResource(
+                    R.string.screenshot_image_placeholder_content_description,
+                ),
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+                onError = { imageLoadFailed = true },
+            )
         }
         Box(
             modifier = Modifier
