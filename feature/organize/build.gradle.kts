@@ -43,6 +43,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.coil.compose)
+    implementation(libs.timber)
     implementation(libs.lottie.compose)
     implementation(libs.chrisbanes.haze)
     implementation(libs.hilt.android)
