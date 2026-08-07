@@ -1,6 +1,7 @@
 package com.chalkak.recap.feature.onboarding.screen
 
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -12,12 +13,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -26,26 +27,39 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
-import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathFillType
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.progress.RecapStepProgressIndicator
+import com.chalkak.recap.core.design.component.speechbubble.RecapSpeechBubble
+import com.chalkak.recap.core.design.component.speechbubble.RecapSpeechBubbleArrowDirection
 import com.chalkak.recap.core.design.component.topbar.RecapTopBar
+import com.chalkak.recap.core.design.theme.Black
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray700
-import com.chalkak.recap.core.design.theme.RecapOnboardingBlue
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 import kotlinx.coroutines.launch
 import kotlin.math.abs
+import kotlin.math.roundToInt
 
 private val GuideStepImages = listOf(
     R.drawable.onboarding_add_to_favorite_guide_1,
@@ -63,16 +77,27 @@ private val GuideStepDescriptions = listOf(
 
 private val GuideStepIcons = listOf("❶", "❷", "❸", "❹")
 
-private val GuideTouchPositions: List<Pair<Float, Float>?> = listOf(
-    0.925f to 0.965f, // 더보기
-    0.963f to 0.023f, // 편집
-    0.186f to 0.500f, // RECAP 체크
+private data class GuideTouchHighlightSpec(
+    val xFraction: Float,
+    val yFraction: Float,
+    val bubbleTextResId: Int,
+)
+
+private val GuideTouchHighlights: List<GuideTouchHighlightSpec?> = listOf(
+    GuideTouchHighlightSpec(0.835f, 0.895f, R.string.onboarding_add_to_favorite_guide_touch_1),
+    GuideTouchHighlightSpec(0.853f, 0.093f, R.string.onboarding_add_to_favorite_guide_touch_2),
+    GuideTouchHighlightSpec(0.146f, 0.500f, R.string.onboarding_add_to_favorite_guide_touch_3),
     null,
 )
 
 private val GuideContentHorizontalPadding = 28.dp
-private val GuideTouchIconSize = 55.dp
-private const val GuideTouchIconAlpha = 0.2f
+private val GuideImageCornerRadius = 20.dp
+private val GuideTouchHoleSize = 89.dp
+private const val GuideOverlayAlpha = 0.3f
+/** 말풍선 높이의 이 비율만큼 원과 overlap 시킨다. */
+private const val GuideBubbleOverlapFraction = 0.3f
+/** 하단 타겟은 원 아래 공간이 없어 말풍선을 위로 올린다. */
+private const val GuideBubbleBelowMaxYFraction = 0.85f
 private const val GuidePagerPageWidthFraction = 0.75f
 private const val GuideImageAspectRatio = 3f / 4f
 
@@ -163,29 +188,26 @@ private fun AddToFavoriteGuideCarousel(
                 contentPadding = PaddingValues(horizontal = sidePadding),
                 pageSpacing = pageSpacing,
             ) { page ->
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant),
-                ) {
+                // 페이지 Box는 clip하지 않아 SpeechBubble이 이미지 라운드 밖으로 나갈 수 있다.
+                // 라운드 clip은 Image / 딤 오버레이에만 적용한다.
+                Box(modifier = Modifier.fillMaxSize()) {
                     Image(
                         painter = painterResource(GuideStepImages[page]),
                         contentDescription = stringResource(
                             R.string.onboarding_add_to_favorite_guide_step_image_content_description,
                             page + 1,
                         ),
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .clip(RoundedCornerShape(GuideImageCornerRadius))
+                            .background(MaterialTheme.colorScheme.surfaceVariant),
                         contentScale = ContentScale.Crop,
                     )
-                    GuideTouchPositions.getOrNull(page)?.let { (xFraction, yFraction) ->
-                        GuideTouchIcon(
-                            modifier = Modifier.align(
-                                BiasAlignment(
-                                    horizontalBias = xFraction * 2f - 1f,
-                                    verticalBias = yFraction * 2f - 1f,
-                                ),
-                            ),
+                    GuideTouchHighlights.getOrNull(page)?.let { highlight ->
+                        GuideTouchHighlight(
+                            xFraction = highlight.xFraction,
+                            yFraction = highlight.yFraction,
+                            bubbleText = stringResource(highlight.bubbleTextResId),
                         )
                     }
                 }
@@ -250,17 +272,60 @@ private fun AddToFavoriteGuideStepDescription(
 }
 
 @Composable
-private fun GuideTouchIcon(
+private fun GuideTouchHighlight(
+    xFraction: Float,
+    yFraction: Float,
+    bubbleText: String,
     modifier: Modifier = Modifier,
 ) {
-    Box(
-        modifier = modifier
-            .size(GuideTouchIconSize)
-            .background(
-                color = RecapOnboardingBlue.copy(alpha = GuideTouchIconAlpha),
-                shape = CircleShape,
-            ),
-    )
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val density = LocalDensity.current
+        val holeDiameterPx = with(density) { GuideTouchHoleSize.toPx() }
+        val placeBubbleBelow = yFraction <= GuideBubbleBelowMaxYFraction
+        var bubbleSize by remember { mutableStateOf(IntSize.Zero) }
+
+        Canvas(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(RoundedCornerShape(GuideImageCornerRadius)),
+        ) {
+            val holeRadius = holeDiameterPx / 2f
+            val center = Offset(
+                x = size.width * xFraction,
+                y = size.height * yFraction,
+            )
+            val overlayPath = Path().apply {
+                fillType = PathFillType.EvenOdd
+                addRect(Rect(Offset.Zero, size))
+                addOval(Rect(center = center, radius = holeRadius))
+            }
+            drawPath(
+                path = overlayPath,
+                color = Black.copy(alpha = GuideOverlayAlpha),
+            )
+        }
+
+        RecapSpeechBubble(
+            text = bubbleText,
+            arrowDirection = RecapSpeechBubbleArrowDirection.None,
+            floatingEnabled = false,
+            modifier = Modifier
+                .onSizeChanged { bubbleSize = it }
+                .offset {
+                    val holeCenterX = constraints.maxWidth * xFraction
+                    val holeCenterY = constraints.maxHeight * yFraction
+                    val holeRadius = holeDiameterPx / 2f
+                    val overlapPx = bubbleSize.height * GuideBubbleOverlapFraction
+                    val x = (holeCenterX - bubbleSize.width / 2f).roundToInt()
+                    val y = if (placeBubbleBelow) {
+                        (holeCenterY + holeRadius - overlapPx).roundToInt()
+                    } else {
+                        (holeCenterY - holeRadius - bubbleSize.height + overlapPx).roundToInt()
+                    }
+                    IntOffset(x = x, y = y)
+                },
+        )
+    }
 }
 
 @Composable
