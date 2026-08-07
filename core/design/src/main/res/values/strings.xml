@@ -533,6 +533,7 @@
     <string name="screenshot_detail_more_content_description">더보기</string>
     <string name="screenshot_detail_fullscreen_content_description">전체화면으로 보기</string>
     <string name="screenshot_organized_date_format">%1$s 정리</string>
+    <string name="screenshot_detail_organized_date_format">정리됨 %1$s</string>
     <string name="screenshot_body_empty">본문이 없습니다.</string>
     <string name="screenshot_detail_ai_disclaimer">AI가 생성한 정보예요. 일부 내용이 정확하지 않을 수 있어요.</string>
     <string name="screenshot_image_load_error">이미지를 불러오지 못했어요.</string>

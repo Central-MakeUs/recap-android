@@ -1,6 +1,7 @@
 package com.chalkak.recap.feature.screenshot
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -51,6 +54,7 @@ import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray100
+import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
@@ -58,6 +62,7 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption3
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
+import com.chalkak.recap.core.design.theme.White
 
 @Composable
 fun ScreenshotEditScreen(
@@ -317,18 +322,41 @@ private fun ScreenshotEditImagePreview(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            ScreenshotIconButton(
-                iconResId = R.drawable.ic_fullscreen_24,
+            ScreenshotEditFullscreenChipButton(
+                enabled = !showPlaceholder,
                 contentDescription = stringResource(
                     R.string.screenshot_detail_fullscreen_content_description,
                 ),
-                onClick = onOpenFullscreen,
-                enabled = !showPlaceholder,
-                tint = RecapGray900,
-                outlined = true,
-                handleClick = false,
             )
         }
+    }
+}
+
+/** Temporary outlined fullscreen chip. Kept private until Edit refactor. */
+@Composable
+private fun ScreenshotEditFullscreenChipButton(
+    contentDescription: String,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(ScreenshotEditTokens.FullscreenChipCornerRadius)
+    Box(
+        modifier = modifier
+            .size(ScreenshotEditTokens.FullscreenChipSize)
+            .background(color = White, shape = shape)
+            .border(
+                width = ScreenshotEditTokens.FullscreenChipBorderWidth,
+                color = RecapGray200,
+                shape = shape,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_fullscreen_24),
+            contentDescription = contentDescription,
+            tint = if (enabled) RecapGray900 else RecapGray900.copy(alpha = 0.38f),
+            modifier = Modifier.size(ScreenshotEditTokens.FullscreenChipIconSize),
+        )
     }
 }
 
@@ -397,4 +425,8 @@ private object ScreenshotEditTokens {
     val EditImagePreviewCornerRadius = 12.dp
     val TextActionMinSize = 46.dp
     val ScrollBottomPadding = 16.dp
+    val FullscreenChipSize = 21.dp
+    val FullscreenChipIconSize = 13.5.dp
+    val FullscreenChipCornerRadius = 2.dp
+    val FullscreenChipBorderWidth = 0.5.dp
 }
