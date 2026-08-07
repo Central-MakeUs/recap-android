@@ -1,15 +1,24 @@
 package com.chalkak.recap.feature.screenshot
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -17,7 +26,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.shadow.Shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -25,8 +38,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.image.RecapPinchZoomAsyncImage
+import com.chalkak.recap.core.design.theme.Black
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
+import com.chalkak.recap.core.design.theme.RecapBackground
+import com.chalkak.recap.core.design.theme.RecapGray100
+import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapImagePlaceholderBackground
 
 @Composable
 fun ScreenshotFullscreenScreen(
@@ -35,48 +52,125 @@ fun ScreenshotFullscreenScreen(
     modifier: Modifier = Modifier,
 ) {
     var imageLoadFailed by remember(imageModel) { mutableStateOf(false) }
-    val showError = imageModel == null || imageLoadFailed
-    val closeInteractionSource = remember { MutableInteractionSource() }
+    val showPlaceholder = imageModel == null || imageLoadFailed
+    val imageShape = RoundedCornerShape(ScreenshotFullscreenTokens.ImageCornerRadius)
+    val imageDropShadow = Shadow(
+        radius = ScreenshotFullscreenTokens.ImageShadowBlurRadius,
+        color = Black.copy(alpha = ScreenshotFullscreenTokens.ImageShadowAlpha),
+    )
 
     Surface(
         modifier = modifier.fillMaxSize(),
-        color = Color.Black,
+        color = RecapBackground,
     ) {
         Box(modifier = Modifier.fillMaxSize()) {
-            if (showError) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = stringResource(R.string.screenshot_image_load_error),
-                        style = RecapBody1,
-                        color = Color.White,
-                        modifier = Modifier.padding(ScreenshotTokens.HorizontalPadding),
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .statusBarsPadding()
+                    .navigationBarsPadding(),
+            ) {
+                if (showPlaceholder) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(
+                                start = ScreenshotFullscreenTokens.ImageEdgePadding,
+                                top = ScreenshotFullscreenTokens.TopBarHeight,
+                                end = ScreenshotFullscreenTokens.ImageEdgePadding,
+                                bottom = ScreenshotFullscreenTokens.ImageEdgePadding,
+                            )
+                            .dropShadow(shape = imageShape, shadow = imageDropShadow),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .clip(imageShape)
+                                .background(RecapImagePlaceholderBackground)
+                                .border(
+                                    width = ScreenshotFullscreenTokens.ImageBorderWidth,
+                                    color = RecapGray100,
+                                    shape = imageShape,
+                                ),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.recap_placeholder_1),
+                                contentDescription = stringResource(
+                                    R.string.screenshot_image_placeholder_content_description,
+                                ),
+                                modifier = Modifier.size(width = 24.dp, height = 21.dp),
+                            )
+                        }
+                    }
+                } else {
+                    RecapPinchZoomAsyncImage(
+                        model = imageModel,
+                        contentDescription = stringResource(
+                            R.string.screenshot_image_placeholder_content_description,
+                        ),
+                        contentPadding = PaddingValues(
+                            start = ScreenshotFullscreenTokens.ImageEdgePadding,
+                            top = ScreenshotFullscreenTokens.TopBarHeight,
+                            end = ScreenshotFullscreenTokens.ImageEdgePadding,
+                            bottom = ScreenshotFullscreenTokens.ImageEdgePadding,
+                        ),
+                        shape = imageShape,
+                        borderWidth = ScreenshotFullscreenTokens.ImageBorderWidth,
+                        borderColor = RecapGray100,
+                        dropShadow = imageDropShadow,
+                        onError = { imageLoadFailed = true },
                     )
                 }
-            } else {
-                RecapPinchZoomAsyncImage(
-                    model = imageModel,
-                    contentDescription = stringResource(
-                        R.string.screenshot_image_placeholder_content_description,
-                    ),
-                    modifier = Modifier.fillMaxSize(),
-                    onError = { imageLoadFailed = true },
-                )
             }
 
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(ScreenshotFullscreenTokens.TopGradientHeightFraction)
+                    .align(Alignment.TopCenter)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Black.copy(alpha = ScreenshotFullscreenTokens.TopGradientStartAlpha),
+                                Color.Transparent,
+                            ),
+                        ),
+                    ),
+            )
+
+            ScreenshotFullscreenTopBar(onNavigateBack = onNavigateBack)
+        }
+    }
+}
+
+@Composable
+private fun ScreenshotFullscreenTopBar(
+    onNavigateBack: () -> Unit,
+) {
+    val closeInteractionSource = remember { MutableInteractionSource() }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .statusBarsPadding()
+            .height(ScreenshotFullscreenTokens.TopBarHeight),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(ScreenshotFullscreenTokens.TopBarPadding),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Icon(
                 painter = painterResource(R.drawable.ic_close_24),
                 contentDescription = stringResource(
                     R.string.screenshot_fullscreen_close_content_description,
                 ),
-                tint = Color.White,
+                tint = RecapGray900,
                 modifier = Modifier
-                    .statusBarsPadding()
-                    .align(Alignment.TopStart)
-                    .padding(horizontal = ScreenshotTokens.OverlayHorizontalPadding)
-                    .size(24.dp)
+                    .size(ScreenshotFullscreenTokens.TopBarIconSize)
                     .clickable(
                         interactionSource = closeInteractionSource,
                         indication = null,
@@ -86,6 +180,19 @@ fun ScreenshotFullscreenScreen(
             )
         }
     }
+}
+
+private object ScreenshotFullscreenTokens {
+    val TopBarHeight = 60.dp
+    val TopBarPadding = 16.dp
+    val TopBarIconSize = 24.dp
+    val ImageCornerRadius = 10.dp
+    val ImageBorderWidth = 0.5.dp
+    val ImageEdgePadding = 30.dp
+    val ImageShadowBlurRadius = 16.dp
+    const val ImageShadowAlpha = 0.13f
+    const val TopGradientHeightFraction = 0.15f
+    const val TopGradientStartAlpha = 0.4f
 }
 
 @Preview(name = "Screenshot Fullscreen", showBackground = true, widthDp = 360, heightDp = 640)
