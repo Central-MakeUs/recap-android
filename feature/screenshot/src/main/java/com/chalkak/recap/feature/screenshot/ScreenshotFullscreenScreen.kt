@@ -3,6 +3,11 @@ package com.chalkak.recap.feature.screenshot
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -43,6 +48,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.animation.RecapNavigationMotion
 import com.chalkak.recap.core.design.component.image.RecapPinchZoomAsyncImage
 import com.chalkak.recap.core.design.theme.Black
 import com.chalkak.recap.core.design.theme.RECAPTheme
@@ -63,10 +69,6 @@ fun ScreenshotFullscreenScreen(
     var imageLoadFailed by remember(imageModel) { mutableStateOf(false) }
     val showPlaceholder = imageModel == null || imageLoadFailed
     val imageShape = RoundedCornerShape(ScreenshotSharedImageCornerRadius)
-    val imageDropShadow = Shadow(
-        radius = ScreenshotFullscreenTokens.ImageShadowBlurRadius,
-        color = Black.copy(alpha = ScreenshotFullscreenTokens.ImageShadowAlpha),
-    )
     val sharedBoundsModifier = if (showPlaceholder) {
         Modifier
     } else {
@@ -101,6 +103,32 @@ fun ScreenshotFullscreenScreen(
         } else {
             ContentScale.Fit
         }
+    // Image dropShadow lives outside sharedBounds; keep it in parallel with morph.
+    val edgeChromeTargetAlpha = when {
+        sharedTransitionScope == null -> 1f
+        !hasCompletedSharedEntry && !isSharedTransitionActive -> 0f
+        isSharedTransitionActive && hasCompletedSharedEntry -> 0f
+        else -> 1f
+    }
+    val edgeChromeProgress by animateFloatAsState(
+        targetValue = edgeChromeTargetAlpha,
+        animationSpec = tween(
+            durationMillis = RecapNavigationMotion.SlideDurationMillis,
+            easing = FastOutSlowInEasing,
+        ),
+        label = "screenshotFullscreenEdgeChrome",
+    )
+    val imageDropShadow = Shadow(
+        radius = ScreenshotFullscreenTokens.ImageShadowBlurRadius,
+        color = Black.copy(
+            alpha = ScreenshotFullscreenTokens.ImageShadowAlpha * edgeChromeProgress,
+        ),
+    )
+    val topGradientChromeModifier =
+        Modifier.screenshotFullscreenTopGradientChrome(
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -176,10 +204,13 @@ fun ScreenshotFullscreenScreen(
                     .fillMaxWidth()
                     .fillMaxHeight(ScreenshotFullscreenTokens.TopGradientHeightFraction)
                     .align(Alignment.TopCenter)
+                    .then(topGradientChromeModifier)
                     .background(
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                Black.copy(alpha = ScreenshotFullscreenTokens.TopGradientStartAlpha),
+                                Black.copy(
+                                    alpha = ScreenshotFullscreenTokens.TopGradientStartAlpha,
+                                ),
                                 Color.Transparent,
                             ),
                         ),
@@ -187,6 +218,34 @@ fun ScreenshotFullscreenScreen(
             )
 
             ScreenshotFullscreenTopBar(onNavigateBack = onNavigateBack)
+        }
+    }
+}
+
+/**
+ * Lift the top vignette above the shared-image overlay and fade it with the
+ * destination enter/exit progress (otherwise it stays hidden under the morph
+ * and only appears after the shared transition ends).
+ */
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+private fun Modifier.screenshotFullscreenTopGradientChrome(
+    sharedTransitionScope: SharedTransitionScope?,
+    animatedVisibilityScope: AnimatedVisibilityScope?,
+): Modifier {
+    if (sharedTransitionScope == null || animatedVisibilityScope == null) return this
+    val fadeSpec = tween<Float>(
+        durationMillis = RecapNavigationMotion.SlideDurationMillis,
+        easing = FastOutSlowInEasing,
+    )
+    return with(sharedTransitionScope) {
+        with(animatedVisibilityScope) {
+            this@screenshotFullscreenTopGradientChrome
+                .renderInSharedTransitionScopeOverlay(zIndexInOverlay = 1f)
+                .animateEnterExit(
+                    enter = fadeIn(animationSpec = fadeSpec),
+                    exit = fadeOut(animationSpec = fadeSpec),
+                )
         }
     }
 }
