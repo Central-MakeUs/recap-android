@@ -25,10 +25,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.fadeOut
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -297,16 +295,16 @@ private fun ScreenshotEditImagePreview(
         )
     }
 
-    // Size on parent; shared frame is the visible board (chip stays outside shared bounds).
+    // Shared bounds on the frame that owns the chip so BottomEnd tracks morph.
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(ScreenshotEditTokens.EditImagePreviewHeight),
+            .height(ScreenshotEditTokens.EditImagePreviewHeight)
+            .then(sharedBoundsModifier),
     ) {
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .then(sharedBoundsModifier)
                 .clip(imageShape)
                 .border(
                     width = ScreenshotEditTokens.EditImagePreviewBorderWidth,
@@ -351,17 +349,8 @@ private fun ScreenshotEditImagePreview(
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .then(
-                    if (animatedVisibilityScope != null) {
-                        with(animatedVisibilityScope) {
-                            Modifier.animateEnterExit(
-                                enter = EnterTransition.None,
-                                exit = fadeOut(),
-                            )
-                        }
-                    } else {
-                        Modifier
-                    },
+                .screenshotFullscreenChipTransition(
+                    animatedVisibilityScope = animatedVisibilityScope,
                 )
                 .size(48.dp)
                 .clickable(

@@ -23,10 +23,8 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
-import androidx.compose.animation.fadeOut
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -420,17 +418,17 @@ private fun ScreenshotDetailHeroImage(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center,
     ) {
-        // Size on parent; shared frame is the visible board (chip stays outside shared bounds).
+        // Shared bounds on the frame that owns the chip so BottomEnd tracks morph.
         Box(
             modifier = Modifier
                 .padding(vertical = ScreenshotDetailTokens.HeroImageVerticalPadding)
                 .fillMaxWidth(ScreenshotDetailTokens.HeroImageWidthFraction)
-                .aspectRatio(ScreenshotDetailTokens.HeroImageAspectRatio),
+                .aspectRatio(ScreenshotDetailTokens.HeroImageAspectRatio)
+                .then(sharedBoundsModifier),
         ) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .then(sharedBoundsModifier)
                     .clip(imageShape)
                     .border(
                         width = ScreenshotDetailTokens.HeroImageBorderWidth,
@@ -476,17 +474,8 @@ private fun ScreenshotDetailHeroImage(
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .then(
-                        if (animatedVisibilityScope != null) {
-                            with(animatedVisibilityScope) {
-                                Modifier.animateEnterExit(
-                                    enter = EnterTransition.None,
-                                    exit = fadeOut(),
-                                )
-                            }
-                        } else {
-                            Modifier
-                        },
+                    .screenshotFullscreenChipTransition(
+                        animatedVisibilityScope = animatedVisibilityScope,
                     )
                     .size(ScreenshotDetailTokens.FullscreenButtonSize)
                     .clickable(

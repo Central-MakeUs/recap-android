@@ -6,6 +6,8 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.RemeasureToBounds
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -42,6 +44,25 @@ internal fun Modifier.screenshotSharedImageBounds(
             exit = ExitTransition.None,
             resizeMode = RemeasureToBounds,
             clipInOverlayDuringTransition = OverlayClip(shape),
+        )
+    }
+}
+
+/**
+ * Fades the Detail/Edit fullscreen chip while it rides the shared image frame
+ * (apply [screenshotSharedImageBounds] on the chip's parent so BottomEnd tracks
+ * the morphing bounds).
+ */
+@OptIn(ExperimentalSharedTransitionApi::class)
+@Composable
+internal fun Modifier.screenshotFullscreenChipTransition(
+    animatedVisibilityScope: AnimatedVisibilityScope?,
+): Modifier {
+    if (animatedVisibilityScope == null) return this
+    return with(animatedVisibilityScope) {
+        this@screenshotFullscreenChipTransition.animateEnterExit(
+            enter = fadeIn(),
+            exit = fadeOut(),
         )
     }
 }
