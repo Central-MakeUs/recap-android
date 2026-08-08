@@ -1,5 +1,8 @@
 package com.chalkak.recap.feature.screenshot
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +23,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,7 +34,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.dropShadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -45,19 +51,56 @@ import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapImagePlaceholderBackground
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ScreenshotFullscreenScreen(
     imageModel: Any?,
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
 ) {
     var imageLoadFailed by remember(imageModel) { mutableStateOf(false) }
     val showPlaceholder = imageModel == null || imageLoadFailed
-    val imageShape = RoundedCornerShape(ScreenshotFullscreenTokens.ImageCornerRadius)
+    val imageShape = RoundedCornerShape(ScreenshotSharedImageCornerRadius)
     val imageDropShadow = Shadow(
         radius = ScreenshotFullscreenTokens.ImageShadowBlurRadius,
         color = Black.copy(alpha = ScreenshotFullscreenTokens.ImageShadowAlpha),
     )
+    val sharedBoundsModifier = if (showPlaceholder) {
+        Modifier
+    } else {
+        Modifier.screenshotSharedImageBounds(
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
+    }
+    // Hide destination Fit frame for the pre-match frame, then keep Crop until the
+    // shared transition finishes so the resting Fit layout never flashes early.
+    var hasCompletedSharedEntry by remember {
+        mutableStateOf(sharedTransitionScope == null)
+    }
+    val isSharedTransitionActive = sharedTransitionScope?.isTransitionActive == true
+    LaunchedEffect(isSharedTransitionActive) {
+        if (!isSharedTransitionActive && sharedTransitionScope != null) {
+            hasCompletedSharedEntry = true
+        }
+    }
+    val imageAlpha =
+        if (sharedTransitionScope != null &&
+            !isSharedTransitionActive &&
+            !hasCompletedSharedEntry
+        ) {
+            0f
+        } else {
+            1f
+        }
+    val imageContentScale =
+        if (!hasCompletedSharedEntry || isSharedTransitionActive) {
+            ContentScale.Crop
+        } else {
+            ContentScale.Fit
+        }
 
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -110,6 +153,7 @@ fun ScreenshotFullscreenScreen(
                         contentDescription = stringResource(
                             R.string.screenshot_image_placeholder_content_description,
                         ),
+                        modifier = Modifier.graphicsLayer { alpha = imageAlpha },
                         contentPadding = PaddingValues(
                             start = ScreenshotFullscreenTokens.ImageEdgePadding,
                             top = ScreenshotFullscreenTokens.TopBarHeight,
@@ -120,6 +164,8 @@ fun ScreenshotFullscreenScreen(
                         borderWidth = ScreenshotFullscreenTokens.ImageBorderWidth,
                         borderColor = RecapGray100,
                         dropShadow = imageDropShadow,
+                        imageFrameModifier = sharedBoundsModifier,
+                        contentScale = imageContentScale,
                         onError = { imageLoadFailed = true },
                     )
                 }
@@ -186,7 +232,6 @@ private object ScreenshotFullscreenTokens {
     val TopBarHeight = 60.dp
     val TopBarPadding = 16.dp
     val TopBarIconSize = 24.dp
-    val ImageCornerRadius = 10.dp
     val ImageBorderWidth = 0.5.dp
     val ImageEdgePadding = 30.dp
     val ImageShadowBlurRadius = 16.dp

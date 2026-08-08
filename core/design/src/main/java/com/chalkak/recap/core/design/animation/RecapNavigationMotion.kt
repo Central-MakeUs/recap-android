@@ -5,6 +5,8 @@ import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
@@ -37,6 +39,16 @@ object RecapNavigationMotion {
 
     fun none(): ContentTransform =
         EnterTransition.None togetherWith ExitTransition.None
+
+    private val committedFadeSpec = tween<Float>(
+        durationMillis = SlideDurationMillis,
+        easing = FastOutSlowInEasing,
+    )
+
+    /** Fullscreen overlay-style push/pop. Keeps underlying slide motion for other destinations. */
+    fun fade(): ContentTransform =
+        fadeIn(animationSpec = committedFadeSpec) togetherWith
+            fadeOut(animationSpec = committedFadeSpec)
 
     fun forward(): ContentTransform =
         slideInHorizontally(

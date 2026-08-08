@@ -32,6 +32,11 @@ class RecapNavigationMotionTest {
         assertTrue(RecapNavigationMotion.none().isNoneTransform())
     }
 
+    @Test
+    fun `fade is not a none transform`() {
+        assertFalse(RecapNavigationMotion.fade().isNoneTransform())
+    }
+
     private fun ContentTransform.isNoneTransform(): Boolean =
         targetContentEnter == EnterTransition.None && initialContentExit == ExitTransition.None
 }

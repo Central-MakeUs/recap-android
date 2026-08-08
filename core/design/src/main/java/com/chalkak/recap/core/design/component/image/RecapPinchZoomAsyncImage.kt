@@ -38,6 +38,9 @@ import coil3.compose.AsyncImage
  * 스크린샷 확대 뷰 공통 정책:
  * - 초기 표시는 가용 영역 대비 [contentPadding] 또는 [edgeInsetFraction] 여백을 둔 Fit
  * - 두 손가락 핀치/팬으로 [MinScale]~[MaxScale] 확대
+ *
+ * Modifier order for shared transitions (docs): size → [imageFrameModifier] → clip → border.
+ * [dropShadow] stays on an outer wrapper so it does not inflate shared bounds.
  */
 @Composable
 fun RecapPinchZoomAsyncImage(
@@ -51,6 +54,9 @@ fun RecapPinchZoomAsyncImage(
     borderWidth: Dp = Dp.Unspecified,
     borderColor: Color = Color.Unspecified,
     dropShadow: Shadow? = null,
+    /** Applied after size constraints and before clip/border (e.g. sharedBounds). */
+    imageFrameModifier: Modifier = Modifier,
+    contentScale: ContentScale = ContentScale.Fit,
     onTap: (() -> Unit)? = null,
     onError: (() -> Unit)? = null,
 ) {
@@ -93,63 +99,20 @@ fun RecapPinchZoomAsyncImage(
             val clipShape = shape ?: RectangleShape
             val hasBorder = borderWidth != Dp.Unspecified && borderColor != Color.Unspecified
 
-            // dropShadow must stay on an unclipped outer wrapper; clip only the image content.
+            // dropShadow outside shared bounds so it does not inflate measured frame.
             Box(
-                modifier = imageSizeModifier
-                    .then(
-                        if (dropShadow != null && shape != null) {
-                            Modifier.dropShadow(shape = clipShape, shadow = dropShadow)
-                        } else {
-                            Modifier
-                        },
-                    )
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        translationX = offset.x
-                        translationY = offset.y
-                    }
-                    .then(
-                        if (onTap != null) {
-                            Modifier.pointerInput(onTap) {
-                                detectTapGestures(onTap = { onTap() })
-                            }
-                        } else {
-                            Modifier
-                        },
-                    )
-                    .pointerInput(model) {
-                        detectTransformGestures { _, pan, zoom, _ ->
-                            val newScale = (scale * zoom).coerceIn(
-                                RecapPinchZoomImageTokens.MinScale,
-                                RecapPinchZoomImageTokens.MaxScale,
-                            )
-                            scale = newScale
-                            if (newScale > RecapPinchZoomImageTokens.MinScale) {
-                                offset += pan
-                            } else {
-                                offset = Offset.Zero
-                            }
-                        }
-                    },
-            ) {
-                AsyncImage(
-                    model = model,
-                    contentDescription = contentDescription,
-                    contentScale = ContentScale.Fit,
-                    onSuccess = { state ->
-                        val size = state.painter.intrinsicSize
-                        if (size.isSpecified && size.height > 0f) {
-                            imageAspectRatio = size.width / size.height
-                        }
-                    },
-                    onError = if (onError != null) {
-                        { onError() }
+                modifier = Modifier.then(
+                    if (dropShadow != null && shape != null) {
+                        Modifier.dropShadow(shape = clipShape, shadow = dropShadow)
                     } else {
-                        null
+                        Modifier
                     },
-                    modifier = Modifier
-                        .fillMaxSize()
+                ),
+            ) {
+                // Docs order: size → sharedBounds → clip → border → content
+                Box(
+                    modifier = imageSizeModifier
+                        .then(imageFrameModifier)
                         .then(if (shape != null) Modifier.clip(clipShape) else Modifier)
                         .then(
                             if (hasBorder && shape != null) {
@@ -161,8 +124,55 @@ fun RecapPinchZoomAsyncImage(
                             } else {
                                 Modifier
                             },
-                        ),
-                )
+                        )
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                            translationX = offset.x
+                            translationY = offset.y
+                        }
+                        .then(
+                            if (onTap != null) {
+                                Modifier.pointerInput(onTap) {
+                                    detectTapGestures(onTap = { onTap() })
+                                }
+                            } else {
+                                Modifier
+                            },
+                        )
+                        .pointerInput(model) {
+                            detectTransformGestures { _, pan, zoom, _ ->
+                                val newScale = (scale * zoom).coerceIn(
+                                    RecapPinchZoomImageTokens.MinScale,
+                                    RecapPinchZoomImageTokens.MaxScale,
+                                )
+                                scale = newScale
+                                if (newScale > RecapPinchZoomImageTokens.MinScale) {
+                                    offset += pan
+                                } else {
+                                    offset = Offset.Zero
+                                }
+                            }
+                        },
+                ) {
+                    AsyncImage(
+                        model = model,
+                        contentDescription = contentDescription,
+                        contentScale = contentScale,
+                        onSuccess = { state ->
+                            val size = state.painter.intrinsicSize
+                            if (size.isSpecified && size.height > 0f) {
+                                imageAspectRatio = size.width / size.height
+                            }
+                        },
+                        onError = if (onError != null) {
+                            { onError() }
+                        } else {
+                            null
+                        },
+                        modifier = Modifier.fillMaxSize(),
+                    )
+                }
             }
         }
     }

@@ -24,6 +24,11 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.animation.fadeOut
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -54,6 +59,7 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapError
+import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray900
@@ -64,6 +70,7 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption3
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 import com.chalkak.recap.core.design.theme.White
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ScreenshotEditScreen(
     content: ScreenshotUiState.Content,
@@ -73,6 +80,9 @@ fun ScreenshotEditScreen(
     onChangeType: () -> Unit,
     onOpenFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    enableSharedImageBounds: Boolean = false,
 ) {
     val draft = content.editDraft
     val canDone = draft.isTitleValid() &&
@@ -83,7 +93,7 @@ fun ScreenshotEditScreen(
         storedImagePath = content.card.imageRefs.storedImagePath,
         sourceImageUri = content.card.imageRefs.sourceImageUri,
         thumbnailPath = content.card.imageRefs.thumbnailPath,
-        priority = ScreenshotImageResolvePriority.Preview,
+        priority = ScreenshotImageResolvePriority.Fullscreen,
     )
 
     val navigationBarBottomPadding = WindowInsets.navigationBars
@@ -129,6 +139,9 @@ fun ScreenshotEditScreen(
                 ScreenshotEditImagePreview(
                     imageModel = imageModel,
                     onOpenFullscreen = onOpenFullscreen,
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    enableSharedImageBounds = enableSharedImageBounds,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -262,58 +275,94 @@ private fun ScreenshotTextAction(
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun ScreenshotEditImagePreview(
     imageModel: Any?,
     onOpenFullscreen: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope?,
+    animatedVisibilityScope: AnimatedVisibilityScope?,
+    enableSharedImageBounds: Boolean,
 ) {
     var imageLoadFailed by remember(imageModel) { mutableStateOf(false) }
     val showPlaceholder = imageModel == null || imageLoadFailed
-
+    val imageShape = RoundedCornerShape(ScreenshotSharedImageCornerRadius)
     val imageInteractionSource = remember { MutableInteractionSource() }
+    val sharedBoundsModifier = if (showPlaceholder || !enableSharedImageBounds) {
+        Modifier
+    } else {
+        Modifier.screenshotSharedImageBounds(
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
+    }
 
+    // Size on parent; shared frame is the visible board (chip stays outside shared bounds).
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(ScreenshotEditTokens.EditImagePreviewHeight)
-            .clip(RoundedCornerShape(ScreenshotEditTokens.EditImagePreviewCornerRadius))
-            .clickable(
-                enabled = !showPlaceholder,
-                interactionSource = imageInteractionSource,
-                indication = null,
-                role = Role.Button,
-                onClick = onOpenFullscreen,
-            ),
+            .height(ScreenshotEditTokens.EditImagePreviewHeight),
     ) {
-        if (showPlaceholder) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(RecapImagePlaceholderBackground),
-                contentAlignment = Alignment.Center,
-            ) {
-                Image(
-                    painter = painterResource(R.drawable.recap_placeholder_1),
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(sharedBoundsModifier)
+                .clip(imageShape)
+                .border(
+                    width = ScreenshotEditTokens.EditImagePreviewBorderWidth,
+                    color = RecapGray100,
+                    shape = imageShape,
+                )
+                .clickable(
+                    enabled = !showPlaceholder,
+                    interactionSource = imageInteractionSource,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onOpenFullscreen,
+                ),
+        ) {
+            if (showPlaceholder) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(RecapImagePlaceholderBackground),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.recap_placeholder_1),
+                        contentDescription = stringResource(
+                            R.string.screenshot_image_placeholder_content_description,
+                        ),
+                        modifier = Modifier.size(width = 24.dp, height = 21.dp),
+                    )
+                }
+            } else {
+                AsyncImage(
+                    model = imageModel,
                     contentDescription = stringResource(
                         R.string.screenshot_image_placeholder_content_description,
                     ),
-                    modifier = Modifier.size(width = 24.dp, height = 21.dp),
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize(),
+                    onError = { imageLoadFailed = true },
                 )
             }
-        } else {
-            AsyncImage(
-                model = imageModel,
-                contentDescription = stringResource(
-                    R.string.screenshot_image_placeholder_content_description,
-                ),
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize(),
-                onError = { imageLoadFailed = true },
-            )
         }
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
+                .then(
+                    if (animatedVisibilityScope != null) {
+                        with(animatedVisibilityScope) {
+                            Modifier.animateEnterExit(
+                                enter = EnterTransition.None,
+                                exit = fadeOut(),
+                            )
+                        }
+                    } else {
+                        Modifier
+                    },
+                )
                 .size(48.dp)
                 .clickable(
                     enabled = !showPlaceholder,
@@ -422,7 +471,7 @@ private fun ScreenshotEditDiscardConfirmPreview() {
 private object ScreenshotEditTokens {
     val EditTopBarHeight = 56.dp
     val EditImagePreviewHeight = 180.dp
-    val EditImagePreviewCornerRadius = 12.dp
+    val EditImagePreviewBorderWidth = 0.5.dp
     val TextActionMinSize = 46.dp
     val ScrollBottomPadding = 16.dp
     val FullscreenChipSize = 21.dp
