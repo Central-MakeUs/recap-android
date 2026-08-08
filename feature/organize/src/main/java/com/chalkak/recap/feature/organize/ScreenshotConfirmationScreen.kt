@@ -1,6 +1,7 @@
 package com.chalkak.recap.feature.organize
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -53,6 +54,8 @@ import coil3.compose.AsyncImage
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapGray100
+import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray900
@@ -206,10 +209,17 @@ private fun ScreenshotConfirmationGridItem(
     onRemoveClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val shape = RoundedCornerShape(ScreenshotConfirmationTokens.ItemCornerRadius)
+
     Box(
         modifier = modifier
             .aspectRatio(1f)
-            .clip(RoundedCornerShape(ScreenshotConfirmationTokens.ItemCornerRadius)),
+            .clip(shape)
+            .border(
+                width = ScreenshotConfirmationTokens.ItemBorderWidth,
+                color = RecapGray100,
+                shape = shape,
+            ),
     ) {
         AsyncImage(
             model = screenshot.uri.toUri(),
@@ -267,7 +277,7 @@ private fun ScreenshotConfirmationAddItem(
     modifier: Modifier = Modifier,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
-    val borderColor = RecapGray300
+    val borderColor = RecapGray200
     val shape = RoundedCornerShape(ScreenshotConfirmationTokens.ItemCornerRadius)
 
     Box(
@@ -306,7 +316,7 @@ private fun ScreenshotConfirmationAddItem(
             painter = painterResource(R.drawable.ic_plus_32),
             contentDescription = stringResource(R.string.organize_add_more_content_description),
             modifier = Modifier.size(24.dp),
-            tint = RecapGray300,
+            tint = RecapGray200,
         )
     }
 }
@@ -319,6 +329,7 @@ private object ScreenshotConfirmationTokens {
     val GridVerticalPadding = 12.dp
     val GridSpacing = 4.dp
     val ItemCornerRadius = 10.dp
+    val ItemBorderWidth = 0.5.dp
     val RemoveButtonSize = 16.dp
     val RemoveButtonPadding = 6.dp
     val RemoveButtonCornerRadius = 50
