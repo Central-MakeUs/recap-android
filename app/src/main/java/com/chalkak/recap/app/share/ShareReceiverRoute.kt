@@ -39,7 +39,7 @@ import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.feature.organize.MAX_SELECTION_COUNT
 import com.chalkak.recap.feature.organize.OrganizeRoute
-import com.chalkak.recap.feature.organize.screen.UnsupportedShareScreen
+import com.chalkak.recap.feature.organize.UnsupportedShareScreen
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState

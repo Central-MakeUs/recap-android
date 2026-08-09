@@ -28,10 +28,11 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.feature.organize.screen.OrganizeFailedContent
-import com.chalkak.recap.feature.organize.screen.OrganizePartialFailedContent
-import com.chalkak.recap.feature.organize.screen.OrganizeProgressContent
-import com.chalkak.recap.feature.organize.screen.OrganizeSuccessContent
+import com.chalkak.recap.feature.organize.content.OrganizeFailedContent
+import com.chalkak.recap.feature.organize.content.OrganizePartialFailedContent
+import com.chalkak.recap.feature.organize.content.OrganizeProgressContent
+import com.chalkak.recap.feature.organize.content.OrganizeSuccessBackgroundGradient
+import com.chalkak.recap.feature.organize.content.OrganizeSuccessContent
 
 @Composable
 fun OrganizeAnalysisStatusRoute(
@@ -39,6 +40,7 @@ fun OrganizeAnalysisStatusRoute(
     onCancelClick: () -> Unit,
     onDismissClick: () -> Unit,
     modifier: Modifier = Modifier,
+    notificationsEnabled: Boolean? = null,
     organizeCompleteNotificationEnabled: Boolean? = null,
     onOrganizeCompleteNotificationEnabledChange: (Boolean) -> Unit = {},
 ) {
@@ -51,6 +53,7 @@ fun OrganizeAnalysisStatusRoute(
                 onCancelClick = onCancelClick,
                 onDismissClick = onDismissClick,
                 modifier = modifier,
+                notificationsEnabled = notificationsEnabled,
             )
             OrganizeProgressNotificationPermissionEffect(
                 organizeCompleteNotificationEnabled = organizeCompleteNotificationEnabled,
@@ -67,6 +70,7 @@ private fun OrganizeAnalysisStatusScaffold(
     onCancelClick: () -> Unit,
     onDismissClick: () -> Unit,
     modifier: Modifier = Modifier,
+    notificationsEnabled: Boolean? = null,
 ) {
     val buttonModel = uiState.toButtonModel()
     val currentOnCancelClick by rememberUpdatedState(onCancelClick)
@@ -76,113 +80,125 @@ private fun OrganizeAnalysisStatusScaffold(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .systemBarsPadding()
-                .padding(horizontal = OrganizeAnalysisStatusTokens.HorizontalPadding),
-        ) {
-            AnimatedContent(
-                targetState = uiState,
-                modifier = Modifier.fillMaxSize(),
-                transitionSpec = {
-                    fadeIn(
-                        animationSpec = tween(
-                            durationMillis = OrganizeAnalysisStatusTokens.FadeMs,
-                            delayMillis = OrganizeAnalysisStatusTokens.FadeMs,
-                        ),
-                    ) togetherWith fadeOut(
-                        animationSpec = tween(
-                            durationMillis = OrganizeAnalysisStatusTokens.FadeMs,
-                        ),
-                    )
-                },
-                contentKey = { state -> state.contentKey() },
-                label = "organize_analysis_status_content",
-            ) { state ->
-                Box(modifier = Modifier.fillMaxSize()) {
-                    when (state) {
-                        OrganizeAnalysisStatusUiState.Hidden -> Unit
+        Box(modifier = Modifier.fillMaxSize()) {
+            if (uiState is OrganizeAnalysisStatusUiState.Success) {
+                OrganizeSuccessBackgroundGradient(
+                    modifier = Modifier.align(Alignment.BottomCenter),
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .systemBarsPadding()
+                    .padding(horizontal = OrganizeAnalysisStatusTokens.HorizontalPadding),
+            ) {
+                AnimatedContent(
+                    targetState = uiState,
+                    modifier = Modifier.fillMaxSize(),
+                    transitionSpec = {
+                        fadeIn(
+                            animationSpec = tween(
+                                durationMillis = OrganizeAnalysisStatusTokens.FadeMs,
+                                delayMillis = OrganizeAnalysisStatusTokens.FadeMs,
+                            ),
+                        ) togetherWith fadeOut(
+                            animationSpec = tween(
+                                durationMillis = OrganizeAnalysisStatusTokens.FadeMs,
+                            ),
+                        )
+                    },
+                    contentKey = { state -> state.contentKey() },
+                    label = "organize_analysis_status_content",
+                ) { state ->
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        when (state) {
+                            OrganizeAnalysisStatusUiState.Hidden -> Unit
 
-                        is OrganizeAnalysisStatusUiState.Progress -> {
-                            OrganizeProgressContent(
-                                progress = state.progress,
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .fillMaxWidth()
-                                    .offset(y = OrganizeAnalysisStatusTokens.ProgressContentOffsetY),
-                            )
-                        }
+                            is OrganizeAnalysisStatusUiState.Progress -> {
+                                OrganizeProgressContent(
+                                    progress = state.progress,
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .fillMaxWidth()
+                                        .offset(
+                                            y = OrganizeAnalysisStatusTokens.ProgressContentOffsetY,
+                                        ),
+                                    notificationsEnabled = notificationsEnabled,
+                                )
+                            }
 
-                        is OrganizeAnalysisStatusUiState.Success -> {
-                            OrganizeSuccessContent(
-                                successCount = state.successCount,
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .fillMaxWidth()
-                                    .offset(y = OrganizeAnalysisStatusTokens.SuccessContentOffsetY),
-                            )
-                        }
+                            is OrganizeAnalysisStatusUiState.Success -> {
+                                OrganizeSuccessContent(
+                                    successCount = state.successCount,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                            }
 
-                        OrganizeAnalysisStatusUiState.Failed -> {
-                            OrganizeFailedContent(
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .fillMaxWidth()
-                                    .offset(y = OrganizeAnalysisStatusTokens.FailedContentOffsetY),
-                            )
-                        }
+                            OrganizeAnalysisStatusUiState.Failed -> {
+                                OrganizeFailedContent(
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .fillMaxWidth()
+                                        .offset(
+                                            y = OrganizeAnalysisStatusTokens.FailedContentOffsetY,
+                                        ),
+                                )
+                            }
 
-                        is OrganizeAnalysisStatusUiState.PartialFailed -> {
-                            OrganizePartialFailedContent(
-                                successCount = state.successCount,
-                                modifier = Modifier
-                                    .align(Alignment.Center)
-                                    .fillMaxWidth()
-                                    .offset(
-                                        y = OrganizeAnalysisStatusTokens.PartialFailedContentOffsetY,
-                                    ),
-                            )
+                            is OrganizeAnalysisStatusUiState.PartialFailed -> {
+                                OrganizePartialFailedContent(
+                                    successCount = state.successCount,
+                                    modifier = Modifier
+                                        .align(Alignment.Center)
+                                        .fillMaxWidth()
+                                        .offset(
+                                            y = OrganizeAnalysisStatusTokens
+                                                .PartialFailedContentOffsetY,
+                                        ),
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            AnimatedContent(
-                targetState = buttonModel,
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .padding(bottom = OrganizeAnalysisStatusTokens.BottomPadding),
-                transitionSpec = {
-                    fadeIn(
-                        animationSpec = tween(
-                            durationMillis = OrganizeAnalysisStatusTokens.FadeMs,
-                        ),
-                    ) togetherWith fadeOut(
-                        animationSpec = tween(
-                            durationMillis = OrganizeAnalysisStatusTokens.FadeMs,
-                        ),
+                AnimatedContent(
+                    targetState = buttonModel,
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .padding(bottom = OrganizeAnalysisStatusTokens.BottomPadding),
+                    transitionSpec = {
+                        fadeIn(
+                            animationSpec = tween(
+                                durationMillis = OrganizeAnalysisStatusTokens.FadeMs,
+                            ),
+                        ) togetherWith fadeOut(
+                            animationSpec = tween(
+                                durationMillis = OrganizeAnalysisStatusTokens.FadeMs,
+                            ),
+                        )
+                    },
+                    label = "organize_analysis_status_button",
+                ) { model ->
+                    RecapButton(
+                        text = stringResource(model.textRes),
+                        onClick = {
+                            if (model.style == OrganizeStatusButtonStyle.Secondary) {
+                                currentOnCancelClick()
+                            } else {
+                                currentOnDismissClick()
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = when (model.style) {
+                            OrganizeStatusButtonStyle.Secondary ->
+                                RecapButtonDefaults.secondaryColors()
+                            OrganizeStatusButtonStyle.Primary ->
+                                RecapButtonDefaults.primaryColors()
+                        },
+                        contentPadding = PaddingValues(vertical = 15.dp),
                     )
-                },
-                label = "organize_analysis_status_button",
-            ) { model ->
-                RecapButton(
-                    text = stringResource(model.textRes),
-                    onClick = {
-                        if (model.style == OrganizeStatusButtonStyle.Secondary) {
-                            currentOnCancelClick()
-                        } else {
-                            currentOnDismissClick()
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = when (model.style) {
-                        OrganizeStatusButtonStyle.Secondary -> RecapButtonDefaults.secondaryColors()
-                        OrganizeStatusButtonStyle.Primary -> RecapButtonDefaults.primaryColors()
-                    },
-                    contentPadding = PaddingValues(vertical = 15.dp),
-                )
+                }
             }
         }
     }
@@ -239,7 +255,6 @@ private object OrganizeAnalysisStatusTokens {
     val HorizontalPadding = 24.dp
     val BottomPadding = 24.dp
     val ProgressContentOffsetY = (-20).dp
-    val SuccessContentOffsetY = (-44).dp
     val FailedContentOffsetY = (-84).dp
     val PartialFailedContentOffsetY = (-45).dp
 }
@@ -257,6 +272,7 @@ private fun OrganizeAnalysisStatusRouteProgressPreview() {
             uiState = OrganizeAnalysisStatusUiState.Progress(progress = 0.65f),
             onCancelClick = {},
             onDismissClick = {},
+            notificationsEnabled = true,
         )
     }
 }

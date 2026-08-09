@@ -1,58 +1,47 @@
 package com.chalkak.recap.feature.onboarding.screen
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.airbnb.lottie.compose.LottieAnimation
+import com.airbnb.lottie.compose.LottieCompositionSpec
+import com.airbnb.lottie.compose.LottieConstants
+import com.airbnb.lottie.compose.animateLottieCompositionAsState
+import com.airbnb.lottie.compose.rememberLottieComposition
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.RecapLogo
 import com.chalkak.recap.core.design.component.RecapLogoAspectRatio
-import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 import com.chalkak.recap.feature.onboarding.OnboardingAction
 import com.chalkak.recap.feature.onboarding.OnboardingPreviewContainer
 import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
 import com.chalkak.recap.feature.onboarding.OnboardingUiState
+import com.chalkak.recap.feature.onboarding.R as OnboardingR
 import com.chalkak.recap.feature.onboarding.component.OnboardingBottomActions
 import com.chalkak.recap.feature.onboarding.component.StepHeader
 
 private val CharacterAspectRatio = 552f / 426f
 private val CharacterWidth = 148.dp
 private val ScreenHorizontalPadding = 24.dp
-private val GuideIconCardSize = 88.dp
-private val GuideIconSize = 48.dp
-private val GuideIconEdgeOverflow = 24.dp
-
-private val GuideIconResources = listOf(
-    R.drawable.onboarding_background_4,
-    R.drawable.onboarding_background_1,
-    R.drawable.onboarding_background_3,
-    R.drawable.onboarding_background_2,
-)
-
-private val GuideIconRotations = listOf(-4f, 3f, -2f, 5f)
+private val GuideLottieAspectRatio = 375f / 200f
 
 @Composable
 fun OnboardingStartFirstAnalyzeScreen(
@@ -84,24 +73,17 @@ fun OnboardingStartFirstAnalyzeScreen(
                 .fillMaxWidth()
                 .padding(top = 32.dp),
         )
-        BoxWithConstraints(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f),
         ) {
             // 화면 오른쪽 끝 padding을 상쇄해 캐릭터가 우측에 딱 붙도록 배치한다.
+            // Guide Lottie는 pager 바깥 Box 오버레이로 그려 좌우 padding 0을 보장한다.
             StartFirstAnalyzeCharacter(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
                     .offset(x = ScreenHorizontalPadding, y = 8.dp),
-            )
-            val guideIconsBreakout = ScreenHorizontalPadding + GuideIconEdgeOverflow
-            StartFirstAnalyzeGuideIcons(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    // 좌우 padding + overflow만큼 넓혀 양끝 아이콘이 화면 가장자리를 살짝 넘기게 한다.
-                    .width(maxWidth + guideIconsBreakout * 2)
-                    .offset(y = 36.dp),
             )
         }
         OnboardingBottomActions(
@@ -142,53 +124,46 @@ private fun StartFirstAnalyzeCharacter(
 }
 
 @Composable
-private fun StartFirstAnalyzeGuideIcons(
+internal fun StartFirstAnalyzeGuideIcons(
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier = modifier,
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        GuideIconResources.forEachIndexed { index, iconRes ->
-            StartFirstAnalyzeGuideIconCard(
-                iconRes = iconRes,
-                rotationZ = GuideIconRotations[index],
-            )
-        }
-    }
-}
+    val guideDescription = stringResource(
+        R.string.onboarding_start_first_analyze_guide_content_description,
+    )
+    val composition by rememberLottieComposition(
+        LottieCompositionSpec.RawRes(OnboardingR.raw.onboarding_start_first_analyze_guide),
+    )
+    val progress by animateLottieCompositionAsState(
+        composition = composition,
+        iterations = LottieConstants.IterateForever,
+    )
 
-@Composable
-private fun StartFirstAnalyzeGuideIconCard(
-    iconRes: Int,
-    rotationZ: Float,
-    modifier: Modifier = Modifier,
-) {
-    Box(
+    LottieAnimation(
+        composition = composition,
+        progress = { progress },
         modifier = modifier
-            .size(GuideIconCardSize)
-            .graphicsLayer { this.rotationZ = rotationZ }
-            .clip(RoundedCornerShape(20.dp))
-            .background(RecapGray50),
-        contentAlignment = Alignment.Center,
-    ) {
-        Image(
-            painter = painterResource(iconRes),
-            contentDescription = null,
-            modifier = Modifier.size(GuideIconSize),
-            contentScale = ContentScale.Fit,
-        )
-    }
+            .fillMaxWidth()
+            .aspectRatio(GuideLottieAspectRatio)
+            .semantics { contentDescription = guideDescription },
+        contentScale = ContentScale.FillWidth,
+    )
 }
 
 @OnboardingScreenPreview
 @Composable
 private fun OnboardingStartFirstAnalyzeScreenPreview() {
     OnboardingPreviewContainer {
-        OnboardingStartFirstAnalyzeScreen(
-            uiState = OnboardingUiState(),
-            onAction = {},
-        )
+        Box(modifier = Modifier.fillMaxSize()) {
+            OnboardingStartFirstAnalyzeScreen(
+                uiState = OnboardingUiState(),
+                onAction = {},
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(start = 24.dp, end = 24.dp, bottom = 24.dp),
+            )
+            StartFirstAnalyzeGuideIcons(
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
     }
 }

@@ -359,6 +359,9 @@
     <string name="onboarding_add_to_favorite_guide_step_2">목록이 열리면 우측 상단 편집을 눌러주세요.</string>
     <string name="onboarding_add_to_favorite_guide_step_3">목록에서 Recap을 찾아, 체크를 눌러주세요.</string>
     <string name="onboarding_add_to_favorite_guide_step_4">즐겨찾기에 Recap이 추가되면 완료!\n≡ 을 드래그 해 상단으로 끌어올수록, 즐겨찾기 앞쪽에 배치돼요.</string>
+    <string name="onboarding_add_to_favorite_guide_touch_1">더보기 누르기</string>
+    <string name="onboarding_add_to_favorite_guide_touch_2">편집 누르기</string>
+    <string name="onboarding_add_to_favorite_guide_touch_3">RECAP 체크하기</string>
     <string name="onboarding_add_to_favorite_guide_page_indicator">%1$d / %2$d</string>
     <string name="onboarding_add_to_favorite_guide_step_image_content_description">공유 즐겨찾기 등록 방법 %1$d단계</string>
     <string name="onboarding_add_to_favorite_guide_previous_content_description">이전 등록 방법 보기</string>
@@ -410,6 +413,7 @@
     <string name="onboarding_start_first_analyze_title">첫 정리를 시작해볼까요?</string>
     <string name="onboarding_start_first_analyze_description">쌓아둔 스크린샷을 골라 첫 정리를 시작해보세요!</string>
     <string name="onboarding_start_first_analyze_character_content_description">첫 정리 안내 캐릭터</string>
+    <string name="onboarding_start_first_analyze_guide_content_description">스크린샷 정리 안내 애니메이션</string>
     <string name="onboarding_start_first_analyze_select_button">스크린샷 선택하기</string>
     <string name="onboarding_start_first_analyze_later_button">나중에 하기</string>
     <string name="onboarding_full_access_permission_title">사진 및 동영상 전체 권한이 필요해요</string>
@@ -529,6 +533,7 @@
     <string name="screenshot_detail_more_content_description">더보기</string>
     <string name="screenshot_detail_fullscreen_content_description">전체화면으로 보기</string>
     <string name="screenshot_organized_date_format">%1$s 정리</string>
+    <string name="screenshot_detail_organized_date_format">정리됨 %1$s</string>
     <string name="screenshot_body_empty">본문이 없습니다.</string>
     <string name="screenshot_detail_ai_disclaimer">AI가 생성한 정보예요. 일부 내용이 정확하지 않을 수 있어요.</string>
     <string name="screenshot_image_load_error">이미지를 불러오지 못했어요.</string>

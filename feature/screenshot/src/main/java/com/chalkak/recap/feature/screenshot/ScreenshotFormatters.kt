@@ -1,8 +1,14 @@
 package com.chalkak.recap.feature.screenshot
 
 import com.chalkak.recap.core.design.component.card.formatOrganizedAbsoluteDate
+import java.time.Instant
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 import timber.log.Timber
+
+private val DetailOrganizedDateFormatter: DateTimeFormatter =
+    DateTimeFormatter.ofPattern("yyyy. MM. dd", Locale.KOREAN)
 
 fun formatOrganizedDate(
     organizedAtMillis: Long,
@@ -14,6 +20,16 @@ fun formatOrganizedDate(
         nowMillis = nowMillis,
         zoneId = zoneId,
     )
+}
+
+fun formatDetailOrganizedDate(
+    organizedAtMillis: Long,
+    zoneId: ZoneId = ZoneId.systemDefault(),
+): String {
+    return Instant.ofEpochMilli(organizedAtMillis)
+        .atZone(zoneId)
+        .toLocalDate()
+        .format(DetailOrganizedDateFormatter)
 }
 
 enum class ScreenshotImageResolvePriority {

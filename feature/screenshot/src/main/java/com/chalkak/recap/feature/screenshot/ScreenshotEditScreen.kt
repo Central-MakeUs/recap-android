@@ -1,6 +1,8 @@
 package com.chalkak.recap.feature.screenshot
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +24,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,6 +40,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -51,14 +58,17 @@ import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray100
-import com.chalkak.recap.core.design.theme.RecapGray500
+import com.chalkak.recap.core.design.theme.RecapGray200
+import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray900
+import com.chalkak.recap.core.design.theme.RecapImagePlaceholderBackground
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
-import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption3
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
+import com.chalkak.recap.core.design.theme.White
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun ScreenshotEditScreen(
     content: ScreenshotUiState.Content,
@@ -68,6 +78,9 @@ fun ScreenshotEditScreen(
     onChangeType: () -> Unit,
     onOpenFullscreen: () -> Unit,
     modifier: Modifier = Modifier,
+    sharedTransitionScope: SharedTransitionScope? = null,
+    animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    enableSharedImageBounds: Boolean = false,
 ) {
     val draft = content.editDraft
     val canDone = draft.isTitleValid() &&
@@ -78,7 +91,7 @@ fun ScreenshotEditScreen(
         storedImagePath = content.card.imageRefs.storedImagePath,
         sourceImageUri = content.card.imageRefs.sourceImageUri,
         thumbnailPath = content.card.imageRefs.thumbnailPath,
-        priority = ScreenshotImageResolvePriority.Preview,
+        priority = ScreenshotImageResolvePriority.Fullscreen,
     )
 
     val navigationBarBottomPadding = WindowInsets.navigationBars
@@ -118,12 +131,15 @@ fun ScreenshotEditScreen(
                         formatOrganizedDate(content.card.analysisResult.organizedAt.toEpochMilli()),
                     ),
                     style = RecapCaption2,
-                    color = RecapGray500,
+                    color = RecapGray300,
                 )
                 Spacer(modifier = Modifier.height(7.dp))
                 ScreenshotEditImagePreview(
                     imageModel = imageModel,
                     onOpenFullscreen = onOpenFullscreen,
+                    sharedTransitionScope = sharedTransitionScope,
+                    animatedVisibilityScope = animatedVisibilityScope,
+                    enableSharedImageBounds = enableSharedImageBounds,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -250,56 +266,80 @@ private fun ScreenshotTextAction(
             color = if (enabled) {
                 color
             } else {
-                RecapGray900.copy(alpha = 0.38f)
+                RecapGray200
             },
             fontWeight = fontWeight,
         )
     }
 }
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 private fun ScreenshotEditImagePreview(
     imageModel: Any?,
     onOpenFullscreen: () -> Unit,
+    sharedTransitionScope: SharedTransitionScope?,
+    animatedVisibilityScope: AnimatedVisibilityScope?,
+    enableSharedImageBounds: Boolean,
 ) {
     var imageLoadFailed by remember(imageModel) { mutableStateOf(false) }
     val showPlaceholder = imageModel == null || imageLoadFailed
-
+    val imageShape = RoundedCornerShape(ScreenshotSharedImageCornerRadius)
     val imageInteractionSource = remember { MutableInteractionSource() }
+    val sharedBoundsModifier = if (showPlaceholder || !enableSharedImageBounds) {
+        Modifier
+    } else {
+        Modifier.screenshotSharedImageBounds(
+            sharedTransitionScope = sharedTransitionScope,
+            animatedVisibilityScope = animatedVisibilityScope,
+        )
+    }
 
+    // Shared bounds on the frame that owns the chip so BottomEnd tracks morph.
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .height(ScreenshotEditTokens.EditImagePreviewHeight)
-            .clip(RoundedCornerShape(ScreenshotEditTokens.EditImagePreviewCornerRadius))
-            .clickable(
-                enabled = !showPlaceholder,
-                interactionSource = imageInteractionSource,
-                indication = null,
-                role = Role.Button,
-                onClick = onOpenFullscreen,
-            ),
+            .then(sharedBoundsModifier),
     ) {
-        Surface(
-            modifier = Modifier.fillMaxSize(),
-            color = RecapGray100,
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .clip(imageShape)
+                .border(
+                    width = ScreenshotEditTokens.EditImagePreviewBorderWidth,
+                    color = RecapGray100,
+                    shape = imageShape,
+                )
+                .clickable(
+                    enabled = !showPlaceholder,
+                    interactionSource = imageInteractionSource,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onOpenFullscreen,
+                ),
         ) {
             if (showPlaceholder) {
                 Box(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(RecapImagePlaceholderBackground),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
-                        text = stringResource(R.string.screenshot_image_load_error),
-                        style = RecapCaption1,
-                        color = RecapGray500,
-                        modifier = Modifier.padding(ScreenshotTokens.HorizontalPadding),
+                    Image(
+                        painter = painterResource(R.drawable.recap_placeholder_1),
+                        contentDescription = stringResource(
+                            R.string.screenshot_image_placeholder_content_description,
+                        ),
+                        modifier = Modifier.size(width = 24.dp, height = 21.dp),
                     )
                 }
             } else {
                 AsyncImage(
                     model = imageModel,
-                    contentDescription = null,
+                    contentDescription = stringResource(
+                        R.string.screenshot_image_placeholder_content_description,
+                    ),
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),
                     onError = { imageLoadFailed = true },
@@ -309,6 +349,9 @@ private fun ScreenshotEditImagePreview(
         Box(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
+                .screenshotFullscreenChipTransition(
+                    animatedVisibilityScope = animatedVisibilityScope,
+                )
                 .size(48.dp)
                 .clickable(
                     enabled = !showPlaceholder,
@@ -317,18 +360,41 @@ private fun ScreenshotEditImagePreview(
                 ),
             contentAlignment = Alignment.Center,
         ) {
-            ScreenshotIconButton(
-                iconResId = R.drawable.ic_fullscreen_24,
+            ScreenshotEditFullscreenChipButton(
+                enabled = !showPlaceholder,
                 contentDescription = stringResource(
                     R.string.screenshot_detail_fullscreen_content_description,
                 ),
-                onClick = onOpenFullscreen,
-                enabled = !showPlaceholder,
-                tint = RecapGray900,
-                outlined = true,
-                handleClick = false,
             )
         }
+    }
+}
+
+/** Temporary outlined fullscreen chip. Kept private until Edit refactor. */
+@Composable
+private fun ScreenshotEditFullscreenChipButton(
+    contentDescription: String,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val shape = RoundedCornerShape(ScreenshotEditTokens.FullscreenChipCornerRadius)
+    Box(
+        modifier = modifier
+            .size(ScreenshotEditTokens.FullscreenChipSize)
+            .background(color = White, shape = shape)
+            .border(
+                width = ScreenshotEditTokens.FullscreenChipBorderWidth,
+                color = RecapGray200,
+                shape = shape,
+            ),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(R.drawable.ic_fullscreen_24),
+            contentDescription = contentDescription,
+            tint = if (enabled) RecapGray900 else RecapGray900.copy(alpha = 0.38f),
+            modifier = Modifier.size(ScreenshotEditTokens.FullscreenChipIconSize),
+        )
     }
 }
 
@@ -394,7 +460,11 @@ private fun ScreenshotEditDiscardConfirmPreview() {
 private object ScreenshotEditTokens {
     val EditTopBarHeight = 56.dp
     val EditImagePreviewHeight = 180.dp
-    val EditImagePreviewCornerRadius = 12.dp
+    val EditImagePreviewBorderWidth = 0.5.dp
     val TextActionMinSize = 46.dp
     val ScrollBottomPadding = 16.dp
+    val FullscreenChipSize = 21.dp
+    val FullscreenChipIconSize = 13.5.dp
+    val FullscreenChipCornerRadius = 2.dp
+    val FullscreenChipBorderWidth = 0.5.dp
 }

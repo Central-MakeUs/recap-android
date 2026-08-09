@@ -1,11 +1,14 @@
 package com.chalkak.recap.feature.screenshot
 
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -16,6 +19,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.LocalNavAnimatedContentScope
+import androidx.navigationevent.NavigationEvent
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.animation.RecapNavDisplay
 import com.chalkak.recap.core.design.animation.RecapNavigationMotion
@@ -27,7 +32,7 @@ import com.chalkak.recap.core.model.capture.ReportReason
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import kotlinx.serialization.Serializable
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalSharedTransitionApi::class)
 @Composable
 fun ScreenshotRoute(
     captureId: Long,
@@ -153,96 +158,141 @@ fun ScreenshotRoute(
         }
     }
 
-    RecapNavDisplay(
-        backStack = backStack,
-        onBack = {
-            when {
-                backStack.size <= 1 -> onNavigateBack()
-                backStack.lastOrNull() is ScreenshotDestination.Edit -> leaveEditScreen()
-                else -> backStack.removeLastOrNull()
-            }
-        },
-        modifier = Modifier.fillMaxSize(),
-        predictivePopEnabled = !isEditingWithUnsavedChanges,
-        transitionSpec = { RecapNavigationMotion.forward() },
-        popTransitionSpec = { RecapNavigationMotion.pop() },
-        entryProvider = { destination ->
-            when (destination) {
-                ScreenshotDestination.Detail -> NavEntry(destination) {
-                    ScreenshotDetailScreen(
-                        uiState = uiState,
-                        onAction = viewModel::onAction,
-                        onNavigateBack = onNavigateBack,
-                        onOpenEdit = {
-                            showActionSheet = false
-                            viewModel.onAction(ScreenshotAction.PrepareEditDraft)
-                            if (backStack.lastOrNull() !is ScreenshotDestination.Edit) {
-                                backStack.add(ScreenshotDestination.Edit)
-                            }
-                        },
-                        onOpenFullscreen = {
-                            if (backStack.lastOrNull() !is ScreenshotDestination.Fullscreen) {
-                                backStack.add(ScreenshotDestination.Fullscreen)
-                            }
-                        },
-                        onOpenMore = { showActionSheet = true },
-                    )
-                }
+    val currentTop = backStack.lastOrNull()
+    // Latch previous destination across the pop animation. SideEffect sync would
+    // clear "came from Fullscreen" after the first frame and fall back to slide.
+    var previousTop by remember { mutableStateOf(currentTop) }
+    var renderedTop by remember { mutableStateOf(currentTop) }
+    if (currentTop != renderedTop) {
+        previousTop = renderedTop
+        renderedTop = currentTop
+    }
+    val useFullscreenFade =
+        currentTop is ScreenshotDestination.Fullscreen ||
+            previousTop is ScreenshotDestination.Fullscreen
 
-                ScreenshotDestination.Edit -> NavEntry(destination) {
-                    val editContent = uiState as? ScreenshotUiState.Content
-                    if (editContent == null) {
+    SharedTransitionLayout {
+        RecapNavDisplay(
+            backStack = backStack,
+            onBack = {
+                when {
+                    backStack.size <= 1 -> onNavigateBack()
+                    backStack.lastOrNull() is ScreenshotDestination.Edit -> leaveEditScreen()
+                    else -> backStack.removeLastOrNull()
+                }
+            },
+            modifier = Modifier.fillMaxSize(),
+            predictivePopEnabled = !isEditingWithUnsavedChanges,
+            transitionSpec = {
+                if (useFullscreenFade) {
+                    RecapNavigationMotion.fade()
+                } else {
+                    RecapNavigationMotion.forward()
+                }
+            },
+            popTransitionSpec = {
+                if (useFullscreenFade) {
+                    RecapNavigationMotion.fade()
+                } else {
+                    RecapNavigationMotion.pop()
+                }
+            },
+            predictivePopSpec = { swipeEdge ->
+                when {
+                    swipeEdge == NavigationEvent.EDGE_NONE -> RecapNavigationMotion.none()
+                    useFullscreenFade -> RecapNavigationMotion.fade()
+                    else -> RecapNavigationMotion.pop()
+                }
+            },
+            entryProvider = { destination ->
+                when (destination) {
+                    ScreenshotDestination.Detail -> NavEntry(destination) {
                         ScreenshotDetailScreen(
                             uiState = uiState,
                             onAction = viewModel::onAction,
-                            onNavigateBack = {
-                                backStack.removeLastOrNull()
-                            },
-                            onOpenEdit = {},
-                            onOpenFullscreen = {},
-                            onOpenMore = {},
-                        )
-                    } else {
-                        ScreenshotEditScreen(
-                            content = editContent,
-                            onAction = viewModel::onAction,
-                            onCancel = ::leaveEditScreen,
-                            onDone = {
-                                viewModel.onAction(ScreenshotAction.SaveEdit)
-                            },
-                            onChangeType = {
-                                tempTypeSelection = editContent.editDraft.contentType.name
-                                showTypePicker = true
+                            onNavigateBack = onNavigateBack,
+                            onOpenEdit = {
+                                showActionSheet = false
+                                viewModel.onAction(ScreenshotAction.PrepareEditDraft)
+                                if (backStack.lastOrNull() !is ScreenshotDestination.Edit) {
+                                    backStack.add(ScreenshotDestination.Edit)
+                                }
                             },
                             onOpenFullscreen = {
                                 if (backStack.lastOrNull() !is ScreenshotDestination.Fullscreen) {
                                     backStack.add(ScreenshotDestination.Fullscreen)
                                 }
                             },
+                            onOpenMore = { showActionSheet = true },
+                            sharedTransitionScope = this@SharedTransitionLayout,
+                            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                            enableSharedImageBounds = useFullscreenFade,
                         )
                     }
-                }
 
-                ScreenshotDestination.Fullscreen -> NavEntry(destination) {
-                    val fullscreenContent = uiState as? ScreenshotUiState.Content
-                    val imageModel = fullscreenContent?.let { content ->
-                        resolveScreenshotImageModel(
-                            storedImagePath = content.card.imageRefs.storedImagePath,
-                            sourceImageUri = content.card.imageRefs.sourceImageUri,
-                            thumbnailPath = content.card.imageRefs.thumbnailPath,
-                            priority = ScreenshotImageResolvePriority.Fullscreen,
+                    ScreenshotDestination.Edit -> NavEntry(destination) {
+                        val editContent = uiState as? ScreenshotUiState.Content
+                        if (editContent == null) {
+                            ScreenshotDetailScreen(
+                                uiState = uiState,
+                                onAction = viewModel::onAction,
+                                onNavigateBack = {
+                                    backStack.removeLastOrNull()
+                                },
+                                onOpenEdit = {},
+                                onOpenFullscreen = {},
+                                onOpenMore = {},
+                                sharedTransitionScope = this@SharedTransitionLayout,
+                                animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                                enableSharedImageBounds = useFullscreenFade,
+                            )
+                        } else {
+                            ScreenshotEditScreen(
+                                content = editContent,
+                                onAction = viewModel::onAction,
+                                onCancel = ::leaveEditScreen,
+                                onDone = {
+                                    viewModel.onAction(ScreenshotAction.SaveEdit)
+                                },
+                                onChangeType = {
+                                    tempTypeSelection = editContent.editDraft.contentType.name
+                                    showTypePicker = true
+                                },
+                                onOpenFullscreen = {
+                                    if (backStack.lastOrNull() !is ScreenshotDestination.Fullscreen) {
+                                        backStack.add(ScreenshotDestination.Fullscreen)
+                                    }
+                                },
+                                sharedTransitionScope = this@SharedTransitionLayout,
+                                animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                                enableSharedImageBounds = useFullscreenFade,
+                            )
+                        }
+                    }
+
+                    ScreenshotDestination.Fullscreen -> NavEntry(destination) {
+                        val fullscreenContent = uiState as? ScreenshotUiState.Content
+                        val imageModel = fullscreenContent?.let { content ->
+                            resolveScreenshotImageModel(
+                                storedImagePath = content.card.imageRefs.storedImagePath,
+                                sourceImageUri = content.card.imageRefs.sourceImageUri,
+                                thumbnailPath = content.card.imageRefs.thumbnailPath,
+                                priority = ScreenshotImageResolvePriority.Fullscreen,
+                            )
+                        }
+                        ScreenshotFullscreenScreen(
+                            imageModel = imageModel,
+                            onNavigateBack = { backStack.removeLastOrNull() },
+                            sharedTransitionScope = this@SharedTransitionLayout,
+                            animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                         )
                     }
-                    ScreenshotFullscreenScreen(
-                        imageModel = imageModel,
-                        onNavigateBack = { backStack.removeLastOrNull() },
-                    )
-                }
 
-                else -> error("Unknown screenshot destination: $destination")
-            }
-        },
-    )
+                    else -> error("Unknown screenshot destination: $destination")
+                }
+            },
+        )
+    }
 
     if (showActionSheet && contentState != null) {
         ScreenshotActionBottomSheet(

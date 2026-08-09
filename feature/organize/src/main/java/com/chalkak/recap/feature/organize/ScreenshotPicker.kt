@@ -20,6 +20,7 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -35,6 +36,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -71,6 +73,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.boundsInRoot
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -89,6 +92,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
 import androidx.compose.ui.window.PopupProperties
 import androidx.core.net.toUri
+import coil3.ImageLoader
 import coil3.compose.AsyncImage
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.button.RecapButton
@@ -112,7 +116,9 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading4
 import com.chalkak.recap.core.model.ImageAccessLevel
-import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.feature.organize.mediastore.MediaStoreThumbnail
+import com.chalkak.recap.feature.organize.mediastore.MediaStoreThumbnailFetcher
+import com.chalkak.recap.feature.organize.mediastore.MediaStoreThumbnailKeyer
 import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -341,6 +347,18 @@ fun ScreenshotPickerContent(
     var dragSelectEndIndex by remember { mutableIntStateOf(-1) }
     val currentUiState by rememberUpdatedState(uiState)
     val currentOnAction by rememberUpdatedState(onAction)
+    val appContext = LocalContext.current.applicationContext
+    val thumbnailImageLoader = remember(appContext) {
+        ImageLoader.Builder(appContext)
+            .components {
+                add(MediaStoreThumbnailKeyer)
+                add(MediaStoreThumbnailFetcher.Factory())
+            }
+            .build()
+    }
+    DisposableEffect(thumbnailImageLoader) {
+        onDispose { thumbnailImageLoader.shutdown() }
+    }
 
     fun hitTestUri(positionInRoot: Offset): String? {
         return itemBoundsInRoot.entries.firstOrNull { (_, bounds) -> bounds.contains(positionInRoot) }?.key
@@ -494,6 +512,7 @@ fun ScreenshotPickerContent(
                     .weight(1f)
                     .fillMaxWidth(),
             ) {
+                val gridState = rememberLazyGridState()
                 when {
                     uiState.isLoading -> {
                         CircularProgressIndicator(
@@ -533,46 +552,69 @@ fun ScreenshotPickerContent(
                         } else {
                             0.dp
                         }
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(ScreenshotPickerTokens.GridColumns),
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = gridBottomPadding),
-                            horizontalArrangement = Arrangement.spacedBy(
-                                ScreenshotPickerTokens.GridSpacing,
-                            ),
-                            verticalArrangement = Arrangement.spacedBy(
-                                ScreenshotPickerTokens.GridSpacing,
-                            ),
-                            userScrollEnabled = !isDragSelecting,
-                        ) {
-                            itemsIndexed(
-                                items = uiState.availableScreenshots,
-                                key = { _, screenshot -> screenshot.uri },
-                            ) { index, screenshot ->
-                                val imageModel = screenshot.toSheetImageModel()
-                                ScreenshotPickerGridItem(
-                                    imageModel = imageModel,
-                                    itemIndex = index + 1,
-                                    selectionOrder = uiState.selectionOrder(screenshot.uri),
-                                    onClick = {
-                                        onAction(OrganizeAction.ToggleSelection(screenshot.uri))
-                                    },
-                                    onImageLongClick = {
-                                        onImageLongClick(imageModel)
-                                    },
-                                    onCheckLongPressStart = {
-                                        onDragSelectStart(screenshot.uri)
-                                    },
-                                    onCheckLongPressDrag = { positionInRoot ->
-                                        onDragSelectMove(positionInRoot)
-                                    },
-                                    onCheckLongPressEnd = ::onDragSelectEnd,
-                                    trackItemBounds = trackItemBounds,
-                                    onBoundsChanged = { bounds ->
-                                        itemBoundsInRoot[screenshot.uri] = bounds
-                                    },
-                                )
+                        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                            val gridCellSizePx = with(LocalDensity.current) {
+                                val gridWidthPx = maxWidth.toPx()
+                                val spacingPx = ScreenshotPickerTokens.GridSpacing.toPx()
+                                val availableWidthPx = gridWidthPx -
+                                    spacingPx * (ScreenshotPickerTokens.GridColumns - 1)
+                                (availableWidthPx / ScreenshotPickerTokens.GridColumns)
+                                    .toInt()
+                                    .coerceAtLeast(1)
                             }
+                            LazyVerticalGrid(
+                                columns = GridCells.Fixed(ScreenshotPickerTokens.GridColumns),
+                                modifier = Modifier.fillMaxSize(),
+                                state = gridState,
+                                contentPadding = PaddingValues(bottom = gridBottomPadding),
+                                horizontalArrangement = Arrangement.spacedBy(
+                                    ScreenshotPickerTokens.GridSpacing,
+                                ),
+                                verticalArrangement = Arrangement.spacedBy(
+                                    ScreenshotPickerTokens.GridSpacing,
+                                ),
+                                userScrollEnabled = !isDragSelecting,
+                            ) {
+                                itemsIndexed(
+                                    items = uiState.availableScreenshots,
+                                    key = { _, screenshot -> screenshot.uri },
+                                ) { index, screenshot ->
+                                    val imageUri = screenshot.uri.toUri()
+                                    ScreenshotPickerGridItem(
+                                        thumbnail = MediaStoreThumbnail(
+                                            uri = imageUri,
+                                            sizePx = gridCellSizePx,
+                                        ),
+                                        imageLoader = thumbnailImageLoader,
+                                        itemIndex = index + 1,
+                                        selectionOrder = uiState.selectionOrder(screenshot.uri),
+                                        onClick = {
+                                            onAction(
+                                                OrganizeAction.ToggleSelection(screenshot.uri),
+                                            )
+                                        },
+                                        onImageLongClick = {
+                                            onImageLongClick(imageUri)
+                                        },
+                                        onCheckLongPressStart = {
+                                            onDragSelectStart(screenshot.uri)
+                                        },
+                                        onCheckLongPressDrag = { positionInRoot ->
+                                            onDragSelectMove(positionInRoot)
+                                        },
+                                        onCheckLongPressEnd = ::onDragSelectEnd,
+                                        trackItemBounds = trackItemBounds,
+                                        onBoundsChanged = { bounds ->
+                                            itemBoundsInRoot[screenshot.uri] = bounds
+                                        },
+                                    )
+                                }
+                            }
+                            ScreenshotPickerScrollIndicator(
+                                gridState = gridState,
+                                columnCount = ScreenshotPickerTokens.GridColumns,
+                                modifier = Modifier.align(Alignment.CenterEnd),
+                            )
                         }
                     }
                 }
@@ -794,7 +836,8 @@ private fun ScreenshotPickerIconButton(
 
 @Composable
 private fun ScreenshotPickerGridItem(
-    imageModel: Any,
+    thumbnail: MediaStoreThumbnail,
+    imageLoader: ImageLoader,
     itemIndex: Int,
     selectionOrder: Int?,
     onClick: () -> Unit,
@@ -883,8 +926,9 @@ private fun ScreenshotPickerGridItem(
             .clip(RoundedCornerShape(cornerRadius)),
     ) {
         AsyncImage(
-            model = imageModel,
+            model = thumbnail,
             contentDescription = contentDescription,
+            imageLoader = imageLoader,
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxSize()
@@ -968,8 +1012,6 @@ private fun View.performSoftLongPressHaptic() {
     }
     performHapticFeedback(feedbackConstant)
 }
-
-private fun LocalImage.toSheetImageModel(): Any = uri.toUri()
 
 private object ScreenshotPickerTokens {
     /** Expanded 상태 시트 높이. PartiallyExpanded(~50%)는 Material3 ModalBottomSheet가 처리한다. */

@@ -33,6 +33,7 @@ fun <T : Any> RecapNavDisplay(
     contentAlignment: Alignment = Alignment.TopStart,
     transitionSpec: () -> ContentTransform = { RecapNavigationMotion.forward() },
     popTransitionSpec: () -> ContentTransform = { RecapNavigationMotion.pop() },
+    predictivePopSpec: ((swipeEdge: Int) -> ContentTransform)? = null,
     entryProvider: (T) -> NavEntry<T>,
 ) {
     require(backStack.isNotEmpty()) { "RecapNavDisplay backStack cannot be empty" }
@@ -68,6 +69,7 @@ fun <T : Any> RecapNavDisplay(
             when {
                 !predictivePopEnabled -> RecapNavigationMotion.none()
                 navigationKind == RecapNavigationKind.Replace -> RecapNavigationMotion.none()
+                predictivePopSpec != null -> predictivePopSpec(swipeEdge)
                 else -> RecapNavigationMotion.predictivePop(swipeEdge)
             }
         },

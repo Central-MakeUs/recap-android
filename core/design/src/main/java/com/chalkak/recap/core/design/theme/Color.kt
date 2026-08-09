@@ -11,6 +11,7 @@ val RecapOnboardingBlue = Color(0xFF5C74FF)
 val RecapKakaoYellow = Color(0xFFFEE500)
 
 val RecapIllustrationPlaceholderGray = Color(0xFFE0E0E0)
+val RecapImagePlaceholderBackground = Color(0xFFF3F5F9)
 
 val RecapGray900 = Color(0xFF0B111D)
 val RecapGray700 = Color(0xFF222B3C)
