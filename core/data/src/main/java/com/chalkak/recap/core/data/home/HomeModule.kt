@@ -1,23 +1,40 @@
 package com.chalkak.recap.core.data.home
 
-import dagger.Binds
+import com.chalkak.recap.core.data.BuildConfig
+import com.chalkak.recap.core.data.backend.BackendSelection
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Provider
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class HomeModule {
-    @Binds
+object HomeModule {
+    @Provides
     @Singleton
-    abstract fun bindHomeRepository(
-        repository: SwitchingHomeRepository,
-    ): HomeRepository
+    fun provideHomeRepository(
+        mockProvider: Provider<MockHomeRepository>,
+        remoteProvider: Provider<RemoteHomeRepository>,
+    ): HomeRepository {
+        return BackendSelection.select(
+            useMockBackend = BuildConfig.USE_MOCK_BACKEND,
+            mockProvider = mockProvider,
+            remoteProvider = remoteProvider,
+        )
+    }
 
-    @Binds
+    @Provides
     @Singleton
-    abstract fun bindRecentCapturesRepository(
-        repository: SwitchingRecentCapturesRepository,
-    ): RecentCapturesRepository
+    fun provideRecentCapturesRepository(
+        mockProvider: Provider<MockRecentCapturesRepository>,
+        remoteProvider: Provider<RemoteRecentCapturesRepository>,
+    ): RecentCapturesRepository {
+        return BackendSelection.select(
+            useMockBackend = BuildConfig.USE_MOCK_BACKEND,
+            mockProvider = mockProvider,
+            remoteProvider = remoteProvider,
+        )
+    }
 }

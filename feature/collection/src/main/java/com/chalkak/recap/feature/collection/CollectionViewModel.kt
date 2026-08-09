@@ -3,6 +3,8 @@ package com.chalkak.recap.feature.collection
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
+import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
+import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.search.SearchRepository
 import com.chalkak.recap.core.data.storage.StorageRepository
 import com.chalkak.recap.core.design.component.topbar.CollectionTypeViewMode
@@ -33,6 +35,8 @@ class CollectionViewModel @Inject constructor(
     private val storageRepository: StorageRepository,
     private val searchRepository: SearchRepository,
     private val captureMutationRepository: CaptureMutationRepository,
+    private val thumbnailUpdates: CaptureThumbnailUpdates,
+    private val mainContentRecoveryTrigger: MainContentRecoveryTrigger,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CollectionUiState())
     val uiState: StateFlow<CollectionUiState> = _uiState.asStateFlow()
@@ -73,6 +77,20 @@ class CollectionViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            thumbnailUpdates.thumbnailReady.collect { ready ->
+                applyThumbnailReady(ready.captureId, ready.localPath)
+            }
+        }
+
+        viewModelScope.launch {
+            mainContentRecoveryTrigger.recoveries.collect {
+                if (overviewLoadFailed) {
+                    storageRepository.refreshOverview()
+                }
+            }
+        }
+
+        viewModelScope.launch {
             // Overview search is intentionally non-functional; always observe unfiltered.
             storageRepository.observeOverview(searchQuery = "").collect { result ->
                 result.fold(
@@ -112,6 +130,9 @@ class CollectionViewModel @Inject constructor(
                         favoriteStates = detail?.items?.associate { it.captureId to it.isFavorite }.orEmpty()
                     }
                     publishState()
+                    detail?.items?.map { it.captureId }?.let { ids ->
+                        reconcileThumbnails(ids)
+                    }
                 }
         }
     }
@@ -311,6 +332,7 @@ class CollectionViewModel @Inject constructor(
                     detailCaptureIds = detailSearchCards.map { it.captureId }.toSet()
                     favoriteStates = detailSearchCards.associate { it.captureId to it.isFavorite }
                     publishState()
+                    reconcileThumbnails(detailSearchCards.map { it.captureId })
                 },
                 onFailure = {
                     detailSearchCards = emptyList()
@@ -364,6 +386,7 @@ class CollectionViewModel @Inject constructor(
                     favoriteStates = detailSearchCards.associate { it.captureId to it.isFavorite }
                     detailSearchLoadingMore = false
                     publishState()
+                    reconcileThumbnails(newCards.map { it.captureId })
                 },
                 onFailure = {
                     detailSearchLoadingMore = false
@@ -478,6 +501,48 @@ class CollectionViewModel @Inject constructor(
                     publishState()
                 }
             }
+        }
+    }
+
+    private fun reconcileThumbnails(captureIds: Iterable<Long>) {
+        captureIds.forEach { captureId ->
+            thumbnailUpdates.resolveLocalPath(captureId)?.let { path ->
+                applyThumbnailReady(captureId, path)
+            }
+        }
+    }
+
+    private fun applyThumbnailReady(
+        captureId: Long,
+        localPath: String,
+    ) {
+        var changed = false
+        latestDetailCards = latestDetailCards?.let { detail ->
+            val updatedItems = detail.items.map { summary ->
+                if (summary.captureId == captureId) {
+                    changed = true
+                    summary.copy(thumbnailUrl = localPath)
+                } else {
+                    summary
+                }
+            }
+            if (changed) {
+                detail.copy(items = updatedItems)
+            } else {
+                detail
+            }
+        }
+        val updatedSearchCards = detailSearchCards.map { card ->
+            if (card.captureId == captureId) {
+                changed = true
+                card.copy(thumbnailModel = localPath)
+            } else {
+                card
+            }
+        }
+        detailSearchCards = updatedSearchCards
+        if (changed) {
+            publishState()
         }
     }
 

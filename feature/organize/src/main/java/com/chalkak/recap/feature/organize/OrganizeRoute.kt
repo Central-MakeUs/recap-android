@@ -362,5 +362,5 @@ private enum class OrganizeDestination {
 }
 
 private object OrganizeTransitionTokens {
-    const val ConfirmationFadeMs = 280
+    const val ConfirmationFadeMs = 350
 }

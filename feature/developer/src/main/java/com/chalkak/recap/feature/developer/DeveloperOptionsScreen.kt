@@ -19,11 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.chalkak.recap.core.data.screenshot.backend.ScreenshotBackendMode
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.theme.RECAPTheme
-import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 
@@ -33,16 +30,6 @@ internal fun DeveloperOptionsScreen(
     onAction: (DeveloperOptionAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val switchTargetMode = when (uiState.screenshotBackendMode) {
-        ScreenshotBackendMode.MOCK -> ScreenshotBackendMode.REMOTE
-        ScreenshotBackendMode.REMOTE -> ScreenshotBackendMode.MOCK
-    }
-    val currentModeLabel = stringResource(uiState.screenshotBackendMode.labelResId)
-    val switchButtonLabelResId = when (switchTargetMode) {
-        ScreenshotBackendMode.MOCK -> R.string.developer_options_switch_to_mock_button
-        ScreenshotBackendMode.REMOTE -> R.string.developer_options_switch_to_remote_button
-    }
-
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
@@ -68,23 +55,6 @@ internal fun DeveloperOptionsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            Text(
-                text = stringResource(
-                    R.string.developer_options_screenshot_backend_current,
-                    currentModeLabel,
-                ),
-                style = RecapBody2,
-                color = MaterialTheme.colorScheme.onBackground,
-            )
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                enabled = uiState.canSwitchScreenshotBackend,
-                onClick = {
-                    onAction(DeveloperOptionAction.RequestScreenshotBackendSwitch(switchTargetMode))
-                },
-            ) {
-                Text(stringResource(switchButtonLabelResId))
-            }
             DeveloperOption.entries.forEach { option ->
                 Button(
                     modifier = Modifier.fillMaxWidth(),
@@ -95,36 +65,7 @@ internal fun DeveloperOptionsScreen(
             }
         }
     }
-
-    val pendingTarget = uiState.pendingSwitchTargetMode
-    if (pendingTarget != null) {
-        RecapPopup(
-            title = stringResource(R.string.developer_options_switch_screenshot_backend_confirm_title),
-            description = stringResource(
-                R.string.developer_options_switch_screenshot_backend_confirm_description,
-            ),
-            confirmButtonText = stringResource(
-                R.string.developer_options_switch_screenshot_backend_confirm_button,
-            ),
-            cancelButtonText = stringResource(
-                R.string.developer_options_switch_screenshot_backend_cancel_button,
-            ),
-            onConfirmClick = { onAction(DeveloperOptionAction.ConfirmScreenshotBackendSwitch) },
-            onCancelClick = { onAction(DeveloperOptionAction.DismissScreenshotBackendSwitchDialog) },
-            onDismissRequest = {
-                onAction(DeveloperOptionAction.DismissScreenshotBackendSwitchDialog)
-            },
-            confirmButtonColor = RecapError,
-        )
-    }
 }
-
-private val ScreenshotBackendMode.labelResId: Int
-    @StringRes
-    get() = when (this) {
-        ScreenshotBackendMode.MOCK -> R.string.developer_options_screenshot_backend_mock
-        ScreenshotBackendMode.REMOTE -> R.string.developer_options_screenshot_backend_remote
-    }
 
 internal enum class DeveloperOption(
     @get:StringRes val labelResId: Int,
@@ -137,6 +78,10 @@ internal enum class DeveloperOption(
     ResetOnboarding(
         labelResId = R.string.developer_options_reset_onboarding_button,
         action = DeveloperOptionAction.ResetOnboarding,
+    ),
+    InvalidateSession(
+        labelResId = R.string.developer_options_invalidate_session_button,
+        action = DeveloperOptionAction.InvalidateSession,
     ),
     ResetScreenshotData(
         labelResId = R.string.developer_options_reset_screenshot_data_button,
@@ -151,51 +96,29 @@ internal enum class DeveloperOption(
 internal sealed interface DeveloperOptionAction {
     data object OpenComponentGarden : DeveloperOptionAction
     data object ResetOnboarding : DeveloperOptionAction
+    data object InvalidateSession : DeveloperOptionAction
     data object ResetScreenshotData : DeveloperOptionAction
     data object ForceTestCrash : DeveloperOptionAction
-    data class RequestScreenshotBackendSwitch(
-        val targetMode: ScreenshotBackendMode,
-    ) : DeveloperOptionAction
-
-    data object ConfirmScreenshotBackendSwitch : DeveloperOptionAction
-    data object DismissScreenshotBackendSwitchDialog : DeveloperOptionAction
 }
 
-@Preview(name = "Developer Options Mock", showBackground = true, widthDp = 360)
+@Preview(name = "Developer Options", showBackground = true, widthDp = 360)
 @Composable
-private fun DeveloperOptionsScreenMockPreview() {
+private fun DeveloperOptionsScreenPreview() {
     RECAPTheme(dynamicColor = false) {
         DeveloperOptionsScreen(
-            uiState = DeveloperOptionsUiState(
-                screenshotBackendMode = ScreenshotBackendMode.MOCK,
-            ),
+            uiState = DeveloperOptionsUiState(),
             onAction = {},
         )
     }
 }
 
-@Preview(name = "Developer Options Remote Running", showBackground = true, widthDp = 360)
+@Preview(name = "Developer Options Feedback", showBackground = true, widthDp = 360)
 @Composable
-private fun DeveloperOptionsScreenRemoteRunningPreview() {
+private fun DeveloperOptionsScreenFeedbackPreview() {
     RECAPTheme(dynamicColor = false) {
         DeveloperOptionsScreen(
             uiState = DeveloperOptionsUiState(
-                screenshotBackendMode = ScreenshotBackendMode.REMOTE,
-                isAnalysisRunning = true,
-            ),
-            onAction = {},
-        )
-    }
-}
-
-@Preview(name = "Developer Options Switch Confirm", showBackground = true, widthDp = 360)
-@Composable
-private fun DeveloperOptionsScreenSwitchConfirmPreview() {
-    RECAPTheme(dynamicColor = false) {
-        DeveloperOptionsScreen(
-            uiState = DeveloperOptionsUiState(
-                screenshotBackendMode = ScreenshotBackendMode.MOCK,
-                pendingSwitchTargetMode = ScreenshotBackendMode.REMOTE,
+                feedbackMessageResId = R.string.developer_options_reset_screenshot_data_success,
             ),
             onAction = {},
         )

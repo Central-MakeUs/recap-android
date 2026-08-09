@@ -69,13 +69,45 @@ fun RecapPopup(
 }
 
 @Composable
+fun RecapPopup(
+    title: String,
+    description: String,
+    confirmButtonText: String,
+    onConfirmClick: () -> Unit,
+    onDismissRequest: () -> Unit,
+    modifier: Modifier = Modifier,
+    confirmButtonColor: Color = RecapBlue300,
+    confirmButtonContentColor: Color = White,
+    properties: DialogProperties = DialogProperties(
+        usePlatformDefaultWidth = false,
+    ),
+) {
+    Dialog(
+        onDismissRequest = onDismissRequest,
+        properties = properties,
+    ) {
+        RecapPopupContent(
+            title = title,
+            description = description,
+            confirmButtonText = confirmButtonText,
+            cancelButtonText = null,
+            onConfirmClick = onConfirmClick,
+            onCancelClick = null,
+            modifier = modifier,
+            confirmButtonColor = confirmButtonColor,
+            confirmButtonContentColor = confirmButtonContentColor,
+        )
+    }
+}
+
+@Composable
 fun RecapPopupContent(
     title: String,
     description: String,
     confirmButtonText: String,
-    cancelButtonText: String,
+    cancelButtonText: String?,
     onConfirmClick: () -> Unit,
-    onCancelClick: () -> Unit,
+    onCancelClick: (() -> Unit)?,
     modifier: Modifier = Modifier,
     confirmButtonColor: Color = RecapError,
     confirmButtonContentColor: Color = White,
@@ -121,21 +153,32 @@ fun RecapPopupContent(
                     .padding(horizontal = RecapPopupTokens.ButtonRowHorizontalPadding),
                 horizontalArrangement = Arrangement.spacedBy(RecapPopupTokens.ButtonSpacing),
             ) {
-                RecapButton(
-                    text = cancelButtonText,
-                    onClick = onCancelClick,
-                    modifier = Modifier.weight(1f),
-                    size = RecapButtonSize.Medium,
-                    colors = RecapButtonDefaults.neutralColors(),
-                )
-                RecapButton(
-                    text = confirmButtonText,
-                    onClick = onConfirmClick,
-                    modifier = Modifier.weight(1f),
-                    size = RecapButtonSize.Medium,
-                    colors = confirmButtonColor,
-                    contentColor = confirmButtonContentColor,
-                )
+                if (cancelButtonText != null && onCancelClick != null) {
+                    RecapButton(
+                        text = cancelButtonText,
+                        onClick = onCancelClick,
+                        modifier = Modifier.weight(1f),
+                        size = RecapButtonSize.Medium,
+                        colors = RecapButtonDefaults.neutralColors(),
+                    )
+                    RecapButton(
+                        text = confirmButtonText,
+                        onClick = onConfirmClick,
+                        modifier = Modifier.weight(1f),
+                        size = RecapButtonSize.Medium,
+                        colors = confirmButtonColor,
+                        contentColor = confirmButtonContentColor,
+                    )
+                } else {
+                    RecapButton(
+                        text = confirmButtonText,
+                        onClick = onConfirmClick,
+                        modifier = Modifier.fillMaxWidth(),
+                        size = RecapButtonSize.Medium,
+                        colors = confirmButtonColor,
+                        contentColor = confirmButtonContentColor,
+                    )
+                }
             }
         }
     }
@@ -195,6 +238,35 @@ private fun RecapPopupPrimaryPreview() {
                 cancelButtonText = stringResource(R.string.deletion_confirmation_cancel_button),
                 onConfirmClick = {},
                 onCancelClick = {},
+                confirmButtonColor = RecapBlue300,
+            )
+        }
+    }
+}
+
+@Preview(
+    name = "RecapPopup Single Action",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 240,
+)
+@Composable
+private fun RecapPopupSingleActionPreview() {
+    RECAPTheme(dynamicColor = false) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(RecapGray900.copy(alpha = 0.72f))
+                .padding(vertical = 40.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            RecapPopupContent(
+                title = stringResource(R.string.startup_read_error_title),
+                description = stringResource(R.string.startup_read_error_description),
+                confirmButtonText = stringResource(R.string.startup_read_error_retry),
+                cancelButtonText = null,
+                onConfirmClick = {},
+                onCancelClick = null,
                 confirmButtonColor = RecapBlue300,
             )
         }

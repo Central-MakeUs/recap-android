@@ -15,6 +15,11 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 
 ## Open
 
+- [ ] 2026-08-05 - 카카오 `me()` 실패가 로그인 전체를 막는 실패 경로의 UX 정리
+  - Context: 소유자 해시 판정을 위해 `signInWithKakao`가 `kakaoLoginClient.fetchUserProfile()`을 새로 호출한다. 일시적 네트워크 오류로 `me()`가 실패하면 카카오 로그인 자체는 성공했는데도 `AuthError.ProviderUnavailable`로 로그인이 실패하고, 일반 로그인 실패 토스트만 노출되어 원인·재시도 안내가 없다.
+  - Next: `me()` 실패 전용 안내/재시도 UX를 둘지 결정
+  - Handoff: not started
+
 - [ ] 2026-07-31 - 작은 기기·고배율·3버튼 내비에서 깨지는 고정 레이아웃/패딩 전역 대응
   - Context: 화면·컴포넌트 간격이 ~6.7인치 기준 고정 `dp`로 맞춰져 있어, 작은 물리 화면 + 높은 디스플레이/폰트 배율 + 3버튼 내비게이션(inset) 조합에서 온보딩 등 풀뷰포트 화면의 CTA·일러스트·텍스트가 잘리거나 겹친다. `core/design`에 Spacing/compact 레이아웃 시스템이 없고, 로컬 `*Tokens` 고정값·스크롤 없는 Column·큰 고정 높이 일러스트(예: Landing `120/90/58.dp`, AddToFavorite `238.dp`)가 원인. Permission/Upload만 scroll+pinned CTA. insets도 화면마다 `safeDrawing`/`navigationBars` 제각각.
   - Next: (1) `core/design`에 scrollable body + pinned bottom actions + compact 시 일러스트 축소/숨김용 화면 템플릿 (2) 풀스크린 플로우 insets 계약 통일 (3) `RecapSpacing` 시맨틱 토큰 + compact/fontScale에서 여유 간격만 축소. 온보딩을 첫 적용·레퍼런스로 두고 이후 화면은 점진 적용. 고정 padding 일괄 축소만으로는 부족.
@@ -25,69 +30,14 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Next: 완료/부분실패 결과 화면으로 PendingIntent 딥링크
   - Handoff: not started
 
-- [ ] 2026-07-25 - Remote 목록 썸네일 캐싱이 검색/목록 응답을 직렬 차단하지 않도록 개선
-  - Context: `RemoteCaptureThumbnailCache.resolveThumbnailSources`가 `associate`로 uncached download를 순차 await함. `RemoteSearchRepository`(및 Home/Storage remote 목록)가 이 호출을 응답 enrichment에 두어, 캐시 미스 시 페이지 전체 썸네일 다운로드가 끝날 때까지 결과 전달이 지연됨. UI는 Coil로 remote URL 비동기 로드가 가능함
-  - Next (차선): 결과 전달을 막지 않는 범위에서 `async` + semaphore 등 bounded parallel caching으로 다운로드 대기 시간을 줄이거나, 로컬 hit만 동기 resolve하고 miss는 remote URL을 즉시 반환한 뒤 백그라운드 캐시. Search만이 아니라 공유 cache API/`withCachedThumbnails` 호출부 일괄 검토
-  - Handoff: not started
-
-- [ ] 2026-07-25 - Remote 스크린샷 상세 content 편집 API 연결
-  - Context: Remote 상세 로드(`ScreenshotDetailRepository` + `CaptureRepository.getDetail`)와 삭제/즐겨찾기는 연결됐지만 `CaptureApi`에 title/summary/body/type PATCH가 없어 편집 저장은 Room `updateCardContent`만 호출한다. Remote에서는 저장이 실패(save error)한다.
-  - Next: 서버 content update API 확정 후 `CaptureMutationRepository`에 updateContent를 추가하고 `ScreenshotViewModel.saveEdit`을 Switching mutation으로 위임
-  - Handoff: not started
-
-- [ ] 2026-07-22 - `ScreenshotAnalysisProgressViewModel` 부분 실패·상태 불일치 처리
-  - Context: (1) `RemoteCompleted`가 `PARTIAL_FAILED`여도 `successCount + failCount`를 완료 수로 기록하고 오류 없이 종료함. `outcome.status`/`failCount`를 검사하지 않아 진행 UI가 사라지면 사용자는 누락 사실을 알 수 없음. (2) Local 경로에서 `organize` 콜백이 이미 `completedCount`/`progress`를 2/2로 올린 뒤 Room 저장이 실패하면 `errorMessage`만 설정되고 완료 수는 그대로라 실제 저장 결과와 모순됨. 작업 완료 UI가 전체 성공만 전제하고 단계별·부분 성공 outcome을 구분하지 않음
-  - Next: Remote는 `PARTIAL_FAILED`/`failCount`를 검사해 부분 실패 상태 또는 복구 가능한 오류 노출. Local 저장 실패 분기에서 `persisted.size` 기준으로 `completedCount`/`progress` 동기화. 상위 progress 역행 이슈와 함께 단계별 outcome 모델 정리
-  - Blocked by: 백엔드 organize/status poll 실환경 분석 파이프라인 가용 (Remote 부분 실패 UX 확정)
-  - Handoff: not started
-
-- [ ] 2026-07-22 (updated 2026-07-31) - 세션 유효성·온보딩·오프라인을 통합한 앱 진입 라우팅과 계정 전환 시 로컬 데이터 격리
-  - Problem: 현재 루트 라우팅은 `onboardingCompleted`만 보고 세션 상태를 관찰하지 않는다. 토큰이 없거나 refresh token이 서버에서 만료·폐기되어도 Main에 남을 수 있고, 반대로 네트워크 단절·timeout처럼 유효성을 일시적으로 확인할 수 없는 상태를 세션 무효로 오판하면 불필요한 로그아웃과 데이터 손실이 발생한다. 세션 만료 후 재로그인 성공 시 온보딩 완료 여부와 무관하게 가이드로 이동하는 흐름도 재방문 사용자 요구와 맞지 않는다.
-  - Current implementation:
-    - `RecapStartupViewModel`은 로컬 `onboardingCompleted`만으로 splash 종료와 `Onboarding`/`Main`을 결정하고, 세션 유효성 확인 때문에 splash를 유지하지는 않는다.
-    - `TokenRefreshCoordinator`는 액세스 토큰 만료 임박 또는 401에서 갱신하며, 서버가 `INVALID_REFRESH_TOKEN`/`EXPIRED_REFRESH_TOKEN`을 명시한 경우에만 토큰을 지우고 네트워크 실패에서는 보존한다. 그러나 이 결과가 앱 전역 인증/라우팅 상태로 노출되지 않는다.
-    - `NetworkConnectivityMonitor`는 active network 존재만 확인하므로 Wi-Fi 연결 후 실제 인터넷 접근 불가 상태를 구분하지 못한다.
-    - `LocalAppDataResetter`는 Room·저장 이미지·최근 검색·세션·온보딩 상태 전체 초기화를 지원하지만, 동일 계정 재인증과 다른 계정 전환을 구분하는 소유자 ID 및 선택적 wipe 정책은 없다.
-  - Required auth state: 토큰 존재 여부만 사용하지 말고 최소 `SignedOut`, `Usable`, `RefreshNeeded`, `TemporarilyUnverified`(오프라인/timeout/5xx), `ReauthRequired`(refresh token 만료·폐기 확정)를 앱 범위의 observable state로 모델링한다. `TemporarilyUnverified`에서는 토큰과 온보딩 완료 상태를 보존하고, 서버의 명시적인 인증 거부에서만 `ReauthRequired`로 전환한다.
-  - Desired routing matrix (`hasSession` × `onboardingCompleted`, 세션 유효성 판정은 별도 상태):
-    - 세션 X + 온보딩 미완료 → 최초 사용자로 보고 Landing부터 전체 온보딩
-    - 세션 O + 온보딩 미완료 → 유효하면 저장된 온보딩 단계 복원. 오프라인이면 유효성 판정을 보류하고 서버 작업 전까지 진행. 무효 확정이면 Landing
-    - 세션 X + 온보딩 완료 → 재방문 사용자용 `Reauth` 로그인 모드. 로그인 후 튜토리얼을 건너뛰고 Main
-    - 세션 O + 온보딩 완료 → splash에서 원격 검증을 기다리지 않고 Main 진입. 유효/갱신 성공이면 일반 사용, 오프라인·timeout이면 캐시 기반 제한 모드, 무효 확정이면 `Reauth`로 전환
-  - Refresh policy:
-    - 고정 간격 timeout 10회 반복은 사용하지 않는다. 앱 foreground 진입, `NET_CAPABILITY_VALIDATED` 네트워크 복구, 인증 요청의 401, 토큰 만료 임박, 홈/컬렉션의 사용자 `다시 시도`를 갱신 트리거로 사용한다.
-    - 일시 실패를 자동 재시도한다면 exponential backoff+jitter와 foreground 단위 상한을 두고, 네트워크 복구 또는 사용자 수동 갱신에서 횟수를 초기화한다. refresh token 무효/만료가 확정되면 재시도 없이 `ReauthRequired`로 전환한다.
-    - 동시 API의 중복 refresh는 기존 single-flight를 유지하고, foreground/background 전환 및 프로세스 재생성 후에도 라우팅 결과가 일관되어야 한다.
-  - Offline UX/data policy:
-    - 인터넷 연결 확인 불가를 이유로 splash에 사용자를 잡아두지 않는다.
-    - 홈/컬렉션은 공통 인터넷 연결 없음 안내와 수동 새로고침을 제공하고, 캐시 데이터가 있으면 계속 표시한다. 조회 외 업로드·분석·수정·삭제를 차단할지, 재연결 후 실행할 작업 큐를 둘지는 별도 확정한다.
-    - 빈 데이터와 오프라인으로 불러오지 못한 상태를 구분하고 raw exception 또는 세션 내부 정보를 노출하지 않는다.
-  - Reauthentication policy:
-    - 인증 손실은 온보딩 초기화가 아니다. `onboardingCompleted`를 유지한 채 Landing UI를 재사용하는 별도 `Reauth` 모드를 두고, 로그인 성공 후 튜토리얼 없이 Main으로 이동한다.
-    - 재인증 중 back 동작, 기존 상세/deep link/공유 intent/진행 중 분석의 보존·폐기, 로그아웃과 강제 재인증의 UX 차이를 확정해야 한다.
-  - Account isolation/wipe:
-    - 서버가 발급하는 불변 RECAP `userId`를 로컬 데이터 소유자 ID로 저장하는 방식을 우선한다. Kakao ID는 서버 계정 병합·다중 provider 정책과 충돌할 수 있어 서버 ID가 없을 때만 대안으로 검토한다.
-    - 재로그인 후 이전 소유자 ID와 동일하면 로컬 DB·이미지·검색 기록을 유지하고, 다르면 새 계정 데이터를 노출하기 전에 Room·저장 이미지·최근 검색·계정 종속 캐시를 원자적으로 wipe한다. 온보딩 완료 플래그와 앱 공통 설정의 유지 범위를 데이터별로 명시한다.
-    - wipe 실패 시 Main 진입을 막고 복구 가능한 오류를 제공한다. 소유자 ID가 없는 기존 설치 데이터의 최초 마이그레이션은 안전 우선 wipe 또는 1회 계정 귀속 중 하나로 결정한다.
-  - Decisions needed: (1) 다른 계정 재로그인 허용 여부 (2) 서버 불변 `userId` 계약 (3) 오프라인에서 허용할 읽기/쓰기 범위와 작업 큐 여부 (4) 자동 재시도 횟수·총 시간 budget (5) `Reauth`의 back/deep link/공유/분석 복원 정책 (6) 계정별 데이터와 기기 공통 설정의 분류 (7) 로그아웃·회원 탈퇴·세션 만료 각각의 wipe 범위
-  - Validation scope: 위 상태별 콜드스타트와 런타임 전환, offline→online 복구, timeout/5xx/401/invalid refresh, 동일·다른 계정 로그인, wipe 실패, 프로세스 재생성을 단위/통합 테스트 행렬로 검증한다. 실제 네트워크 복구와 화면 전환은 에뮬레이터 또는 실기기 런타임 검증을 포함한다.
-  - Next: 서버 인증 오류 코드와 user identity 계약을 먼저 확정한 뒤 `AuthSessionManager` 역할, root navigation state, 재인증 화면, 계정 소유권 저장/wipe transaction, 홈·컬렉션 수동 갱신 순으로 handoff를 분리한다.
-  - Depends: 서버 refresh/user identity 계약
+- [ ] 2026-08-05 - 계정별 vs 기기 공통 설정 추가 분류
+  - Context: 세션·계정 격리 작업에서 owner wipe 시 유지/삭제할 preference 분류는 현재 salt·onboarding·deviceId·알림 설정 유지로 확정됐지만, 이후 추가 설정 키의 계정 종속 여부는 아직 정책이 없다.
+  - Next: 새 preference 추가 시 계정 종속/기기 공통 분류 기준을 문서화
   - Handoff: not started
 
 - [ ] 2026-07-18 - `docs/LOCAL_DATA.md`를 CaptureDetailResponse 동기화 스키마에 맞게 갱신
   - Context: 스크린샷 mock 계약이 `captureId: Long` / `typeCode` / `organizedAt` / Room v1로 리셋되었지만 `LOCAL_DATA.md`는 여전히 imageId·key_fields·migration 설명을 담고 있음
   - Next: LOCAL_DATA.md의 screenshot_cards / repository / image storage 섹션을 현재 구현과 맞추고 레거시 migration 문서 제거
-  - Handoff: not started
-
-- [ ] 2026-07-16 - 한국어 텍스트 overflow 대응
-  - Context: 설정·계정 관리 등 UI에서 긴 한국어 라벨/이메일/버튼 문구가 잘리거나 레이아웃을 깨뜨릴 수 있음. `RecapButton`·설정 row·계정 관리 화면 등 maxLines/ellipsis/가변 폭 정책이 통일되어 있지 않음
-  - Next: 공통 텍스트 overflow 규칙(줄 수, ellipsis, textWrap, 버튼 compactText)을 정한 뒤 design/feature 컴포넌트에 일괄 적용
-  - Handoff: not started
-
-- [ ] 2026-07-15 - 설정 하위 화면(계정 관리, 문의하기)
-  - Context: 설정 top-level UI/명칭과 Gradle 모듈은 `:feature:settings`로 통일됨. 계정 관리·문의하기는 stub. 이용 안내·공유 즐겨찾기 가이드는 `AppRoute`로 연결됨
-  - Next: 계정 관리/문의하기 전용 화면 스펙 후 구현
   - Handoff: not started
 
 - [ ] 2026-07-14 - 카카오 로그인 SDK 예외 처리 보강
@@ -109,10 +59,6 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Context: `feature/organize` 선택/확인 화면이 Coil 3 `AsyncImage` + MediaStore `content://` URI를 기본 `ImageLoader`로 렌더링함. 메모리 캐시 miss·재디코딩·placeholder 부재로 스크롤 복귀 시 이미지가 다시 불러와지는 것처럼 보일 수 있음
   - Handoff: not started
 
-- [ ] 2026-07-08 - 정리 화면에서 이미지 권한 없음과 실제 빈 목록 상태 구분
-  - Context: `OrganizeViewModel`이 `LocalScreenshotDataSource.queryAllScreenshots()` 결과만 보고 상태를 구성해, 이미지 권한이 거부된 사용자도 "스크린샷 없음" 빈 상태로 보임. 권한 요청/설정 이동 경로가 정리 플로우 안에 필요함
-  - Handoff: not started
-
 - [ ] 2026-07-08 - Coroutine dispatcher DI 패턴 도입
   - Context: 현재 `Dispatchers.IO` 직접 사용과 `@VisibleForTesting` 테스트 훅이 섞여 있어 비동기 코드 테스트 제어 방식이 일관되지 않음. `@IoDispatcher` 등 qualifier 기반 Hilt provider를 추가하고 ViewModel/Repository/Storage의 blocking work dispatcher를 생성자 주입으로 점진 이전할 필요가 있음
   - Handoff: not started
@@ -127,14 +73,9 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Handoff: not started
 
 - [ ] 2026-07-24 - RecapNavDisplay OverlayScene/공유 요소 lifecycle 패리티
-  - Context: predictive back 저항 preview + commit 연속성을 위해 single-pane `RecapNavDisplay`(progress remapping + custom commit completion)를 재도입함. 공식 `NavDisplay`의 OverlayScene/shared-element/일부 interrupted-transition 패리티는 없음. Main tab Home-Collection은 공식 `NavDisplay` 예외를 유지함
-  - Next: OverlayScene/공유 요소가 필요해지면 공식 `NavDisplay` 확장 훅 또는 라이브러리 remapping API를 재평가하고, 없으면 패리티 범위를 명시적으로 문서화
-  - Note: 2026-07-23 공식 NavDisplay 기반 공통 navigation motion 안정화 Done 항목의 순수주의 방향과 상충하며, progress remapping 목표를 위해 의도적으로 재전환함
-  - Handoff: not started
-
-- [ ] 2026-07-10 - DataStore 읽기·손상 오류에도 앱 시작 복구 경로 추가
-  - Context: `UserPreferencesRepository`의 `dataStore.data`에 오류 복구가 없고 startup state가 `Loading`에서 시작해, 파일 손상이나 읽기 실패 시 프로세스 crash 또는 splash 고착으로 앱 진입이 불가능할 수 있음
-  - Next: `IOException` 기본값 복구, `ReplaceFileCorruptionHandler`, 명시적인 startup error/fallback 상태와 관련 테스트를 추가
+  - Context: `feature/033-navigaion-3-animation`에서 `RecapNavDisplay`를 공식 `NavDisplay` thin wrapper로 되돌림. OverlayScene/shared-element 패리티는 회복 가능 방향. 대신 저항 preview(`PredictiveMaxFraction` remapping), custom commit completion, interrupted-transition planner/back commit queue는 포기하고 edge full-range predictive + `EDGE_NONE` None으로 단순화함
+  - Next: OverlayScene/공유 요소가 실제로 필요해지면 공식 `NavDisplay` 확장 훅을 사용하고, 빠른 역전 입력 레이어 회귀가 나면 planner 재도입 여부를 재평가
+  - Note: 2026-07-23 공식 NavDisplay 복원 방향과 다시 정렬. Main tab Home↔Collection은 계속 공식 `NavDisplay` + predictive None
   - Handoff: not started
 
 - [ ] 2026-07-12 - `:core:design` → `:core:model` 의존성 재검토
@@ -148,6 +89,49 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 - 없음
 
 ## Done
+
+- [x] 2026-07-22 (updated 2026-08-05) - 세션 유효성·온보딩·오프라인을 통합한 앱 진입 라우팅과 계정 전환 시 로컬 데이터 격리
+  - Result: `hasSession`(refresh token) × `onboardingCompleted`로 `RecapEntryMode` 파생, Reauth, 카카오 owner hash wipe, 로그인 Connectivity gate, Main 오프라인은 캐시 읽기/쓰기 큐 없이 Error+수동 재시도, foreground·validated 복구 시 Error만 자동 refresh 1회(`MainContentRecoveryTrigger`).
+  - Validation: 관련 unit test GREEN, `assembleDebug` GREEN
+  - Closed: 2026-08-05
+  - Handoff: not started (backlog 직접 구현)
+
+- [x] 2026-08-04 - 런타임 Mock/Remote 전환 계층을 BuildConfig 고정 선택으로 교체
+  - Result: DataStore mode·Switcher·8개 Switching repository와 개발자 전환 UI를 제거하고, `:core:data`의 `BuildConfig.USE_MOCK_BACKEND` 및 lazy Provider 기반 Hilt 선택으로 교체했다. debug도 `-PUSE_MOCK_BACKEND=false`로 Remote를 선택할 수 있으며 Mock User의 계정 조회·탈퇴는 Remote 위임을 유지한다.
+  - Handoff: `docs/handoff/archive/2026-08-04-buildconfig-backend-selection.md`
+  - Validation: 관련 전체 unit test GREEN, debug Mock/Remote assemble GREEN, qa assemble GREEN, invalid property expected failure, debug Mock/Remote `:core:data:testDebugUnitTest` GREEN, 잔존 참조 및 `git diff --check` GREEN
+  - Closed: 2026-08-04
+
+- [x] 2026-07-16 - 한국어 텍스트 overflow 대응
+  - Result: `Type.kt` `recapTextStyle()`에 `localeList = LocaleList("ko")`와 `LineBreak.Paragraph` + `WordBreak.Phrase`를 적용해, 시스템 언어와 무관하게 `RecapTypography` 텍스트가 한국어 phrase 단위 줄바꿈을 사용하도록 함
+  - Closed: 2026-08-04
+
+- [x] 2026-07-10 - DataStore 읽기·손상 오류에도 앱 시작 복구 경로 추가
+  - Result: 확정된 Preferences corruption만 recovery marker로 교체하고 앱 시작 전에 Room·원본 이미지·썸네일·세션·최근 검색·온보딩 상태를 멱등 초기화한다. 일반 읽기 `IOException`은 100ms/300ms 간격으로 최대 2회 재수집하며, 소진 시 데이터를 삭제하지 않고 dismiss 불가능한 단일 액션 `RecapPopup`에서 재시도를 제공한다.
+  - Handoff: `docs/handoff/archive/2026-08-04-datastore-startup-corruption-recovery.md`
+  - Validation: `:core:data:testDebugUnitTest :app:testDebugUnitTest` GREEN, `assembleDebug` GREEN, `git diff --check` GREEN
+  - Closed: 2026-08-04
+
+- [x] 2026-07-25 - Remote 목록 썸네일 캐싱이 검색/목록 응답을 직렬 차단하지 않도록 개선
+  - Result: `resolveThumbnailSources`는 hit→로컬 path, miss→null을 즉시 반환하고 Semaphore(4) 백그라운드 prefetch로 디스크 캐시를 채운 뒤 `thumbnailReady`를 emit한다. Search/Home/Collection/Recent ViewModel이 path로 UiState를 패치하며, Coil은 remote URL을 받지 않아 첫 miss 네트워크는 앱 캐시 한 경로만 탄다
+  - Closed: 2026-08-03
+
+- [x] 2026-07-22 - `ScreenshotAnalysisProgressViewModel` 부분 실패·상태 불일치 처리
+  - Result: `OrganizeTerminalResultMapper`가 Remote `PARTIAL_FAILED`/`failCount`와 Local 저장 실패 시 `persisted.size`를 `AllSuccess`/`PartialSuccess`/`AllFailed`로 매핑한다. `ScreenshotAnalysisProgressViewModel`은 `terminalResult`를 설정하고 `OrganizePartialFailedScreen` 등 단계별 완료 UI로 연결되며 관련 단위 테스트가 있다
+  - Closed: 2026-08-03 (이미 구현된 상태로 Open에서 Done으로 이동)
+
+- [x] 2026-07-15 - 설정 하위 화면(계정 관리, 문의하기)
+  - Result: 계정 관리는 `AccountManagementRoute`/`ViewModel`(로그아웃·회원탈퇴)로 구현됨. 문의하기는 전용 stub 화면 대신 `RecapLegalUrls.CUSTOMER_SUPPORT` 외부 URL을 연다
+  - Closed: 2026-08-03 (이미 구현된 상태로 Open에서 Done으로 이동)
+
+- [x] 2026-07-08 - 정리 화면에서 이미지 권한 없음과 실제 빈 목록 상태 구분
+  - Result: Main에서 `ImageAccessLevel.Denied` 시 정리 진입 전 권한 팝업을 띄우고, Organize는 Partial 접근 카드·권한 요청/설정 이동 경로를 제공한다. 빈 목록은 권한이 있을 때의 empty UI로 구분된다
+  - Closed: 2026-08-03 (이미 구현된 상태로 Open에서 Done으로 이동)
+
+- [x] 2026-07-25 - Remote 스크린샷 상세 content 편집 API 연결
+  - Context: Remote 상세 로드(`ScreenshotDetailRepository` + `CaptureRepository.getDetail`)와 삭제/즐겨찾기는 연결됐지만 `CaptureApi`에 title/summary/body/type PATCH가 없어 편집 저장은 Room `updateCardContent`만 호출한다. Remote에서는 저장이 실패(save error)한다.
+  - Next: 서버 content update API 확정 후 `CaptureMutationRepository`에 updateContent를 추가하고 `ScreenshotViewModel.saveEdit`을 ~~Switching mutation으로 위임~~ `CaptureMutationRepository`(BuildConfig로 선택된 Mock/Remote)로 위임
+  - Handoff: not started
 
 - [x] 2026-07-30 - 빠른 전역 navigation push/pop 역전의 화면 레이어 안정화
   - Result: 실제 initial/target scene pair에 방향과 z-index를 고정하는 transition planner를 도입하고, 취소/재타기팅/idle 정규화 및 post-splash 흰색 window/root fallback 배경을 적용

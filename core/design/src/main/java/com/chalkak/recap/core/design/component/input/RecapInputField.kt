@@ -39,11 +39,12 @@ import com.chalkak.recap.core.design.theme.Black
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapBlue500
+import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray900
-import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 
 @Composable
@@ -235,7 +236,11 @@ private object RecapInputFieldTokens {
 
 const val showRecapInputFieldBackground = true
 
-@Preview(name = "RecapInputField filled", showBackground = showRecapInputFieldBackground, widthDp = 360)
+@Preview(
+    name = "RecapInputField filled",
+    showBackground = showRecapInputFieldBackground,
+    widthDp = 360
+)
 @Composable
 private fun RecapInputFieldFilledPreview() {
     RECAPTheme(dynamicColor = false) {
@@ -249,7 +254,11 @@ private fun RecapInputFieldFilledPreview() {
     }
 }
 
-@Preview(name = "RecapInputField placeholder", showBackground = showRecapInputFieldBackground, widthDp = 360)
+@Preview(
+    name = "RecapInputField placeholder",
+    showBackground = showRecapInputFieldBackground,
+    widthDp = 360
+)
 @Composable
 private fun RecapInputFieldPlaceholderPreview() {
     RECAPTheme(dynamicColor = false) {
@@ -263,7 +272,11 @@ private fun RecapInputFieldPlaceholderPreview() {
     }
 }
 
-@Preview(name = "RecapInputField focused", showBackground = showRecapInputFieldBackground, widthDp = 360)
+@Preview(
+    name = "RecapInputField focused",
+    showBackground = showRecapInputFieldBackground,
+    widthDp = 360
+)
 @Composable
 private fun RecapInputFieldFocusedPreview() {
     RECAPTheme(dynamicColor = false) {
@@ -273,7 +286,11 @@ private fun RecapInputFieldFocusedPreview() {
     }
 }
 
-@Preview(name = "RecapInputField typing", showBackground = showRecapInputFieldBackground, widthDp = 360)
+@Preview(
+    name = "RecapInputField typing",
+    showBackground = showRecapInputFieldBackground,
+    widthDp = 360
+)
 @Composable
 private fun RecapInputFieldTypingPreview() {
     RECAPTheme(dynamicColor = false) {
@@ -283,7 +300,11 @@ private fun RecapInputFieldTypingPreview() {
     }
 }
 
-@Preview(name = "RecapInputField multiline", showBackground = showRecapInputFieldBackground, widthDp = 360)
+@Preview(
+    name = "RecapInputField multiline",
+    showBackground = showRecapInputFieldBackground,
+    widthDp = 360
+)
 @Composable
 private fun RecapInputFieldMultilinePreview() {
     RECAPTheme(dynamicColor = false) {
@@ -300,7 +321,11 @@ private fun RecapInputFieldMultilinePreview() {
     }
 }
 
-@Preview(name = "RecapInputField counter empty", showBackground = showRecapInputFieldBackground, widthDp = 360)
+@Preview(
+    name = "RecapInputField counter empty",
+    showBackground = showRecapInputFieldBackground,
+    widthDp = 360
+)
 @Composable
 private fun RecapInputFieldCounterEmptyPreview() {
     RECAPTheme(dynamicColor = false) {
@@ -315,7 +340,11 @@ private fun RecapInputFieldCounterEmptyPreview() {
     }
 }
 
-@Preview(name = "RecapInputField error", showBackground = showRecapInputFieldBackground, widthDp = 360)
+@Preview(
+    name = "RecapInputField error",
+    showBackground = showRecapInputFieldBackground,
+    widthDp = 360
+)
 @Composable
 private fun RecapInputFieldErrorPreview() {
     RECAPTheme(dynamicColor = false) {
@@ -347,8 +376,8 @@ private fun RecapInputFieldFocusedPreviewContent(
         ) {
             Text(
                 text = stringResource(R.string.recap_input_field_preview_label),
-                style = RecapBody2,
-                color = RecapGray900,
+                style = RecapCaption1,
+                color = Black,
             )
             Surface(
                 modifier = Modifier.fillMaxWidth(),

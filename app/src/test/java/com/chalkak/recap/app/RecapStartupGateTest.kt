@@ -30,7 +30,7 @@ class RecapStartupGateTest {
         assertFalse(
             canEnterRecapApp(
                 lottieSplashComplete = false,
-                startupUiState = RecapStartupUiState.Ready(onboardingCompleted = true),
+                startupUiState = RecapStartupUiState.Ready(entryMode = RecapEntryMode.Main),
             ),
         )
     }
@@ -40,7 +40,9 @@ class RecapStartupGateTest {
         assertTrue(
             canEnterRecapApp(
                 lottieSplashComplete = true,
-                startupUiState = RecapStartupUiState.Ready(onboardingCompleted = false),
+                startupUiState = RecapStartupUiState.Ready(
+                    entryMode = RecapEntryMode.Onboarding,
+                ),
             ),
         )
     }
@@ -50,7 +52,27 @@ class RecapStartupGateTest {
         assertTrue(
             canEnterRecapApp(
                 lottieSplashComplete = true,
-                startupUiState = RecapStartupUiState.Ready(onboardingCompleted = true),
+                startupUiState = RecapStartupUiState.Ready(entryMode = RecapEntryMode.Main),
+            ),
+        )
+    }
+
+    @Test
+    fun `animation complete and reauth entry allows entry`() {
+        assertTrue(
+            canEnterRecapApp(
+                lottieSplashComplete = true,
+                startupUiState = RecapStartupUiState.Ready(entryMode = RecapEntryMode.Reauth),
+            ),
+        )
+    }
+
+    @Test
+    fun `animation complete and startup read error blocks entry`() {
+        assertFalse(
+            canEnterRecapApp(
+                lottieSplashComplete = true,
+                startupUiState = RecapStartupUiState.ReadError,
             ),
         )
     }

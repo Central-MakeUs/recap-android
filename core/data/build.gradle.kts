@@ -5,6 +5,20 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+// -P override applies to debug only. release (and app qa via release fallback) is always Remote.
+val useMockBackendOverride: Boolean? =
+    if (project.hasProperty("USE_MOCK_BACKEND")) {
+        when (val raw = project.property("USE_MOCK_BACKEND").toString()) {
+            "true" -> true
+            "false" -> false
+            else -> error(
+                "Invalid USE_MOCK_BACKEND='$raw'. Allowed values are 'true' or 'false'.",
+            )
+        }
+    } else {
+        null
+    }
+
 android {
     namespace = "com.chalkak.recap.core.data"
     compileSdk {
@@ -28,6 +42,23 @@ android {
     buildFeatures {
         buildConfig = true
     }
+
+    buildTypes {
+        debug {
+            buildConfigField(
+                "boolean",
+                "USE_MOCK_BACKEND",
+                (useMockBackendOverride ?: true).toString(),
+            )
+        }
+        release {
+            buildConfigField(
+                "boolean",
+                "USE_MOCK_BACKEND",
+                "false",
+            )
+        }
+    }
 }
 
 tasks.withType<Test>().configureEach {
@@ -37,6 +68,7 @@ tasks.withType<Test>().configureEach {
 dependencies {
     implementation(project(":core:model"))
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.process)
     implementation(libs.androidx.exifinterface)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.room.ktx)

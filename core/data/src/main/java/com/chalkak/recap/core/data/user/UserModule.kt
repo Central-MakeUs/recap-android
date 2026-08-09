@@ -1,17 +1,27 @@
 package com.chalkak.recap.core.data.user
 
-import dagger.Binds
+import com.chalkak.recap.core.data.BuildConfig
+import com.chalkak.recap.core.data.backend.BackendSelection
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Provider
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class UserModule {
-    @Binds
+object UserModule {
+    @Provides
     @Singleton
-    abstract fun bindUserRepository(
-        repository: SwitchingUserRepository,
-    ): UserRepository
+    fun provideUserRepository(
+        mockProvider: Provider<MockUserRepository>,
+        remoteProvider: Provider<RemoteUserRepository>,
+    ): UserRepository {
+        return BackendSelection.select(
+            useMockBackend = BuildConfig.USE_MOCK_BACKEND,
+            mockProvider = mockProvider,
+            remoteProvider = remoteProvider,
+        )
+    }
 }

@@ -78,7 +78,6 @@ Recap은 `:app`을 중심으로 재사용 계층인 `:core:*`와 화면 단위 �
 - UI 상태는 immutable `UiState`로 표현하고 사용자 입력은 sealed `Action`으로 명시합니다.
 - ViewModel은 상태 생성과 action 처리에 집중합니다.
 - Repository가 로컬 저장소와 외부 연동의 세부 구현을 감춥니다.
-- OCR·AI 분석은 서버에서 수행하며, Debug 빌드에서는 Mock/Remote backend를 런타임 중 전환할 수 있습니다.
 
 ## 앱 정보
 
@@ -96,6 +95,9 @@ Recap은 `:app`을 중심으로 재사용 계층인 `:core:*`와 화면 단위 �
 | [`docs/PROJECT.md`](docs/PROJECT.md) | 프로젝트 구조와 개발 컨벤션 |
 | [`docs/TESTING.md`](docs/TESTING.md) | 테스트 및 검증 정책 |
 | [`docs/LOCAL_DATA.md`](docs/LOCAL_DATA.md) | 로컬 데이터 구조와 저장 정책 |
-| [`docs/ANALYSIS_DATA_SOURCE.md`](docs/ANALYSIS_DATA_SOURCE.md) | Mock/Remote backend 전환 구조 |
+| [`docs/ANALYSIS_DATA_SOURCE.md`](docs/ANALYSIS_DATA_SOURCE.md) | Mock/Remote build-time (`USE_MOCK_BACKEND`) 선택 |
+| [`docs/MOCK_REMOTE_CHANGE.md`](docs/MOCK_REMOTE_CHANGE.md) | 제거된 런타임 Mock/Remote 전환 계층 역사 스냅샷 |
+| [`docs/SCREENSHOT_MOCK_DATA.md`](docs/SCREENSHOT_MOCK_DATA.md) | Mock 스크린샷 분석 결과 계약 |
 | [`docs/ORGANIZE_OVERLAY_NAVIGATION.md`](docs/ORGANIZE_OVERLAY_NAVIGATION.md) | 스크린샷 정리 플로우와 내비게이션 구조 |
 | [`docs/BACKLOG.md`](docs/BACKLOG.md) | 후속 작업 백로그 |
+| [`docs/handoff/HANDOFF.md`](docs/handoff/HANDOFF.md) | Codex ↔ Cursor 활성 handoff 채널 |

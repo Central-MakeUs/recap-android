@@ -159,11 +159,25 @@ class ShareIntakeViewModelTest {
 
             assertEquals(ShareIntakeEvent.LoginRequired, awaitItem())
             assertNull(viewModel.pendingShareIntake.value)
-            coVerify(exactly = 1) {
-                userPreferencesRepository.setOnboardingCompleted(false)
-            }
             expectNoEvents()
             cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `login required share entry keeps onboarding completed flag`() = runTest(testDispatcher) {
+        coEvery { sessionTokenStore.getRefreshToken() } returns null
+        val intent = mockk<Intent>()
+        val viewModel = createViewModel(
+            fingerprint = "share-fingerprint",
+            parseResult = ::sampleParseResult,
+        )
+
+        viewModel.submitShareIntent(intent)
+        advanceUntilIdle()
+
+        coVerify(exactly = 0) {
+            userPreferencesRepository.setOnboardingCompleted(any())
         }
     }
 

@@ -47,7 +47,7 @@ class StorageRepositoryTest {
     fun setUp() {
         refreshToken.value = "refresh-token"
         every { sessionTokenStore.refreshToken } returns refreshToken
-        coEvery { thumbnailCache.resolveThumbnailSources(any()) } answers {
+        every { thumbnailCache.resolveThumbnailSources(any()) } answers {
             firstArg<List<Pair<Long, String?>>>().associate { (id, url) -> id to url }
         }
         repository = RemoteStorageRepository(

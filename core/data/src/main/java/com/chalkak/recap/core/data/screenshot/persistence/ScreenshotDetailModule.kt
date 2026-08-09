@@ -1,17 +1,27 @@
 package com.chalkak.recap.core.data.screenshot.persistence
 
-import dagger.Binds
+import com.chalkak.recap.core.data.BuildConfig
+import com.chalkak.recap.core.data.backend.BackendSelection
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Provider
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class ScreenshotDetailModule {
-    @Binds
+object ScreenshotDetailModule {
+    @Provides
     @Singleton
-    abstract fun bindScreenshotDetailRepository(
-        repository: SwitchingScreenshotDetailRepository,
-    ): ScreenshotDetailRepository
+    fun provideScreenshotDetailRepository(
+        mockProvider: Provider<MockScreenshotDetailRepository>,
+        remoteProvider: Provider<RemoteScreenshotDetailRepository>,
+    ): ScreenshotDetailRepository {
+        return BackendSelection.select(
+            useMockBackend = BuildConfig.USE_MOCK_BACKEND,
+            mockProvider = mockProvider,
+            remoteProvider = remoteProvider,
+        )
+    }
 }

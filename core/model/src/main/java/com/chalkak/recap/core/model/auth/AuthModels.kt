@@ -14,6 +14,7 @@ data class SocialAuthCredential(
 )
 
 data class KakaoUserProfile(
+    val id: Long,
     val email: String?,
     val connectedAt: Instant?,
     val emailNeedsAgreement: Boolean = false,

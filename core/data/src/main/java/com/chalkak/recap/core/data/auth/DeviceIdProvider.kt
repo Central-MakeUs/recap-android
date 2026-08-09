@@ -4,7 +4,9 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.chalkak.recap.core.data.USER_PREFERENCES_DATASTORE_NAME
 import com.chalkak.recap.core.data.UserPreferencesDataStore
+import com.chalkak.recap.core.data.safeData
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -20,7 +22,7 @@ class DeviceIdProvider @Inject constructor(
 
     suspend fun getOrCreate(): String =
         mutex.withLock {
-            val existing = dataStore.data.first()[DEVICE_ID]
+            val existing = dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).first()[DEVICE_ID]
             if (!existing.isNullOrBlank()) {
                 return@withLock existing
             }
@@ -31,7 +33,7 @@ class DeviceIdProvider @Inject constructor(
                     preferences[DEVICE_ID] = created
                 }
             }
-            dataStore.data.first()[DEVICE_ID]
+            dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).first()[DEVICE_ID]
                 ?: error("device_id was not persisted")
         }
 

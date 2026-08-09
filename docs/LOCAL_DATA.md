@@ -7,15 +7,21 @@
 ```text
 :core:data
 ├── LocalScreenshotDataSource.kt        # MediaStore 기반 로컬 스크린샷 조회
+├── LocalAppDataResetter.kt             # 로그아웃 wipe / 계정 전환 wipe
 ├── RecapDatabase.kt                    # Room DB 정의
 ├── DatabaseModule.kt                   # Room DB/DAO Hilt 제공
 ├── UserPreferencesDataStoreOwner.kt    # user_preferences DataStore owner
 ├── UserPreferencesModule.kt            # DataStore Hilt 제공
 ├── UserPreferencesRepository.kt        # 사용자 설정 repository
+├── account/
+│   ├── AccountOwnerDataStoreOwner.kt   # account_owner DataStore owner
+│   ├── AccountOwnerModule.kt           # account_owner Hilt 제공
+│   ├── AccountOwnerStore.kt            # 소유자 해시 + 기기 로컬 salt 저장
+│   └── AccountOwnerHasher.kt           # SHA-256("{salt}|kakao:{id}")
 └── screenshot/
     ├── permission/                     # 이미지 권한 인터페이스/모듈
-    ├── analysis/                       # 분석 repository (mock/remote/switching)
-    ├── backend/                        # Mock/Remote 백엔드 모드 전환
+    ├── analysis/                       # 분석 repository (mock/remote, BuildConfig 선택)
+    ├── backend/                        # MockScreenshotDataResetter 등
     ├── image/                          # 앱 private 이미지 경로 관리
     └── persistence/                    # 분석 카드 Room 저장
 ```
@@ -166,12 +172,43 @@
 역할:
 - `Context.userPreferencesDataStore` delegate의 단일 owner다.
 - DataStore name은 `user_preferences`다.
+- `ReplaceFileCorruptionHandler`로 파일 손상 시 `emptyPreferences()`로 교체한다. 온보딩·세션·deviceId·검색 설정이 함께 리셋된다.
+
+### `PreferencesDataStoreExt`
+
+역할:
+- `DataStore<Preferences>.safeData(name)`이 읽기 `IOException`에서 최대 3회(재시도 2회, 100ms·300ms 지연) 재수집한다. 3회 모두 실패하면 예외를 그대로 던지므로 호출 측이 실패를 처리해야 한다. 취소와 non-IO 예외는 삼키지 않는다.
+- `name`은 로그에만 쓰며, 어느 DataStore 파일에서 실패했는지 구분하기 위해 호출 측이 넘긴다.
+- `UserPreferencesRepository`, `SessionTokenStore`, `DeviceIdProvider`, `RecentSearchStore`, `AccountOwnerStore`가 이 경로로 읽는다.
 
 ### `UserPreferencesModule`
 
 역할:
 - `user_preferences` DataStore를 Hilt singleton으로 제공한다.
 - `@UserPreferencesDataStore` qualifier로 같은 타입의 다른 DataStore와 구분한다.
+
+### `AccountOwnerStore` / `account_owner` DataStore
+
+역할:
+- 카카오 `user.id`의 SHA-256 해시(`{salt}|kakao:{id}` → hex)와 기기 로컬 salt만 별도 Preferences DataStore `account_owner`에 저장한다. 원문 ID는 디스크에 두지 않는다.
+- 세션 만료/`Reauth`에서는 유지하고, 로그인 시 저장된 해시와 비교한다.
+- 해시 없음(기존 설치) 또는 불일치면 `LocalAppDataResetter.wipeAndRebindOwner(hash)`로 Room·썸네일 캐시·최근 검색·계정 종속 preference를 wipe한 뒤 새 해시를 저장한다. `onboardingCompleted`·`deviceId`·알림 설정은 유지한다.
+- 명시적 로그아웃/탈퇴의 `resetDatabaseAndOnboarding()`에서 owner hash와 salt를 `clear()`한다.
+
+주요 API:
+- `getHash()` / `setHash(hash)` / `getOrCreateSalt()` / `clear()`
+- `AccountOwnerHasher.hashKakaoUserId(userId)`
+- `LocalAppDataResetter.wipeAndRebindOwner(hash)` / `resetDatabaseAndOnboarding()`
+
+주의사항:
+- 일반 사용자 설정은 `user_preferences`에 두고, 계정 소유자 마커만 `account_owner`로 분리한다(세션·온보딩 wipe와 수명 분리).
+- salt 없는 SHA-256은 카카오 `user.id` 자릿수가 짧아 전수 조사로 역산된다. 기기 로컬 salt를 반드시 함께 쓴다.
+- salt가 사라지면 이전 해시와 절대 일치하지 않아 다음 로그인에서 wipe가 일어난다(안전 우선).
+- 두 값 모두 `backup_rules.xml`·`data_extraction_rules.xml`에서 백업/기기 전송 제외 대상이다(`datastore/account_owner.preferences_pb`).
+- 로그인 chokepoint는 `AuthRepository.signInWithKakao`다. `me()` 실패 시 서버 로그인/Main 진입을 하지 않는다.
+- wipe는 fail-closed다. 이미지/썸네일 삭제가 완전히 끝나지 않으면 `wipeAndRebindOwner`가 예외를 던지고 해시를 갱신하지 않는다. 이전 해시가 남으므로 다음 로그인에서 wipe를 다시 시도한다.
+- `reconcileAccountOwner` 경로의 DataStore·wipe 실패는 모두 `Result.failure(AuthException(AuthError.Unknown))`으로 매핑된다. `signInWithKakao`는 예외를 던지지 않는다.
+- 계정 전환 wipe는 서버 로그인보다 먼저 실행한다. 서버 로그인이 실패해도 로컬은 이미 비어 있고, 서버가 SoT이므로 재로그인 후 다시 동기화한다.
 
 ### `UserPreferencesRepository`
 
@@ -185,6 +222,7 @@
 - `organizeCompleteNotificationEnabled: Flow<Boolean>`
 - `setOrganizeCompleteNotificationEnabled(enabled)`
 - `getAiDataTransferConsentStatus()` / `setAiDataTransferConsent(consented, consentedAt)`
+- `clearAccountScopedPreferences()`
 
 저장 key:
 - `onboarding_completed`
@@ -192,21 +230,10 @@
 - `ai_data_transfer_consented` / `ai_data_transfer_consented_at` (MOCK consent SoT)
 
 주의사항:
-- 스크린샷 backend 모드는 `ScreenshotBackendModeStore`가 같은 `user_preferences` DataStore에서 관리한다.
-- 새 설정을 추가할 때는 같은 `user_preferences` DataStore를 사용하고, 별도 DataStore 파일을 만들지 않는다.
+- 일반 사용자 설정은 같은 `user_preferences` DataStore에 추가한다. 계정 소유자 해시만 예외적으로 `account_owner` DataStore를 사용한다.
 - AI 동의 DataStore 값은 MOCK backend에서만 사용한다. REMOTE는 서버 consent API가 SoT다.
-
-### `ScreenshotBackendModeStore`
-
-역할:
-- 전역 스크린샷 backend 모드(`MOCK` / `REMOTE`)를 관찰·저장한다.
-- Debug에서만 저장값을 사용하고, non-debug(release)는 항상 `REMOTE`이다.
-
-저장 key:
-- `screenshot_backend_mode` (신규, 우선)
-- `analysis_data_source_mode` (legacy fallback, `setMode` 시 제거)
-
-자세한 전환 구조는 `docs/ANALYSIS_DATA_SOURCE.md`를 본다.
+- AI 동의는 계정 종속 값이라 `clearAccountScopedPreferences()`가 지운다. 계정 전환 wipe와 로그아웃 reset이 이 API를 호출한다. 계정별로 다시 받아야 하는 설정을 추가할 때는 여기에도 등록한다.
+- 스크린샷 backend(Mock/Remote)는 DataStore가 아니라 `:core:data` `BuildConfig.USE_MOCK_BACKEND`로 빌드 시 고정된다. 자세한 선택은 `docs/ANALYSIS_DATA_SOURCE.md`를 본다.
 
 ## Mock backend vs Remote backend 저장 SoT
 
@@ -221,7 +248,8 @@
 | Mock 구현 | `MockHomeRepository`, `MockStorageRepository`, `MockCaptureMutationRepository`, `MockUserRepository` 등 | — |
 | Remote 구현 | — | `RemoteHomeRepository`, `RemoteStorageRepository`, `RemoteCaptureMutationRepository`, `RemoteScreenshotDetailRepository`, `RemoteUserRepository` 등 |
 
-모드 전환 시 `MockScreenshotDataResetter`가 Mock Room 카드와 private 원본/썸네일만 삭제한다. session token·onboarding·MOCK consent·일반 사용자 설정은 유지한다.
+개발자 옵션의 스크린샷 데이터 초기화와 Mock `deleteAccountData`는 `MockScreenshotDataResetter`로 Mock Room 카드와 private 원본/썸네일만 삭제한다. session token·onboarding·MOCK consent·일반 사용자 설정은 유지한다. Remote 빌드에서도 이 액션은 서버 데이터 삭제로 바뀌지 않는다.
+BuildConfig backend 선택 자체는 resetter와 무관하며, 런타임 모드 전환(및 전환 시 wipe)은 없다.
 
 ## 현재 연결되지 않은 부분
 
@@ -241,7 +269,8 @@ Remote 업로드/정리 파이프라인(`issueUploadUrls` → PUT → `organize`
 - `ScreenshotImageStorageTest`
 - `ScreenshotCardDaoTest`
 - `RecapDatabaseMigration2To3Test`
-- `ScreenshotImageStorageTest`
+- `AccountOwnerStoreTest` / `AccountOwnerHasherTest`
+- `LocalAppDataResetterTest`
 
 검증 범위:
 - DataStore 기본값/저장
@@ -251,6 +280,8 @@ Remote 업로드/정리 파이프라인(`issueUploadUrls` → PUT → `organize`
 - favorite state 독립 갱신
 - card 삭제 시 key fields 제거
 - repository round-trip
+- 소유자 해시/salt 저장·초기화와 salt별 해시 분리
+- 계정 전환 wipe의 fail-closed 동작(이미지 삭제 실패 시 해시 미갱신)과 로그아웃 reset의 fail-open 동작
 
 기본 검증 명령:
 

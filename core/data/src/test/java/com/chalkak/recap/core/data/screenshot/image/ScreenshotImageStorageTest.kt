@@ -263,8 +263,9 @@ class ScreenshotImageStorageTest {
             writeText("thumbnail")
         }
 
-        storage.clearStoredImages()
+        val cleared = storage.clearStoredImages()
 
+        assertTrue(cleared)
         assertFalse(imageFile.exists())
         assertFalse(thumbnailFile.exists())
     }

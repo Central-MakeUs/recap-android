@@ -42,12 +42,12 @@ class RemoteRecentCapturesRepository @Inject constructor(
             ) { it.toDomain() }.getOrThrow().withCachedThumbnails()
         }
 
-    private suspend fun CapturePage.withCachedThumbnails(): CapturePage {
+    private fun CapturePage.withCachedThumbnails(): CapturePage {
         val resolved = thumbnailCache.resolveThumbnailSources(
             items.map { summary -> summary.captureId to summary.thumbnailUrl },
         )
         val enriched = items.map { summary ->
-            summary.copy(thumbnailUrl = resolved[summary.captureId] ?: summary.thumbnailUrl)
+            summary.copy(thumbnailUrl = resolved[summary.captureId])
         }
         return copy(items = enriched)
     }

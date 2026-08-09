@@ -109,12 +109,12 @@ class RemoteHomeRepository(
             )
         }
 
-    private suspend fun List<CaptureSummary>.withCachedThumbnails(): List<CaptureSummary> {
+    private fun List<CaptureSummary>.withCachedThumbnails(): List<CaptureSummary> {
         val resolved = thumbnailCache.resolveThumbnailSources(
             map { summary -> summary.captureId to summary.thumbnailUrl },
         )
         return map { summary ->
-            summary.copy(thumbnailUrl = resolved[summary.captureId] ?: summary.thumbnailUrl)
+            summary.copy(thumbnailUrl = resolved[summary.captureId])
         }
     }
 

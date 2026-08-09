@@ -1,17 +1,27 @@
 package com.chalkak.recap.core.data.storage
 
-import dagger.Binds
+import com.chalkak.recap.core.data.BuildConfig
+import com.chalkak.recap.core.data.backend.BackendSelection
 import dagger.Module
+import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import javax.inject.Provider
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class StorageModule {
-    @Binds
+object StorageModule {
+    @Provides
     @Singleton
-    abstract fun bindStorageRepository(
-        repository: SwitchingStorageRepository,
-    ): StorageRepository
+    fun provideStorageRepository(
+        mockProvider: Provider<MockStorageRepository>,
+        remoteProvider: Provider<RemoteStorageRepository>,
+    ): StorageRepository {
+        return BackendSelection.select(
+            useMockBackend = BuildConfig.USE_MOCK_BACKEND,
+            mockProvider = mockProvider,
+            remoteProvider = remoteProvider,
+        )
+    }
 }

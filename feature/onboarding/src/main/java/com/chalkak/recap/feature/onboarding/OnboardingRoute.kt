@@ -35,6 +35,7 @@ import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.feature.onboarding.screen.OnboardingAddToFavoriteGuideScreen
+import com.chalkak.recap.feature.onboarding.component.NoInternetPopup
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
@@ -63,6 +64,7 @@ fun OnboardingRoute(
     val pendingSampleShareAdvanceRequestId by
         pendingSampleShareAdvanceRequestIds.collectAsStateWithLifecycle()
     var showPhotoPermissionPopup by rememberSaveable { mutableStateOf(false) }
+    var showNoInternetPopup by rememberSaveable { mutableStateOf(false) }
     var awaitPermissionFromSettings by rememberSaveable { mutableStateOf(false) }
 
     fun advanceFromPermissionGuide() {
@@ -98,6 +100,9 @@ fun OnboardingRoute(
                         },
                         type = RecapToastType.Error,
                     )
+                }
+                OnboardingEvent.ShowNoInternet -> {
+                    showNoInternetPopup = true
                 }
             }
         }
@@ -236,6 +241,10 @@ fun OnboardingRoute(
                 confirmButtonColor = RecapBlue300,
                 confirmButtonContentColor = White,
             )
+        }
+
+        if (showNoInternetPopup) {
+            NoInternetPopup(onDismissRequest = { showNoInternetPopup = false })
         }
     }
 }

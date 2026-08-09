@@ -5,7 +5,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.auth.AuthException
 import com.chalkak.recap.core.data.auth.AuthRepository
+import com.chalkak.recap.core.data.network.NetworkConnectivityMonitor
 import com.chalkak.recap.core.data.network.SessionTokenStore
+import com.chalkak.recap.core.data.network.TokenRefreshCoordinator
 import com.chalkak.recap.core.data.screenshot.permission.ImagePermissionRepository
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.auth.AuthError
@@ -25,6 +27,8 @@ class OnboardingViewModel @Inject constructor(
     private val imagePermissionRepository: ImagePermissionRepository,
     private val authRepository: AuthRepository,
     private val sessionTokenStore: SessionTokenStore,
+    private val tokenRefreshCoordinator: TokenRefreshCoordinator,
+    private val networkConnectivityMonitor: NetworkConnectivityMonitor,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = _uiState.asStateFlow()
@@ -78,6 +82,11 @@ class OnboardingViewModel @Inject constructor(
         if (_uiState.value.isLoading) return
 
         viewModelScope.launch {
+            if (!networkConnectivityMonitor.isInternetValidated()) {
+                _events.emit(OnboardingEvent.ShowNoInternet)
+                return@launch
+            }
+
             _uiState.update { current ->
                 current.copy(isLoading = true, errorMessage = null)
             }
@@ -90,11 +99,7 @@ class OnboardingViewModel @Inject constructor(
                 onFailure = { error ->
                     val authError = (error as? AuthException)?.authError ?: AuthError.Unknown
                     _uiState.update { current -> current.copy(isLoading = false) }
-                    _events.emit(
-                        OnboardingEvent.ShowLoginError(
-                            isCancelled = authError == AuthError.Cancelled,
-                        ),
-                    )
+                    _events.emit(loginFailureEvent(authError))
                 },
             )
         }
@@ -170,12 +175,8 @@ class OnboardingViewModel @Inject constructor(
             return OnboardingStep.Landing
         }
 
-        val refreshResult = authRepository.refresh()
-        val refreshError = (refreshResult.exceptionOrNull() as? AuthException)?.authError
-        if (refreshError is AuthError.Server &&
-            refreshError.code in INVALID_REFRESH_TOKEN_CODES
-        ) {
-            sessionTokenStore.clear()
+        val refreshed = tokenRefreshCoordinator.refreshIfNeeded(force = true)
+        if (!refreshed && sessionTokenStore.getRefreshToken() == null) {
             return OnboardingStep.Landing
         }
 
@@ -197,12 +198,12 @@ class OnboardingViewModel @Inject constructor(
         }
     }
 
-    private companion object {
-        val INVALID_REFRESH_TOKEN_CODES = setOf(
-            "INVALID_REFRESH_TOKEN",
-            "EXPIRED_REFRESH_TOKEN",
-        )
-    }
+    private fun loginFailureEvent(authError: AuthError): OnboardingEvent =
+        when (authError) {
+            AuthError.Network -> OnboardingEvent.ShowNoInternet
+            AuthError.Cancelled -> OnboardingEvent.ShowLoginError(isCancelled = true)
+            else -> OnboardingEvent.ShowLoginError(isCancelled = false)
+        }
 }
 
 private fun OnboardingStep.previousStep(): OnboardingStep =
