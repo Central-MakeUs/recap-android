@@ -20,9 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,13 +36,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.White
+
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -195,13 +195,13 @@ private fun ScreenshotPickerScrollIndicatorPill(
         ),
     ) {
         Icon(
-            imageVector = Icons.Filled.ArrowDropUp,
+            painter = painterResource(R.drawable.ic_arrow_drop_up_16),
             contentDescription = null,
             modifier = Modifier.size(ScreenshotPickerScrollIndicatorTokens.IconSize),
             tint = White,
         )
         Icon(
-            imageVector = Icons.Filled.ArrowDropDown,
+            painter = painterResource(R.drawable.ic_arrow_drop_down_16),
             contentDescription = null,
             modifier = Modifier.size(ScreenshotPickerScrollIndicatorTokens.IconSize),
             tint = White,

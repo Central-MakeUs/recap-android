@@ -25,9 +25,8 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.Icon
+
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -263,7 +262,7 @@ private fun ScreenshotConfirmationRemoveButton(
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            imageVector = Icons.Outlined.Close,
+            painter = painterResource(R.drawable.ic_close_24),
             contentDescription = stringResource(R.string.organize_remove_selection_content_description),
             modifier = Modifier.size(14.dp),
             tint = RecapGray50,
