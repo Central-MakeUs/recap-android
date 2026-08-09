@@ -2,6 +2,7 @@ package com.chalkak.recap.feature.organize.content
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +31,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -45,10 +47,10 @@ import com.chalkak.recap.core.design.theme.Black
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapBlue50
+import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
-import com.chalkak.recap.feature.organize.R as OrganizeR
 import io.github.vinceglb.confettikit.compose.ConfettiKit
 import io.github.vinceglb.confettikit.core.Party
 import io.github.vinceglb.confettikit.core.Position
@@ -58,6 +60,7 @@ import io.github.vinceglb.confettikit.core.models.Shape
 import io.github.vinceglb.confettikit.core.models.Size
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
+import com.chalkak.recap.feature.organize.R as OrganizeR
 
 @Composable
 fun OrganizeSuccessBackgroundGradient(
@@ -126,7 +129,7 @@ fun OrganizeSuccessContent(
         confettiOrigin?.let { origin ->
             OrganizeSuccessConfetti(
                 origin = origin,
-                playDelayMillis = checkLottiePlayDelayMillis,
+                playDelayMillis = OrganizeSuccessTokens.ConfettiPlayDelayMillis,
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -155,13 +158,11 @@ fun OrganizeSuccessContent(
                 textAlign = TextAlign.Center,
             )
             Spacer(modifier = Modifier.height(OrganizeSuccessTokens.TitleToIllustrationSpacing))
-            OrganizeSuccessCharacterLottie(
-                modifier = Modifier
-                    .size(
-                        width = OrganizeSuccessTokens.IllustrationWidth,
-                        height = OrganizeSuccessTokens.IllustrationHeight,
-                    )
-                    .offset(x = (-9).dp),
+            OrganizeSuccessCharacterImage(
+                modifier = Modifier.size(
+                    width = OrganizeSuccessTokens.IllustrationWidth,
+                    height = OrganizeSuccessTokens.IllustrationHeight,
+                ),
             )
             Spacer(modifier = Modifier.height(OrganizeSuccessTokens.IllustrationToDescriptionSpacing))
             Text(
@@ -248,44 +249,37 @@ private fun OrganizeSuccessCheckLottie(
 }
 
 @Composable
-private fun OrganizeSuccessCharacterLottie(
+private fun OrganizeSuccessCharacterImage(
     modifier: Modifier = Modifier,
 ) {
     val illustrationDescription = stringResource(
         R.string.organize_success_illustration_content_description,
     )
-    val composition by rememberLottieComposition(
-        LottieCompositionSpec.RawRes(OrganizeR.raw.complete_character),
-    )
-    val progress by animateLottieCompositionAsState(
-        composition = composition,
-        iterations = 1,
-        isPlaying = composition != null,
-    )
-    LottieAnimation(
-        composition = composition,
-        progress = { progress },
-        modifier = modifier.semantics { contentDescription = illustrationDescription },
+    Image(
+        painter = painterResource(R.drawable.recap_organize_success),
+        contentDescription = illustrationDescription,
+        modifier = modifier,
         contentScale = ContentScale.Fit,
     )
 }
 
 private object OrganizeSuccessTokens {
     val IconSize = 45.dp
-    val IllustrationWidth = 195.09.dp
-    val IllustrationHeight = 177.43.dp
+    val IllustrationWidth = 195.dp
+    val IllustrationHeight = 120.dp
     val IconToTitleSpacing = 10.dp
-    val TitleToIllustrationSpacing = 28.dp
-    val IllustrationToDescriptionSpacing = 21.dp
+    val TitleToIllustrationSpacing = 44.dp
+    val IllustrationToDescriptionSpacing = 27.dp
     val ContentOffsetY = (-44).dp
     const val CheckLottiePlayDelayMillis = 200L
+    const val ConfettiPlayDelayMillis = 420L
     const val BackgroundGradientHeightFraction = 0.54f
     const val BackgroundGradientAlpha = 0.4f
     const val BackgroundGradientFadeDurationMillis = 750
     val BackgroundGradientColor = Color(0xFF8FA4FF)
-    const val ConfettiMaxSpeed = 28f
+    const val ConfettiMaxSpeed = 36f
     const val ConfettiDamping = 0.9f
-    const val ConfettiTimeToLiveMillis = 2_200L
+    const val ConfettiTimeToLiveMillis = 2_000L
     const val ConfettiParticleCount = 80
     val ConfettiOriginOffsetX = 0.dp
     val ConfettiOriginOffsetY = 0.dp
@@ -293,7 +287,7 @@ private object OrganizeSuccessTokens {
     val ConfettiColors = listOf(
         RecapBlue50.toArgb(),
         RecapBlue300.toArgb(),
-        RecapBlue50.toArgb(),
+        RecapBlue500.toArgb(),
     )
 }
 
