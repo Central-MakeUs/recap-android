@@ -45,6 +45,7 @@ dependencies {
     implementation(libs.coil.compose)
     implementation(libs.timber)
     implementation(libs.lottie.compose)
+    implementation(libs.confettikit)
     implementation(libs.chrisbanes.haze)
     implementation(libs.hilt.android)
     ksp(libs.hilt.compiler)

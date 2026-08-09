@@ -130,12 +130,7 @@ private fun OrganizeAnalysisStatusScaffold(
                             is OrganizeAnalysisStatusUiState.Success -> {
                                 OrganizeSuccessContent(
                                     successCount = state.successCount,
-                                    modifier = Modifier
-                                        .align(Alignment.Center)
-                                        .fillMaxWidth()
-                                        .offset(
-                                            y = OrganizeAnalysisStatusTokens.SuccessContentOffsetY,
-                                        ),
+                                    modifier = Modifier.fillMaxSize(),
                                 )
                             }
 
@@ -260,7 +255,6 @@ private object OrganizeAnalysisStatusTokens {
     val HorizontalPadding = 24.dp
     val BottomPadding = 24.dp
     val ProgressContentOffsetY = (-20).dp
-    val SuccessContentOffsetY = (-44).dp
     val FailedContentOffsetY = (-84).dp
     val PartialFailedContentOffsetY = (-45).dp
 }
