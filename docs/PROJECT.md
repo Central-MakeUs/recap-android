@@ -161,6 +161,7 @@ UI 색상·타이포는 `MaterialTheme.colorScheme` / `MaterialTheme.typography`
 - `docs/PROJECT.md`: 프로젝트 사실과 컨벤션
 - `docs/BACKLOG.md`: 두 에이전트가 공유해야 하는 후속 항목
 - `docs/TESTING.md`: 테스트/검증 정책
+- `docs/qa/GUIDE.md`: 디자인 QA(스크린샷·VM) 오케스트라 지침
 - `docs/LOCAL_DATA.md`: 로컬 데이터 구현체와 저장 정책
 - `docs/ANALYSIS_DATA_SOURCE.md`: 스크린샷 Mock/Remote build-time (`USE_MOCK_BACKEND`) 선택
 - `docs/MOCK_REMOTE_CHANGE.md`: 제거된 런타임 Mock/Remote 전환 계층 역사 스냅샷
