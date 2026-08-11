@@ -3,7 +3,6 @@ package com.chalkak.recap
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -25,7 +24,7 @@ import com.chalkak.recap.core.model.observability.OrganizeTraceEntry
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
+class MainActivity : RecapComponentActivity() {
     private val startupViewModel: RecapStartupViewModel by viewModels()
     private val toastViewModel: RecapToastViewModel by viewModels()
     private val analysisProgressViewModel: ScreenshotAnalysisProgressViewModel by viewModels()
