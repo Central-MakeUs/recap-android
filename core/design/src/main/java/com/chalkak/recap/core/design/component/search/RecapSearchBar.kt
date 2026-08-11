@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -120,7 +120,7 @@ fun RecapSearchBar(
     ) {
         Row(
             modifier = Modifier
-                .height(RecapSearchBarTokens.Height)
+                .heightIn(min = RecapSearchBarTokens.MinHeight)
                 .padding(horizontal = RecapSearchBarTokens.HorizontalPadding),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(RecapSearchBarTokens.IconTextSpacing),
@@ -232,7 +232,7 @@ private fun RecapSearchBarClearButton(
 }
 
 private object RecapSearchBarTokens {
-    val Height = 44.dp
+    val MinHeight = 44.dp
     val HorizontalPadding = 16.dp
     val IconTextSpacing = 8.dp
     val IconSize = 24.dp
