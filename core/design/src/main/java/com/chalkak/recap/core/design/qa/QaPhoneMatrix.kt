@@ -3,7 +3,7 @@ package com.chalkak.recap.core.design.qa
 import androidx.compose.ui.tooling.preview.Preview
 
 /**
- * Design QA phone matrix: 320/360/412 × fontScale 1.0/1.3/1.5/2.0 (12 previews).
+ * Design QA phone matrix: 320/360/412 × fontScale 1.0/1.3/1.5 (9 previews).
  * Spec: `docs/qa/GUIDE.md` §3.
  */
 @Target(
@@ -33,13 +33,6 @@ import androidx.compose.ui.tooling.preview.Preview
     showBackground = true,
 )
 @Preview(
-    name = "320x640-font200",
-    widthDp = 320,
-    heightDp = 640,
-    fontScale = 2.0f,
-    showBackground = true,
-)
-@Preview(
     name = "360x800-font100",
     widthDp = 360,
     heightDp = 800,
@@ -61,13 +54,6 @@ import androidx.compose.ui.tooling.preview.Preview
     showBackground = true,
 )
 @Preview(
-    name = "360x800-font200",
-    widthDp = 360,
-    heightDp = 800,
-    fontScale = 2.0f,
-    showBackground = true,
-)
-@Preview(
     name = "412x915-font100",
     widthDp = 412,
     heightDp = 915,
@@ -86,13 +72,6 @@ import androidx.compose.ui.tooling.preview.Preview
     widthDp = 412,
     heightDp = 915,
     fontScale = 1.5f,
-    showBackground = true,
-)
-@Preview(
-    name = "412x915-font200",
-    widthDp = 412,
-    heightDp = 915,
-    fontScale = 2.0f,
     showBackground = true,
 )
 annotation class QaPhoneMatrix

@@ -63,16 +63,17 @@ Compose Screenshot / Preview 캡처의 기본 매트릭스다.
 |-----------|------|
 | 1.0 | 기본 |
 | 1.3 | 약간 확대 |
-| 1.5 | 접근성 중간 |
-| 2.0 | 접근성 최대 stress |
+| 1.5 | 앱 지원 상한 (런타임 `RECAP_MAX_FONT_SCALE`) |
+
+앱은 Activity에서 `fontScale`을 1.5로 상한하므로 screenshot 매트릭스에 2.0은 포함하지 않는다.
 
 ### 3.3 조합 규칙
 
-- 기본 전체 조합: `3 sizes × 4 fontScale = 12` per screen state.
+- 기본 전체 조합: `3 sizes × 3 fontScale = 9` per screen state.
 - 공통 Preview 애노테이션: `@QaPhoneMatrix` (`core/design` → `com.chalkak.recap.core.design.qa`). Preview / screenshotTest에서 매트릭스를 한 줄로 적용한다.
 - 상태(empty/loading/error/content)가 여러 개면 **대표 state + 가장 붐비는 state** 우선.
 - 풀뷰포트 + pinned CTA 화면은 전 조합 필수.
-- 리스트/스크롤 화면은 `320×640 @ 2.0`과 `360×800 @ 1.5`를 우선하고, 나머지는 샘플링 가능(생략 시 기록).
+- 리스트/스크롤 화면은 `320×640 @ 1.5`와 `360×800 @ 1.5`를 우선하고, 나머지는 샘플링 가능(생략 시 기록).
 
 ### 3.4 Screenshot 판정 (Pass / Fail)
 
@@ -82,7 +83,7 @@ Compose Screenshot / Preview 캡처의 기본 매트릭스다.
 - 본문 텍스트가 컨테이너를 뚫고 잘림 (의도된 ellipsis 제외)
 - 일러스트와 텍스트/버튼이 겹침
 - 가로 overflow로 잘림
-- fontScale 2.0에서 스크롤 가능한 body인데도 필수 액션에 도달 불가
+- fontScale 1.5에서 스크롤 가능한 body인데도 필수 액션에 도달 불가
 
 **Pass**
 
@@ -157,7 +158,7 @@ Compose Screenshot / Preview 캡처의 기본 매트릭스다.
 ### 4.2 권장 설정
 
 - Orientation: Portrait only
-- Display size / Font size: 기본 + 최대(또는 fontScale 1.5 / 2.0에 해당하는 설정)를 각각 확인
+- Display size / Font size: 기본 + 최대(앱 상한인 fontScale 1.5에 해당하는 설정)를 각각 확인
 - 가능하면 API 30+ (프로젝트 minSdk 30)
 
 ### 4.3 VM에서 반드시 볼 플로우
@@ -214,7 +215,7 @@ VM QA:
 ```markdown
 ## Design QA Result
 - Scope: <screens / components>
-- Screenshot matrix: 320×640 / 360×800 / 412×915 × fontScale 1.0·1.3·1.5·2.0
+- Screenshot matrix: 320×640 / 360×800 / 412×915 × fontScale 1.0·1.3·1.5
   - Result: PASS | FAIL
   - Failures: (screen, size, fontScale) — note
 - VM:
