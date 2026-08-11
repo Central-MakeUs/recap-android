@@ -95,6 +95,29 @@ Compose Screenshot / Preview 캡처의 기본 매트릭스다.
 - 실패 시: 해당 조합 이미지 + 재현 튜플 + 예상 원인(고정 height / inset / non-scroll Column 등)
 - 통과 시: 대상 화면 목록과 “전 조합 확인” 또는 “샘플링 + 생략 사유”
 
+### 3.6 현재 Screenshot Test 커버리지
+
+작성 위치: 각 feature 모듈 `src/screenshotTest/.../*Screenshots.kt`  
+공통 규칙: `@PreviewTest` + `@QaPhoneMatrix` + `RECAPTheme(dynamicColor = false)` (또는 onboarding PreviewContainer)
+
+| 모듈 | 커버 화면 / 상태 |
+|------|------------------|
+| `feature/onboarding` | Landing, PermissionGuide, UploadMethodGuide, AddToFavorite, AddToFavoriteGuide(step 1–4), StartFirstAnalyze |
+| `feature/settings` | Settings(Allowed/Denied), AccountManagement, DataManagement, Notification(On/DeviceOff), PrivacyGuide, UsageGuide |
+| `feature/screenshot` | Detail(Content/Loading/Error), Edit, Fullscreen |
+| `feature/organize` | Picker Empty, Confirmation, AnalysisStatus(Progress/Success/Failed/PartialFailed), UnsupportedShare |
+| `feature/home` | Home(Empty/Error), Search(Idle/Empty), RecentOrganized(Empty/Error) |
+| `feature/collection` | Overview(Empty/LoadError/Grid), Detail(Populated/Empty) |
+
+기준 이미지 갱신·검증:
+
+```powershell
+.\gradlew.bat updateDebugScreenshotTest
+.\gradlew.bat validateDebugScreenshotTest
+```
+
+상태 선택 원칙은 §3.3과 같다. 대표 + 밀집/레이아웃 차이 상태만 두고, 미커버 상태는 생략 사유를 남긴다.
+
 ---
 
 ## 4. QA with VMs
@@ -186,16 +209,16 @@ VM QA:
 - 다크모드
 - 태블릿 / landscape 전용 레이아웃
 - 기능·네트워크·인증 QA
-- 온보딩 외 전 화면의 즉시 일괄 마이그레이션 검증 (점진 적용 시 해당 화면만 게이트)
+- Screenshot Test에 아직 없는 세부 상태(예: Home populated content, Collection list view, dialog/sheet 단독)의 즉시 전수 커버 — 필요 시 §3.6에 추가
 
 ---
 
 ## 8. 미결 (초안 TODO)
 
-- Compose Screenshot 도구: Compose Preview Screenshot Testing (`com.android.compose.screenshot` `0.0.1-alpha16`) 도입됨. `screenshotTest` source set에 `@QaPhoneMatrix` + `@PreviewTest`로 작성
+- Compose Screenshot 도구·`@QaPhoneMatrix`·주요 feature screenshotTest는 도입됨 (§3.6). 남은 작업은 golden 갱신/검증과 미커버 상태 확장
 - golden image 저장 경로와 diff threshold
 - Emulator AVD 이름·API level·정확한 dpi 프로파일 고정
 - CI에서 Screenshot Spec 자동 실행 여부
 - Design QA 결과를 `TESTING.md` / handoff Result에 의무 링크로 넣을지 여부
 
-이 섹션은 도구가 정해지면 갱신한다.
+이 섹션은 도구/커버리지가 바뀌면 갱신한다.

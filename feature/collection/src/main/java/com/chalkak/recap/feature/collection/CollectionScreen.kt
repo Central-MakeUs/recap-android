@@ -595,7 +595,7 @@ private fun CollectionOverviewZeroFavoritesPreview() {
     }
 }
 
-private fun previewOverviewUiState(
+internal fun previewOverviewUiState(
     viewMode: CollectionTypeViewMode,
     favoriteCount: Int = 4,
 ): CollectionUiState {
