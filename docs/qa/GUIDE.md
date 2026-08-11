@@ -69,6 +69,7 @@ Compose Screenshot / Preview 캡처의 기본 매트릭스다.
 ### 3.3 조합 규칙
 
 - 기본 전체 조합: `3 sizes × 4 fontScale = 12` per screen state.
+- 공통 Preview 애노테이션: `@QaPhoneMatrix` (`core/design` → `com.chalkak.recap.core.design.qa`). Preview / screenshotTest에서 매트릭스를 한 줄로 적용한다.
 - 상태(empty/loading/error/content)가 여러 개면 **대표 state + 가장 붐비는 state** 우선.
 - 풀뷰포트 + pinned CTA 화면은 전 조합 필수.
 - 리스트/스크롤 화면은 `320×640 @ 2.0`과 `360×800 @ 1.5`를 우선하고, 나머지는 샘플링 가능(생략 시 기록).
@@ -191,7 +192,7 @@ VM QA:
 
 ## 8. 미결 (초안 TODO)
 
-- Compose Screenshot 도구: Compose Preview Screenshot Testing (`com.android.compose.screenshot` `0.0.1-alpha16`) 도입됨. `screenshotTest` source set에 `@Preview` + `@PreviewTest`로 작성
+- Compose Screenshot 도구: Compose Preview Screenshot Testing (`com.android.compose.screenshot` `0.0.1-alpha16`) 도입됨. `screenshotTest` source set에 `@QaPhoneMatrix` + `@PreviewTest`로 작성
 - golden image 저장 경로와 diff threshold
 - Emulator AVD 이름·API level·정확한 dpi 프로파일 고정
 - CI에서 Screenshot Spec 자동 실행 여부

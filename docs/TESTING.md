@@ -27,10 +27,10 @@ Instrumentation/Compose UI test는 AndroidX Compose test가 JUnit4 rule 기반�
 - 플러그인: `com.android.compose.screenshot` (`libs.plugins.compose.screenshot`, `0.0.1-alpha16`)
 - `gradle.properties`와 모듈 `android.experimental.enableScreenshotTest`로 `screenshotTest` source set을 켠다
 - Preview는 `src/screenshotTest/...`에 두고 `@Preview` + `@PreviewTest`로 지정한다
+- 화면 크기·fontScale 매트릭스는 `@QaPhoneMatrix` (`com.chalkak.recap.core.design.qa`)로 적용한다 — `docs/qa/GUIDE.md` §3
 - 의존성: `screenshotTestImplementation(libs.screenshot.validation.api)`, `screenshotTestImplementation(libs.androidx.compose.ui.tooling)`
 - 기준 이미지 갱신: `.\gradlew.bat updateDebugScreenshotTest`
 - 검증: `.\gradlew.bat validateDebugScreenshotTest`
-- 화면 크기·fontScale 매트릭스는 `docs/qa/GUIDE.md`를 따른다
 
 ## 기본 검증 명령
 
