@@ -45,6 +45,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -99,6 +100,8 @@ private const val GuideBubbleOverlapFraction = 0.3f
 /** 하단 타겟은 원 아래 공간이 없어 말풍선을 위로 올린다. */
 private const val GuideBubbleBelowMaxYFraction = 0.85f
 private const val GuidePagerPageWidthFraction = 0.75f
+/** 말풍선이 가이드 이미지 밖으로 나갈 수 있는 최대 비율(화면–이미지 좌우 여백 대비). */
+private const val GuideBubbleHorizontalOverflowFraction = 0.5f
 private const val GuideImageAspectRatio = 3f / 4f
 
 @Composable
@@ -175,6 +178,7 @@ private fun AddToFavoriteGuideCarousel(
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val sidePadding = maxWidth * ((1f - GuidePagerPageWidthFraction) / 2f)
+        val bubbleHorizontalOverflow = sidePadding * GuideBubbleHorizontalOverflowFraction
         val pageSpacing = maxWidth * (1f - GuidePagerPageWidthFraction)
         val pageWidth = maxWidth * GuidePagerPageWidthFraction
         val pagerHeight = pageWidth / GuideImageAspectRatio
@@ -208,6 +212,7 @@ private fun AddToFavoriteGuideCarousel(
                             xFraction = highlight.xFraction,
                             yFraction = highlight.yFraction,
                             bubbleText = stringResource(highlight.bubbleTextResId),
+                            horizontalOverflow = bubbleHorizontalOverflow,
                         )
                     }
                 }
@@ -276,11 +281,13 @@ private fun GuideTouchHighlight(
     xFraction: Float,
     yFraction: Float,
     bubbleText: String,
+    horizontalOverflow: Dp,
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val density = LocalDensity.current
         val holeDiameterPx = with(density) { GuideTouchHoleSize.toPx() }
+        val horizontalOverflowPx = with(density) { horizontalOverflow.toPx() }
         val placeBubbleBelow = yFraction <= GuideBubbleBelowMaxYFraction
         var bubbleSize by remember { mutableStateOf(IntSize.Zero) }
 
@@ -316,7 +323,12 @@ private fun GuideTouchHighlight(
                     val holeCenterY = constraints.maxHeight * yFraction
                     val holeRadius = holeDiameterPx / 2f
                     val overlapPx = bubbleSize.height * GuideBubbleOverlapFraction
-                    val x = (holeCenterX - bubbleSize.width / 2f).roundToInt()
+                    val preferredX = holeCenterX - bubbleSize.width / 2f
+                    val minX = -horizontalOverflowPx
+                    val maxX = (
+                        (constraints.maxWidth - bubbleSize.width).toFloat() + horizontalOverflowPx
+                    ).coerceAtLeast(minX)
+                    val x = preferredX.coerceIn(minX, maxX).roundToInt()
                     val y = if (placeBubbleBelow) {
                         (holeCenterY + holeRadius - overlapPx).roundToInt()
                     } else {
