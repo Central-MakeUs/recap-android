@@ -41,3 +41,6 @@ google-services.json
 
 tmp/
 app/release
+
+# Compose Preview Screenshot Test reference images (updateDebugScreenshotTest / host QA)
+**/src/screenshotTestDebug/

@@ -118,6 +118,27 @@ Compose Screenshot / Preview 캡처의 기본 매트릭스다.
 
 상태 선택 원칙은 §3.3과 같다. 대표 + 밀집/레이아웃 차이 상태만 두고, 미커버 상태는 생략 사유를 남긴다.
 
+### 3.7 Host-side visual audit 산출물
+
+`QaPhoneMatrix` Screenshot Test를 렌더한 뒤 시각적으로 검수한 host-side QA 런은 아래 경로에 남긴다.
+
+| 종류 | 경로 |
+|------|------|
+| 런별 아티팩트 루트 | `build/qa-audit/<timestamp>/` |
+| 오프라인 HTML 보고서 (이슈 스크린샷 포함) | `build/qa-audit/<timestamp>/index.html` |
+| 이슈별 스크린샷 복사본 | `build/qa-audit/<timestamp>/assets/<module>/` |
+| 모듈별 worker 결과 | `build/qa-audit/<timestamp>/modules/<module>/result.json` |
+| 집계 JSON | `build/qa-audit/<timestamp>/summary.json` |
+| 문서용 요약 (이미지 없음) | `docs/qa/<timestamp>.md` |
+
+`build/qa-audit/`는 로컬/CI 산출물이다. 문제 있는 스크린샷과 전체 보고서는 해당 런 디렉터리를 연다.  
+최신 문서 요약 예: [`docs/qa/2026-08-11_141943.md`](./2026-08-11_141943.md) → HTML `build/qa-audit/2026-08-11_141943/index.html`.
+
+참고:
+
+- `Gradle PASS ≠ visual QA PASS`
+- 이 산출물은 **host-side only**이다. Gesture / 3-button / 실제 `WindowInsets`는 §4 VM QA가 담당한다.
+
 ---
 
 ## 4. QA with VMs
