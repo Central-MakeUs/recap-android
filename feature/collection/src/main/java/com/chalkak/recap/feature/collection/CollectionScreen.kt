@@ -605,32 +605,86 @@ internal fun previewOverviewUiState(
         typeViewMode = viewMode,
         overview = CollectionOverviewUiModel(
             favoriteSummary = CollectionFavoriteSummaryUiModel(count = favoriteCount),
-            typeSummaries = listOf(
-                CollectionTypeSummaryUiModel(
-                    contentType = ScreenshotContentType.SHOPPING,
-                    labelResId = R.string.category_type_shopping_product,
-                    categoryType = RecapCategoryType.ShoppingProduct,
-                    count = 20,
-                    exampleTitles = listOf("택배 반품 절차", "노트북 가격 비교"),
-                    additionalExampleCount = 0,
-                ),
-                CollectionTypeSummaryUiModel(
-                    contentType = ScreenshotContentType.PLACE,
-                    labelResId = R.string.category_type_place_restaurant,
-                    categoryType = RecapCategoryType.PlaceRestaurant,
-                    count = 23,
-                    exampleTitles = listOf("성수 카페", "강남 맛집"),
-                    additionalExampleCount = 0,
-                ),
-                CollectionTypeSummaryUiModel(
-                    contentType = ScreenshotContentType.ETC,
-                    labelResId = R.string.category_type_other,
-                    categoryType = RecapCategoryType.Other,
-                    count = 1,
-                    exampleTitles = listOf("미분류 메모"),
-                    additionalExampleCount = 0,
-                ),
-            ),
+            typeSummaries = CollectionOverviewPreviewTypeSummaries,
         ),
     )
 }
+
+/**
+ * Overview preview/fixture order mirrors production overview category order
+ * (SHOPPING → … → ETC), covering all 9 taxonomy entries.
+ */
+private val CollectionOverviewPreviewTypeSummaries = listOf(
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.SHOPPING,
+        labelResId = R.string.category_type_shopping_product,
+        categoryType = RecapCategoryType.ShoppingProduct,
+        count = 20,
+        exampleTitles = listOf("택배 반품 절차", "노트북 가격 비교"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.PLACE,
+        labelResId = R.string.category_type_place_restaurant,
+        categoryType = RecapCategoryType.PlaceRestaurant,
+        count = 23,
+        exampleTitles = listOf("성수 카페", "강남 맛집"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.SCHEDULE,
+        labelResId = R.string.category_type_schedule_reservation,
+        categoryType = RecapCategoryType.ScheduleReservation,
+        count = 10,
+        exampleTitles = listOf("치과 예약", "항공권 일정"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.KNOWLEDGE,
+        labelResId = R.string.category_type_info_knowledge,
+        categoryType = RecapCategoryType.InfoKnowledge,
+        count = 12,
+        exampleTitles = listOf("Compose 팁", "면접 질문"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.CONTENT,
+        labelResId = R.string.category_type_book_content,
+        categoryType = RecapCategoryType.BookContent,
+        count = 1,
+        exampleTitles = listOf("읽을 책 메모"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.BENEFIT,
+        labelResId = R.string.category_type_benefit_event,
+        categoryType = RecapCategoryType.BenefitEvent,
+        count = 5,
+        exampleTitles = listOf("쿠폰 만료", "이벤트 안내"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.RECORD,
+        labelResId = R.string.category_type_record_capture,
+        categoryType = RecapCategoryType.RecordCapture,
+        count = 12,
+        exampleTitles = listOf("회의 메모", "아이디어 스케치"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.JOB,
+        labelResId = R.string.category_type_job_career,
+        categoryType = RecapCategoryType.JobCareer,
+        count = 8,
+        exampleTitles = listOf("이력서 초안", "채용 공고"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.ETC,
+        labelResId = R.string.category_type_other,
+        categoryType = RecapCategoryType.Other,
+        count = 3,
+        exampleTitles = listOf("미분류 메모", "임시 저장"),
+        additionalExampleCount = 0,
+    ),
+)

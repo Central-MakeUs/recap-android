@@ -50,3 +50,16 @@ fun CollectionScreenOverviewGridScreenshot() {
         )
     }
 }
+
+@PreviewTest
+@QaPhoneMatrix
+@Composable
+fun CollectionScreenOverviewListScreenshot() {
+    RECAPTheme(dynamicColor = false) {
+        CollectionScreen(
+            uiState = previewOverviewUiState(CollectionTypeViewMode.List),
+            onAction = {},
+            onNavigateToOrganize = {},
+        )
+    }
+}
