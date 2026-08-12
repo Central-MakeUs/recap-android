@@ -55,7 +55,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.component.text.RecapMarqueeDefaults
 import com.chalkak.recap.core.design.component.text.recapMarqueeText
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
@@ -73,7 +72,7 @@ import com.chalkak.recap.core.design.theme.White
 /*
  * RecapButton parameter mini docs
  * - text: Button label. It is always visually centered in the button.
- *   When the label does not fit, it scrolls with a marquee and faded edge alphas.
+ *   When the label does not fit, it scrolls with a marquee.
  * - compactText: Optional shorter label used when a fixed-start icon may collide with the full label.
  * - onClick/enabled: Click callback and disabled state.
  * - modifier: Caller-owned layout. Use Modifier.fillMaxWidth() for full-width buttons.
@@ -314,7 +313,6 @@ object RecapButtonDefaults {
     const val PressedShadowElevationScale = 0.75f
     const val PressAnimationDurationMillis = 50
     val FixedIconStartPadding = 28.dp
-    val MarqueeEdgeFadeWidth = RecapMarqueeDefaults.EdgeFadeWidth
 
     fun colors(
         containerColor: Color,
@@ -410,14 +408,15 @@ private fun RecapButtonInlineContent(
         }
         Text(
             text = text,
-            modifier = Modifier
-                .fillMaxWidth()
-                .recapMarqueeText(text = text, textStyle = textStyle),
+            modifier = Modifier.recapMarqueeText(
+                text = text,
+                textStyle = textStyle,
+                edgeWidth = 0.dp,
+            ),
             color = LocalContentColor.current,
             style = textStyle,
             maxLines = 1,
             softWrap = false,
-            textAlign = TextAlign.Center,
         )
     }
 }
@@ -473,7 +472,11 @@ private fun RecapButtonFixedStartContent(
                     .align(Alignment.Center)
                     .fillMaxWidth()
                     .padding(horizontal = textHorizontalPadding)
-                    .recapMarqueeText(text = buttonText, textStyle = textStyle),
+                    .recapMarqueeText(
+                        text = buttonText,
+                        textStyle = textStyle,
+                        edgeWidth = 0.dp,
+                    ),
                 color = LocalContentColor.current,
                 style = textStyle,
                 maxLines = 1,

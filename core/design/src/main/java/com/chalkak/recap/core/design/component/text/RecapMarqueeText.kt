@@ -60,27 +60,34 @@ object RecapMarqueeDefaults {
 
 /**
  * Scrolls overflowing single-line text with a [androidx.compose.foundation.basicMarquee]-compatible
- * animation, and applies edge fade alphas:
+ * animation. When [edgeWidth] is greater than 0, applies edge fade alphas:
  * - Fitted text: no fades
  * - Overflowing but stopped at the start: right fade only
  * - Overflowing and actively scrolling (`offset > 0`): left and right fades
  *
  * [text] / [textStyle] are restart keys when the label changes; layout decides overflow.
+ * Pass [edgeWidth] as `0.dp` to disable edge fades (e.g. RecapButton).
  */
 fun Modifier.recapMarqueeText(
     text: String,
     textStyle: TextStyle,
     edgeWidth: Dp = RecapMarqueeDefaults.EdgeFadeWidth,
-): Modifier = this
-    // Required so DstIn edge fades affect only this text, not the parent background.
-    .graphicsLayer { compositingStrategy = GraphicsCompositingStrategy.Offscreen }
-    .then(
-        RecapMarqueeElement(
-            text = text,
-            textStyle = textStyle,
-            edgeWidth = edgeWidth,
-        ),
+): Modifier {
+    val marquee = RecapMarqueeElement(
+        text = text,
+        textStyle = textStyle,
+        edgeWidth = edgeWidth,
     )
+    // Offscreen compositing is only required so DstIn edge fades do not punch through
+    // the parent background.
+    return if (edgeWidth > 0.dp) {
+        this
+            .graphicsLayer { compositingStrategy = GraphicsCompositingStrategy.Offscreen }
+            .then(marquee)
+    } else {
+        this.then(marquee)
+    }
+}
 
 private data class RecapMarqueeElement(
     private val text: String,
@@ -219,10 +226,12 @@ private class RecapMarqueeNode(
 
         // Fades are drawn fresh each frame (not baked into a recorded layer), so a snap
         // back to offset 0 cannot leave a stale left-edge fade behind.
-        if (currentOffset > LeftFadeOffsetEpsilonPx) {
-            drawMarqueeFadedEdge(leftEdge = true, edgeWidth = edgeWidth)
+        if (edgeWidth > 0.dp) {
+            if (currentOffset > LeftFadeOffsetEpsilonPx) {
+                drawMarqueeFadedEdge(leftEdge = true, edgeWidth = edgeWidth)
+            }
+            drawMarqueeFadedEdge(leftEdge = false, edgeWidth = edgeWidth)
         }
-        drawMarqueeFadedEdge(leftEdge = false, edgeWidth = edgeWidth)
     }
 
     private fun restartAnimation() {
