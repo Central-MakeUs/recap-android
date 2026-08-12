@@ -12,6 +12,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -301,29 +302,36 @@ private fun CollectionUnifiedOverview(
         ) { animatedViewMode ->
             when (animatedViewMode) {
                 CollectionTypeViewMode.Grid -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(3),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = CollectionScreenTokens.HorizontalPadding),
-                        contentPadding = PaddingValues(
-                            top = CollectionScreenTokens.TypeGridTopPadding,
-                            bottom = bottomContentPadding,
-                        ),
-                        horizontalArrangement = Arrangement.spacedBy(CollectionScreenTokens.TypeGridSpacing),
-                        verticalArrangement = Arrangement.spacedBy(CollectionScreenTokens.TypeGridRowSpacing),
-                    ) {
-                        items(
-                            items = typeSummaries,
-                            key = { summary -> summary.contentType.name },
-                            contentType = { "category-grid" },
-                        ) { summary ->
-                            CollectionTypeGridItem(
-                                summary = summary,
-                                onClick = {
-                                    onAction(CollectionAction.OpenTypeDetail(summary.contentType))
-                                },
-                            )
+                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                        val gridColumns = collectionTypeGridColumns(maxWidth)
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(gridColumns),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = CollectionScreenTokens.HorizontalPadding),
+                            contentPadding = PaddingValues(
+                                top = CollectionScreenTokens.TypeGridTopPadding,
+                                bottom = bottomContentPadding,
+                            ),
+                            horizontalArrangement = Arrangement.spacedBy(
+                                CollectionScreenTokens.TypeGridSpacing,
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(
+                                CollectionScreenTokens.TypeGridRowSpacing,
+                            ),
+                        ) {
+                            items(
+                                items = typeSummaries,
+                                key = { summary -> summary.contentType.name },
+                                contentType = { "category-grid" },
+                            ) { summary ->
+                                CollectionTypeGridItem(
+                                    summary = summary,
+                                    onClick = {
+                                        onAction(CollectionAction.OpenTypeDetail(summary.contentType))
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -510,6 +518,23 @@ private const val CollectionViewModeSlideDurationMillis = 300
 private const val CollectionViewModeFadeDurationMillis = 250
 private const val CollectionViewModeSlideFraction = 6
 
+/**
+ * Type grid column count from available width (before horizontal padding).
+ *
+ * - below 348.dp: 2 columns
+ * - below 493.dp: 3 columns
+ * - otherwise: 4 columns (cap)
+ *
+ * 360.dp phones stay on 3 columns with the 348.dp three-column floor.
+ * Four-column floor matches fixed haze-folder card width 99.dp plus
+ * horizontal padding/spacing: 40 + 99*4 + 19*3 = 493.dp.
+ */
+internal fun collectionTypeGridColumns(availableWidth: Dp): Int = when {
+    availableWidth < CollectionScreenTokens.TypeGridThreeColumnMinWidth -> 2
+    availableWidth < CollectionScreenTokens.TypeGridFourColumnMinWidth -> 3
+    else -> 4
+}
+
 private object CollectionScreenTokens {
     val HorizontalPadding = 20.dp
     val SearchTopPadding = 8.dp
@@ -519,6 +544,10 @@ private object CollectionScreenTokens {
     val TypeListTopPadding = 10.dp
     val TypeGridSpacing = 19.dp
     val TypeGridRowSpacing = 24.dp
+    /** Inclusive lower bound for 3 columns (keeps 360.dp phones on 3×3). */
+    val TypeGridThreeColumnMinWidth = 332.dp
+    /** Inclusive lower bound for 4 columns (fold / wide). */
+    val TypeGridFourColumnMinWidth = 493.dp
     val MinimumTouchTarget = 48.dp
     val EmptyCharacterWidth = 122.dp
     val EmptyCharacterHeight = 89.dp
