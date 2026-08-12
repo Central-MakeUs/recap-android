@@ -7,7 +7,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -36,23 +35,14 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
@@ -65,6 +55,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.text.RecapMarqueeDefaults
+import com.chalkak.recap.core.design.component.text.recapMarqueeText
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapBlue50
@@ -322,7 +314,7 @@ object RecapButtonDefaults {
     const val PressedShadowElevationScale = 0.75f
     const val PressAnimationDurationMillis = 50
     val FixedIconStartPadding = 28.dp
-    val MarqueeEdgeFadeWidth = 8.dp
+    val MarqueeEdgeFadeWidth = RecapMarqueeDefaults.EdgeFadeWidth
 
     fun colors(
         containerColor: Color,
@@ -418,11 +410,14 @@ private fun RecapButtonInlineContent(
         }
         Text(
             text = text,
-            modifier = Modifier.recapButtonMarqueeLabel(text = text, textStyle = textStyle),
+            modifier = Modifier
+                .fillMaxWidth()
+                .recapMarqueeText(text = text, textStyle = textStyle),
             color = LocalContentColor.current,
             style = textStyle,
             maxLines = 1,
             softWrap = false,
+            textAlign = TextAlign.Center,
         )
     }
 }
@@ -478,7 +473,7 @@ private fun RecapButtonFixedStartContent(
                     .align(Alignment.Center)
                     .fillMaxWidth()
                     .padding(horizontal = textHorizontalPadding)
-                    .recapButtonMarqueeLabel(text = buttonText, textStyle = textStyle),
+                    .recapMarqueeText(text = buttonText, textStyle = textStyle),
                 color = LocalContentColor.current,
                 style = textStyle,
                 maxLines = 1,
@@ -487,51 +482,6 @@ private fun RecapButtonFixedStartContent(
             )
         }
     }
-}
-
-@Composable
-private fun Modifier.recapButtonMarqueeLabel(
-    text: String,
-    textStyle: TextStyle,
-    edgeWidth: Dp = RecapButtonDefaults.MarqueeEdgeFadeWidth,
-): Modifier {
-    val textMeasurer = rememberTextMeasurer()
-    val textWidthPx = remember(text, textStyle, textMeasurer) {
-        textMeasurer.measure(text = text, style = textStyle).size.width
-    }
-    var widthPx by remember { mutableIntStateOf(0) }
-    val overflows = widthPx in 1..<textWidthPx
-
-    return this
-        .onSizeChanged { widthPx = it.width }
-        .then(
-            if (overflows) {
-                Modifier
-                    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
-                    .drawWithContent {
-                        drawContent()
-                        drawMarqueeFadedEdge(leftEdge = true, edgeWidth = edgeWidth)
-                        drawMarqueeFadedEdge(leftEdge = false, edgeWidth = edgeWidth)
-                    }
-                    .basicMarquee()
-            } else {
-                Modifier.basicMarquee()
-            },
-        )
-}
-
-private fun ContentDrawScope.drawMarqueeFadedEdge(leftEdge: Boolean, edgeWidth: Dp) {
-    val edgeWidthPx = edgeWidth.toPx()
-    drawRect(
-        topLeft = Offset(if (leftEdge) 0f else size.width - edgeWidthPx, 0f),
-        size = Size(edgeWidthPx, size.height),
-        brush = Brush.horizontalGradient(
-            colors = listOf(Color.Transparent, Color.Black),
-            startX = if (leftEdge) 0f else size.width,
-            endX = if (leftEdge) edgeWidthPx else size.width - edgeWidthPx,
-        ),
-        blendMode = BlendMode.DstIn,
-    )
 }
 
 private fun maxOfDp(first: Dp, second: Dp, third: Dp): Dp {

@@ -62,6 +62,7 @@ import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
 import com.chalkak.recap.core.design.component.icon.RecapCategoryIcon
 import com.chalkak.recap.core.design.component.icon.RecapCategoryIconSize
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
+import com.chalkak.recap.core.design.component.text.recapMarqueeText
 import com.chalkak.recap.core.design.component.topbar.CollectionTopBar
 import com.chalkak.recap.core.design.component.topbar.CollectionTypeViewMode
 import com.chalkak.recap.core.design.theme.Black
@@ -392,6 +393,12 @@ private fun CollectionTypeGridItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val categoryLabel = stringResource(summary.labelResId)
+    val recapCountLabel = pluralStringResource(
+        R.plurals.collection_recap_count,
+        summary.count,
+        summary.count,
+    )
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -403,24 +410,26 @@ private fun CollectionTypeGridItem(
             onClick = onClick,
         )
         Text(
-            text = stringResource(summary.labelResId),
+            text = categoryLabel,
+            modifier = Modifier
+                .fillMaxWidth()
+                .recapMarqueeText(text = categoryLabel, textStyle = RecapHeading3),
             style = RecapHeading3,
             color = RecapGray900,
             textAlign = TextAlign.Center,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            softWrap = false,
         )
         Text(
-            text = pluralStringResource(
-                R.plurals.collection_recap_count,
-                summary.count,
-                summary.count,
-            ),
+            text = recapCountLabel,
+            modifier = Modifier
+                .fillMaxWidth()
+                .recapMarqueeText(text = recapCountLabel, textStyle = RecapCaption2),
             style = RecapCaption2,
             color = RecapGray300,
             textAlign = TextAlign.Center,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            softWrap = false,
         )
     }
 }
