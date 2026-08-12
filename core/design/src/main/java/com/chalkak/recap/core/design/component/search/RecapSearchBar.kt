@@ -1,5 +1,6 @@
 package com.chalkak.recap.core.design.component.search
 
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -39,7 +40,6 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.component.text.recapMarqueeText
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray300
@@ -182,10 +182,7 @@ fun RecapSearchBar(
                                 text = placeholder,
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .recapMarqueeText(
-                                        text = placeholder,
-                                        textStyle = RecapCaption1,
-                                    ),
+                                    .basicMarquee(),
                                 style = RecapCaption1,
                                 color = RecapGray300,
                                 maxLines = 1,

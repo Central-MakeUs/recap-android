@@ -8,6 +8,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -63,7 +64,6 @@ import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
 import com.chalkak.recap.core.design.component.icon.RecapCategoryIcon
 import com.chalkak.recap.core.design.component.icon.RecapCategoryIconSize
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
-import com.chalkak.recap.core.design.component.text.recapMarqueeText
 import com.chalkak.recap.core.design.component.topbar.CollectionTopBar
 import com.chalkak.recap.core.design.component.topbar.CollectionTypeViewMode
 import com.chalkak.recap.core.design.theme.Black
@@ -421,7 +421,7 @@ private fun CollectionTypeGridItem(
             text = categoryLabel,
             modifier = Modifier
                 .fillMaxWidth()
-                .recapMarqueeText(text = categoryLabel, textStyle = RecapHeading3),
+                .basicMarquee(),
             style = RecapHeading3,
             color = RecapGray900,
             textAlign = TextAlign.Center,
@@ -432,7 +432,7 @@ private fun CollectionTypeGridItem(
             text = recapCountLabel,
             modifier = Modifier
                 .fillMaxWidth()
-                .recapMarqueeText(text = recapCountLabel, textStyle = RecapCaption2),
+                .basicMarquee(),
             style = RecapCaption2,
             color = RecapGray300,
             textAlign = TextAlign.Center,

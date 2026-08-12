@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -55,7 +56,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
-import com.chalkak.recap.core.design.component.text.recapMarqueeText
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapBlue50
@@ -408,11 +408,7 @@ private fun RecapButtonInlineContent(
         }
         Text(
             text = text,
-            modifier = Modifier.recapMarqueeText(
-                text = text,
-                textStyle = textStyle,
-                edgeWidth = 0.dp,
-            ),
+            modifier = Modifier.basicMarquee(),
             color = LocalContentColor.current,
             style = textStyle,
             maxLines = 1,
@@ -472,11 +468,7 @@ private fun RecapButtonFixedStartContent(
                     .align(Alignment.Center)
                     .fillMaxWidth()
                     .padding(horizontal = textHorizontalPadding)
-                    .recapMarqueeText(
-                        text = buttonText,
-                        textStyle = textStyle,
-                        edgeWidth = 0.dp,
-                    ),
+                    .basicMarquee(),
                 color = LocalContentColor.current,
                 style = textStyle,
                 maxLines = 1,
