@@ -36,10 +36,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.component.text.recapMarqueeText
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray300
@@ -180,10 +180,16 @@ fun RecapSearchBar(
                         if (value.isEmpty()) {
                             Text(
                                 text = placeholder,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .recapMarqueeText(
+                                        text = placeholder,
+                                        textStyle = RecapCaption1,
+                                    ),
                                 style = RecapCaption1,
                                 color = RecapGray300,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                                softWrap = false,
                             )
                         }
                         innerTextField()
@@ -273,6 +279,19 @@ private fun RecapSearchBarNavigationEntryPreview() {
             value = "",
             onValueChange = {},
             onClick = {},
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+}
+
+@Preview(name = "RecapSearchBar long placeholder", showBackground = true, widthDp = 280)
+@Composable
+private fun RecapSearchBarLongPlaceholderPreview() {
+    RECAPTheme {
+        RecapSearchBar(
+            value = "",
+            onValueChange = {},
+            placeholder = "제목, 요약, 이미지 속 내용으로 검색 · 긴 플레이스홀더 마퀴 확인",
             modifier = Modifier.padding(16.dp),
         )
     }
