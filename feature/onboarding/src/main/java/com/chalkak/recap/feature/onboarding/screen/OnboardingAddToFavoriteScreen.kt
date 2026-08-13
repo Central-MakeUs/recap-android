@@ -7,16 +7,22 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -36,9 +42,11 @@ import com.chalkak.recap.feature.onboarding.OnboardingUiState
 import com.chalkak.recap.feature.onboarding.component.OnboardingBottomActions
 import com.chalkak.recap.feature.onboarding.component.StepHeader
 import com.chalkak.recap.feature.onboarding.launchOnboardingAddToFavoriteShareSheet
+import kotlin.math.roundToInt
 
 private val AddToFavoriteIllustrationSize = 238.dp
-private val AddToFavoriteSpeechBubbleOverlap = 4.dp
+private const val AddToFavoriteSpeechBubbleOverlapFraction = 0.5f
+private const val AddToFavoriteSpeechBubbleMaxImageOverlapFraction = 0.07f
 private val AddToFavoriteGuideLinkTopPadding = 18.dp
 private val AddToFavoriteGuideLinkBottomGap = 8.dp
 
@@ -92,6 +100,16 @@ private fun AddToFavoriteIllustrationContent(
     onGuideClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var illustrationEdgePx by remember { mutableIntStateOf(-1) }
+    val maxIllustrationPx = with(LocalDensity.current) {
+        AddToFavoriteIllustrationSize.toPx()
+    }
+    val illustrationScale = if (illustrationEdgePx < 0 || maxIllustrationPx <= 0f) {
+        1f
+    } else {
+        (illustrationEdgePx / maxIllustrationPx).coerceIn(0f, 1f)
+    }
+
     Column(
         modifier = modifier.padding(bottom = AddToFavoriteGuideLinkBottomGap),
         verticalArrangement = Arrangement.Center,
@@ -108,27 +126,57 @@ private fun AddToFavoriteIllustrationContent(
                     maxWidth = AddToFavoriteIllustrationSize,
                     maxHeight = AddToFavoriteIllustrationSize,
                 )
-                .aspectRatio(1f),
+                .aspectRatio(1f)
+                .onSizeChanged { size ->
+                    illustrationEdgePx = minOf(size.width, size.height)
+                },
             contentScale = ContentScale.Fit,
         )
         RecapSpeechBubble(
             text = stringResource(R.string.onboarding_add_to_favorite_speech_bubble),
             arrowDirection = RecapSpeechBubbleArrowDirection.Down,
-            modifier = Modifier.offset(y = -AddToFavoriteSpeechBubbleOverlap),
+            modifier = Modifier.overlapIllustration(
+                illustrationEdgePx = illustrationEdgePx.takeIf { it >= 0 }
+                    ?: maxIllustrationPx.roundToInt(),
+            ),
         )
         Text(
             text = stringResource(R.string.onboarding_first_organize_description),
             modifier = Modifier
-                .padding(
-                    top = AddToFavoriteGuideLinkTopPadding -
-                            AddToFavoriteSpeechBubbleOverlap,
-                )
+                .padding(top = AddToFavoriteGuideLinkTopPadding * illustrationScale)
                 .clickable(role = Role.Button, onClick = onGuideClick),
             style = RecapBody1,
             color = RecapGray700,
             textDecoration = TextDecoration.Underline,
         )
     }
+}
+
+private fun Modifier.overlapIllustration(
+    illustrationEdgePx: Int,
+): Modifier = layout { measurable, constraints ->
+    val placeable = measurable.measure(constraints)
+    val overlap = calculateSpeechBubbleOverlap(
+        bubbleHeightPx = placeable.height,
+        illustrationEdgePx = illustrationEdgePx,
+    )
+
+    layout(placeable.width, placeable.height - overlap) {
+        placeable.placeRelative(x = 0, y = -overlap)
+    }
+}
+
+private fun calculateSpeechBubbleOverlap(
+    bubbleHeightPx: Int,
+    illustrationEdgePx: Int,
+): Int {
+    val overlapByBubble = (bubbleHeightPx * AddToFavoriteSpeechBubbleOverlapFraction)
+        .roundToInt()
+    val overlapByIllustration =
+        (illustrationEdgePx * AddToFavoriteSpeechBubbleMaxImageOverlapFraction).roundToInt()
+
+    return minOf(overlapByBubble, overlapByIllustration)
+        .coerceIn(0, bubbleHeightPx)
 }
 
 @OnboardingScreenPreview
