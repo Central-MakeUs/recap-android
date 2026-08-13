@@ -7,6 +7,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -51,7 +52,6 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -72,6 +72,7 @@ import com.chalkak.recap.core.design.theme.White
 /*
  * RecapButton parameter mini docs
  * - text: Button label. It is always visually centered in the button.
+ *   When the label does not fit, it scrolls with a marquee.
  * - compactText: Optional shorter label used when a fixed-start icon may collide with the full label.
  * - onClick/enabled: Click callback and disabled state.
  * - modifier: Caller-owned layout. Use Modifier.fillMaxWidth() for full-width buttons.
@@ -407,10 +408,11 @@ private fun RecapButtonInlineContent(
         }
         Text(
             text = text,
+            modifier = Modifier.basicMarquee(),
             color = LocalContentColor.current,
             style = textStyle,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            softWrap = false,
         )
     }
 }
@@ -465,11 +467,12 @@ private fun RecapButtonFixedStartContent(
                 modifier = Modifier
                     .align(Alignment.Center)
                     .fillMaxWidth()
-                    .padding(horizontal = textHorizontalPadding),
+                    .padding(horizontal = textHorizontalPadding)
+                    .basicMarquee(),
                 color = LocalContentColor.current,
                 style = textStyle,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                softWrap = false,
                 textAlign = TextAlign.Center,
             )
         }
@@ -517,6 +520,13 @@ private fun RecapButtonPreview() {
                 text = stringResource(R.string.recap_button_preview_label),
                 onClick = {},
                 modifier = Modifier.fillMaxWidth(),
+            )
+            RecapButton(
+                text = stringResource(R.string.recap_button_preview_long_label),
+                onClick = {},
+                modifier = Modifier.width(188.dp),
+                size = RecapButtonSize.Medium,
+                colors = RecapButtonDefaults.secondaryColors(),
             )
             RecapButtonPressedPreview()
             RecapButton(

@@ -1,5 +1,6 @@
 package com.chalkak.recap.core.design.component.toast
 
+import android.os.Build
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
@@ -96,12 +97,17 @@ object RecapToastDefaults {
     val Shape = RoundedCornerShape(percent = 50)
     val BlurRadius: Dp = 24.dp
     const val NoiseFactor: Float = 0.0f
+    const val FallbackAlpha: Float = 0.7f
+    val FallbackContainerColor: Color = RecapToastBackground.copy(alpha = FallbackAlpha)
 
     fun colors(): RecapToastColors = RecapToastColors(
         container = RecapToastBackground,
         content = RecapToastContent,
     )
 }
+
+private fun isRecapRealtimeBlurEnabled(): Boolean =
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
 @Composable
 fun RecapToastHost(
@@ -147,26 +153,35 @@ fun RecapToast(
     hazeState: HazeState,
     modifier: Modifier = Modifier,
     colors: RecapToastColors = RecapToastDefaults.colors(),
+    useRealtimeBlur: Boolean = isRecapRealtimeBlurEnabled(),
 ) {
-    val blurStyle = CupertinoMaterials.ultraThin()
+    val hazeModifier = if (useRealtimeBlur) {
+        val blurStyle = CupertinoMaterials.ultraThin()
+        Modifier.hazeEffect(state = hazeState) {
+            inputScale = HazeInputScale.Fixed(0.5f)
+            blurEffect {
+                blurEnabled = true
+                blurRadius = RecapToastDefaults.BlurRadius
+                style = blurStyle
+                colorEffects = listOf(
+                    HazeColorEffect.tint(colors.container),
+                )
+                noiseFactor = RecapToastDefaults.NoiseFactor
+            }
+        }
+    } else {
+        Modifier
+    }
     // Haze is a no-op in Compose Preview; fall back to the tint color so the toast is visible.
-    val containerColor =
-        if (LocalInspectionMode.current) colors.container else Color.Transparent
+    val containerColor = when {
+        !useRealtimeBlur -> RecapToastDefaults.FallbackContainerColor
+        LocalInspectionMode.current -> colors.container
+        else -> Color.Transparent
+    }
     Surface(
         modifier = modifier
             .clip(RecapToastDefaults.Shape)
-            .hazeEffect(state = hazeState) {
-                inputScale = HazeInputScale.Fixed(0.5f)
-                blurEffect {
-                    blurEnabled = true
-                    blurRadius = RecapToastDefaults.BlurRadius
-                    style = blurStyle
-                    colorEffects = listOf(
-                        HazeColorEffect.tint(colors.container),
-                    )
-                    noiseFactor = RecapToastDefaults.NoiseFactor
-                }
-            },
+            .then(hazeModifier),
         shape = RecapToastDefaults.Shape,
         color = containerColor,
         contentColor = colors.content,
@@ -261,6 +276,54 @@ private fun RecapToastVariantsPreview() {
                     hazeState = hazeState,
                 )
             }
+        }
+    }
+}
+
+@Preview(
+    name = "Recap Toast Success Fallback (API 32)",
+    showBackground = true,
+    backgroundColor = 0xFF4D586C,
+    apiLevel = 32,
+)
+@Composable
+private fun RecapToastSuccessFallbackPreview() {
+    RECAPTheme(dynamicColor = false) {
+        val hazeState = rememberHazeState()
+        RecapToastGlassPreviewBackground(hazeState = hazeState) {
+            RecapToast(
+                message = stringResource(R.string.recap_toast_preview_login_failed_message),
+                type = RecapToastType.Success,
+                hazeState = hazeState,
+                useRealtimeBlur = false,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(24.dp),
+            )
+        }
+    }
+}
+
+@Preview(
+    name = "Recap Toast Error Fallback (API 32)",
+    showBackground = true,
+    backgroundColor = 0xFF4D586C,
+    apiLevel = 32,
+)
+@Composable
+private fun RecapToastErrorFallbackPreview() {
+    RECAPTheme(dynamicColor = false) {
+        val hazeState = rememberHazeState()
+        RecapToastGlassPreviewBackground(hazeState = hazeState) {
+            RecapToast(
+                message = stringResource(R.string.recap_toast_preview_login_failed_message),
+                type = RecapToastType.Error,
+                hazeState = hazeState,
+                useRealtimeBlur = false,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(24.dp),
+            )
         }
     }
 }

@@ -362,7 +362,7 @@ private fun ScreenshotConfirmationScreenPreview() {
     }
 }
 
-private val OrganizeConfirmationPreviewScreenshots = listOf(
+internal val OrganizeConfirmationPreviewScreenshots = listOf(
     LocalImage(
         uri = "content://com.chalkak.recap.preview/screenshot/1",
         displayName = "screenshot-1",

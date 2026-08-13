@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.hilt.android)
@@ -5,24 +7,31 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-// -P override applies to debug only. release (and app qa via release fallback) is always Remote.
-val useMockBackendOverride: Boolean? =
-    if (project.hasProperty("USE_MOCK_BACKEND")) {
-        when (val raw = project.property("USE_MOCK_BACKEND").toString()) {
-            "true" -> true
-            "false" -> false
-            else -> error(
-                "Invalid USE_MOCK_BACKEND='$raw'. Allowed values are 'true' or 'false'.",
-            )
-        }
-    } else {
-        null
-    }
-
 android {
     namespace = "com.chalkak.recap.core.data"
     compileSdk {
         version = release(37)
+    }
+
+    // Debug-only: -P/gradle.properties, else local.properties (same as KAKAO_NATIVE_APP_KEY).
+    val useMockBackendForDebug = providers.provider {
+        val raw = if (project.hasProperty("USE_MOCK_BACKEND")) {
+            project.property("USE_MOCK_BACKEND").toString()
+        } else {
+            val localProperties = Properties()
+            val localFile = rootProject.file("local.properties")
+            if (localFile.exists()) {
+                localFile.inputStream().use(localProperties::load)
+            }
+            localProperties.getProperty("USE_MOCK_BACKEND")
+        }
+        when (raw) {
+            null -> "true"
+            "true", "false" -> raw
+            else -> error(
+                "Invalid USE_MOCK_BACKEND='$raw'. Allowed values are 'true' or 'false'.",
+            )
+        }
     }
 
     defaultConfig {
@@ -48,7 +57,7 @@ android {
             buildConfigField(
                 "boolean",
                 "USE_MOCK_BACKEND",
-                (useMockBackendOverride ?: true).toString(),
+                useMockBackendForDebug.get(),
             )
         }
         release {
