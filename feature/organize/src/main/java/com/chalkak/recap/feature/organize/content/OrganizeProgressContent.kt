@@ -71,7 +71,7 @@ fun OrganizeProgressContent(
     }
     val illustrationSize = with(LocalDensity.current) {
         LocalWindowInfo.current.containerSize.width.toDp() / 2f
-    }
+    }.coerceAtMost(OrganizeProgressTokens.IllustrationMaxSize)
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -150,6 +150,7 @@ private fun rememberAreAppNotificationsEnabled(): Boolean {
 }
 
 private object OrganizeProgressTokens {
+    val IllustrationMaxSize = 240.dp
     val ProgressHeight = 6.dp
     val TitleToDescriptionSpacing = 11.dp
     val DescriptionToIllustrationSpacing = 22.dp
