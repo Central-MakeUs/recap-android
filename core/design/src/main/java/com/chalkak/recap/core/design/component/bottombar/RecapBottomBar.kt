@@ -1,5 +1,6 @@
 package com.chalkak.recap.core.design.component.bottombar
 
+import android.os.Build
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.Animatable
@@ -86,6 +87,7 @@ fun RecapBottomBar(
     onOrganizeClick: () -> Unit,
     modifier: Modifier = Modifier,
     predictiveBackProgress: Float = 0f,
+    useRealtimeBlur: Boolean = isRecapRealtimeBlurEnabled(),
 ) {
     Row(
         modifier = modifier
@@ -104,6 +106,7 @@ fun RecapBottomBar(
             currentDestination = currentDestination,
             predictiveBackProgress = predictiveBackProgress,
             onDestinationClick = onDestinationClick,
+            useRealtimeBlur = useRealtimeBlur,
         )
 
         Spacer(modifier = Modifier.weight(1f))
@@ -118,10 +121,10 @@ private fun RecapBottomBarNavPill(
     currentDestination: RecapBottomBarDestination,
     predictiveBackProgress: Float,
     onDestinationClick: (RecapBottomBarDestination) -> Unit,
+    useRealtimeBlur: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val pillShape = RoundedCornerShape(percent = 50)
-    val pillBlurStyle = CupertinoMaterials.ultraThin()
     val itemSpan = RecapBottomBarItemWidth + RecapBottomBarNavItemSpacing
     val selectionFraction = remember {
         Animatable(currentDestination.ordinal.toFloat())
@@ -149,6 +152,27 @@ private fun RecapBottomBarNavPill(
     val homeSelectedStrength = (1f - selectionFraction.value).coerceIn(0f, 1f)
     val collectionSelectedStrength = selectionFraction.value.coerceIn(0f, 1f)
 
+    val glassModifier = if (useRealtimeBlur) {
+        val pillBlurStyle = CupertinoMaterials.ultraThin()
+        Modifier.hazeEffect(state = hazeState) {
+            inputScale = HazeInputScale.Fixed(0.5f)
+            blurEffect {
+                blurEnabled = true
+                blurRadius = RecapBottomBarDefaults.GlassBlurRadius
+                style = pillBlurStyle
+                colorEffects = listOf(
+                    HazeColorEffect.tint(RecapBottomBarDefaults.GlassTintColor),
+                )
+                noiseFactor = RecapBottomBarDefaults.GlassNoiseFactor
+            }
+        }
+    } else {
+        Modifier.background(
+            color = RecapBottomBarDefaults.GlassFallbackColor,
+            shape = pillShape,
+        )
+    }
+
     Box(
         modifier = modifier
             .shadow(
@@ -157,20 +181,7 @@ private fun RecapBottomBarNavPill(
                 ambientColor = RecapBottomBarDefaults.GlassShadowColor,
                 spotColor = RecapBottomBarDefaults.GlassShadowColor,
             )
-            .hazeEffect(state = hazeState) {
-                inputScale = HazeInputScale.Fixed(0.5f)
-                blurEffect {
-                    blurEnabled = true
-                    blurRadius = RecapBottomBarDefaults.GlassBlurRadius
-                    style = pillBlurStyle
-                    colorEffects = listOf(
-                        HazeColorEffect.tint(
-                            Color.White.copy(alpha = RecapBottomBarDefaults.GlassTintAlpha),
-                        ),
-                    )
-                    noiseFactor = RecapBottomBarDefaults.GlassNoiseFactor
-                }
-            }
+            .then(glassModifier)
             .border(
                 width = 1.dp,
                 color = RecapBottomBarDefaults.GlassBorderColor,
@@ -319,8 +330,14 @@ object RecapBottomBarDefaults {
     val GlassShadowElevation: Dp = 20.dp
     val GlassBlurRadius: Dp = 24.dp
     const val GlassTintAlpha: Float = 0.62f
+    val GlassTintColor: Color = Color.White.copy(alpha = GlassTintAlpha)
+    const val GlassFallbackAlpha: Float = 0.7f
+    val GlassFallbackColor: Color = Color.White.copy(alpha = GlassFallbackAlpha)
     const val GlassNoiseFactor: Float = 0.0f
 }
+
+private fun isRecapRealtimeBlurEnabled(): Boolean =
+    Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
 
 private const val RecapBottomBarHighlightDurationMillis = 250
 private const val RecapBottomBarPredictiveMaxFraction = 1f / 3f
@@ -366,6 +383,54 @@ private fun RecapBottomBarCollectionPreview() {
                 onDestinationClick = {},
                 onOrganizeClick = {},
                 modifier = Modifier.align(Alignment.BottomCenter),
+            )
+        }
+    }
+}
+
+@Preview(
+    name = "Recap Bottom Bar - Home Fallback (API 32)",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 140,
+    apiLevel = 32,
+)
+@Composable
+private fun RecapBottomBarHomeFallbackPreview() {
+    RECAPTheme {
+        val hazeState = rememberHazeState()
+        RecapBottomBarGlassPreviewBackground(hazeState = hazeState) {
+            RecapBottomBar(
+                hazeState = hazeState,
+                currentDestination = RecapBottomBarDestination.Home,
+                onDestinationClick = {},
+                onOrganizeClick = {},
+                modifier = Modifier.align(Alignment.BottomCenter),
+                useRealtimeBlur = false,
+            )
+        }
+    }
+}
+
+@Preview(
+    name = "Recap Bottom Bar - Collection Fallback (API 32)",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 140,
+    apiLevel = 32,
+)
+@Composable
+private fun RecapBottomBarCollectionFallbackPreview() {
+    RECAPTheme {
+        val hazeState = rememberHazeState()
+        RecapBottomBarGlassPreviewBackground(hazeState = hazeState) {
+            RecapBottomBar(
+                hazeState = hazeState,
+                currentDestination = RecapBottomBarDestination.Collection,
+                onDestinationClick = {},
+                onOrganizeClick = {},
+                modifier = Modifier.align(Alignment.BottomCenter),
+                useRealtimeBlur = false,
             )
         }
     }
