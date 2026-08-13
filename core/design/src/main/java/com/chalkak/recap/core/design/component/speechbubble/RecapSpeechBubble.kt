@@ -107,13 +107,8 @@ fun RecapSpeechBubble(
     } else {
         null
     }
-    val showArrow = arrowDirection != RecapSpeechBubbleArrowDirection.None
     val shape = with(density) {
-        val arrowHeightPx = if (showArrow) {
-            RecapSpeechBubbleDefaults.ArrowHeight.toPx()
-        } else {
-            0f
-        }
+        val arrowHeightPx = RecapSpeechBubbleDefaults.ArrowHeight.toPx()
         SpeechBubbleShape(
             arrowWidthPx = RecapSpeechBubbleDefaults.ArrowWidth.toPx(),
             upArrowHeightPx = if (arrowDirection == RecapSpeechBubbleArrowDirection.Up) {
@@ -126,11 +121,10 @@ fun RecapSpeechBubble(
             } else {
                 0f
             },
-            reservedArrowHeightPx = arrowHeightPx,
         )
     }
-    // 꼬리 방향과 무관하게 상·하 패딩을 동일하게 유지해 레이아웃 크기를 고정한다.
-    val contentPadding = speechBubbleContentPadding(showArrow = showArrow)
+    // 화살표가 있는 쪽에만 ArrowHeight를 예약한다. Down이면 위쪽 빈 공간을 두지 않는다.
+    val contentPadding = speechBubbleContentPadding(arrowDirection = arrowDirection)
 
     Box(
         modifier = modifier
@@ -165,17 +159,24 @@ fun RecapSpeechBubble(
     }
 }
 
-private fun speechBubbleContentPadding(showArrow: Boolean): PaddingValues {
-    val arrowHeight = if (showArrow) {
+private fun speechBubbleContentPadding(
+    arrowDirection: RecapSpeechBubbleArrowDirection,
+): PaddingValues {
+    val topArrowHeight = if (arrowDirection == RecapSpeechBubbleArrowDirection.Up) {
+        RecapSpeechBubbleDefaults.ArrowHeight
+    } else {
+        0.dp
+    }
+    val bottomArrowHeight = if (arrowDirection == RecapSpeechBubbleArrowDirection.Down) {
         RecapSpeechBubbleDefaults.ArrowHeight
     } else {
         0.dp
     }
     return PaddingValues(
         start = RecapSpeechBubbleDefaults.HorizontalPadding,
-        top = RecapSpeechBubbleDefaults.VerticalPadding + arrowHeight,
+        top = RecapSpeechBubbleDefaults.VerticalPadding + topArrowHeight,
         end = RecapSpeechBubbleDefaults.HorizontalPadding,
-        bottom = RecapSpeechBubbleDefaults.VerticalPadding + arrowHeight,
+        bottom = RecapSpeechBubbleDefaults.VerticalPadding + bottomArrowHeight,
     )
 }
 
@@ -183,7 +184,6 @@ private data class SpeechBubbleShape(
     private val arrowWidthPx: Float,
     private val upArrowHeightPx: Float,
     private val downArrowHeightPx: Float,
-    private val reservedArrowHeightPx: Float,
 ) : Shape {
     override fun createOutline(
         size: Size,
@@ -195,7 +195,6 @@ private data class SpeechBubbleShape(
             arrowWidth = arrowWidthPx,
             upArrowHeight = upArrowHeightPx,
             downArrowHeight = downArrowHeightPx,
-            reservedArrowHeight = reservedArrowHeightPx,
         ),
     )
 }
@@ -205,13 +204,11 @@ internal fun createSpeechBubblePath(
     arrowWidth: Float,
     upArrowHeight: Float,
     downArrowHeight: Float,
-    reservedArrowHeight: Float,
 ): Path {
     val width = size.width
     val height = size.height
-    val inset = reservedArrowHeight.coerceAtLeast(0f)
-    val bodyTop = inset
-    val bodyBottom = (height - inset).coerceAtLeast(bodyTop)
+    val bodyTop = upArrowHeight.coerceAtLeast(0f)
+    val bodyBottom = (height - downArrowHeight.coerceAtLeast(0f)).coerceAtLeast(bodyTop)
     val bodyHeight = (bodyBottom - bodyTop).coerceAtLeast(0f)
     val radius = bodyHeight / 2f
     val arrowCenterX = width / 2f

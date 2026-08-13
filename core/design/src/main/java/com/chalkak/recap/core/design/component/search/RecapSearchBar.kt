@@ -1,12 +1,13 @@
 package com.chalkak.recap.core.design.component.search
 
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -36,7 +37,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
@@ -120,7 +120,7 @@ fun RecapSearchBar(
     ) {
         Row(
             modifier = Modifier
-                .height(RecapSearchBarTokens.Height)
+                .heightIn(min = RecapSearchBarTokens.MinHeight)
                 .padding(horizontal = RecapSearchBarTokens.HorizontalPadding),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(RecapSearchBarTokens.IconTextSpacing),
@@ -180,10 +180,13 @@ fun RecapSearchBar(
                         if (value.isEmpty()) {
                             Text(
                                 text = placeholder,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .basicMarquee(),
                                 style = RecapCaption1,
                                 color = RecapGray300,
                                 maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                                softWrap = false,
                             )
                         }
                         innerTextField()
@@ -232,7 +235,7 @@ private fun RecapSearchBarClearButton(
 }
 
 private object RecapSearchBarTokens {
-    val Height = 44.dp
+    val MinHeight = 44.dp
     val HorizontalPadding = 16.dp
     val IconTextSpacing = 8.dp
     val IconSize = 24.dp
@@ -273,6 +276,19 @@ private fun RecapSearchBarNavigationEntryPreview() {
             value = "",
             onValueChange = {},
             onClick = {},
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+}
+
+@Preview(name = "RecapSearchBar long placeholder", showBackground = true, widthDp = 280)
+@Composable
+private fun RecapSearchBarLongPlaceholderPreview() {
+    RECAPTheme {
+        RecapSearchBar(
+            value = "",
+            onValueChange = {},
+            placeholder = "제목, 요약, 이미지 속 내용으로 검색 · 긴 플레이스홀더 마퀴 확인",
             modifier = Modifier.padding(16.dp),
         )
     }

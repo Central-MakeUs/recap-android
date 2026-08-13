@@ -21,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -67,6 +69,9 @@ fun OrganizeProgressContent(
     } else {
         R.string.organize_progress_description_without_notification
     }
+    val illustrationSize = with(LocalDensity.current) {
+        LocalWindowInfo.current.containerSize.width.toDp() / 2f
+    }.coerceAtMost(OrganizeProgressTokens.IllustrationMaxSize)
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -87,7 +92,7 @@ fun OrganizeProgressContent(
         )
         Spacer(modifier = Modifier.height(OrganizeProgressTokens.DescriptionToIllustrationSpacing))
         OrganizeProgressAnalyzingLottie(
-            modifier = Modifier.size(OrganizeProgressTokens.IllustrationSize),
+            modifier = Modifier.size(illustrationSize),
         )
         Spacer(modifier = Modifier.height(OrganizeProgressTokens.IllustrationToProgressSpacing))
         LinearProgressIndicator(
@@ -145,7 +150,7 @@ private fun rememberAreAppNotificationsEnabled(): Boolean {
 }
 
 private object OrganizeProgressTokens {
-    val IllustrationSize = 240.dp
+    val IllustrationMaxSize = 240.dp
     val ProgressHeight = 6.dp
     val TitleToDescriptionSpacing = 11.dp
     val DescriptionToIllustrationSpacing = 22.dp

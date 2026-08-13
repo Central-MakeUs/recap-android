@@ -107,7 +107,7 @@ core.data.screenshot 하위:
 - `RecapStartupViewModel`이 `onboardingCompleted`와 `AuthSessionStateProvider.hasSession`(refresh token 보유 여부)을 합쳐 `RecapEntryMode`(`Onboarding` / `Reauth` / `Main`)를 파생한다. 네트워크 상태는 entry 입력이 아니며, refresh token이 서버에서 무효/만료로 확정되어 clear될 때만 세션 없음으로 전환한다. 온보딩·Reauth 로그인 전 오프라인은 `NetworkConnectivityMonitor.isInternetValidated()` + `RecapPopup`으로 안내한다. Main Home/Collection/Search는 오프라인 캐시 읽기 없이 로드 실패 Error UI와 수동 재시도를 쓰고, foreground 복귀 또는 validated 네트워크 복구 시 Error일 때만 자동 refresh를 1회 시도한다.
 - root route:
   - `Onboarding`
-  - `Reauth` (온보딩 완료 사용자가 세션을 잃었을 때. `OnboardingLandingScreen`을 그대로 재사용해 로그인만 처리하고, 성공 시 튜토리얼 없이 Main으로 복귀한다. 로그인 시 카카오 user.id 해시가 없으면/다르면 로컬 계정 데이터를 wipe한다)
+  - `Reauth` (온보딩 완료 사용자가 세션을 잃었거나 로그아웃/탈퇴했을 때. `OnboardingLandingScreen`을 그대로 재사용해 로그인만 처리하고, 성공 시 튜토리얼 없이 Main으로 복귀한다. 로그인 시 카카오 user.id 해시가 없으면/다르면 로컬 계정 데이터를 wipe한다. 자발적 로그아웃/탈퇴에서는 세션 만료 토스트를 띄우지 않는다)
   - `Main`
   - `Developer`
 - main route:
@@ -129,7 +129,7 @@ core.data.screenshot 하위:
 - OCR/AI 분석은 서버에서 수행한다. 로컬 ML Kit OCR 및 Firebase AI 클라이언트는 사용하지 않는다.
 - 스크린샷 도메인 backend는 `:core:data`의 `BuildConfig.USE_MOCK_BACKEND`로 프로세스 수명 동안 고정된다.
   - 기본값: debug `true`, qa/release `false` (qa/release는 Remote 고정)
-  - Gradle project property `USE_MOCK_BACKEND=true|false`는 **debug에만** 적용된다. release/qa는 `-P`로도 Mock으로 바뀌지 않는다.
+  - debug 덮어쓰기: `-PUSE_MOCK_BACKEND=true|false`가 있으면 그걸 쓰고, 없으면 `local.properties`의 `USE_MOCK_BACKEND`(Kakao 키와 동일)를 쓴다. 둘 다 없으면 debug 기본값은 Mock(`true`). release/qa는 `-P`/local.properties로도 Mock으로 바뀌지 않는다.
   - Hilt 모듈이 Mock 또는 Remote concrete repository를 한 번 선택해 제공한다.
 
 외부 API, Firebase, local.properties, google-services 파일, API key 등 시크릿은 커밋하지 않는다.
@@ -161,6 +161,7 @@ UI 색상·타이포는 `MaterialTheme.colorScheme` / `MaterialTheme.typography`
 - `docs/PROJECT.md`: 프로젝트 사실과 컨벤션
 - `docs/BACKLOG.md`: 두 에이전트가 공유해야 하는 후속 항목
 - `docs/TESTING.md`: 테스트/검증 정책
+- `docs/qa/GUIDE.md`: 디자인 QA(스크린샷·VM) 오케스트라 지침
 - `docs/LOCAL_DATA.md`: 로컬 데이터 구현체와 저장 정책
 - `docs/ANALYSIS_DATA_SOURCE.md`: 스크린샷 Mock/Remote build-time (`USE_MOCK_BACKEND`) 선택
 - `docs/MOCK_REMOTE_CHANGE.md`: 제거된 런타임 Mock/Remote 전환 계층 역사 스냅샷

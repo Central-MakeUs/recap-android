@@ -486,7 +486,7 @@ private fun CollectionDetailEmptyPreview() {
     }
 }
 
-private fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
+internal fun previewCollectionDetailUiModel(): CollectionDetailUiModel {
     return CollectionDetailUiModel(
         titleResId = R.string.category_type_shopping_product,
         count = 3,

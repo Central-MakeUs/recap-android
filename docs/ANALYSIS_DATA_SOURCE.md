@@ -28,19 +28,21 @@
 
 | 조건 | `USE_MOCK_BACKEND` |
 |------|--------------------|
-| property 없음 + **debug** | `true` (Mock) |
-| **release** | 항상 `false` (Remote; `-P` 무시) |
-| app **qa** | 항상 `false` (Remote; `:core:data` release fallback, `-P` 무시) |
-| `-PUSE_MOCK_BACKEND=true` | **debug만** Mock |
-| `-PUSE_MOCK_BACKEND=false` | **debug만** Remote |
-| 그 외 property 값 | Gradle configuration 단계에서 실패 |
+| 덮어쓰기 없음 + **debug** | `true` (Mock) |
+| **release** | 항상 `false` (Remote; `-P`/local.properties 무시) |
+| app **qa** | 항상 `false` (Remote; `:core:data` release fallback, `-P`/local.properties 무시) |
+| `local.properties` `USE_MOCK_BACKEND` | **debug만** 해당 값 (`KAKAO_NATIVE_APP_KEY`와 같이 로컬 파일에서 읽음) |
+| `-PUSE_MOCK_BACKEND=true` | **debug만** Mock (`local.properties`보다 우선) |
+| `-PUSE_MOCK_BACKEND=false` | **debug만** Remote (`local.properties`보다 우선) |
+| 그 외 property/local 값 | Gradle configuration 단계에서 실패 |
 
 예:
 
 ```powershell
+# 로컬 기본 Remote: local.properties에 USE_MOCK_BACKEND=false
 .\gradlew.bat assembleDebug -PUSE_MOCK_BACKEND=false
 .\gradlew.bat assembleDebug -PUSE_MOCK_BACKEND=true
-# release/qa는 -PUSE_MOCK_BACKEND=true 여도 Remote 유지
+# release/qa는 -P / local.properties와 무관하게 Remote 유지
 .\gradlew.bat assembleRelease
 .\gradlew.bat :app:assembleQa
 ```

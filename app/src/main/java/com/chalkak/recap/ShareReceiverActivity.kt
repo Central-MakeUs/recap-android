@@ -4,7 +4,6 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -23,7 +22,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
-class ShareReceiverActivity : ComponentActivity() {
+class ShareReceiverActivity : RecapComponentActivity() {
     private val shareIntakeViewModel: ShareIntakeViewModel by viewModels()
     private val toastViewModel: RecapToastViewModel by viewModels()
 

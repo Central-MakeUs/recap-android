@@ -8,10 +8,12 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -300,29 +302,36 @@ private fun CollectionUnifiedOverview(
         ) { animatedViewMode ->
             when (animatedViewMode) {
                 CollectionTypeViewMode.Grid -> {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(3),
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(horizontal = CollectionScreenTokens.HorizontalPadding),
-                        contentPadding = PaddingValues(
-                            top = CollectionScreenTokens.TypeGridTopPadding,
-                            bottom = bottomContentPadding,
-                        ),
-                        horizontalArrangement = Arrangement.spacedBy(CollectionScreenTokens.TypeGridSpacing),
-                        verticalArrangement = Arrangement.spacedBy(CollectionScreenTokens.TypeGridRowSpacing),
-                    ) {
-                        items(
-                            items = typeSummaries,
-                            key = { summary -> summary.contentType.name },
-                            contentType = { "category-grid" },
-                        ) { summary ->
-                            CollectionTypeGridItem(
-                                summary = summary,
-                                onClick = {
-                                    onAction(CollectionAction.OpenTypeDetail(summary.contentType))
-                                },
-                            )
+                    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+                        val gridColumns = collectionTypeGridColumns(maxWidth)
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(gridColumns),
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = CollectionScreenTokens.HorizontalPadding),
+                            contentPadding = PaddingValues(
+                                top = CollectionScreenTokens.TypeGridTopPadding,
+                                bottom = bottomContentPadding,
+                            ),
+                            horizontalArrangement = Arrangement.spacedBy(
+                                CollectionScreenTokens.TypeGridSpacing,
+                            ),
+                            verticalArrangement = Arrangement.spacedBy(
+                                CollectionScreenTokens.TypeGridRowSpacing,
+                            ),
+                        ) {
+                            items(
+                                items = typeSummaries,
+                                key = { summary -> summary.contentType.name },
+                                contentType = { "category-grid" },
+                            ) { summary ->
+                                CollectionTypeGridItem(
+                                    summary = summary,
+                                    onClick = {
+                                        onAction(CollectionAction.OpenTypeDetail(summary.contentType))
+                                    },
+                                )
+                            }
                         }
                     }
                 }
@@ -392,6 +401,12 @@ private fun CollectionTypeGridItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val categoryLabel = stringResource(summary.labelResId)
+    val recapCountLabel = pluralStringResource(
+        R.plurals.collection_recap_count,
+        summary.count,
+        summary.count,
+    )
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -403,24 +418,26 @@ private fun CollectionTypeGridItem(
             onClick = onClick,
         )
         Text(
-            text = stringResource(summary.labelResId),
+            text = categoryLabel,
+            modifier = Modifier
+                .fillMaxWidth()
+                .basicMarquee(),
             style = RecapHeading3,
             color = RecapGray900,
             textAlign = TextAlign.Center,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            softWrap = false,
         )
         Text(
-            text = pluralStringResource(
-                R.plurals.collection_recap_count,
-                summary.count,
-                summary.count,
-            ),
+            text = recapCountLabel,
+            modifier = Modifier
+                .fillMaxWidth()
+                .basicMarquee(),
             style = RecapCaption2,
             color = RecapGray300,
             textAlign = TextAlign.Center,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            softWrap = false,
         )
     }
 }
@@ -501,6 +518,23 @@ private const val CollectionViewModeSlideDurationMillis = 300
 private const val CollectionViewModeFadeDurationMillis = 250
 private const val CollectionViewModeSlideFraction = 6
 
+/**
+ * Type grid column count from available width (before horizontal padding).
+ *
+ * - below 332.dp: 2 columns
+ * - below 493.dp: 3 columns
+ * - otherwise: 4 columns (cap)
+ *
+ * 360.dp phones stay on 3 columns with the 332.dp three-column floor.
+ * Four-column floor matches fixed haze-folder card width 99.dp plus
+ * horizontal padding/spacing: 40 + 99*4 + 19*3 = 493.dp.
+ */
+internal fun collectionTypeGridColumns(availableWidth: Dp): Int = when {
+    availableWidth < CollectionScreenTokens.TypeGridThreeColumnMinWidth -> 2
+    availableWidth < CollectionScreenTokens.TypeGridFourColumnMinWidth -> 3
+    else -> 4
+}
+
 private object CollectionScreenTokens {
     val HorizontalPadding = 20.dp
     val SearchTopPadding = 8.dp
@@ -510,6 +544,10 @@ private object CollectionScreenTokens {
     val TypeListTopPadding = 10.dp
     val TypeGridSpacing = 19.dp
     val TypeGridRowSpacing = 24.dp
+    /** Inclusive lower bound for 3 columns (332.dp; keeps 360.dp phones on 3×3). */
+    val TypeGridThreeColumnMinWidth = 332.dp
+    /** Inclusive lower bound for 4 columns (fold / wide). */
+    val TypeGridFourColumnMinWidth = 493.dp
     val MinimumTouchTarget = 48.dp
     val EmptyCharacterWidth = 122.dp
     val EmptyCharacterHeight = 89.dp
@@ -595,7 +633,7 @@ private fun CollectionOverviewZeroFavoritesPreview() {
     }
 }
 
-private fun previewOverviewUiState(
+internal fun previewOverviewUiState(
     viewMode: CollectionTypeViewMode,
     favoriteCount: Int = 4,
 ): CollectionUiState {
@@ -605,32 +643,86 @@ private fun previewOverviewUiState(
         typeViewMode = viewMode,
         overview = CollectionOverviewUiModel(
             favoriteSummary = CollectionFavoriteSummaryUiModel(count = favoriteCount),
-            typeSummaries = listOf(
-                CollectionTypeSummaryUiModel(
-                    contentType = ScreenshotContentType.SHOPPING,
-                    labelResId = R.string.category_type_shopping_product,
-                    categoryType = RecapCategoryType.ShoppingProduct,
-                    count = 20,
-                    exampleTitles = listOf("택배 반품 절차", "노트북 가격 비교"),
-                    additionalExampleCount = 0,
-                ),
-                CollectionTypeSummaryUiModel(
-                    contentType = ScreenshotContentType.PLACE,
-                    labelResId = R.string.category_type_place_restaurant,
-                    categoryType = RecapCategoryType.PlaceRestaurant,
-                    count = 23,
-                    exampleTitles = listOf("성수 카페", "강남 맛집"),
-                    additionalExampleCount = 0,
-                ),
-                CollectionTypeSummaryUiModel(
-                    contentType = ScreenshotContentType.ETC,
-                    labelResId = R.string.category_type_other,
-                    categoryType = RecapCategoryType.Other,
-                    count = 1,
-                    exampleTitles = listOf("미분류 메모"),
-                    additionalExampleCount = 0,
-                ),
-            ),
+            typeSummaries = CollectionOverviewPreviewTypeSummaries,
         ),
     )
 }
+
+/**
+ * Overview preview/fixture order mirrors production overview category order
+ * (SHOPPING → … → ETC), covering all 9 taxonomy entries.
+ */
+private val CollectionOverviewPreviewTypeSummaries = listOf(
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.SHOPPING,
+        labelResId = R.string.category_type_shopping_product,
+        categoryType = RecapCategoryType.ShoppingProduct,
+        count = 20,
+        exampleTitles = listOf("택배 반품 절차", "노트북 가격 비교"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.PLACE,
+        labelResId = R.string.category_type_place_restaurant,
+        categoryType = RecapCategoryType.PlaceRestaurant,
+        count = 23,
+        exampleTitles = listOf("성수 카페", "강남 맛집"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.SCHEDULE,
+        labelResId = R.string.category_type_schedule_reservation,
+        categoryType = RecapCategoryType.ScheduleReservation,
+        count = 10,
+        exampleTitles = listOf("치과 예약", "항공권 일정"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.KNOWLEDGE,
+        labelResId = R.string.category_type_info_knowledge,
+        categoryType = RecapCategoryType.InfoKnowledge,
+        count = 12,
+        exampleTitles = listOf("Compose 팁", "면접 질문"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.CONTENT,
+        labelResId = R.string.category_type_book_content,
+        categoryType = RecapCategoryType.BookContent,
+        count = 1,
+        exampleTitles = listOf("읽을 책 메모"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.BENEFIT,
+        labelResId = R.string.category_type_benefit_event,
+        categoryType = RecapCategoryType.BenefitEvent,
+        count = 5,
+        exampleTitles = listOf("쿠폰 만료", "이벤트 안내"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.RECORD,
+        labelResId = R.string.category_type_record_capture,
+        categoryType = RecapCategoryType.RecordCapture,
+        count = 12,
+        exampleTitles = listOf("회의 메모", "아이디어 스케치"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.JOB,
+        labelResId = R.string.category_type_job_career,
+        categoryType = RecapCategoryType.JobCareer,
+        count = 8,
+        exampleTitles = listOf("이력서 초안", "채용 공고"),
+        additionalExampleCount = 0,
+    ),
+    CollectionTypeSummaryUiModel(
+        contentType = ScreenshotContentType.ETC,
+        labelResId = R.string.category_type_other,
+        categoryType = RecapCategoryType.Other,
+        count = 3,
+        exampleTitles = listOf("미분류 메모", "임시 저장"),
+        additionalExampleCount = 0,
+    ),
+)

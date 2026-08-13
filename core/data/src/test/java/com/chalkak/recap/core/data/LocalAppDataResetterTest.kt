@@ -13,6 +13,8 @@ import io.mockk.runs
 import io.mockk.verify
 import java.io.IOException
 import kotlinx.coroutines.test.runTest
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
@@ -73,6 +75,47 @@ class LocalAppDataResetterTest {
 
         coVerify(exactly = 0) { accountOwnerStore.setHash(any()) }
     }
+
+    @Test
+    fun `prepareSignOut does not clear onboarding completed`() {
+        resetter.prepareSignOut()
+
+        coVerify(exactly = 0) { userPreferencesRepository.setOnboardingCompleted(any()) }
+    }
+
+    @Test
+    fun `consumeVoluntarySignOut is a one shot flag`() {
+        assertFalse(resetter.consumeVoluntarySignOut())
+
+        resetter.prepareSignOut()
+
+        assertTrue(resetter.consumeVoluntarySignOut())
+        assertFalse(resetter.consumeVoluntarySignOut())
+    }
+
+    @Test
+    fun `resetAccountLocalData clears owner hash without onboarding or session`() = runTest {
+        resetter.resetAccountLocalData()
+
+        verify(exactly = 1) { recapDatabase.clearAllTables() }
+        verify(exactly = 1) { thumbnailCache.clearAll() }
+        coVerify(exactly = 1) { recentSearchStore.clearAll() }
+        coVerify(exactly = 1) { userPreferencesRepository.clearAccountScopedPreferences() }
+        coVerify(exactly = 1) { accountOwnerStore.clear() }
+        coVerify(exactly = 0) { userPreferencesRepository.setOnboardingCompleted(any()) }
+        coVerify(exactly = 0) { sessionTokenStore.clear() }
+    }
+
+    @Test
+    fun `resetAccountLocalData continues when image clear fails without clearing session`() =
+        runTest {
+            every { thumbnailCache.clearAll() } returns false
+
+            resetter.resetAccountLocalData()
+
+            coVerify(exactly = 1) { accountOwnerStore.clear() }
+            coVerify(exactly = 0) { sessionTokenStore.clear() }
+        }
 
     @Test
     fun `resetDatabaseAndOnboarding clears owner hash account prefs and onboarding`() = runTest {

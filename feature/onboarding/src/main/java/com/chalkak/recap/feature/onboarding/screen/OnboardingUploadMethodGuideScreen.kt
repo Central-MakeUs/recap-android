@@ -7,10 +7,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -43,8 +42,15 @@ import com.chalkak.recap.feature.onboarding.OnboardingScreenPreview
 import com.chalkak.recap.feature.onboarding.component.StepHeader
 
 private val UploadMethodGuideCardShape = RoundedCornerShape(10.dp)
-private val UploadMethodGuideCardHeight = 129.dp
+private val UploadMethodGuideScrollShape = RoundedCornerShape(10.dp)
+private val UploadMethodGuideCardsToButtonSpacing = 8.dp
+private val AlbumSelectGuideCardMinHeight = 119.dp
+private val ShareSendGuideCardMinHeight = 129.dp
 private val AlbumSelectGuideImageSize = 119.dp
+
+/** 화면 너비·fontScale과 무관한 고정 폭 (기존 360dp 기준 ~0.45 비율). */
+private val ShareGuideImageWidth = 140.dp
+private val ShareGuideImageHeight = ShareSendGuideCardMinHeight
 
 @Composable
 fun OnboardingUploadMethodGuideScreen(
@@ -54,28 +60,31 @@ fun OnboardingUploadMethodGuideScreen(
     Column(
         modifier = modifier.fillMaxSize(),
     ) {
+        RecapLogo(
+            contentDescription = stringResource(R.string.app_name),
+            modifier = Modifier
+                .align(Alignment.Start)
+                .padding(top = 24.dp)
+                .width(58.dp)
+                .aspectRatio(RecapLogoAspectRatio),
+        )
+        StepHeader(
+            title = stringResource(R.string.onboarding_upload_method_title),
+            description = stringResource(R.string.onboarding_upload_method_description),
+            modifier = Modifier.padding(top = 10.dp),
+        )
         Column(
             modifier = Modifier
                 .weight(1f)
-                .verticalScroll(rememberScrollState()),
+                .fillMaxWidth()
+                .padding(vertical = UploadMethodGuideCardsToButtonSpacing)
+                .clip(UploadMethodGuideScrollShape)
+                .verticalScroll(state = rememberScrollState(), overscrollEffect = null),
         ) {
-            RecapLogo(
-                contentDescription = stringResource(R.string.app_name),
-                modifier = Modifier
-                    .align(Alignment.Start)
-                    .padding(top = 24.dp)
-                    .width(58.dp)
-                    .aspectRatio(RecapLogoAspectRatio),
-            )
-            StepHeader(
-                title = stringResource(R.string.onboarding_upload_method_title),
-                description = stringResource(R.string.onboarding_upload_method_description),
-                modifier = Modifier.padding(top = 10.dp),
-            )
             AlbumSelectGuideCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 32.dp),
+                    .padding(top = 16.dp),
             )
             ShareSendGuideCard(
                 modifier = Modifier
@@ -100,11 +109,11 @@ private fun AlbumSelectGuideCard(
 ) {
     Row(
         modifier = modifier
-            .height(AlbumSelectGuideImageSize)
+            .heightIn(min = AlbumSelectGuideCardMinHeight)
             .clip(UploadMethodGuideCardShape)
             .background(RecapGray50)
             .padding(start = 13.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Image(
@@ -112,8 +121,7 @@ private fun AlbumSelectGuideCard(
             contentDescription = stringResource(
                 R.string.onboarding_upload_method_album_image_content_description,
             ),
-            modifier = Modifier
-                .size(AlbumSelectGuideImageSize),
+            modifier = Modifier.size(AlbumSelectGuideImageSize),
             contentScale = ContentScale.Crop,
         )
         UploadMethodGuideCardText(
@@ -121,7 +129,8 @@ private fun AlbumSelectGuideCard(
             description = stringResource(R.string.onboarding_upload_method_album_description),
             modifier = Modifier
                 .weight(1f)
-                .padding(end = 20.dp),
+                .align(Alignment.CenterVertically)
+                .padding(end = 20.dp, top = 12.dp, bottom = 12.dp),
         )
     }
 }
@@ -132,7 +141,7 @@ private fun ShareSendGuideCard(
 ) {
     Box(
         modifier = modifier
-            .height(UploadMethodGuideCardHeight)
+            .heightIn(min = ShareSendGuideCardMinHeight)
             .clip(UploadMethodGuideCardShape)
             .background(RecapGray50),
     ) {
@@ -151,8 +160,8 @@ private fun ShareSendGuideCard(
             ),
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .fillMaxHeight()
-                .fillMaxWidth(0.45f),
+                .size(width = ShareGuideImageWidth, height = ShareGuideImageHeight),
+            contentScale = ContentScale.Fit,
             alignment = Alignment.BottomEnd,
         )
     }

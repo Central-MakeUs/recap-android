@@ -7,8 +7,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -55,15 +57,18 @@ fun ShareFavoriteGuideCard(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(ShareFavoriteGuideCardTokens.CardHeight),
+                .heightIn(min = ShareFavoriteGuideCardTokens.CardMinHeight),
         ) {
             Column(
                 modifier = Modifier
                     .align(Alignment.CenterStart)
+                    .fillMaxWidth()
                     .padding(
                         start = ShareFavoriteGuideCardTokens.HorizontalPadding,
                         end = ShareFavoriteGuideCardTokens.IllustrationWidth +
-                                ShareFavoriteGuideCardTokens.ContentToIllustrationSpacing,
+                            ShareFavoriteGuideCardTokens.ContentToIllustrationSpacing,
+                        top = ShareFavoriteGuideCardTokens.VerticalPadding,
+                        bottom = ShareFavoriteGuideCardTokens.VerticalPadding,
                     ),
                 verticalArrangement = Arrangement.spacedBy(
                     ShareFavoriteGuideCardTokens.TextSpacing,
@@ -101,10 +106,9 @@ fun ShareFavoriteGuideCard(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(end = ShareFavoriteGuideCardTokens.IllustrationEndPadding)
-                    .size(
-                        width = ShareFavoriteGuideCardTokens.IllustrationWidth,
-                        height = ShareFavoriteGuideCardTokens.IllustrationHeight,
-                    ),
+                    // dp 고정 폭/높이 — fontScale이 커져도 일러스트 크기는 유지된다.
+                    .width(ShareFavoriteGuideCardTokens.IllustrationWidth)
+                    .height(ShareFavoriteGuideCardTokens.IllustrationHeight),
                 contentScale = ContentScale.Fit,
             )
         }
@@ -113,8 +117,9 @@ fun ShareFavoriteGuideCard(
 
 private object ShareFavoriteGuideCardTokens {
     val CornerRadius = 10.dp
-    val CardHeight = 115.dp
+    val CardMinHeight = 115.dp
     val HorizontalPadding = 20.dp
+    val VerticalPadding = 16.dp
     val TextSpacing = 14.dp
     val TitleChevronSpacing = 6.dp
     val ChevronSize = 16.dp
@@ -127,6 +132,22 @@ private object ShareFavoriteGuideCardTokens {
 @Preview(name = "Share Favorite Guide Card", showBackground = true, widthDp = 360)
 @Composable
 private fun ShareFavoriteGuideCardPreview() {
+    RECAPTheme(dynamicColor = false) {
+        ShareFavoriteGuideCard(
+            onClick = {},
+            modifier = Modifier.padding(16.dp),
+        )
+    }
+}
+
+@Preview(
+    name = "Share Favorite Guide Card Font 1.5",
+    showBackground = true,
+    widthDp = 360,
+    fontScale = 1.5f,
+)
+@Composable
+private fun ShareFavoriteGuideCardFontScalePreview() {
     RECAPTheme(dynamicColor = false) {
         ShareFavoriteGuideCard(
             onClick = {},

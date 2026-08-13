@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -13,19 +14,25 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.scrollableArea
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +52,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -99,7 +107,10 @@ private const val GuideBubbleOverlapFraction = 0.3f
 /** 하단 타겟은 원 아래 공간이 없어 말풍선을 위로 올린다. */
 private const val GuideBubbleBelowMaxYFraction = 0.85f
 private const val GuidePagerPageWidthFraction = 0.75f
+/** 말풍선이 가이드 이미지 밖으로 나갈 수 있는 최대 비율(화면–이미지 좌우 여백 대비). */
+private const val GuideBubbleHorizontalOverflowFraction = 0.5f
 private const val GuideImageAspectRatio = 3f / 4f
+private val GuideStepDescriptionTopPadding = 32.dp
 
 @Composable
 fun OnboardingAddToFavoriteGuideScreen(
@@ -113,46 +124,84 @@ fun OnboardingAddToFavoriteGuideScreen(
         pageCount = { pageCount },
     )
     val progress = pagerState.currentPage + pagerState.currentPageOffsetFraction
+    val pagerFlingBehavior = PagerDefaults.flingBehavior(state = pagerState)
 
     Surface(
         modifier = modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
         Column(
-            modifier = Modifier.fillMaxSize(),
+            modifier = Modifier
+                .fillMaxSize()
+                .scrollableArea(
+                    state = pagerState,
+                    orientation = Orientation.Horizontal,
+                    flingBehavior = pagerFlingBehavior,
+                    overscrollEffect = null
+                ),
         ) {
             RecapTopBar(
                 title = stringResource(R.string.onboarding_add_to_favorite_guide_title),
                 onBackClick = onBackClick,
                 backButtonContentDescription = stringResource(R.string.settings_back_content_description),
             )
-            Column(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(vertical = 24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Spacer(modifier = Modifier.weight(1f))
-                AddToFavoriteGuideCarousel(
-                    pagerState = pagerState,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                AddToFavoriteGuideStepDescription(
-                    pagerState = pagerState,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = GuideContentHorizontalPadding)
-                        .padding(top = 18.dp),
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                RecapStepProgressIndicator(
-                    progress = progress,
-                    stepCount = pageCount,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = GuideContentHorizontalPadding),
-                )
-                Spacer(modifier = Modifier.weight(1f))
+                val density = LocalDensity.current
+                val pagerHeight = maxWidth * GuidePagerPageWidthFraction / GuideImageAspectRatio
+                var progressHeight by remember { mutableStateOf(0.dp) }
+                var descriptionContentHeight by remember { mutableStateOf(0.dp) }
+                val descriptionBudget = (
+                    maxHeight - pagerHeight - progressHeight - GuideStepDescriptionTopPadding
+                    ).coerceAtLeast(0.dp)
+                val needsDescriptionScroll = descriptionContentHeight > descriptionBudget
+                val descriptionScrollState = rememberScrollState()
+                LaunchedEffect(pagerState.currentPage) {
+                    descriptionScrollState.scrollTo(0)
+                }
+
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    AddToFavoriteGuideCarousel(
+                        pagerState = pagerState,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    AddToFavoriteGuideStepDescription(
+                        pagerState = pagerState,
+                        onContentHeightChanged = { descriptionContentHeight = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = GuideContentHorizontalPadding)
+                            .padding(top = GuideStepDescriptionTopPadding)
+                            .then(
+                                if (needsDescriptionScroll) {
+                                    Modifier
+                                        .heightIn(max = descriptionBudget)
+                                        .verticalScroll(descriptionScrollState)
+                                } else {
+                                    Modifier
+                                },
+                            ),
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    RecapStepProgressIndicator(
+                        progress = progress,
+                        stepCount = pageCount,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = GuideContentHorizontalPadding)
+                            .onSizeChanged { size ->
+                                progressHeight = with(density) { size.height.toDp() }
+                            },
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                }
             }
         }
     }
@@ -175,6 +224,7 @@ private fun AddToFavoriteGuideCarousel(
 
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
         val sidePadding = maxWidth * ((1f - GuidePagerPageWidthFraction) / 2f)
+        val bubbleHorizontalOverflow = sidePadding * GuideBubbleHorizontalOverflowFraction
         val pageSpacing = maxWidth * (1f - GuidePagerPageWidthFraction)
         val pageWidth = maxWidth * GuidePagerPageWidthFraction
         val pagerHeight = pageWidth / GuideImageAspectRatio
@@ -187,6 +237,7 @@ private fun AddToFavoriteGuideCarousel(
                     .height(pagerHeight),
                 contentPadding = PaddingValues(horizontal = sidePadding),
                 pageSpacing = pageSpacing,
+                userScrollEnabled = false,
             ) { page ->
                 // 페이지 Box는 clip하지 않아 SpeechBubble이 이미지 라운드 밖으로 나갈 수 있다.
                 // 라운드 clip은 Image / 딤 오버레이에만 적용한다.
@@ -208,6 +259,7 @@ private fun AddToFavoriteGuideCarousel(
                             xFraction = highlight.xFraction,
                             yFraction = highlight.yFraction,
                             bubbleText = stringResource(highlight.bubbleTextResId),
+                            horizontalOverflow = bubbleHorizontalOverflow,
                         )
                     }
                 }
@@ -237,35 +289,46 @@ private fun AddToFavoriteGuideCarousel(
 @Composable
 private fun AddToFavoriteGuideStepDescription(
     pagerState: PagerState,
+    onContentHeightChanged: (Dp) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val density = LocalDensity.current
     val currentPage = pagerState.currentPage
     val descriptionAlpha =
         (1f - abs(pagerState.currentPageOffsetFraction) * 2f).coerceIn(0f, 1f)
 
     Box(
         modifier = modifier,
-        contentAlignment = Alignment.Center,
+        contentAlignment = Alignment.TopStart,
     ) {
-        GuideStepDescriptions.forEachIndexed { index, descriptionResId ->
-            val alpha = if (index == currentPage) descriptionAlpha else 0f
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .graphicsLayer { this.alpha = alpha },
-                verticalAlignment = Alignment.Top,
-            ) {
-                Text(
-                    text = GuideStepIcons[index],
-                    style = RecapBody1,
-                    color = RecapGray700,
-                )
-                Text(
-                    text = stringResource(descriptionResId),
-                    modifier = Modifier.padding(start = 8.dp),
-                    style = RecapBody1,
-                    color = RecapGray700,
-                )
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .onSizeChanged { size ->
+                    onContentHeightChanged(with(density) { size.height.toDp() })
+                },
+            contentAlignment = Alignment.TopStart,
+        ) {
+            GuideStepDescriptions.forEachIndexed { index, descriptionResId ->
+                val alpha = if (index == currentPage) descriptionAlpha else 0f
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .graphicsLayer { this.alpha = alpha },
+                    verticalAlignment = Alignment.Top,
+                ) {
+                    Text(
+                        text = GuideStepIcons[index],
+                        style = RecapBody1,
+                        color = RecapGray700,
+                    )
+                    Text(
+                        text = stringResource(descriptionResId),
+                        modifier = Modifier.padding(start = 8.dp),
+                        style = RecapBody1,
+                        color = RecapGray700,
+                    )
+                }
             }
         }
     }
@@ -276,11 +339,13 @@ private fun GuideTouchHighlight(
     xFraction: Float,
     yFraction: Float,
     bubbleText: String,
+    horizontalOverflow: Dp,
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val density = LocalDensity.current
         val holeDiameterPx = with(density) { GuideTouchHoleSize.toPx() }
+        val horizontalOverflowPx = with(density) { horizontalOverflow.toPx() }
         val placeBubbleBelow = yFraction <= GuideBubbleBelowMaxYFraction
         var bubbleSize by remember { mutableStateOf(IntSize.Zero) }
 
@@ -316,7 +381,12 @@ private fun GuideTouchHighlight(
                     val holeCenterY = constraints.maxHeight * yFraction
                     val holeRadius = holeDiameterPx / 2f
                     val overlapPx = bubbleSize.height * GuideBubbleOverlapFraction
-                    val x = (holeCenterX - bubbleSize.width / 2f).roundToInt()
+                    val preferredX = holeCenterX - bubbleSize.width / 2f
+                    val minX = -horizontalOverflowPx
+                    val maxX = (
+                        (constraints.maxWidth - bubbleSize.width).toFloat() + horizontalOverflowPx
+                    ).coerceAtLeast(minX)
+                    val x = preferredX.coerceIn(minX, maxX).roundToInt()
                     val y = if (placeBubbleBelow) {
                         (holeCenterY + holeRadius - overlapPx).roundToInt()
                     } else {
