@@ -62,7 +62,7 @@ class AccountManagementViewModel @Inject constructor(
             localAppDataResetter.prepareSignOut()
             // 서버 실패여도 AuthRepository가 로컬 토큰을 clear한다.
             authRepository.logout()
-            localAppDataResetter.resetDatabaseAndOnboarding()
+            localAppDataResetter.resetAccountLocalData()
         }
     }
 
@@ -71,7 +71,7 @@ class AccountManagementViewModel @Inject constructor(
             localAppDataResetter.prepareSignOut()
             // 서버 실패여도 UserRepository가 로컬 토큰을 clear한다.
             userRepository.withdraw()
-            localAppDataResetter.resetDatabaseAndOnboarding()
+            localAppDataResetter.resetAccountLocalData()
         }
     }
 }

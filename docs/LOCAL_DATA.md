@@ -193,12 +193,12 @@
 - 카카오 `user.id`의 SHA-256 해시(`{salt}|kakao:{id}` → hex)와 기기 로컬 salt만 별도 Preferences DataStore `account_owner`에 저장한다. 원문 ID는 디스크에 두지 않는다.
 - 세션 만료/`Reauth`에서는 유지하고, 로그인 시 저장된 해시와 비교한다.
 - 해시 없음(기존 설치) 또는 불일치면 `LocalAppDataResetter.wipeAndRebindOwner(hash)`로 Room·썸네일 캐시·최근 검색·계정 종속 preference를 wipe한 뒤 새 해시를 저장한다. `onboardingCompleted`·`deviceId`·알림 설정은 유지한다.
-- 명시적 로그아웃/탈퇴의 `resetDatabaseAndOnboarding()`에서 owner hash와 salt를 `clear()`한다.
+- 명시적 로그아웃/탈퇴의 `resetAccountLocalData()`에서 owner hash와 salt를 `clear()`한다. 온보딩 완료 플래그와 세션은 유지하고, 세션은 `logout()`/`withdraw()`가 서버 호출 후 비운다. 루트는 `Reauth`로 간다.
 
 주요 API:
 - `getHash()` / `setHash(hash)` / `getOrCreateSalt()` / `clear()`
 - `AccountOwnerHasher.hashKakaoUserId(userId)`
-- `LocalAppDataResetter.wipeAndRebindOwner(hash)` / `resetDatabaseAndOnboarding()`
+- `LocalAppDataResetter.wipeAndRebindOwner(hash)` / `resetAccountLocalData()` / `resetDatabaseAndOnboarding()`
 
 주의사항:
 - 일반 사용자 설정은 `user_preferences`에 두고, 계정 소유자 마커만 `account_owner`로 분리한다(세션·온보딩 wipe와 수명 분리).

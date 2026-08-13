@@ -2,6 +2,7 @@ package com.chalkak.recap.app
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chalkak.recap.core.data.LocalAppDataResetter
 import com.chalkak.recap.core.data.StartupDataRecoveryCoordinator
 import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.home.HomeRepository
@@ -35,6 +36,7 @@ class RecapStartupViewModel @Inject constructor(
     private val homeRepository: HomeRepository,
     private val storageRepository: StorageRepository,
     private val startupDataRecoveryCoordinator: StartupDataRecoveryCoordinator,
+    private val localAppDataResetter: LocalAppDataResetter,
 ) : ViewModel() {
     private val startupAttempts = MutableStateFlow(0)
     private val recoveryPhase = MutableStateFlow(StartupRecoveryPhase.Running)
@@ -61,6 +63,8 @@ class RecapStartupViewModel @Inject constructor(
         startupAttempts.value += 1
         startStartup()
     }
+
+    fun consumeVoluntarySignOut(): Boolean = localAppDataResetter.consumeVoluntarySignOut()
 
     fun completeOnboarding() {
         viewModelScope.launch {
@@ -155,7 +159,7 @@ private enum class StartupRecoveryPhase {
 /**
  * 온보딩 완료 여부와 세션 보유 여부로 결정되는 앱 진입 지점.
  *
- * 온보딩을 마친 사용자가 세션을 잃으면 온보딩을 처음부터 반복시키지 않고 [Reauth]로 보낸다.
+ * 온보딩을 마친 사용자가 세션을 잃거나 로그아웃/탈퇴하면 온보딩을 처음부터 반복시키지 않고 [Reauth]로 보낸다.
  */
 enum class RecapEntryMode {
     Onboarding,
