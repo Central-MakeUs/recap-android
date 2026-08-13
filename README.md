@@ -32,13 +32,13 @@
 <table>
   <tr>
     <td width="33.33%"><img src="https://github.com/user-attachments/assets/a6387e6a-eb23-4aae-91b3-fcf22e43f224" alt="Recap 앱 소개 화면" width="100%" /></td>
-    <td width="33.33%"><img src="https://github.com/user-attachments/assets/f3836e9e-a3ec-44f6-af7b-ece2b7b73d53" alt="Recap 홈 화면" width="100%" /></td>
-    <td width="33.33%"><img src="https://github.com/user-attachments/assets/06fe02a3-2849-45aa-afc1-83184fea557e" alt="Recap 스크린샷 정리 화면" width="100%" /></td>
+    <td width="33.33%"><img src="https://github.com/user-attachments/assets/0bbfcc0d-6842-4b7d-8f5f-462b366c7926" alt="Recap 홈 화면" width="100%" /></td>
+    <td width="33.33%"><img src="https://github.com/user-attachments/assets/68cb34dc-b46c-491a-8f87-a51af9ae62a9" alt="Recap 스크린샷 정리 화면" width="100%" /></td>
   </tr>
   <tr>
-    <td width="33.33%"><img src="https://github.com/user-attachments/assets/c71ec50b-3462-460c-a98f-4f6bde02c67e" alt="Recap AI 분석 화면" width="100%" /></td>
-    <td width="33.33%"><img src="https://github.com/user-attachments/assets/80149b21-10fb-4f60-9132-30b79aaf92f7" alt="Recap 컬렉션 화면" width="100%" /></td>
-    <td width="33.33%"><img src="https://github.com/user-attachments/assets/0ca4cfd3-1515-470c-8baa-c509df4e0ee4" alt="Recap 스크린샷 상세 화면" width="100%" /></td>
+    <td width="33.33%"><img src="https://github.com/user-attachments/assets/5c829d1c-03f9-42de-a394-dea7b198286f" alt="Recap AI 분석 화면" width="100%" /></td>
+    <td width="33.33%"><img src="https://github.com/user-attachments/assets/fdc491ef-93f0-4bdb-8bbf-cec49ba04de5" alt="Recap 컬렉션 화면" width="100%" /></td>
+    <td width="33.33%"><img src="https://github.com/user-attachments/assets/51d727f1-9aa4-40af-9e6d-4937e7355f41" alt="Recap 스크린샷 상세 화면" width="100%" /></td>
   </tr>
 </table>
 
@@ -86,7 +86,7 @@ Recap은 `:app`을 중심으로 재사용 계층인 `:core:*`와 화면 단위 �
 | Package | `com.chalkak.recap` |
 | minSdk | 30 |
 | targetSdk / compileSdk | 37 |
-| Version | `1.0.0` (`versionCode` 1) |
+| Version | `1.0.3` (`versionCode` 7) |
 
 ## 문서
 
