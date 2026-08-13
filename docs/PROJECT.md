@@ -129,7 +129,7 @@ core.data.screenshot 하위:
 - OCR/AI 분석은 서버에서 수행한다. 로컬 ML Kit OCR 및 Firebase AI 클라이언트는 사용하지 않는다.
 - 스크린샷 도메인 backend는 `:core:data`의 `BuildConfig.USE_MOCK_BACKEND`로 프로세스 수명 동안 고정된다.
   - 기본값: debug `true`, qa/release `false` (qa/release는 Remote 고정)
-  - Gradle project property `USE_MOCK_BACKEND=true|false`는 **debug에만** 적용된다. release/qa는 `-P`로도 Mock으로 바뀌지 않는다.
+  - debug 덮어쓰기: `-PUSE_MOCK_BACKEND=true|false`가 있으면 그걸 쓰고, 없으면 `local.properties`의 `USE_MOCK_BACKEND`(Kakao 키와 동일)를 쓴다. 둘 다 없으면 debug 기본값은 Mock(`true`). release/qa는 `-P`/local.properties로도 Mock으로 바뀌지 않는다.
   - Hilt 모듈이 Mock 또는 Remote concrete repository를 한 번 선택해 제공한다.
 
 외부 API, Firebase, local.properties, google-services 파일, API key 등 시크릿은 커밋하지 않는다.
