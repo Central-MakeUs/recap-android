@@ -521,11 +521,11 @@ private const val CollectionViewModeSlideFraction = 6
 /**
  * Type grid column count from available width (before horizontal padding).
  *
- * - below 348.dp: 2 columns
+ * - below 332.dp: 2 columns
  * - below 493.dp: 3 columns
  * - otherwise: 4 columns (cap)
  *
- * 360.dp phones stay on 3 columns with the 348.dp three-column floor.
+ * 360.dp phones stay on 3 columns with the 332.dp three-column floor.
  * Four-column floor matches fixed haze-folder card width 99.dp plus
  * horizontal padding/spacing: 40 + 99*4 + 19*3 = 493.dp.
  */
@@ -544,7 +544,7 @@ private object CollectionScreenTokens {
     val TypeListTopPadding = 10.dp
     val TypeGridSpacing = 19.dp
     val TypeGridRowSpacing = 24.dp
-    /** Inclusive lower bound for 3 columns (keeps 360.dp phones on 3×3). */
+    /** Inclusive lower bound for 3 columns (332.dp; keeps 360.dp phones on 3×3). */
     val TypeGridThreeColumnMinWidth = 332.dp
     /** Inclusive lower bound for 4 columns (fold / wide). */
     val TypeGridFourColumnMinWidth = 493.dp

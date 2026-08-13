@@ -8,12 +8,12 @@ class CollectionTypeGridColumnsTest {
 
     @Test
     fun `uses 2 columns below three-column floor`() {
-        assertEquals(2, collectionTypeGridColumns(347.dp))
+        assertEquals(2, collectionTypeGridColumns(331.dp))
     }
 
     @Test
     fun `uses 3 columns from three-column floor through typical phone width`() {
-        assertEquals(3, collectionTypeGridColumns(348.dp))
+        assertEquals(3, collectionTypeGridColumns(332.dp))
         assertEquals(3, collectionTypeGridColumns(360.dp))
         assertEquals(3, collectionTypeGridColumns(492.dp))
     }
