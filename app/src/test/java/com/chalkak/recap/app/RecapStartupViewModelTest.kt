@@ -1,6 +1,7 @@
 package com.chalkak.recap.app
 
 import app.cash.turbine.test
+import com.chalkak.recap.core.data.LocalAppDataResetter
 import com.chalkak.recap.core.data.StartupDataRecoveryCoordinator
 import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.home.HomeRepository
@@ -14,6 +15,7 @@ import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,6 +27,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
@@ -37,6 +40,7 @@ class RecapStartupViewModelTest {
     private val homeRepository = mockk<HomeRepository>()
     private val storageRepository = mockk<StorageRepository>()
     private val startupDataRecoveryCoordinator = mockk<StartupDataRecoveryCoordinator>()
+    private val localAppDataResetter = mockk<LocalAppDataResetter>()
     private val onboardingCompleted = MutableStateFlow(false)
     private val hasSession = MutableStateFlow(false)
 
@@ -45,6 +49,7 @@ class RecapStartupViewModelTest {
         Dispatchers.setMain(testDispatcher)
         every { userPreferencesRepository.onboardingCompleted } returns onboardingCompleted
         every { authSessionStateProvider.hasSession } returns hasSession
+        every { localAppDataResetter.consumeVoluntarySignOut() } returns false
         coEvery { startupDataRecoveryCoordinator.recoverIfNeeded() } returns Unit
         coEvery { userPreferencesRepository.setOnboardingCompleted(any()) } coAnswers {
             onboardingCompleted.value = firstArg()
@@ -264,6 +269,15 @@ class RecapStartupViewModelTest {
         assertEquals(readyState(RecapEntryMode.Onboarding), viewModel.uiState.value)
     }
 
+    @Test
+    fun `consumeVoluntarySignOut delegates to local app data resetter`() {
+        every { localAppDataResetter.consumeVoluntarySignOut() } returns true
+        val viewModel = createViewModel()
+
+        assertTrue(viewModel.consumeVoluntarySignOut())
+        verify(exactly = 1) { localAppDataResetter.consumeVoluntarySignOut() }
+    }
+
     private fun readyState(entryMode: RecapEntryMode): RecapStartupUiState =
         RecapStartupUiState.Ready(entryMode = entryMode)
 
@@ -275,5 +289,6 @@ class RecapStartupViewModelTest {
             homeRepository = homeRepository,
             storageRepository = storageRepository,
             startupDataRecoveryCoordinator = startupDataRecoveryCoordinator,
+            localAppDataResetter = localAppDataResetter,
         )
 }

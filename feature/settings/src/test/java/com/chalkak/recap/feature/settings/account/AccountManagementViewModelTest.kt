@@ -7,7 +7,10 @@ import com.chalkak.recap.core.model.user.AccountInfo
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
+import io.mockk.every
+import io.mockk.just
 import io.mockk.mockk
+import io.mockk.runs
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -38,7 +41,8 @@ class AccountManagementViewModelTest {
                 createdAt = "2026-06-12T00:00:00Z",
             ),
         )
-        coEvery { localAppDataResetter.prepareSignOut() } returns Unit
+        every { localAppDataResetter.prepareSignOut() } just runs
+        coEvery { localAppDataResetter.resetAccountLocalData() } returns Unit
         coEvery { localAppDataResetter.resetDatabaseAndOnboarding() } returns Unit
     }
 
@@ -89,7 +93,8 @@ class AccountManagementViewModelTest {
         assertEquals(AccountManagementDialog.None, viewModel.uiState.value.dialog)
         coVerify(exactly = 1) { authRepository.logout() }
         coVerify(exactly = 0) { userRepository.withdraw() }
-        coVerify(exactly = 1) { localAppDataResetter.resetDatabaseAndOnboarding() }
+        coVerify(exactly = 1) { localAppDataResetter.resetAccountLocalData() }
+        coVerify(exactly = 0) { localAppDataResetter.resetDatabaseAndOnboarding() }
     }
 
     @Test
@@ -103,7 +108,8 @@ class AccountManagementViewModelTest {
         assertEquals(AccountManagementDialog.None, viewModel.uiState.value.dialog)
         coVerify(exactly = 1) { userRepository.withdraw() }
         coVerify(exactly = 0) { authRepository.logout() }
-        coVerify(exactly = 1) { localAppDataResetter.resetDatabaseAndOnboarding() }
+        coVerify(exactly = 1) { localAppDataResetter.resetAccountLocalData() }
+        coVerify(exactly = 0) { localAppDataResetter.resetDatabaseAndOnboarding() }
     }
 
     @Test
@@ -115,7 +121,8 @@ class AccountManagementViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { authRepository.logout() }
-        coVerify(exactly = 1) { localAppDataResetter.resetDatabaseAndOnboarding() }
+        coVerify(exactly = 1) { localAppDataResetter.resetAccountLocalData() }
+        coVerify(exactly = 0) { localAppDataResetter.resetDatabaseAndOnboarding() }
     }
 
     @Test
@@ -127,36 +134,39 @@ class AccountManagementViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { userRepository.withdraw() }
-        coVerify(exactly = 1) { localAppDataResetter.resetDatabaseAndOnboarding() }
+        coVerify(exactly = 1) { localAppDataResetter.resetAccountLocalData() }
+        coVerify(exactly = 0) { localAppDataResetter.resetDatabaseAndOnboarding() }
     }
 
     @Test
-    fun confirmLogout_clearsOnboardingFlagBeforeSessionIsDropped() = runTest(testDispatcher) {
-        val viewModel = createViewModel()
+    fun confirmLogout_marksSignOutThenClearsSessionThenResetsAccountLocalData() =
+        runTest(testDispatcher) {
+            val viewModel = createViewModel()
 
-        viewModel.onAction(AccountManagementAction.ConfirmLogout)
-        advanceUntilIdle()
+            viewModel.onAction(AccountManagementAction.ConfirmLogout)
+            advanceUntilIdle()
 
-        coVerifyOrder {
-            localAppDataResetter.prepareSignOut()
-            authRepository.logout()
-            localAppDataResetter.resetDatabaseAndOnboarding()
+            coVerifyOrder {
+                localAppDataResetter.prepareSignOut()
+                authRepository.logout()
+                localAppDataResetter.resetAccountLocalData()
+            }
         }
-    }
 
     @Test
-    fun confirmWithdraw_clearsOnboardingFlagBeforeSessionIsDropped() = runTest(testDispatcher) {
-        val viewModel = createViewModel()
+    fun confirmWithdraw_marksSignOutThenClearsSessionThenResetsAccountLocalData() =
+        runTest(testDispatcher) {
+            val viewModel = createViewModel()
 
-        viewModel.onAction(AccountManagementAction.ConfirmWithdraw)
-        advanceUntilIdle()
+            viewModel.onAction(AccountManagementAction.ConfirmWithdraw)
+            advanceUntilIdle()
 
-        coVerifyOrder {
-            localAppDataResetter.prepareSignOut()
-            userRepository.withdraw()
-            localAppDataResetter.resetDatabaseAndOnboarding()
+            coVerifyOrder {
+                localAppDataResetter.prepareSignOut()
+                userRepository.withdraw()
+                localAppDataResetter.resetAccountLocalData()
+            }
         }
-    }
 
     @Test
     fun loadAccountInfo_formatsJoinedDateAndPlatform() = runTest(testDispatcher) {

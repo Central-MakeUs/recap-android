@@ -197,15 +197,18 @@ private fun RecapAppReadyContent(
         val targetRoute = readyState.entryMode.toRootRoute()
         val currentRoute = rootBackStack.lastOrNull()
 
+        if (currentRoute == targetRoute) return@LaunchedEffect
+
         if (targetRoute == RecapRootRoute.Reauth) {
             // 세션이 폐기된 뒤에는 남은 업로드/분석을 이어갈 수 없다.
             analysisProgressViewModel.cancelAnalysis()
-            toastDispatcher.showToast(
-                message = sessionExpiredMessage,
-                type = RecapToastType.Error,
-            )
+            if (!startupViewModel.consumeVoluntarySignOut()) {
+                toastDispatcher.showToast(
+                    message = sessionExpiredMessage,
+                    type = RecapToastType.Error,
+                )
+            }
         }
-        if (currentRoute == targetRoute) return@LaunchedEffect
 
         if (targetRoute == RecapRootRoute.Onboarding &&
             (currentRoute == RecapRootRoute.Main || currentRoute == RecapRootRoute.Reauth)
