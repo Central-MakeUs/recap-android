@@ -31,7 +31,7 @@ object ObservabilityKeys {
     const val LOGGED_IN = "logged_in"
     const val BACKEND_MODE = "backend_mode"
     const val ORGANIZE_ACTIVE = "organize_active"
-    const val IMAGE_COUNT_BUCKET = "image_count_bucket"
+    const val IMAGE_COUNT = "image_count"
     const val ORGANIZE_PHASE = "organize_phase"
     const val SHARE_ENTRY = "share_entry"
     const val AUTH_ERROR_CODE = "auth_error_code"
@@ -46,10 +46,3 @@ object OrganizeTraceEntry {
     const val SHARE = "share"
 }
 
-fun imageCountBucket(count: Int): String =
-    when {
-        count <= 0 -> "0"
-        count == 1 -> "1"
-        count <= 5 -> "2-5"
-        else -> "6+"
-    }
