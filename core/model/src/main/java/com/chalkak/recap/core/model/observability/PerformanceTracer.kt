@@ -23,13 +23,11 @@ interface PerformanceTracer {
 
 object PerformanceTraceNames {
     const val ORGANIZE_REMOTE_END_TO_END = "organize_remote_end_to_end"
-    const val SHARE_INTAKE_TO_ORGANIZE = "share_intake_to_organize"
 }
 
 object ObservabilityKeys {
     const val ONBOARDING_COMPLETED = "onboarding_completed"
     const val LOGGED_IN = "logged_in"
-    const val BACKEND_MODE = "backend_mode"
     const val ORGANIZE_ACTIVE = "organize_active"
     const val IMAGE_COUNT = "image_count"
     const val ORGANIZE_PHASE = "organize_phase"
@@ -37,7 +35,6 @@ object ObservabilityKeys {
     const val AUTH_ERROR_CODE = "auth_error_code"
     const val ENTRY = "entry"
     const val OUTCOME = "outcome"
-    const val GATE = "gate"
 }
 
 object OrganizeTraceEntry {

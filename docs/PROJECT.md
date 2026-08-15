@@ -34,7 +34,7 @@
 - Image loading: Coil
 - Logging: Timber
 - Crash reporting: Firebase Crashlytics
-- Performance: Firebase Performance Monitoring (auto + organize/share custom traces)
+- Performance: Firebase Performance Monitoring (auto + organize custom traces)
 
 ## 빌드 명령
 

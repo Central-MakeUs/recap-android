@@ -11,11 +11,11 @@ import com.chalkak.recap.core.model.capture.OrganizeStatusDetail
 import com.chalkak.recap.core.model.observability.CrashReporter
 import com.chalkak.recap.core.model.observability.ObservabilityKeys
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import timber.log.Timber
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
 
 class RemoteOrganizeFailedException(
@@ -133,7 +133,6 @@ class RemoteScreenshotAnalysisRepository @Inject constructor(
                 captureRepository.ackOrganizeResult(finalStatus.batchId)
                     .onFailure { error ->
                         Timber.w(error, "Failed to ack organize result batchId=%s", finalStatus.batchId)
-                        crashReporter.recordException(error)
                     }
                 changeNotifier.notifyCaptureChanged()
                 return ScreenshotOrganizeOutcome.RemoteCompleted(
@@ -157,23 +156,22 @@ class RemoteScreenshotAnalysisRepository @Inject constructor(
                 captureRepository.ackOrganizeResult(finalStatus.batchId)
                     .onFailure { error ->
                         Timber.w(error, "Failed to ack organize result batchId=%s", finalStatus.batchId)
-                        crashReporter.recordException(error)
                     }
                 val failed = RemoteOrganizeFailedException(
                     status = finalStatus.status,
                     message = "Remote organize finished with status=${finalStatus.status}",
                 )
-                crashReporter.recordException(failed)
+                if (finalStatus.status == OrganizeStatus.FAILED) {
+                    crashReporter.recordException(failed)
+                }
                 throw failed
             }
 
             OrganizeStatus.PROCESSING -> {
-                val failed = RemoteOrganizeFailedException(
+                throw RemoteOrganizeFailedException(
                     status = OrganizeStatus.PROCESSING,
                     message = "Remote organize polling ended while still processing",
                 )
-                crashReporter.recordException(failed)
-                throw failed
             }
         }
     }

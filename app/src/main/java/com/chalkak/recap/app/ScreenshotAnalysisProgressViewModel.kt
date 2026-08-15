@@ -219,13 +219,6 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                                 saveFailed = false,
                             )
                         }
-                        if (outcome.preparationFailCount > 0) {
-                            crashReporter.recordException(
-                                IllegalStateException(
-                                    "Screenshot preparation failed count=${outcome.preparationFailCount}",
-                                ),
-                            )
-                        }
                         _uiState.value = _uiState.value.copy(
                             isRunning = false,
                             completedCount = (persisted.size + outcome.preparationFailCount)

@@ -1,13 +1,9 @@
 package com.chalkak.recap.app.observability
 
-import com.chalkak.recap.core.data.BuildConfig
 import com.chalkak.recap.core.data.UserPreferencesRepository
-import com.chalkak.recap.core.data.backend.BackendSelection
 import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.model.observability.CrashReporter
 import com.chalkak.recap.core.model.observability.ObservabilityKeys
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -15,6 +11,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
 class ObservabilityBootstrap @Inject constructor(
@@ -25,10 +23,6 @@ class ObservabilityBootstrap @Inject constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     fun start() {
-        crashReporter.setCustomKey(
-            ObservabilityKeys.BACKEND_MODE,
-            BackendSelection.backendModeLabel(BuildConfig.USE_MOCK_BACKEND),
-        )
         scope.launch {
             combine(
                 userPreferencesRepository.onboardingCompleted,

@@ -11,13 +11,8 @@ import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.core.model.observability.CrashReporter
 import com.chalkak.recap.core.model.observability.ObservabilityKeys
-import com.chalkak.recap.core.model.observability.PerformanceTrace
-import com.chalkak.recap.core.model.observability.PerformanceTraceNames
-import com.chalkak.recap.core.model.observability.PerformanceTracer
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.android.lifecycle.HiltViewModel
-import java.util.UUID
-import javax.inject.Inject
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +26,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.UUID
+import javax.inject.Inject
 
 sealed interface ShareIntakeEvent {
     data object LoginRequired : ShareIntakeEvent
@@ -52,7 +49,6 @@ class ShareIntakeViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val sharedAnalysisRequestStore: SharedAnalysisRequestStore,
     private val crashReporter: CrashReporter,
-    private val performanceTracer: PerformanceTracer,
     @ApplicationContext context: Context,
 ) : ViewModel() {
     private val intentParser = ShareImageIntentParser(context.contentResolver)
@@ -75,7 +71,6 @@ class ShareIntakeViewModel @Inject constructor(
     private var parseJob: Job? = null
     private var inFlightFingerprint: String? = null
     private var isSubmittingStart = false
-    private var activeShareTrace: PerformanceTrace? = null
 
     fun submitShareIntent(
         intent: Intent,
@@ -85,7 +80,6 @@ class ShareIntakeViewModel @Inject constructor(
         val fingerprint = runCatching { fingerprintIntent(intentCopy) }.getOrNull()
         if (fingerprint == null) {
             _isLoading.value = false
-            stopActiveShareTrace(gate = "unsupported", outcome = "reject")
             return
         }
         val lastProcessedFingerprint = savedStateHandle.get<String>(
@@ -100,11 +94,8 @@ class ShareIntakeViewModel @Inject constructor(
         }
 
         parseJob?.cancel()
-        stopActiveShareTrace(gate = "superseded", outcome = "cancel")
         inFlightFingerprint = fingerprint
         _isLoading.value = true
-        val trace = performanceTracer.startTrace(PerformanceTraceNames.SHARE_INTAKE_TO_ORGANIZE)
-        activeShareTrace = trace
         crashReporter.setCustomKey(ObservabilityKeys.SHARE_ENTRY, "external")
         parseJob = viewModelScope.launch {
             val result = try {
@@ -112,14 +103,8 @@ class ShareIntakeViewModel @Inject constructor(
                     parseIntent(intentCopy)
                 }
             } catch (cancellation: CancellationException) {
-                stopShareTrace(
-                    trace = trace,
-                    gate = "cancelled",
-                    outcome = "cancel",
-                )
                 throw cancellation
-            } catch (error: RuntimeException) {
-                crashReporter.recordException(error)
+            } catch (_: RuntimeException) {
                 ShareImageParseResult(accepted = emptyList(), rejectedCount = 0)
             }
             var keepLoadingForRedirect = false
@@ -134,60 +119,33 @@ class ShareIntakeViewModel @Inject constructor(
                     eventChannel.send(ShareIntakeEvent.ReturnAfterOnboardingSampleShare)
                     keepLoadingForRedirect = true
                     crashReporter.setCustomKey(ObservabilityKeys.SHARE_ENTRY, "onboarding_sample")
-                    stopShareTrace(
-                        trace = trace,
-                        gate = "onboarding_sample",
-                        outcome = "redirect",
-                    )
                 } else {
                     when (val gate = resolveShareEntryGate()) {
                         ShareEntryGate.LoginRequired -> {
                             updatePendingShareIntake(null)
                             eventChannel.send(ShareIntakeEvent.LoginRequired)
                             keepLoadingForRedirect = true
-                            stopShareTrace(
-                                trace = trace,
-                                gate = "login_required",
-                                outcome = "gate",
-                            )
                         }
 
                         ShareEntryGate.OnboardingRequired -> {
                             updatePendingShareIntake(null)
                             eventChannel.send(ShareIntakeEvent.OnboardingRequired)
                             keepLoadingForRedirect = true
-                            stopShareTrace(
-                                trace = trace,
-                                gate = "onboarding_required",
-                                outcome = "gate",
-                            )
                         }
 
                         ShareEntryGate.Allowed -> {
                             if (result.accepted.isEmpty()) {
                                 updatePendingShareIntake(null)
-                                stopShareTrace(
-                                    trace = trace,
-                                    gate = "empty",
-                                    outcome = "reject",
-                                )
                             } else {
                                 updatePendingShareIntake(
                                     result.toPendingShareIntake(
                                         sessionId = UUID.randomUUID().toString(),
                                     ),
                                 )
-                                // Trace continues until requestStartOrganize or discard.
                             }
                         }
                     }
                 }
-            } else {
-                stopShareTrace(
-                    trace = trace,
-                    gate = "parse_null",
-                    outcome = "reject",
-                )
             }
             if (inFlightFingerprint == fingerprint) {
                 inFlightFingerprint = null
@@ -201,13 +159,11 @@ class ShareIntakeViewModel @Inject constructor(
     fun completePendingShareIntake(sessionId: String) {
         if (_pendingShareIntake.value?.sessionId == sessionId) {
             updatePendingShareIntake(null)
-            stopActiveShareTrace(gate = "discard", outcome = "cancel")
         }
     }
 
     fun discardPendingShareIntake() {
         updatePendingShareIntake(null)
-        stopActiveShareTrace(gate = "discard", outcome = "cancel")
     }
 
     fun requestStartOrganize(candidates: List<ScreenshotUploadCandidate>) {
@@ -215,18 +171,12 @@ class ShareIntakeViewModel @Inject constructor(
             return
         }
         isSubmittingStart = true
-        val trace = activeShareTrace
         viewModelScope.launch {
             when (resolveShareEntryGate()) {
                 ShareEntryGate.LoginRequired -> {
                     updatePendingShareIntake(null)
                     isSubmittingStart = false
                     eventChannel.send(ShareIntakeEvent.LoginRequired)
-                    stopShareTrace(
-                        trace = trace,
-                        gate = "login_required",
-                        outcome = "gate",
-                    )
                     return@launch
                 }
 
@@ -234,11 +184,6 @@ class ShareIntakeViewModel @Inject constructor(
                     updatePendingShareIntake(null)
                     isSubmittingStart = false
                     eventChannel.send(ShareIntakeEvent.OnboardingRequired)
-                    stopShareTrace(
-                        trace = trace,
-                        gate = "onboarding_required",
-                        outcome = "gate",
-                    )
                     return@launch
                 }
 
@@ -257,47 +202,12 @@ class ShareIntakeViewModel @Inject constructor(
                         images = images,
                     ),
                 )
-                stopShareTrace(
-                    trace = trace,
-                    gate = "allowed",
-                    outcome = "started",
-                )
             } catch (cancellation: CancellationException) {
                 sharedAnalysisRequestStore.consume(requestId)
                 isSubmittingStart = false
-                stopShareTrace(
-                    trace = trace,
-                    gate = "cancelled",
-                    outcome = "cancel",
-                )
                 throw cancellation
             }
         }
-    }
-
-    override fun onCleared() {
-        stopActiveShareTrace(gate = "view_model_cleared", outcome = "cancel")
-        super.onCleared()
-    }
-
-    private fun stopActiveShareTrace(
-        gate: String,
-        outcome: String,
-    ) {
-        val trace = activeShareTrace ?: return
-        stopShareTrace(trace = trace, gate = gate, outcome = outcome)
-    }
-
-    private fun stopShareTrace(
-        trace: PerformanceTrace?,
-        gate: String,
-        outcome: String,
-    ) {
-        if (trace == null || activeShareTrace !== trace) return
-        activeShareTrace = null
-        trace.putAttribute(ObservabilityKeys.GATE, gate)
-        trace.putAttribute(ObservabilityKeys.OUTCOME, outcome)
-        trace.stop()
     }
 
     private suspend fun resolveShareEntryGate(): ShareEntryGate {
