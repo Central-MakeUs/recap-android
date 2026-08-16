@@ -137,6 +137,24 @@ fun ScreenshotFullscreenScreen(
         Box(modifier = Modifier.fillMaxSize()) {
             Box(
                 modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(ScreenshotFullscreenTokens.TopGradientHeightFraction)
+                    .align(Alignment.TopCenter)
+                    .then(topGradientChromeModifier)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                Black.copy(
+                                    alpha = ScreenshotFullscreenTokens.TopGradientStartAlpha,
+                                ),
+                                Color.Transparent,
+                            ),
+                        ),
+                    ),
+            )
+
+            Box(
+                modifier = Modifier
                     .fillMaxSize()
                     .statusBarsPadding()
                     .navigationBarsPadding(),
@@ -200,33 +218,14 @@ fun ScreenshotFullscreenScreen(
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .fillMaxHeight(ScreenshotFullscreenTokens.TopGradientHeightFraction)
-                    .align(Alignment.TopCenter)
-                    .then(topGradientChromeModifier)
-                    .background(
-                        brush = Brush.verticalGradient(
-                            colors = listOf(
-                                Black.copy(
-                                    alpha = ScreenshotFullscreenTokens.TopGradientStartAlpha,
-                                ),
-                                Color.Transparent,
-                            ),
-                        ),
-                    ),
-            )
-
             ScreenshotFullscreenTopBar(onNavigateBack = onNavigateBack)
         }
     }
 }
 
 /**
- * Lift the top vignette above the shared-image overlay and fade it with the
- * destination enter/exit progress (otherwise it stays hidden under the morph
- * and only appears after the shared transition ends).
+ * Keep the top vignette in the shared-transition overlay so it fades with
+ * destination enter/exit, but below the shared image.
  */
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -242,7 +241,7 @@ private fun Modifier.screenshotFullscreenTopGradientChrome(
     return with(sharedTransitionScope) {
         with(animatedVisibilityScope) {
             this@screenshotFullscreenTopGradientChrome
-                .renderInSharedTransitionScopeOverlay(zIndexInOverlay = 1f)
+                .renderInSharedTransitionScopeOverlay(zIndexInOverlay = -1f)
                 .animateEnterExit(
                     enter = fadeIn(animationSpec = fadeSpec),
                     exit = fadeOut(animationSpec = fadeSpec),
