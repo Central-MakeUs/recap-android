@@ -40,7 +40,6 @@ import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.feature.organize.MAX_SELECTION_COUNT
 import com.chalkak.recap.feature.organize.OrganizeRoute
 import com.chalkak.recap.feature.organize.UnsupportedShareScreen
-import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 
@@ -71,7 +70,7 @@ fun ShareReceiverRoute(
             }
         }
     }
-    val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
+    val toastHazeState = rememberHazeState()
     val currentToast by toastViewModel.currentToast.collectAsStateWithLifecycle()
     val toastBottomPadding = WindowInsets.navigationBars
         .asPaddingValues()

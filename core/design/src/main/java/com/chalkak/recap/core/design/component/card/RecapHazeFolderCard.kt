@@ -51,13 +51,12 @@ import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapHazeFolderColor
-import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
-import dev.chrisbanes.haze.HazeInputScale
+import com.chalkak.recap.core.design.theme.White
+import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.blur.HazeColorEffect
-import dev.chrisbanes.haze.blur.blurEffect
+import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.blur.materials.CupertinoMaterials
-import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlin.math.roundToInt
@@ -82,7 +81,6 @@ fun RecapHazeFolderCard(
     scale: Float = 1f,
 ) {
     val hazeState = rememberHazeState()
-    val glassStyle = CupertinoMaterials.ultraThin()
     val interactionSource = remember { MutableInteractionSource() }
     val backShape = RoundedCornerShape(RecapHazeFolderCardTokens.BackCornerRadius)
     val folderShape = remember { FolderShape }
@@ -137,18 +135,16 @@ fun RecapHazeFolderCard(
                         height = RecapHazeFolderCardTokens.FolderHeight,
                     )
                     .clip(folderShape)
-                    .hazeEffect(state = hazeState) {
-                        inputScale = HazeInputScale.Fixed(0.5f)
-                        blurEffect {
-                            blurEnabled = true
-                            blurRadius = RecapHazeFolderCardTokens.BlurRadius
-                            style = glassStyle
-                            colorEffects = listOf(
-                                HazeColorEffect.tint(brush = tintBrush),
+                    .hazeBlur(
+                        input = HazeInput.Sources(hazeState),
+                        style = CupertinoMaterials.ultraThin().then {
+                            blurRadius(RecapHazeFolderCardTokens.BlurRadius)
+                            colorEffects(
+                                listOf(HazeColorEffect.tint(brush = tintBrush)),
                             )
-                            noiseFactor = RecapHazeFolderCardTokens.NoiseFactor
-                        }
-                    }
+                            noiseFactor(RecapHazeFolderCardTokens.NoiseFactor)
+                        },
+                    )
                     .border(
                         width = RecapHazeFolderCardTokens.FrontBorderWidth,
                         color = RecapHazeFolderCardTokens.GlassBorderColor,

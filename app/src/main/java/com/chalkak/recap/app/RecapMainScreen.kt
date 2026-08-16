@@ -35,7 +35,6 @@ import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.feature.organize.OrganizeRoute
-import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.rememberHazeState
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
@@ -55,7 +54,7 @@ fun RecapMainScreen(
     val context = LocalContext.current
     val backStack = rememberNavBackStack(MainTabRoute.Home)
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
-    val hazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
+    val hazeState = rememberHazeState()
     var openCollectionFavoritesOnNextEnter by remember { mutableStateOf(false) }
     var openCollectionTypeDetailOnNextEnter by remember { mutableStateOf<String?>(null) }
     var collectionPredictiveBackProgress by remember { mutableFloatStateOf(0f) }

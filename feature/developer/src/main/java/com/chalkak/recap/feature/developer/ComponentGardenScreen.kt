@@ -41,8 +41,8 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.bottomsheet.AiDataTransferConsentBottomSheet
-import com.chalkak.recap.core.design.component.bottomsheet.NotificationPermissionRequestBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.LogoutConfirmationBottomSheet
+import com.chalkak.recap.core.design.component.bottomsheet.NotificationPermissionRequestBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheetDefaults
 import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheetNoticeAlignment
@@ -53,12 +53,12 @@ import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
 import com.chalkak.recap.core.design.component.card.HomeFavoriteCard
 import com.chalkak.recap.core.design.component.card.OrganizedCaptureCard
-import com.chalkak.recap.core.design.component.card.ShareFavoriteGuideCard
 import com.chalkak.recap.core.design.component.card.OrganizedScreenshotSummaryCard
 import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
+import com.chalkak.recap.core.design.component.card.ShareFavoriteGuideCard
 import com.chalkak.recap.core.design.component.chip.RecapCategoryRoundChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChipWithIcon
@@ -82,7 +82,6 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.feature.organize.OrganizeAction
 import com.chalkak.recap.feature.organize.OrganizeUiState
 import com.chalkak.recap.feature.organize.ScreenshotPicker
-import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 
@@ -114,7 +113,7 @@ internal fun ComponentGardenScreen(
     var multilineInputFieldValue by remember { mutableStateOf("") }
     var isScreenshotCardFavorited by remember { mutableStateOf(false) }
     var isSortLatest by remember { mutableStateOf(true) }
-    val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
+    val toastHazeState = rememberHazeState()
     val toastDispatcher = LocalRecapToastDispatcher.current
     val toastPreviewMessage = stringResource(R.string.recap_toast_preview_login_failed_message)
 

@@ -48,7 +48,6 @@ import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.feature.developer.DeveloperRoute
 import com.chalkak.recap.feature.onboarding.ReauthRoute
-import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.flow.StateFlow
@@ -177,7 +176,7 @@ private fun RecapAppReadyContent(
             }
         }
     }
-    val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
+    val toastHazeState = rememberHazeState()
     val currentToast by toastViewModel.currentToast.collectAsStateWithLifecycle()
     val navigationBarBottomPadding = WindowInsets.navigationBars
         .asPaddingValues()

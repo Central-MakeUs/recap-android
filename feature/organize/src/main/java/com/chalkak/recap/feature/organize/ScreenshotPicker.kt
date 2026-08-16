@@ -119,7 +119,6 @@ import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.feature.organize.mediastore.MediaStoreThumbnail
 import com.chalkak.recap.feature.organize.mediastore.MediaStoreThumbnailFetcher
 import com.chalkak.recap.feature.organize.mediastore.MediaStoreThumbnailKeyer
-import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.delay
@@ -326,7 +325,7 @@ fun ScreenshotPickerContent(
     onImageLongClick: (Any) -> Unit = {},
 ) {
     // ModalBottomSheet는 Dialog 윈도우라 앱 루트 RecapToastHost가 가려진다. 시트 안에 호스트한다.
-    val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
+    val toastHazeState = rememberHazeState()
     var currentToast by remember { mutableStateOf<RecapToastPresentation?>(null) }
     val maxSelectionMessage = stringResource(
         R.string.organize_max_selection_message,
