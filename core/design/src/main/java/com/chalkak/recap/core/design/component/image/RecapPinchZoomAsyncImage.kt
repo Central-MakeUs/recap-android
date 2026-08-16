@@ -68,8 +68,9 @@ import kotlin.math.abs
  * - 확대는 Fit 프레임(clip/border/shadow) 전체를 스케일해 bound가 같이 커진다
  *
  * Modifier order for shared transitions (docs):
- * graphicsLayer → dropShadow → size → [imageFrameModifier] → clip → border.
- * [dropShadow] stays outside shared bounds so it does not inflate measured frame.
+ * graphicsLayer → size → dropShadow → [imageFrameModifier] → clip → border.
+ * [dropShadow] stays on the sized frame and outside shared bounds so the
+ * shadow follows zoom without inflating the shared measured rect.
  * [graphicsLayer] stays outside clip/sharedBounds so the rounded frame grows with pinch.
  *
  * [expandLayoutToZoom] bakes pan/scale into layout so [imageFrameModifier] (sharedBounds)
@@ -291,17 +292,17 @@ fun RecapPinchZoomAsyncImage(
                             translationX = offset.x
                             translationY = offset.y
                         }
-                    }
-                    .then(
-                        if (dropShadow != null && shape != null) {
-                            Modifier.dropShadow(shape = clipShape, shadow = dropShadow)
-                        } else {
-                            Modifier
-                        },
-                    ),
+                    },
             ) {
                 Box(
                     modifier = imageSizeModifier
+                        .then(
+                            if (dropShadow != null && shape != null) {
+                                Modifier.dropShadow(shape = clipShape, shadow = dropShadow)
+                            } else {
+                                Modifier
+                            },
+                        )
                         .then(imageFrameModifier)
                         .then(if (shape != null) Modifier.clip(clipShape) else Modifier)
                         .then(
