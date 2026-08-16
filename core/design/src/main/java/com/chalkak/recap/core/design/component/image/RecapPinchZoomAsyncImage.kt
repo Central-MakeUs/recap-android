@@ -44,6 +44,7 @@ import coil3.compose.AsyncImage
  * 스크린샷 확대 뷰 공통 정책:
  * - 초기 표시는 가용 영역 대비 [contentPadding] 또는 [edgeInsetFraction] 여백을 둔 Fit
  * - 두 손가락 핀치/팬으로 [MinScale]~[MaxScale] 확대
+ * - 팬은 뷰포트 각 가장자리에 [MaxEmptyEdgeFraction]을 넘는 빈 영역이 보이지 않게 제한한다
  * - 확대는 Fit 프레임(clip/border/shadow) 전체를 스케일해 bound가 같이 커진다
  *
  * Modifier order for shared transitions (docs):
@@ -109,6 +110,7 @@ fun RecapPinchZoomAsyncImage(
                 .fillMaxSize()
                 .pointerInput(
                     model,
+                    imageAspectRatio,
                     paddingLeftPx,
                     paddingTopPx,
                     paddingRightPx,
@@ -119,19 +121,31 @@ fun RecapPinchZoomAsyncImage(
                             RecapPinchZoomImageTokens.MinScale,
                             RecapPinchZoomImageTokens.MaxScale,
                         )
+                        val availableWidth = size.width - paddingLeftPx - paddingRightPx
+                        val availableHeight = size.height - paddingTopPx - paddingBottomPx
                         val transformCenter = Offset(
-                            x = paddingLeftPx +
-                                    (size.width - paddingLeftPx - paddingRightPx) / 2f,
-                            y = paddingTopPx +
-                                    (size.height - paddingTopPx - paddingBottomPx) / 2f,
+                            x = paddingLeftPx + availableWidth / 2f,
+                            y = paddingTopPx + availableHeight / 2f,
                         )
-                        offset = pinchZoomOffset(
-                            currentOffset = offset,
-                            currentScale = scale,
-                            newScale = newScale,
-                            centroid = centroid,
-                            pan = pan,
-                            transformCenter = transformCenter,
+                        val (fitWidth, fitHeight) = pinchZoomFitSize(
+                            availableWidth = availableWidth,
+                            availableHeight = availableHeight,
+                            imageAspectRatio = imageAspectRatio,
+                        )
+                        offset = clampPinchZoomOffset(
+                            offset = pinchZoomOffset(
+                                currentOffset = offset,
+                                currentScale = scale,
+                                newScale = newScale,
+                                centroid = centroid,
+                                pan = pan,
+                                transformCenter = transformCenter,
+                            ),
+                            visualWidth = fitWidth * newScale,
+                            visualHeight = fitHeight * newScale,
+                            viewportWidth = size.width.toFloat(),
+                            viewportHeight = size.height.toFloat(),
+                            restCenter = transformCenter,
                         )
                         scale = newScale
                     }
@@ -244,7 +258,23 @@ fun RecapPinchZoomAsyncImage(
     }
 }
 
-private fun pinchZoomOffset(
+internal fun pinchZoomFitSize(
+    availableWidth: Float,
+    availableHeight: Float,
+    imageAspectRatio: Float,
+): Pair<Float, Float> {
+    if (imageAspectRatio <= 0f || availableWidth <= 0f || availableHeight <= 0f) {
+        return availableWidth to availableHeight
+    }
+    val availableAspect = availableWidth / availableHeight
+    return if (imageAspectRatio > availableAspect) {
+        availableWidth to availableWidth / imageAspectRatio
+    } else {
+        availableHeight * imageAspectRatio to availableHeight
+    }
+}
+
+internal fun pinchZoomOffset(
     currentOffset: Offset,
     currentScale: Float,
     newScale: Float,
@@ -259,8 +289,58 @@ private fun pinchZoomOffset(
             pan
 }
 
+/**
+ * Keeps pan from revealing more than [maxEmptyFraction] of the viewport beyond
+ * any image edge. If the visual size is too small to satisfy both edges, the
+ * rest (Fit-centered) position is kept on that axis.
+ */
+internal fun clampPinchZoomOffset(
+    offset: Offset,
+    visualWidth: Float,
+    visualHeight: Float,
+    viewportWidth: Float,
+    viewportHeight: Float,
+    restCenter: Offset,
+    maxEmptyFraction: Float = RecapPinchZoomImageTokens.MaxEmptyEdgeFraction,
+): Offset {
+    return Offset(
+        x = clampPinchZoomAxis(
+            offset = offset.x,
+            visualSize = visualWidth,
+            viewportSize = viewportWidth,
+            restCenter = restCenter.x,
+            maxEmptyFraction = maxEmptyFraction,
+        ),
+        y = clampPinchZoomAxis(
+            offset = offset.y,
+            visualSize = visualHeight,
+            viewportSize = viewportHeight,
+            restCenter = restCenter.y,
+            maxEmptyFraction = maxEmptyFraction,
+        ),
+    )
+}
+
+private fun clampPinchZoomAxis(
+    offset: Float,
+    visualSize: Float,
+    viewportSize: Float,
+    restCenter: Float,
+    maxEmptyFraction: Float,
+): Float {
+    if (viewportSize <= 0f || visualSize <= 0f) return 0f
+    val maxEmpty = viewportSize * maxEmptyFraction
+    val restStart = restCenter - visualSize / 2f
+    val restEnd = restCenter + visualSize / 2f
+    val maxOffset = maxEmpty - restStart
+    val minOffset = (viewportSize - maxEmpty) - restEnd
+    if (minOffset > maxOffset) return 0f
+    return offset.coerceIn(minOffset, maxOffset)
+}
+
 object RecapPinchZoomImageTokens {
     const val EdgeInsetFraction = 0.1f
     const val MinScale = 1f
-    const val MaxScale = 4f
+    const val MaxScale = 5f
+    const val MaxEmptyEdgeFraction = 0.1f
 }
