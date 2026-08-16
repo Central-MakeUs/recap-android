@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.input.pointer.PointerEvent
 import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChanged
@@ -479,8 +480,9 @@ private suspend fun PointerInputScope.detectPinchZoomPanGestures(
         var sawMultiPointer = false
         val touchSlop = viewConfiguration.touchSlop
 
-        awaitFirstDown(requireUnconsumed = false)
+        val down = awaitFirstDown(requireUnconsumed = false)
         onTouchDown()
+        velocityTracker.addPosition(down.uptimeMillis, down.position)
 
         var canceled = false
         do {
@@ -502,15 +504,11 @@ private suspend fun PointerInputScope.detectPinchZoomPanGestures(
                         pastTouchSlop = true
                     }
                 }
+                event.trackPinchZoomVelocity(velocityTracker)
                 if (pastTouchSlop) {
                     val centroid = event.calculateCentroid(useCurrent = false)
                     if (zoomChange != 1f || panChange != Offset.Zero) {
                         onTransform(centroid, panChange, zoomChange)
-                    }
-                    val currentCentroid = event.calculateCentroid(useCurrent = true)
-                    if (currentCentroid.isSpecified) {
-                        val uptime = event.changes.maxOf { it.uptimeMillis }
-                        velocityTracker.addPosition(uptime, currentCentroid)
                     }
                     event.changes.forEach { change ->
                         if (change.positionChanged()) {
@@ -529,6 +527,16 @@ private suspend fun PointerInputScope.detectPinchZoomPanGestures(
             onSinglePointerFling(Offset(velocity.x, velocity.y))
         }
     }
+}
+
+private fun PointerEvent.trackPinchZoomVelocity(velocityTracker: VelocityTracker) {
+    val currentCentroid = calculateCentroid(useCurrent = true)
+    if (currentCentroid.isSpecified) {
+        velocityTracker.addPosition(changes.maxOf { it.uptimeMillis }, currentCentroid)
+        return
+    }
+    val released = changes.firstOrNull { it.previousPressed && !it.pressed } ?: return
+    velocityTracker.addPosition(released.uptimeMillis, released.position)
 }
 
 object RecapPinchZoomImageTokens {
