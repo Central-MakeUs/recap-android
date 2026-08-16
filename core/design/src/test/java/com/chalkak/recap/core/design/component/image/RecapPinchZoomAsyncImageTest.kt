@@ -2,12 +2,14 @@ package com.chalkak.recap.core.design.component.image
 
 import androidx.compose.ui.geometry.Offset
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 class RecapPinchZoomAsyncImageTest {
 
     @Test
-    fun `clamp limits left empty area to 20 percent of viewport`() {
+    fun `clamp limits left empty area to max empty fraction of viewport`() {
         val clamped = clampPinchZoomOffset(
             offset = Offset(10_000f, 0f),
             visualWidth = 2_000f,
@@ -17,12 +19,16 @@ class RecapPinchZoomAsyncImageTest {
             restCenter = ViewportCenter,
         )
 
-        assertEquals(700f, clamped.x, Delta)
-        assertEquals(0.2f * ViewportWidth, emptyStart(clamped.x, 2_000f, ViewportWidth), Delta)
+        assertEquals(600f, clamped.x, Delta)
+        assertEquals(
+            RecapPinchZoomImageTokens.MaxEmptyEdgeFraction * ViewportWidth,
+            emptyStart(clamped.x, 2_000f, ViewportWidth),
+            Delta,
+        )
     }
 
     @Test
-    fun `clamp limits right empty area to 20 percent of viewport`() {
+    fun `clamp limits right empty area to max empty fraction of viewport`() {
         val clamped = clampPinchZoomOffset(
             offset = Offset(-10_000f, 0f),
             visualWidth = 2_000f,
@@ -32,16 +38,16 @@ class RecapPinchZoomAsyncImageTest {
             restCenter = ViewportCenter,
         )
 
-        assertEquals(-700f, clamped.x, Delta)
+        assertEquals(-600f, clamped.x, Delta)
         assertEquals(
-            0.2f * ViewportWidth,
+            RecapPinchZoomImageTokens.MaxEmptyEdgeFraction * ViewportWidth,
             emptyEnd(clamped.x, 2_000f, ViewportWidth),
             Delta,
         )
     }
 
     @Test
-    fun `clamp limits top empty area to 20 percent of viewport`() {
+    fun `clamp limits top empty area to max empty fraction of viewport`() {
         val clamped = clampPinchZoomOffset(
             offset = Offset(0f, 10_000f),
             visualWidth = 2_000f,
@@ -51,12 +57,16 @@ class RecapPinchZoomAsyncImageTest {
             restCenter = ViewportCenter,
         )
 
-        assertEquals(900f, clamped.y, Delta)
-        assertEquals(0.2f * ViewportHeight, emptyStart(clamped.y, 3_000f, ViewportHeight), Delta)
+        assertEquals(700f, clamped.y, Delta)
+        assertEquals(
+            RecapPinchZoomImageTokens.MaxEmptyEdgeFraction * ViewportHeight,
+            emptyStart(clamped.y, 3_000f, ViewportHeight),
+            Delta,
+        )
     }
 
     @Test
-    fun `clamp limits bottom empty area to 20 percent of viewport`() {
+    fun `clamp limits bottom empty area to max empty fraction of viewport`() {
         val clamped = clampPinchZoomOffset(
             offset = Offset(0f, -10_000f),
             visualWidth = 2_000f,
@@ -66,16 +76,16 @@ class RecapPinchZoomAsyncImageTest {
             restCenter = ViewportCenter,
         )
 
-        assertEquals(-900f, clamped.y, Delta)
+        assertEquals(-700f, clamped.y, Delta)
         assertEquals(
-            0.2f * ViewportHeight,
+            RecapPinchZoomImageTokens.MaxEmptyEdgeFraction * ViewportHeight,
             emptyEnd(clamped.y, 3_000f, ViewportHeight),
             Delta,
         )
     }
 
     @Test
-    fun `clamp keeps rest offset when image is too small to fill 60 percent`() {
+    fun `clamp keeps rest offset when image is too small to satisfy both edges`() {
         val clamped = clampPinchZoomOffset(
             offset = Offset(400f, -300f),
             visualWidth = 400f,
@@ -126,6 +136,26 @@ class RecapPinchZoomAsyncImageTest {
 
         assertEquals(800f, width, Delta)
         assertEquals(400f, height, Delta)
+    }
+
+    @Test
+    fun `shouldStartPinchZoomFling rejects slower than min speed`() {
+        assertFalse(
+            shouldStartPinchZoomFling(
+                velocity = Offset(300f, 0f),
+                minSpeedPxPerSec = 400f,
+            ),
+        )
+    }
+
+    @Test
+    fun `shouldStartPinchZoomFling accepts diagonal flick at min speed`() {
+        assertTrue(
+            shouldStartPinchZoomFling(
+                velocity = Offset(240f, 320f),
+                minSpeedPxPerSec = 400f,
+            ),
+        )
     }
 
     private fun emptyStart(offset: Float, visualSize: Float, viewportSize: Float): Float {
