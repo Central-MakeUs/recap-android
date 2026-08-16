@@ -194,6 +194,7 @@ fun ScreenshotFullscreenScreen(
                         dropShadow = imageDropShadow,
                         imageFrameModifier = sharedBoundsModifier,
                         contentScale = imageContentScale,
+                        expandLayoutToZoom = hasCompletedSharedEntry,
                         onError = { imageLoadFailed = true },
                     )
                 }
