@@ -1,6 +1,7 @@
 package com.chalkak.recap.core.data.home
 
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.CaptureChange
+import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
 import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
 import com.chalkak.recap.core.data.capture.remote.CapturePageResponseDto
 import com.chalkak.recap.core.data.capture.remote.CaptureSummaryResponseDto
@@ -29,7 +30,7 @@ import org.junit.jupiter.api.Test
 class RemoteRecentCapturesRepositoryTest {
     private val homeApi = mockk<HomeApi>()
     private val thumbnailCache = mockk<RemoteCaptureThumbnailCache>()
-    private val changeNotifier = RemoteCaptureChangeNotifier()
+    private val changeNotifier = CaptureChangeNotifier()
 
     @Test
     fun `getRecentCaptures returns single page with thumbnail cache applied`() = runTest {
@@ -100,7 +101,7 @@ class RemoteRecentCapturesRepositoryTest {
         }
         advanceUntilIdle()
 
-        changeNotifier.notifyCaptureChanged()
+        changeNotifier.emit(CaptureChange.Invalidated)
         advanceUntilIdle()
         collectJob.join()
 

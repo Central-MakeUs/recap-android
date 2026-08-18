@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
 import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.search.SearchRepository
 import com.chalkak.recap.core.data.storage.StorageRepository
@@ -38,7 +37,6 @@ class CollectionViewModel @Inject constructor(
     private val captureMutationRepository: CaptureMutationRepository,
     private val thumbnailUpdates: CaptureThumbnailUpdates,
     private val mainContentRecoveryTrigger: MainContentRecoveryTrigger,
-    private val changeNotifier: RemoteCaptureChangeNotifier,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CollectionUiState())
     val uiState: StateFlow<CollectionUiState> = _uiState.asStateFlow()
@@ -94,12 +92,6 @@ class CollectionViewModel @Inject constructor(
                 if (overviewLoadFailed) {
                     storageRepository.refreshOverview()
                 }
-            }
-        }
-
-        viewModelScope.launch {
-            changeNotifier.deletedCaptureIds.collect { ids ->
-                removeDeletedSearchCaptures(ids)
             }
         }
 
@@ -353,15 +345,14 @@ class CollectionViewModel @Inject constructor(
             detailSearchLoadingMore = false
             publishState()
 
-            val result = searchRepository.search(
+            searchRepository.observeSearch(
                 query = query,
                 scope = filter.toSearchScope(),
                 typeCode = filter.toTypeCode(),
-                page = 0,
-            )
-
-            result.fold(
-                onSuccess = { page ->
+            ).collect { result ->
+                detailLoadMoreJob?.cancel()
+                result.fold(
+                    onSuccess = { page ->
                     detailSearchCards = page.items.map { item ->
                         item.toCardItemUiModel()
                     }
@@ -372,8 +363,8 @@ class CollectionViewModel @Inject constructor(
                     favoriteStates = detailSearchCards.associate { it.captureId to it.isFavorite }
                     publishState()
                     reconcileThumbnails(detailSearchCards.map { it.captureId })
-                },
-                onFailure = {
+                    },
+                    onFailure = {
                     detailSearchCards = emptyList()
                     detailSearchCount = 0
                     detailSearchHasNext = false
@@ -381,8 +372,9 @@ class CollectionViewModel @Inject constructor(
                     detailCaptureIds = emptySet()
                     favoriteStates = emptyMap()
                     publishState()
-                },
-            )
+                    },
+                )
+            }
         }
     }
 
@@ -499,10 +491,12 @@ class CollectionViewModel @Inject constructor(
                 return@launch
             }
             if (isDetailSearchMode) {
-                detailSearchCards = detailSearchCards.filterNot { card ->
+                val remaining = detailSearchCards.filterNot { card ->
                     card.captureId == captureId
                 }
-                detailSearchCount = detailSearchCards.size
+                val removedCount = detailSearchCards.size - remaining.size
+                detailSearchCards = remaining
+                detailSearchCount = (detailSearchCount - removedCount).coerceAtLeast(0)
                 detailCaptureIds = detailSearchCards.map { card -> card.captureId }.toSet()
                 favoriteStates = detailSearchCards.associate { card ->
                     card.captureId to card.isFavorite
@@ -568,10 +562,12 @@ class CollectionViewModel @Inject constructor(
 
                 else -> {
                     if (isDetailSearchMode) {
-                        detailSearchCards = detailSearchCards.filterNot {
+                        val remaining = detailSearchCards.filterNot {
                             it.captureId in deleteResult.deletedIds
                         }
-                        detailSearchCount = detailSearchCards.size
+                        val removedCount = detailSearchCards.size - remaining.size
+                        detailSearchCards = remaining
+                        detailSearchCount = (detailSearchCount - removedCount).coerceAtLeast(0)
                         detailCaptureIds = detailSearchCards.map { it.captureId }.toSet()
                         favoriteStates = detailSearchCards.associate { it.captureId to it.isFavorite }
                     }

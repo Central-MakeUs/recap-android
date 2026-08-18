@@ -2,7 +2,6 @@ package com.chalkak.recap.feature.collection
 
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
 import com.chalkak.recap.core.data.capture.MockCaptureMutationRepository
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
 import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
@@ -27,6 +26,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -52,7 +52,6 @@ class CollectionViewModelTest {
     private val recoveryFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private val mainContentRecoveryTrigger = mockk<MainContentRecoveryTrigger>()
     private val cardsFlow = MutableSharedFlow<List<StoredScreenshotCard>>(replay = 1)
-    private val changeNotifier = RemoteCaptureChangeNotifier()
     private lateinit var captureMutations: MockCaptureMutationRepository
     private lateinit var viewModel: CollectionViewModel
 
@@ -64,6 +63,25 @@ class CollectionViewModelTest {
         every { thumbnailUpdates.thumbnailReady } returns MutableSharedFlow()
         every { thumbnailUpdates.resolveLocalPath(any()) } returns null
         every { mainContentRecoveryTrigger.recoveries } returns recoveryFlow
+        every {
+            searchRepository.observeSearch(any(), any(), any(), any())
+        } answers {
+            val query = firstArg<String>()
+            val scope = secondArg<com.chalkak.recap.core.model.search.SearchScope>()
+            val typeCode = thirdArg<ScreenshotContentType?>()
+            val size = arg<Int>(3)
+            flow {
+                emit(
+                    searchRepository.search(
+                        query = query,
+                        scope = scope,
+                        typeCode = typeCode,
+                        page = 0,
+                        size = size,
+                    ),
+                )
+            }
+        }
         captureMutations = MockCaptureMutationRepository(
             screenshotCardRepository = cardRepository,
             screenshotImageStorage = imageStorage,
@@ -76,7 +94,6 @@ class CollectionViewModelTest {
             captureMutationRepository = captureMutations,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
-            changeNotifier = changeNotifier,
         )
     }
 
@@ -650,7 +667,6 @@ class CollectionViewModelTest {
             captureMutationRepository = captureMutationRepository,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
-            changeNotifier = changeNotifier,
         )
         cardsFlow.emit(
             listOf(
@@ -993,7 +1009,6 @@ class CollectionViewModelTest {
             captureMutationRepository = captureMutations,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
-            changeNotifier = changeNotifier,
         )
         runCurrent()
 
@@ -1025,7 +1040,6 @@ class CollectionViewModelTest {
             captureMutationRepository = captureMutations,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
-            changeNotifier = changeNotifier,
         )
         runCurrent()
 
@@ -1060,7 +1074,6 @@ class CollectionViewModelTest {
             captureMutationRepository = captureMutations,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
-            changeNotifier = changeNotifier,
         )
         runCurrent()
 
@@ -1089,7 +1102,6 @@ class CollectionViewModelTest {
             captureMutationRepository = captureMutations,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
-            changeNotifier = changeNotifier,
         )
         runCurrent()
 

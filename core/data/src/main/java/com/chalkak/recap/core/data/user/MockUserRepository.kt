@@ -1,7 +1,8 @@
 package com.chalkak.recap.core.data.user
 
 import com.chalkak.recap.core.data.UserPreferencesRepository
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.CaptureChange
+import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
 import com.chalkak.recap.core.data.screenshot.backend.MockScreenshotDataResetter
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.model.user.AccountInfo
@@ -23,7 +24,7 @@ class MockUserRepository @Inject constructor(
     private val screenshotCardRepository: ScreenshotCardRepository,
     private val userPreferencesRepository: UserPreferencesRepository,
     private val mockScreenshotDataResetter: MockScreenshotDataResetter,
-    private val changeNotifier: RemoteCaptureChangeNotifier,
+    private val changeNotifier: CaptureChangeNotifier,
     private val remoteAuthRepository: RemoteUserRepository,
 ) : UserRepository {
     private val consentRefresh = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -96,6 +97,6 @@ class MockUserRepository @Inject constructor(
     override suspend fun deleteAccountData(): Result<Unit> =
         runCatching {
             mockScreenshotDataResetter.reset()
-            changeNotifier.notifyCaptureChanged()
+            changeNotifier.emit(CaptureChange.Invalidated)
         }
 }

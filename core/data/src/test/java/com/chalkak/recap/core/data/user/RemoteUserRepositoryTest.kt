@@ -1,7 +1,7 @@
 package com.chalkak.recap.core.data.user
 
 import app.cash.turbine.test
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
 import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
 import com.chalkak.recap.core.data.network.ApiResponseDto
 import com.chalkak.recap.core.data.network.RemoteApiException
@@ -36,7 +36,7 @@ class RemoteUserRepositoryTest {
     private val sessionTokenStore = mockk<SessionTokenStore>(relaxed = true)
     private val screenshotCardRepository = mockk<ScreenshotCardRepository>()
     private val thumbnailCache = mockk<RemoteCaptureThumbnailCache>(relaxed = true)
-    private val changeNotifier = RemoteCaptureChangeNotifier()
+    private val changeNotifier = CaptureChangeNotifier()
     private val refreshToken = MutableStateFlow<String?>("refresh-token")
     private val testDispatcher = UnconfinedTestDispatcher()
 

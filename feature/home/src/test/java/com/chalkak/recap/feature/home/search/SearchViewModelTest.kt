@@ -3,7 +3,6 @@ package com.chalkak.recap.feature.home.search
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.capture.CaptureThumbnailReady
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
 import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.search.RecentSearchStore
 import com.chalkak.recap.core.data.search.SearchRepository
@@ -19,6 +18,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -43,7 +43,6 @@ class SearchViewModelTest {
     private val thumbnailUpdates = mockk<CaptureThumbnailUpdates>()
     private val recoveryFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private val mainContentRecoveryTrigger = mockk<MainContentRecoveryTrigger>()
-    private val changeNotifier = RemoteCaptureChangeNotifier()
     private lateinit var viewModel: SearchViewModel
 
     @Before
@@ -53,6 +52,25 @@ class SearchViewModelTest {
         every { thumbnailUpdates.resolveLocalPath(any()) } returns null
         every { recentSearchStore.recentSearches } returns recentSearchesFlow
         every { mainContentRecoveryTrigger.recoveries } returns recoveryFlow
+        every {
+            searchRepository.observeSearch(any(), any(), any(), any())
+        } answers {
+            val query = firstArg<String>()
+            val scope = secondArg<SearchScope>()
+            val typeCode = thirdArg<ScreenshotContentType?>()
+            val size = arg<Int>(3)
+            flow {
+                emit(
+                    searchRepository.search(
+                        query = query,
+                        scope = scope,
+                        typeCode = typeCode,
+                        page = 0,
+                        size = size,
+                    ),
+                )
+            }
+        }
         coEvery { recentSearchStore.remember(any()) } coAnswers {
             val term = firstArg<String>().trim()
             recentSearchesFlow.value = (
@@ -76,7 +94,6 @@ class SearchViewModelTest {
             recentSearchStore = recentSearchStore,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
-            changeNotifier = changeNotifier,
         )
     }
 
@@ -622,16 +639,12 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `edit result refreshes submitted query when list becomes visible again`() = runTest {
-        coEvery {
-            searchRepository.search(
-                query = "숙소",
-                scope = SearchScope.ALL,
-                typeCode = null,
-                page = 0,
-                size = 20,
-            )
-        } returnsMany listOf(
+    fun `edit result is refreshed by repository change`() = runTest {
+        val searchResults = MutableSharedFlow<Result<SearchPage>>(replay = 1)
+        every {
+            searchRepository.observeSearch("숙소", SearchScope.ALL, null, 20)
+        } returns searchResults
+        searchResults.emit(
             Result.success(
                 SearchPage(
                     count = 1L,
@@ -650,7 +663,6 @@ class SearchViewModelTest {
                     ),
                 ),
             ),
-            Result.success(SearchPage(count = 0L, hasNext = false, items = emptyList())),
         )
 
         viewModel.onAction(SearchAction.UpdateQuery("숙소"))
@@ -661,20 +673,13 @@ class SearchViewModelTest {
         viewModel.onAction(SearchAction.EditResult(7L))
         viewModel.onListHidden()
         viewModel.onAction(SearchAction.LeaveComposition)
-        viewModel.onListVisible()
+        searchResults.emit(
+            Result.success(SearchPage(count = 0L, hasNext = false, items = emptyList())),
+        )
         advanceUntilIdle()
 
         assertEquals(SearchContentPhase.Empty, viewModel.uiState.value.phase)
         assertTrue(viewModel.uiState.value.results.isEmpty())
-        coVerify(exactly = 2) {
-            searchRepository.search(
-                query = "숙소",
-                scope = SearchScope.ALL,
-                typeCode = null,
-                page = 0,
-                size = 20,
-            )
-        }
     }
 
     @Test
@@ -842,10 +847,12 @@ class SearchViewModelTest {
     }
 
     @Test
-    fun `deleted capture stays until list is visible again`() = runTest(testDispatcher) {
-        coEvery {
-            searchRepository.search(any(), any(), any(), any(), any())
-        } returns Result.success(
+    fun `repository update refreshes results regardless of list visibility`() = runTest(testDispatcher) {
+        val searchResults = MutableSharedFlow<Result<SearchPage>>(replay = 1)
+        every {
+            searchRepository.observeSearch("숙소", SearchScope.ALL, null, 20)
+        } returns searchResults
+        searchResults.emit(Result.success(
             SearchPage(
                 count = 2L,
                 hasNext = false,
@@ -872,19 +879,32 @@ class SearchViewModelTest {
                     ),
                 ),
             ),
-        )
+        ))
 
         viewModel.onAction(SearchAction.UpdateQuery("숙소"))
         viewModel.onAction(SearchAction.SubmitSearch)
         advanceUntilIdle()
         viewModel.onListHidden()
-        changeNotifier.notifyCapturesDeleted(setOf(7L))
-        advanceUntilIdle()
-
-        assertEquals(listOf(7L, 8L), viewModel.uiState.value.results.map { it.captureId })
-        assertEquals(2L, viewModel.uiState.value.resultCount)
-
-        viewModel.onListVisible()
+        searchResults.emit(
+            Result.success(
+                SearchPage(
+                    count = 1L,
+                    hasNext = false,
+                    items = listOf(
+                        SearchResult(
+                            captureId = 8L,
+                            typeCode = ScreenshotContentType.PLACE,
+                            thumbnailUrl = null,
+                            titleHighlighted = "카페",
+                            summaryHighlighted = "요약",
+                            ocrExcerptHighlighted = null,
+                            isFavorite = false,
+                            organizedAt = "2026-07-18T00:00:00Z",
+                        ),
+                    ),
+                ),
+            ),
+        )
         advanceUntilIdle()
 
         assertEquals(listOf(8L), viewModel.uiState.value.results.map { it.captureId })
