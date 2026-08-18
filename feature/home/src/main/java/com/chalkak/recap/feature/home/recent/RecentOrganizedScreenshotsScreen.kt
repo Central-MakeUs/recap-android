@@ -52,6 +52,8 @@ import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.OrganizedRelativeTimeFormatter
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.popup.RecapPopup
+import com.chalkak.recap.core.design.component.swipe.SwipeActionRow
+import com.chalkak.recap.core.design.component.swipe.rememberEditDeleteSwipeActions
 import com.chalkak.recap.core.design.component.topbar.RecentOrganizedScreenshotsTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
@@ -207,47 +209,48 @@ private fun RecentOrganizedScreenshotsContent(
                 items = visibleItems,
                 key = { item -> item.id },
             ) { item ->
-                ScreenshotCard(
-                    thumbnailModel = item.thumbnailModel,
-                    categoryType = item.categoryType,
-                    title = item.title,
-                    description = item.description,
-                    isFavorite = item.isFavorite,
-                    onClick = {
-                        if (revealedCaptureId == item.id) {
+                SwipeActionRow(
+                    actions = rememberEditDeleteSwipeActions(
+                        onEditClick = {
                             revealedCaptureId = null
-                        } else {
-                            onAction(RecentOrganizedScreenshotsAction.SelectItem(item.id))
-                        }
-                    },
-                    onFavoriteClick = {
-                        onAction(RecentOrganizedScreenshotsAction.ToggleFavorite(item.id))
-                    },
-                    horizontalContentPadding = RecentOrganizedScreenshotsTokens.HorizontalPadding,
-                    modifier = Modifier.fillMaxWidth(),
-                    swipeActionsEnabled = true,
-                    swipeRevealed = revealedCaptureId == item.id,
-                    onSwipeRevealedChange = { revealed ->
+                            onAction(RecentOrganizedScreenshotsAction.EditItem(item.id))
+                        },
+                        onDeleteClick = {
+                            revealedCaptureId = null
+                            onAction(RecentOrganizedScreenshotsAction.RequestDeleteItem(item.id))
+                        },
+                    ),
+                    revealed = revealedCaptureId == item.id,
+                    onRevealedChange = { revealed ->
                         revealedCaptureId = when {
                             revealed -> item.id
                             revealedCaptureId == item.id -> null
                             else -> revealedCaptureId
                         }
                     },
-                    onSwipeDragStarted = {
+                    onDragStarted = {
                         if (revealedCaptureId != null && revealedCaptureId != item.id) {
                             revealedCaptureId = null
                         }
                     },
-                    onEditClick = {
-                        revealedCaptureId = null
-                        onAction(RecentOrganizedScreenshotsAction.EditItem(item.id))
-                    },
-                    onDeleteClick = {
-                        revealedCaptureId = null
-                        onAction(RecentOrganizedScreenshotsAction.RequestDeleteItem(item.id))
-                    },
-                )
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    ScreenshotCard(
+                        thumbnailModel = item.thumbnailModel,
+                        categoryType = item.categoryType,
+                        title = item.title,
+                        description = item.description,
+                        isFavorite = item.isFavorite,
+                        onClick = {
+                            onAction(RecentOrganizedScreenshotsAction.SelectItem(item.id))
+                        },
+                        onFavoriteClick = {
+                            onAction(RecentOrganizedScreenshotsAction.ToggleFavorite(item.id))
+                        },
+                        horizontalContentPadding = RecentOrganizedScreenshotsTokens.HorizontalPadding,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
             if (uiState.isLoadingMore) {
                 item(key = "recent_loading_more") {

@@ -67,6 +67,8 @@ import com.chalkak.recap.core.design.component.icon.RecapHazeFolderIcon
 import com.chalkak.recap.core.design.component.input.RecapInputField
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
+import com.chalkak.recap.core.design.component.swipe.SwipeActionRow
+import com.chalkak.recap.core.design.component.swipe.rememberEditDeleteSwipeActions
 import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.ProvideRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToast
@@ -233,24 +235,30 @@ internal fun ComponentGardenScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                 )
-                ScreenshotCard(
-                    thumbnailModel = R.drawable.bid_landscape_24px,
-                    categoryType = RecapCategoryType.ShoppingProduct,
-                    title = stringResource(R.string.component_garden_screenshot_card_title),
-                    description = stringResource(
-                        R.string.component_garden_screenshot_card_description
+                SwipeActionRow(
+                    actions = rememberEditDeleteSwipeActions(
+                        onEditClick = {},
+                        onDeleteClick = {},
                     ),
-                    isFavorite = isScreenshotCardFavorited,
-                    onClick = {},
-                    onFavoriteClick = {
-                        isScreenshotCardFavorited = !isScreenshotCardFavorited
-                    },
-                    swipeActionsEnabled = true,
-                    swipeRevealed = isScreenshotCardSwipeRevealed,
-                    onSwipeRevealedChange = { revealed ->
+                    revealed = isScreenshotCardSwipeRevealed,
+                    onRevealedChange = { revealed ->
                         isScreenshotCardSwipeRevealed = revealed
                     },
-                )
+                ) {
+                    ScreenshotCard(
+                        thumbnailModel = R.drawable.bid_landscape_24px,
+                        categoryType = RecapCategoryType.ShoppingProduct,
+                        title = stringResource(R.string.component_garden_screenshot_card_title),
+                        description = stringResource(
+                            R.string.component_garden_screenshot_card_description
+                        ),
+                        isFavorite = isScreenshotCardFavorited,
+                        onClick = {},
+                        onFavoriteClick = {
+                            isScreenshotCardFavorited = !isScreenshotCardFavorited
+                        },
+                    )
+                }
                 RecapButton(
                     text = stringResource(R.string.photo_access_permission_request_permission),
                     onClick = {},

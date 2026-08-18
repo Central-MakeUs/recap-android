@@ -51,6 +51,8 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
+import com.chalkak.recap.core.design.component.swipe.SwipeActionRow
+import com.chalkak.recap.core.design.component.swipe.rememberEditDeleteSwipeActions
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue300
@@ -234,43 +236,49 @@ internal fun CollectionSelectableCaptureItem(
             }
     }
 
-    ScreenshotCard(
-        thumbnailModel = item.thumbnailModel,
-        categoryType = item.categoryType,
-        organizedAtMillis = item.organizedAtMillis,
-        metadataMode = metadataMode,
-        title = item.title,
-        description = item.summary,
-        titleHighlightRange = item.titleHighlightRange,
-        descriptionHighlightRange = item.descriptionHighlightRange,
-        isFavorite = item.isFavorite,
-        onClick = onOpenClick,
-        onFavoriteClick = onFavoriteClick,
+    SwipeActionRow(
+        actions = rememberEditDeleteSwipeActions(
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick,
+        ),
+        revealed = swipeRevealed,
+        onRevealedChange = onSwipeRevealedChange,
+        enabled = swipeActionsEnabled,
+        onDragStarted = onSwipeDragStarted,
         modifier = modifier.fillMaxWidth(),
-        horizontalContentPadding = CollectionSelectionTokens.ItemHorizontalPadding,
-        showFavoriteButton = !selection.isActive,
-        containerClickEnabled = false,
-        contentModifier = Modifier
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .clip(rowShape)
-            .background(RecapBackground)
-            .then(pressableModifier),
-        leadingContent = {
-            CollectionSelectionCheckbox(
-                visible = selection.isActive,
-                checked = isSelected,
-            )
-        },
-        swipeActionsEnabled = swipeActionsEnabled,
-        swipeRevealed = swipeRevealed,
-        onSwipeRevealedChange = onSwipeRevealedChange,
-        onSwipeDragStarted = onSwipeDragStarted,
-        onEditClick = onEditClick,
-        onDeleteClick = onDeleteClick,
-    )
+    ) {
+        ScreenshotCard(
+            thumbnailModel = item.thumbnailModel,
+            categoryType = item.categoryType,
+            organizedAtMillis = item.organizedAtMillis,
+            metadataMode = metadataMode,
+            title = item.title,
+            description = item.summary,
+            titleHighlightRange = item.titleHighlightRange,
+            descriptionHighlightRange = item.descriptionHighlightRange,
+            isFavorite = item.isFavorite,
+            onClick = onOpenClick,
+            onFavoriteClick = onFavoriteClick,
+            modifier = Modifier.fillMaxWidth(),
+            horizontalContentPadding = CollectionSelectionTokens.ItemHorizontalPadding,
+            showFavoriteButton = !selection.isActive,
+            containerClickEnabled = false,
+            contentModifier = Modifier
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .clip(rowShape)
+                .background(RecapBackground)
+                .then(pressableModifier),
+            leadingContent = {
+                CollectionSelectionCheckbox(
+                    visible = selection.isActive,
+                    checked = isSelected,
+                )
+            },
+        )
+    }
 }
 
 private fun <T> collectionSelectionEnterTween() = tween<T>(

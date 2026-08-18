@@ -53,6 +53,8 @@ import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
+import com.chalkak.recap.core.design.component.swipe.SwipeActionRow
+import com.chalkak.recap.core.design.component.swipe.rememberEditDeleteSwipeActions
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapError
@@ -272,47 +274,46 @@ private fun SearchResultsContent(
                 items = results,
                 key = { item -> item.captureId },
             ) { item ->
-                ScreenshotCard(
-                    thumbnailModel = item.thumbnailModel,
-                    categoryType = item.categoryType,
-                    title = item.title,
-                    description = item.description,
-                    titleHighlightRange = item.titleHighlightRange,
-                    descriptionHighlightRange = item.descriptionHighlightRange,
-                    isFavorite = item.isFavorite,
-                    onClick = {
-                        if (revealedCaptureId == item.captureId) {
+                SwipeActionRow(
+                    actions = rememberEditDeleteSwipeActions(
+                        onEditClick = {
                             revealedCaptureId = null
-                        } else {
-                            onAction(SearchAction.SelectResult(item.captureId))
-                        }
-                    },
-                    onFavoriteClick = { onAction(SearchAction.ToggleFavorite(item.captureId)) },
-                    horizontalContentPadding = SearchScreenTokens.HorizontalPadding,
-                    modifier = Modifier.fillMaxWidth(),
-                    swipeActionsEnabled = true,
-                    swipeRevealed = revealedCaptureId == item.captureId,
-                    onSwipeRevealedChange = { revealed ->
+                            onAction(SearchAction.EditResult(item.captureId))
+                        },
+                        onDeleteClick = {
+                            revealedCaptureId = null
+                            onAction(SearchAction.RequestDeleteResult(item.captureId))
+                        },
+                    ),
+                    revealed = revealedCaptureId == item.captureId,
+                    onRevealedChange = { revealed ->
                         revealedCaptureId = when {
                             revealed -> item.captureId
                             revealedCaptureId == item.captureId -> null
                             else -> revealedCaptureId
                         }
                     },
-                    onSwipeDragStarted = {
+                    onDragStarted = {
                         if (revealedCaptureId != null && revealedCaptureId != item.captureId) {
                             revealedCaptureId = null
                         }
                     },
-                    onEditClick = {
-                        revealedCaptureId = null
-                        onAction(SearchAction.EditResult(item.captureId))
-                    },
-                    onDeleteClick = {
-                        revealedCaptureId = null
-                        onAction(SearchAction.RequestDeleteResult(item.captureId))
-                    },
-                )
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    ScreenshotCard(
+                        thumbnailModel = item.thumbnailModel,
+                        categoryType = item.categoryType,
+                        title = item.title,
+                        description = item.description,
+                        titleHighlightRange = item.titleHighlightRange,
+                        descriptionHighlightRange = item.descriptionHighlightRange,
+                        isFavorite = item.isFavorite,
+                        onClick = { onAction(SearchAction.SelectResult(item.captureId)) },
+                        onFavoriteClick = { onAction(SearchAction.ToggleFavorite(item.captureId)) },
+                        horizontalContentPadding = SearchScreenTokens.HorizontalPadding,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
             if (isLoadingMore) {
                 item(key = "search_loading_more") {

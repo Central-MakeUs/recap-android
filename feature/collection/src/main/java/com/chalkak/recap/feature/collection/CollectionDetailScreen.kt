@@ -183,13 +183,7 @@ fun CollectionDetailScreen(
                             item = card,
                             selection = selection,
                             metadataMode = detail.cardMetadataMode,
-                            onOpenClick = {
-                                if (revealedCaptureId == card.captureId) {
-                                    revealedCaptureId = null
-                                } else {
-                                    onItemClick(card.captureId)
-                                }
-                            },
+                            onOpenClick = { onItemClick(card.captureId) },
                             onFavoriteClick = {
                                 onAction(CollectionAction.ToggleFavorite(card.captureId))
                             },
