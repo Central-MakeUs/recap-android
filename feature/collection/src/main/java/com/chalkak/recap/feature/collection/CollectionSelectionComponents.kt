@@ -49,9 +49,7 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
-import com.chalkak.recap.core.design.component.swipe.LocalSwipeActionRowActive
-import com.chalkak.recap.core.design.component.swipe.SwipeActionRow
-import com.chalkak.recap.core.design.component.swipe.rememberEditDeleteSwipeActions
+import com.chalkak.recap.core.design.component.swipe.ScreenshotCardSwipeRow
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue300
@@ -225,24 +223,21 @@ internal fun CollectionSelectableCaptureItem(
             }
     }
 
-    SwipeActionRow(
-        actions = rememberEditDeleteSwipeActions(
-            onEditClick = onEditClick,
-            onDeleteClick = onDeleteClick,
-        ),
+    ScreenshotCardSwipeRow(
+        onEditClick = onEditClick,
+        onDeleteClick = onDeleteClick,
         revealed = swipeRevealed,
         onRevealedChange = onSwipeRevealedChange,
         enabled = swipeActionsEnabled,
         onDragStarted = onSwipeDragStarted,
         modifier = modifier.fillMaxWidth(),
     ) {
-        val swipeActive = LocalSwipeActionRowActive.current
         val pressAnimationSpec = tween<Float>(
             durationMillis = CollectionSelectionTokens.PressAnimationDurationMillis,
             easing = FastOutSlowInEasing,
         )
         val scale by animateFloatAsState(
-            targetValue = if (isPressed && !swipeActive) {
+            targetValue = if (isPressed && !isGestureActive) {
                 CollectionSelectionTokens.PressedScale
             } else {
                 1f
@@ -262,7 +257,9 @@ internal fun CollectionSelectableCaptureItem(
             isFavorite = item.isFavorite,
             onClick = onOpenClick,
             onFavoriteClick = onFavoriteClick,
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .screenshotCardSwipeSemantics(),
             horizontalContentPadding = CollectionSelectionTokens.ItemHorizontalPadding,
             showFavoriteButton = !selection.isActive,
             containerClickEnabled = false,

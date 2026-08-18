@@ -48,11 +48,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.customActions
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -71,8 +68,6 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChipDefaults
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
-import com.chalkak.recap.core.design.component.swipe.LocalSwipeActionRowActive
-import com.chalkak.recap.core.design.component.swipe.LocalSwipeRevealActions
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue300
@@ -110,12 +105,11 @@ fun ScreenshotCard(
     leadingContent: (@Composable () -> Unit)? = null,
     titleHighlightRange: IntRange? = null,
     descriptionHighlightRange: IntRange? = null,
+    suppressPressScale: Boolean = false,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val swipeActive = LocalSwipeActionRowActive.current
-    val swipeActions = LocalSwipeRevealActions.current
-    val pressActive = containerClickEnabled && isPressed && !swipeActive
+    val pressActive = containerClickEnabled && isPressed && !suppressPressScale
     val pressAnimationSpec = tween<Float>(
         durationMillis = ScreenshotCardTokens.PressAnimationDurationMillis,
         easing = FastOutSlowInEasing,
@@ -125,18 +119,6 @@ fun ScreenshotCard(
         animationSpec = pressAnimationSpec,
         label = "screenshot_card_press_scale",
     )
-    val swipeActionsModifier = if (swipeActions.isEmpty()) {
-        Modifier
-    } else {
-        Modifier.semantics {
-            customActions = swipeActions.map { action ->
-                CustomAccessibilityAction(label = action.label) {
-                    action.onClick()
-                    true
-                }
-            }
-        }
-    }
     val clearEmbeddedTextSemantics = leadingContent != null && !containerClickEnabled
     val contentContainerModifier = if (containerClickEnabled) {
         Modifier
@@ -151,9 +133,8 @@ fun ScreenshotCard(
                 role = Role.Button,
                 onClick = onClick,
             )
-            .then(swipeActionsModifier)
     } else {
-        contentModifier.then(swipeActionsModifier)
+        contentModifier
     }
 
     Column(

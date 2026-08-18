@@ -54,8 +54,7 @@ import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
-import com.chalkak.recap.core.design.component.swipe.SwipeActionRow
-import com.chalkak.recap.core.design.component.swipe.rememberEditDeleteSwipeActions
+import com.chalkak.recap.core.design.component.swipe.ScreenshotCardSwipeRow
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapError
@@ -275,16 +274,14 @@ private fun SearchResultsContent(
                 items = results,
                 key = { item -> item.captureId },
             ) { item ->
-                SwipeActionRow(
-                    actions = rememberEditDeleteSwipeActions(
-                        onEditClick = {
-                            revealedCaptureId = null
-                            onAction(SearchAction.EditResult(item.captureId))
-                        },
-                        onDeleteClick = {
-                            onAction(SearchAction.RequestDeleteResult(item.captureId))
-                        },
-                    ),
+                ScreenshotCardSwipeRow(
+                    onEditClick = {
+                        revealedCaptureId = null
+                        onAction(SearchAction.EditResult(item.captureId))
+                    },
+                    onDeleteClick = {
+                        onAction(SearchAction.RequestDeleteResult(item.captureId))
+                    },
                     revealed = revealedCaptureId == item.captureId,
                     onRevealedChange = { revealed ->
                         revealedCaptureId = when {
@@ -313,7 +310,10 @@ private fun SearchResultsContent(
                         onClick = { onAction(SearchAction.SelectResult(item.captureId)) },
                         onFavoriteClick = { onAction(SearchAction.ToggleFavorite(item.captureId)) },
                         horizontalContentPadding = SearchScreenTokens.HorizontalPadding,
-                        modifier = Modifier.fillMaxWidth(),
+                        suppressPressScale = isGestureActive,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .screenshotCardSwipeSemantics(),
                     )
                 }
             }

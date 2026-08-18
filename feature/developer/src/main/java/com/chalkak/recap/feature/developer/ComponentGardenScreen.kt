@@ -67,8 +67,7 @@ import com.chalkak.recap.core.design.component.icon.RecapHazeFolderIcon
 import com.chalkak.recap.core.design.component.input.RecapInputField
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
-import com.chalkak.recap.core.design.component.swipe.SwipeActionRow
-import com.chalkak.recap.core.design.component.swipe.rememberEditDeleteSwipeActions
+import com.chalkak.recap.core.design.component.swipe.ScreenshotCardSwipeRow
 import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.ProvideRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToast
@@ -235,11 +234,9 @@ internal fun ComponentGardenScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                 )
-                SwipeActionRow(
-                    actions = rememberEditDeleteSwipeActions(
-                        onEditClick = {},
-                        onDeleteClick = {},
-                    ),
+                ScreenshotCardSwipeRow(
+                    onEditClick = {},
+                    onDeleteClick = {},
                     revealed = isScreenshotCardSwipeRevealed,
                     onRevealedChange = { revealed ->
                         isScreenshotCardSwipeRevealed = revealed
@@ -257,6 +254,8 @@ internal fun ComponentGardenScreen(
                         onFavoriteClick = {
                             isScreenshotCardFavorited = !isScreenshotCardFavorited
                         },
+                        suppressPressScale = isGestureActive,
+                        modifier = Modifier.screenshotCardSwipeSemantics(),
                     )
                 }
                 RecapButton(

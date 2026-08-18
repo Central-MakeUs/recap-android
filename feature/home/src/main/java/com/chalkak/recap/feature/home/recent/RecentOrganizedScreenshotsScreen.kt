@@ -53,8 +53,7 @@ import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.OrganizedRelativeTimeFormatter
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.popup.RecapPopup
-import com.chalkak.recap.core.design.component.swipe.SwipeActionRow
-import com.chalkak.recap.core.design.component.swipe.rememberEditDeleteSwipeActions
+import com.chalkak.recap.core.design.component.swipe.ScreenshotCardSwipeRow
 import com.chalkak.recap.core.design.component.topbar.RecentOrganizedScreenshotsTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
@@ -199,16 +198,14 @@ private fun RecentOrganizedScreenshotsContent(
             key = { item -> item.id },
             contentType = { "recent_organized_screenshot" },
         ) { item ->
-            SwipeActionRow(
-                actions = rememberEditDeleteSwipeActions(
-                    onEditClick = {
-                        revealedCaptureId = null
-                        onAction(RecentOrganizedScreenshotsAction.EditItem(item.id))
-                    },
-                    onDeleteClick = {
-                        onAction(RecentOrganizedScreenshotsAction.RequestDeleteItem(item.id))
-                    },
-                ),
+            ScreenshotCardSwipeRow(
+                onEditClick = {
+                    revealedCaptureId = null
+                    onAction(RecentOrganizedScreenshotsAction.EditItem(item.id))
+                },
+                onDeleteClick = {
+                    onAction(RecentOrganizedScreenshotsAction.RequestDeleteItem(item.id))
+                },
                 revealed = revealedCaptureId == item.id,
                 onRevealedChange = { revealed ->
                     revealedCaptureId = when {
@@ -239,7 +236,10 @@ private fun RecentOrganizedScreenshotsContent(
                         onAction(RecentOrganizedScreenshotsAction.ToggleFavorite(item.id))
                     },
                     horizontalContentPadding = RecentOrganizedScreenshotsTokens.HorizontalPadding,
-                    modifier = Modifier.fillMaxWidth(),
+                    suppressPressScale = isGestureActive,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .screenshotCardSwipeSemantics(),
                 )
             }
         }

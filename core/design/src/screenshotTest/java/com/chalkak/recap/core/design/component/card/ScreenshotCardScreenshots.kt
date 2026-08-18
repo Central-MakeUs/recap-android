@@ -2,11 +2,11 @@ package com.chalkak.recap.core.design.component.card
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import com.android.tools.screenshot.PreviewTest
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
-import com.chalkak.recap.core.design.component.swipe.SwipeActionRow
-import com.chalkak.recap.core.design.component.swipe.rememberEditDeleteSwipeActions
+import com.chalkak.recap.core.design.component.swipe.ScreenshotCardSwipeRow
 import com.chalkak.recap.core.design.qa.QaPhoneMatrix
 import com.chalkak.recap.core.design.theme.RECAPTheme
 
@@ -15,11 +15,9 @@ import com.chalkak.recap.core.design.theme.RECAPTheme
 @Composable
 fun ScreenshotCardSwipeRevealedScreenshot() {
     RECAPTheme(dynamicColor = false) {
-        SwipeActionRow(
-            actions = rememberEditDeleteSwipeActions(
-                onEditClick = {},
-                onDeleteClick = {},
-            ),
+        ScreenshotCardSwipeRow(
+            onEditClick = {},
+            onDeleteClick = {},
             revealed = true,
             onRevealedChange = {},
         ) {
@@ -31,6 +29,8 @@ fun ScreenshotCardSwipeRevealedScreenshot() {
                 isFavorite = false,
                 onClick = {},
                 onFavoriteClick = {},
+                suppressPressScale = isGestureActive,
+                modifier = Modifier.screenshotCardSwipeSemantics(),
             )
         }
     }
@@ -42,11 +42,9 @@ fun ScreenshotCardSwipeRevealedScreenshot() {
 fun ScreenshotCardSwipeStackedScreenshot() {
     RECAPTheme(dynamicColor = false) {
         Column {
-            SwipeActionRow(
-                actions = rememberEditDeleteSwipeActions(
-                    onEditClick = {},
-                    onDeleteClick = {},
-                ),
+            ScreenshotCardSwipeRow(
+                onEditClick = {},
+                onDeleteClick = {},
                 revealed = true,
                 onRevealedChange = {},
             ) {
@@ -58,13 +56,13 @@ fun ScreenshotCardSwipeStackedScreenshot() {
                     isFavorite = false,
                     onClick = {},
                     onFavoriteClick = {},
+                    suppressPressScale = isGestureActive,
+                    modifier = Modifier.screenshotCardSwipeSemantics(),
                 )
             }
-            SwipeActionRow(
-                actions = rememberEditDeleteSwipeActions(
-                    onEditClick = {},
-                    onDeleteClick = {},
-                ),
+            ScreenshotCardSwipeRow(
+                onEditClick = {},
+                onDeleteClick = {},
                 revealed = false,
                 onRevealedChange = {},
             ) {
@@ -76,6 +74,8 @@ fun ScreenshotCardSwipeStackedScreenshot() {
                     isFavorite = true,
                     onClick = {},
                     onFavoriteClick = {},
+                    suppressPressScale = isGestureActive,
+                    modifier = Modifier.screenshotCardSwipeSemantics(),
                 )
             }
         }
