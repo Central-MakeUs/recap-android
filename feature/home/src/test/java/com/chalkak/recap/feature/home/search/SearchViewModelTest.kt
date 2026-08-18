@@ -622,6 +622,62 @@ class SearchViewModelTest {
     }
 
     @Test
+    fun `edit result refreshes submitted query when list becomes visible again`() = runTest {
+        coEvery {
+            searchRepository.search(
+                query = "숙소",
+                scope = SearchScope.ALL,
+                typeCode = null,
+                page = 0,
+                size = 20,
+            )
+        } returnsMany listOf(
+            Result.success(
+                SearchPage(
+                    count = 1L,
+                    hasNext = false,
+                    items = listOf(
+                        SearchResult(
+                            captureId = 7L,
+                            typeCode = ScreenshotContentType.PLACE,
+                            thumbnailUrl = null,
+                            titleHighlighted = "제주 숙소",
+                            summaryHighlighted = "요약",
+                            ocrExcerptHighlighted = null,
+                            isFavorite = false,
+                            organizedAt = "2026-07-19T00:00:00Z",
+                        ),
+                    ),
+                ),
+            ),
+            Result.success(SearchPage(count = 0L, hasNext = false, items = emptyList())),
+        )
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        assertEquals(listOf(7L), viewModel.uiState.value.results.map { it.captureId })
+
+        viewModel.onAction(SearchAction.EditResult(7L))
+        viewModel.onListHidden()
+        viewModel.onAction(SearchAction.LeaveComposition)
+        viewModel.onListVisible()
+        advanceUntilIdle()
+
+        assertEquals(SearchContentPhase.Empty, viewModel.uiState.value.phase)
+        assertTrue(viewModel.uiState.value.results.isEmpty())
+        coVerify(exactly = 2) {
+            searchRepository.search(
+                query = "숙소",
+                scope = SearchScope.ALL,
+                typeCode = null,
+                page = 0,
+                size = 20,
+            )
+        }
+    }
+
+    @Test
     fun `leave composition without detail navigation clears session and restores autoFocus`() = runTest {
         coEvery {
             searchRepository.search(any(), any(), any(), any(), any())

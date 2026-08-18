@@ -39,6 +39,7 @@ class SearchViewModel @Inject constructor(
     private var searchJob: Job? = null
     private var loadMoreJob: Job? = null
     private var preserveSessionOnNextDispose = false
+    private var refreshSearchOnNextListVisible = false
     private var isListVisible = true
     private val pendingDeletedCaptureIds = mutableSetOf<Long>()
 
@@ -74,6 +75,13 @@ class SearchViewModel @Inject constructor(
 
     fun onListVisible() {
         isListVisible = true
+        if (refreshSearchOnNextListVisible) {
+            refreshSearchOnNextListVisible = false
+            val submittedQuery = _uiState.value.submittedQuery
+            if (submittedQuery.isNotBlank()) {
+                submitSearch(reset = true, queryOverride = submittedQuery)
+            }
+        }
         if (pendingDeletedCaptureIds.isEmpty()) {
             return
         }
@@ -127,9 +135,11 @@ class SearchViewModel @Inject constructor(
 
             is SearchAction.ToggleFavorite -> toggleFavorite(action.captureId)
 
-            is SearchAction.SelectResult,
-            is SearchAction.EditResult,
-                -> prepareNavigateToDetail()
+            is SearchAction.SelectResult -> prepareNavigateToDetail()
+            is SearchAction.EditResult -> {
+                refreshSearchOnNextListVisible = true
+                prepareNavigateToDetail()
+            }
 
             is SearchAction.RequestDeleteResult -> requestDeleteResult(action.captureId)
             SearchAction.ConfirmDeleteResult -> confirmDeleteResult()
