@@ -197,6 +197,7 @@ private fun RecentOrganizedScreenshotsContent(
         items(
             items = visibleItems,
             key = { item -> item.id },
+            contentType = { "recent_organized_screenshot" },
         ) { item ->
             SwipeActionRow(
                 actions = rememberEditDeleteSwipeActions(

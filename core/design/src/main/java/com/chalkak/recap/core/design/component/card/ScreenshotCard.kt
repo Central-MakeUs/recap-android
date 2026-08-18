@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -256,6 +257,25 @@ private fun ScreenshotCardThumbnail(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
+    val thumbnailWidthPx = remember(density) {
+        with(density) { ScreenshotCardTokens.ThumbnailWidth.roundToPx() }
+    }
+    val thumbnailHeightPx = remember(density) {
+        with(density) { ScreenshotCardTokens.ThumbnailHeight.roundToPx() }
+    }
+    val imageRequest = remember(
+        context,
+        thumbnailModel,
+        thumbnailWidthPx,
+        thumbnailHeightPx,
+    ) {
+        ImageRequest.Builder(context)
+            .data(thumbnailModel)
+            .size(thumbnailWidthPx, thumbnailHeightPx)
+            .crossfade(ScreenshotCardTokens.ImageCrossfadeMillis)
+            .build()
+    }
     val rectProgress by animateFloatAsState(
         targetValue = if (showFavoriteButton) 0f else 1f,
         animationSpec = if (showFavoriteButton) {
@@ -297,10 +317,7 @@ private fun ScreenshotCardThumbnail(
                     ),
             )
             AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(thumbnailModel)
-                    .crossfade(ScreenshotCardTokens.ImageCrossfadeMillis)
-                    .build(),
+                model = imageRequest,
                 contentDescription = thumbnailContentDescription,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),

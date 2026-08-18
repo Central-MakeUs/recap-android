@@ -5,6 +5,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -49,14 +51,17 @@ fun RecentOrganizedScreenshotsRoute(
         }
     }
 
-    RecentOrganizedScreenshotsScreen(
-        modifier = modifier.fillMaxSize(),
-        uiState = uiState,
-        onAction = { action ->
+    val currentOnNavigateBack by rememberUpdatedState(onNavigateBack)
+    val currentOnNavigateToSearch by rememberUpdatedState(onNavigateToSearch)
+    val currentOnNavigateToOrganize by rememberUpdatedState(onNavigateToOrganize)
+    val currentOnNavigateToScreenshot by rememberUpdatedState(onNavigateToScreenshot)
+    val currentOnNavigateToScreenshotEdit by rememberUpdatedState(onNavigateToScreenshotEdit)
+    val onAction = remember(viewModel) {
+        { action: RecentOrganizedScreenshotsAction ->
             when (action) {
-                RecentOrganizedScreenshotsAction.NavigateBack -> onNavigateBack()
-                RecentOrganizedScreenshotsAction.OpenSearch -> onNavigateToSearch()
-                RecentOrganizedScreenshotsAction.StartImport -> onNavigateToOrganize()
+                RecentOrganizedScreenshotsAction.NavigateBack -> currentOnNavigateBack()
+                RecentOrganizedScreenshotsAction.OpenSearch -> currentOnNavigateToSearch()
+                RecentOrganizedScreenshotsAction.StartImport -> currentOnNavigateToOrganize()
                 RecentOrganizedScreenshotsAction.LoadMore,
                 RecentOrganizedScreenshotsAction.Retry,
                 is RecentOrganizedScreenshotsAction.ToggleFavorite,
@@ -65,9 +70,18 @@ fun RecentOrganizedScreenshotsRoute(
                 RecentOrganizedScreenshotsAction.DismissDeleteItem,
                 -> viewModel.onAction(action)
 
-                is RecentOrganizedScreenshotsAction.SelectItem -> onNavigateToScreenshot(action.id)
-                is RecentOrganizedScreenshotsAction.EditItem -> onNavigateToScreenshotEdit(action.id)
+                is RecentOrganizedScreenshotsAction.SelectItem ->
+                    currentOnNavigateToScreenshot(action.id)
+
+                is RecentOrganizedScreenshotsAction.EditItem ->
+                    currentOnNavigateToScreenshotEdit(action.id)
             }
-        },
+        }
+    }
+
+    RecentOrganizedScreenshotsScreen(
+        modifier = modifier.fillMaxSize(),
+        uiState = uiState,
+        onAction = onAction,
     )
 }
