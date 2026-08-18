@@ -6,15 +6,18 @@ import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
 import com.chalkak.recap.core.data.home.RecentCapturesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class RecentOrganizedScreenshotsViewModel @Inject constructor(
@@ -24,6 +27,10 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RecentOrganizedScreenshotsUiState())
     val uiState: StateFlow<RecentOrganizedScreenshotsUiState> = _uiState.asStateFlow()
+
+    private val _events =
+        MutableSharedFlow<RecentOrganizedScreenshotsEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<RecentOrganizedScreenshotsEvent> = _events.asSharedFlow()
 
     private val refreshKey = MutableStateFlow(0)
     private var loadMoreJob: Job? = null
@@ -42,6 +49,9 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
             RecentOrganizedScreenshotsAction.LoadMore -> loadMore()
             RecentOrganizedScreenshotsAction.Retry -> retry()
             is RecentOrganizedScreenshotsAction.ToggleFavorite -> toggleFavorite(action.id)
+            is RecentOrganizedScreenshotsAction.RequestDeleteItem -> requestDeleteItem(action.id)
+            RecentOrganizedScreenshotsAction.ConfirmDeleteItem -> confirmDeleteItem()
+            RecentOrganizedScreenshotsAction.DismissDeleteItem -> dismissDeleteItem()
             else -> Unit
         }
     }
@@ -106,6 +116,7 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
                 isLoadingMore = false,
                 hasNext = false,
                 nextPage = 0,
+                pendingDeleteCaptureId = null,
             )
         }
         refreshKey.update { value -> value + 1 }
@@ -177,6 +188,46 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
                     }
                 },
             )
+        }
+    }
+
+    private fun requestDeleteItem(id: Long) {
+        if (_uiState.value.items.none { item -> item.id == id }) {
+            return
+        }
+        _uiState.update { state -> state.copy(pendingDeleteCaptureId = id) }
+    }
+
+    private fun dismissDeleteItem() {
+        if (_uiState.value.pendingDeleteCaptureId == null) {
+            return
+        }
+        _uiState.update { state -> state.copy(pendingDeleteCaptureId = null) }
+    }
+
+    private fun confirmDeleteItem() {
+        val captureId = _uiState.value.pendingDeleteCaptureId ?: return
+        _uiState.update { state -> state.copy(pendingDeleteCaptureId = null) }
+        viewModelScope.launch {
+            val result = captureMutationRepository.deleteCaptures(setOf(captureId))
+            val deleteResult = result.getOrNull()
+            if (result.isFailure || deleteResult == null || captureId !in deleteResult.deletedIds) {
+                _events.emit(RecentOrganizedScreenshotsEvent.ShowDeleteFailureToast)
+                return@launch
+            }
+            _uiState.update { state ->
+                val remaining = state.items.filterNot { item -> item.id == captureId }
+                state.copy(
+                    items = remaining,
+                    resultCount = (state.resultCount - 1).coerceAtLeast(0L),
+                    phase = if (remaining.isEmpty()) {
+                        RecentOrganizedScreenshotsPhase.Empty
+                    } else {
+                        state.phase
+                    },
+                )
+            }
+            _events.emit(RecentOrganizedScreenshotsEvent.ShowDeleteSuccessToast)
         }
     }
 

@@ -112,6 +112,7 @@ internal fun ComponentGardenScreen(
     var inputFieldValue by remember { mutableStateOf("") }
     var multilineInputFieldValue by remember { mutableStateOf("") }
     var isScreenshotCardFavorited by remember { mutableStateOf(false) }
+    var isScreenshotCardSwipeRevealed by remember { mutableStateOf(false) }
     var isSortLatest by remember { mutableStateOf(true) }
     val toastHazeState = rememberHazeState()
     val toastDispatcher = LocalRecapToastDispatcher.current
@@ -243,6 +244,11 @@ internal fun ComponentGardenScreen(
                     onClick = {},
                     onFavoriteClick = {
                         isScreenshotCardFavorited = !isScreenshotCardFavorited
+                    },
+                    swipeActionsEnabled = true,
+                    swipeRevealed = isScreenshotCardSwipeRevealed,
+                    onSwipeRevealedChange = { revealed ->
+                        isScreenshotCardSwipeRevealed = revealed
                     },
                 )
                 RecapButton(

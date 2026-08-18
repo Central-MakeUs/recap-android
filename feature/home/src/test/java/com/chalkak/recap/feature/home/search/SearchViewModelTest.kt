@@ -698,4 +698,87 @@ class SearchViewModelTest {
         assertEquals(SearchContentPhase.Idle, state.phase)
         assertTrue(state.results.isEmpty())
     }
+
+    @Test
+    fun `request delete result shows confirm then removes item`() = runTest {
+        coEvery {
+            searchRepository.search(any(), any(), any(), any(), any())
+        } returns Result.success(
+            SearchPage(
+                count = 1L,
+                hasNext = false,
+                items = listOf(
+                    SearchResult(
+                        captureId = 7L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "숙소",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-19T00:00:00Z",
+                    ),
+                ),
+            ),
+        )
+        coEvery {
+            captureMutationRepository.deleteCaptures(setOf(7L))
+        } returns Result.success(
+            com.chalkak.recap.core.model.capture.CaptureDeleteResult(
+                deletedIds = setOf(7L),
+                failedIds = emptySet(),
+            ),
+        )
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        viewModel.onAction(SearchAction.RequestDeleteResult(7L))
+        assertEquals(7L, viewModel.uiState.value.pendingDeleteCaptureId)
+
+        viewModel.onAction(SearchAction.ConfirmDeleteResult)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { captureMutationRepository.deleteCaptures(setOf(7L)) }
+        assertTrue(viewModel.uiState.value.results.isEmpty())
+        assertEquals(SearchContentPhase.Empty, viewModel.uiState.value.phase)
+        assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
+    }
+
+    @Test
+    fun `confirm delete result failure keeps item and emits failure`() = runTest {
+        coEvery {
+            searchRepository.search(any(), any(), any(), any(), any())
+        } returns Result.success(
+            SearchPage(
+                count = 1L,
+                hasNext = false,
+                items = listOf(
+                    SearchResult(
+                        captureId = 7L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "숙소",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-19T00:00:00Z",
+                    ),
+                ),
+            ),
+        )
+        coEvery {
+            captureMutationRepository.deleteCaptures(setOf(7L))
+        } returns Result.failure(IllegalStateException("network"))
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        viewModel.onAction(SearchAction.RequestDeleteResult(7L))
+        viewModel.onAction(SearchAction.ConfirmDeleteResult)
+        advanceUntilIdle()
+
+        assertEquals(listOf(7L), viewModel.uiState.value.results.map { it.captureId })
+        assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
+    }
 }

@@ -34,7 +34,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,6 +80,8 @@ fun CollectionDetailScreen(
     searchQuery: String = "",
     isSearchVisible: Boolean = false,
     onItemClick: (Long) -> Unit = {},
+    onItemEditClick: (Long) -> Unit = {},
+    pendingDeleteCaptureId: Long? = null,
 ) {
     val navigationBarBottomPadding = WindowInsets.navigationBars
         .asPaddingValues()
@@ -84,6 +89,13 @@ fun CollectionDetailScreen(
     val bottomContentPadding = RecapBottomBarDefaults.ContentScrollPadding +
             navigationBarBottomPadding
     val categoryType = detail.categoryType
+    val swipeActionsEnabled = categoryType != null && !selection.isActive
+    var revealedCaptureId by remember { mutableStateOf<Long?>(null) }
+    LaunchedEffect(swipeActionsEnabled) {
+        if (!swipeActionsEnabled) {
+            revealedCaptureId = null
+        }
+    }
     val listState = rememberLazyListState()
     LaunchedEffect(detail.sort, detail.cards.firstOrNull()?.captureId) {
         listState.scrollToItem(0)
@@ -171,12 +183,43 @@ fun CollectionDetailScreen(
                             item = card,
                             selection = selection,
                             metadataMode = detail.cardMetadataMode,
-                            onOpenClick = { onItemClick(card.captureId) },
+                            onOpenClick = {
+                                if (revealedCaptureId == card.captureId) {
+                                    revealedCaptureId = null
+                                } else {
+                                    onItemClick(card.captureId)
+                                }
+                            },
                             onFavoriteClick = {
                                 onAction(CollectionAction.ToggleFavorite(card.captureId))
                             },
                             onSelectionToggle = {
                                 onAction(CollectionAction.ToggleItemSelection(card.captureId))
+                            },
+                            swipeActionsEnabled = swipeActionsEnabled,
+                            swipeRevealed = revealedCaptureId == card.captureId,
+                            onSwipeRevealedChange = { revealed ->
+                                revealedCaptureId = when {
+                                    revealed -> card.captureId
+                                    revealedCaptureId == card.captureId -> null
+                                    else -> revealedCaptureId
+                                }
+                            },
+                            onSwipeDragStarted = {
+                                if (
+                                    revealedCaptureId != null &&
+                                    revealedCaptureId != card.captureId
+                                ) {
+                                    revealedCaptureId = null
+                                }
+                            },
+                            onEditClick = {
+                                revealedCaptureId = null
+                                onItemEditClick(card.captureId)
+                            },
+                            onDeleteClick = {
+                                revealedCaptureId = null
+                                onAction(CollectionAction.RequestDeleteItem(card.captureId))
                             },
                         )
                     }
@@ -230,6 +273,19 @@ fun CollectionDetailScreen(
             onConfirmClick = { onAction(CollectionAction.ConfirmDeleteSelected) },
             onCancelClick = { onAction(CollectionAction.DismissDeleteConfirmDialog) },
             onDismissRequest = { onAction(CollectionAction.DismissDeleteConfirmDialog) },
+            confirmButtonColor = RecapError,
+        )
+    }
+
+    if (pendingDeleteCaptureId != null) {
+        RecapPopup(
+            title = stringResource(R.string.screenshot_delete_confirm_title),
+            description = stringResource(R.string.screenshot_delete_confirm_description),
+            confirmButtonText = stringResource(R.string.deletion_confirmation_delete_button),
+            cancelButtonText = stringResource(R.string.deletion_confirmation_cancel_button),
+            onConfirmClick = { onAction(CollectionAction.ConfirmDeleteItem) },
+            onCancelClick = { onAction(CollectionAction.DismissDeleteItem) },
+            onDismissRequest = { onAction(CollectionAction.DismissDeleteItem) },
             confirmButtonColor = RecapError,
         )
     }

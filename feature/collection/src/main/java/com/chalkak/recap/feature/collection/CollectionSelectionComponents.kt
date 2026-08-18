@@ -183,6 +183,12 @@ internal fun CollectionSelectableCaptureItem(
     onSelectionToggle: () -> Unit,
     modifier: Modifier = Modifier,
     metadataMode: ScreenshotCardMetadataMode = ScreenshotCardMetadataMode.CategoryChip,
+    swipeActionsEnabled: Boolean = false,
+    swipeRevealed: Boolean = false,
+    onSwipeRevealedChange: (Boolean) -> Unit = {},
+    onSwipeDragStarted: () -> Unit = {},
+    onEditClick: () -> Unit = {},
+    onDeleteClick: () -> Unit = {},
 ) {
     val isSelected = item.captureId in selection.selectedCaptureIds
     val itemContentDescription = stringResource(
@@ -258,6 +264,12 @@ internal fun CollectionSelectableCaptureItem(
                 checked = isSelected,
             )
         },
+        swipeActionsEnabled = swipeActionsEnabled,
+        swipeRevealed = swipeRevealed,
+        onSwipeRevealedChange = onSwipeRevealedChange,
+        onSwipeDragStarted = onSwipeDragStarted,
+        onEditClick = onEditClick,
+        onDeleteClick = onDeleteClick,
     )
 }
 

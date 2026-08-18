@@ -21,6 +21,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -282,6 +283,65 @@ class RecentOrganizedScreenshotsViewModelTest {
         advanceUntilIdle()
 
         assertFalse(viewModel.uiState.value.items.single().isFavorite)
+    }
+
+    @Test
+    fun `request delete item shows confirm then removes item`() = runTest(testDispatcher) {
+        firstPageFlow.tryEmit(
+            Result.success(
+                CapturePage(
+                    count = 1,
+                    hasNext = false,
+                    items = listOf(captureSummary(captureId = 7L, isFavorite = false)),
+                ),
+            ),
+        )
+        coEvery {
+            captureMutationRepository.deleteCaptures(setOf(7L))
+        } returns Result.success(
+            com.chalkak.recap.core.model.capture.CaptureDeleteResult(
+                deletedIds = setOf(7L),
+                failedIds = emptySet(),
+            ),
+        )
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        viewModel.onAction(RecentOrganizedScreenshotsAction.RequestDeleteItem(7L))
+        assertEquals(7L, viewModel.uiState.value.pendingDeleteCaptureId)
+
+        viewModel.onAction(RecentOrganizedScreenshotsAction.ConfirmDeleteItem)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { captureMutationRepository.deleteCaptures(setOf(7L)) }
+        assertTrue(viewModel.uiState.value.items.isEmpty())
+        assertEquals(RecentOrganizedScreenshotsPhase.Empty, viewModel.uiState.value.phase)
+        assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
+    }
+
+    @Test
+    fun `confirm delete item failure keeps item`() = runTest(testDispatcher) {
+        firstPageFlow.tryEmit(
+            Result.success(
+                CapturePage(
+                    count = 1,
+                    hasNext = false,
+                    items = listOf(captureSummary(captureId = 7L, isFavorite = false)),
+                ),
+            ),
+        )
+        coEvery {
+            captureMutationRepository.deleteCaptures(setOf(7L))
+        } returns Result.failure(IllegalStateException("network"))
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        viewModel.onAction(RecentOrganizedScreenshotsAction.RequestDeleteItem(7L))
+        viewModel.onAction(RecentOrganizedScreenshotsAction.ConfirmDeleteItem)
+        advanceUntilIdle()
+
+        assertEquals(listOf(7L), viewModel.uiState.value.items.map { it.id })
+        assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
     }
 
     private fun createViewModel(): RecentOrganizedScreenshotsViewModel =

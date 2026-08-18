@@ -39,6 +39,7 @@ fun CollectionRoute(
     onNavigateToOrganize: () -> Unit,
     onNavigateToSearch: () -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
+    onNavigateToScreenshotEdit: (Long) -> Unit = {},
     onNavigateBack: () -> Unit = {},
     openCollectionFavoritesOnEnter: Boolean = false,
     onOpenCollectionFavoritesOnEnterConsumed: () -> Unit = {},
@@ -243,9 +244,11 @@ fun CollectionRoute(
                             selection = uiState.selection,
                             searchQuery = uiState.detailSearchQuery,
                             isSearchVisible = uiState.isDetailSearchVisible,
+                            pendingDeleteCaptureId = uiState.pendingDeleteCaptureId,
                             onBackClick = ::handleBack,
                             onAction = ::handleAction,
                             onItemClick = onNavigateToScreenshot,
+                            onItemEditClick = onNavigateToScreenshotEdit,
                             onLeaveDetail = ::closeDetailIfNoDetailDestination,
                         )
                     }
@@ -258,9 +261,11 @@ fun CollectionRoute(
                             selection = uiState.selection,
                             searchQuery = uiState.detailSearchQuery,
                             isSearchVisible = uiState.isDetailSearchVisible,
+                            pendingDeleteCaptureId = uiState.pendingDeleteCaptureId,
                             onBackClick = ::handleBack,
                             onAction = ::handleAction,
                             onItemClick = onNavigateToScreenshot,
+                            onItemEditClick = onNavigateToScreenshotEdit,
                             onLeaveDetail = ::closeDetailIfNoDetailDestination,
                         )
                     }
@@ -283,6 +288,8 @@ private fun CollectionDetailDestination(
     onBackClick: () -> Unit,
     onAction: (CollectionAction) -> Unit,
     onItemClick: (Long) -> Unit,
+    onItemEditClick: (Long) -> Unit,
+    pendingDeleteCaptureId: Long?,
     onLeaveDetail: () -> Unit,
 ) {
     var retainedDetail by remember { mutableStateOf(detail) }
@@ -302,6 +309,8 @@ private fun CollectionDetailDestination(
         onBackClick = onBackClick,
         onAction = onAction,
         onItemClick = onItemClick,
+        onItemEditClick = onItemEditClick,
+        pendingDeleteCaptureId = pendingDeleteCaptureId,
         searchQuery = searchQuery,
         isSearchVisible = isSearchVisible,
     )

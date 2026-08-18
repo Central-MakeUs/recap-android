@@ -106,6 +106,12 @@ fun ScreenshotCard(
     leadingContent: (@Composable () -> Unit)? = null,
     titleHighlightRange: IntRange? = null,
     descriptionHighlightRange: IntRange? = null,
+    swipeActionsEnabled: Boolean = false,
+    swipeRevealed: Boolean = false,
+    onSwipeRevealedChange: (Boolean) -> Unit = {},
+    onSwipeDragStarted: () -> Unit = {},
+    onEditClick: () -> Unit = {},
+    onDeleteClick: () -> Unit = {},
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -121,6 +127,20 @@ fun ScreenshotCard(
     )
     val rowShape = RoundedCornerShape(ScreenshotCardTokens.RowCornerRadius)
     val clearEmbeddedTextSemantics = leadingContent != null && !containerClickEnabled
+    val handleContainerClick = {
+        if (swipeActionsEnabled && swipeRevealed) {
+            onSwipeRevealedChange(false)
+        } else {
+            onClick()
+        }
+    }
+    val handleFavoriteClick = {
+        if (swipeActionsEnabled && swipeRevealed) {
+            onSwipeRevealedChange(false)
+        } else {
+            onFavoriteClick()
+        }
+    }
     val contentContainerModifier = if (containerClickEnabled) {
         Modifier
             .graphicsLayer {
@@ -133,101 +153,114 @@ fun ScreenshotCard(
                 interactionSource = interactionSource,
                 indication = null,
                 role = Role.Button,
-                onClick = onClick,
+                onClick = handleContainerClick,
             )
     } else {
         contentModifier
     }
 
     Column(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(contentContainerModifier),
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = horizontalContentPadding,
-                        vertical = ScreenshotCardTokens.ContainerVerticalPadding,
-                    ),
-                verticalAlignment = Alignment.CenterVertically,
+        val cardBody: @Composable (Modifier) -> Unit = { bodyModifier ->
+            Column(
+                modifier = bodyModifier.then(contentContainerModifier),
             ) {
-                leadingContent?.invoke()
-                Column(
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .then(
-                            if (clearEmbeddedTextSemantics) {
-                                Modifier.clearAndSetSemantics { }
-                            } else {
-                                Modifier
-                            },
+                        .fillMaxWidth()
+                        .padding(
+                            horizontal = horizontalContentPadding,
+                            vertical = ScreenshotCardTokens.ContainerVerticalPadding,
                         ),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (
-                        metadataMode == ScreenshotCardMetadataMode.CategoryChip &&
-                        categoryType != null
+                    leadingContent?.invoke()
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .then(
+                                if (clearEmbeddedTextSemantics) {
+                                    Modifier.clearAndSetSemantics { }
+                                } else {
+                                    Modifier
+                                },
+                            ),
                     ) {
-                        RecapCategoryTextChip(
-                            type = categoryType,
-                            colors = RecapCategoryChipDefaults.colors(categoryType),
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                    }
-                    Text(
-                        text = rememberHighlightedText(
-                            text = title,
-                            highlightRange = titleHighlightRange,
-                            defaultColor = RecapGray900,
-                        ),
-                        style = RecapCaption1,
-                        fontWeight = FontWeight.Bold,
-                        color = RecapGray900,
-                        maxLines = ScreenshotCardTokens.TitleMaxLines,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(modifier = Modifier.height(2.dp))
-                    Text(
-                        text = rememberHighlightedText(
-                            text = description,
-                            highlightRange = descriptionHighlightRange,
-                            defaultColor = RecapGray500,
-                        ),
-                        style = RecapCaption1,
-                        color = RecapGray500,
-                        maxLines = ScreenshotCardTokens.DescriptionMaxLines,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    if (metadataMode == ScreenshotCardMetadataMode.OrganizedDate) {
-                        val organizedDateLabel = remember(organizedAtMillis) {
-                            organizedAtMillis?.let(::formatOrganizedAbsoluteDate)
-                        }
-                        if (organizedDateLabel != null) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = stringResource(
-                                    R.string.collection_detail_organized_date,
-                                    organizedDateLabel,
-                                ),
-                                style = RecapCaption3,
-                                color = RecapGray300,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
+                        if (
+                            metadataMode == ScreenshotCardMetadataMode.CategoryChip &&
+                            categoryType != null
+                        ) {
+                            RecapCategoryTextChip(
+                                type = categoryType,
+                                colors = RecapCategoryChipDefaults.colors(categoryType),
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                        Text(
+                            text = rememberHighlightedText(
+                                text = title,
+                                highlightRange = titleHighlightRange,
+                                defaultColor = RecapGray900,
+                            ),
+                            style = RecapCaption1,
+                            fontWeight = FontWeight.Bold,
+                            color = RecapGray900,
+                            maxLines = ScreenshotCardTokens.TitleMaxLines,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = rememberHighlightedText(
+                                text = description,
+                                highlightRange = descriptionHighlightRange,
+                                defaultColor = RecapGray500,
+                            ),
+                            style = RecapCaption1,
+                            color = RecapGray500,
+                            maxLines = ScreenshotCardTokens.DescriptionMaxLines,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        if (metadataMode == ScreenshotCardMetadataMode.OrganizedDate) {
+                            val organizedDateLabel = remember(organizedAtMillis) {
+                                organizedAtMillis?.let(::formatOrganizedAbsoluteDate)
+                            }
+                            if (organizedDateLabel != null) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = stringResource(
+                                        R.string.collection_detail_organized_date,
+                                        organizedDateLabel,
+                                    ),
+                                    style = RecapCaption3,
+                                    color = RecapGray300,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis,
+                                )
+                            }
                         }
                     }
+                    Spacer(modifier = Modifier.width(ScreenshotCardTokens.ContentSpacing))
+                    ScreenshotCardThumbnail(
+                        thumbnailModel = thumbnailModel,
+                        thumbnailContentDescription = thumbnailContentDescription,
+                        isFavorite = isFavorite,
+                        showFavoriteButton = showFavoriteButton,
+                        onFavoriteClick = handleFavoriteClick,
+                    )
                 }
-                Spacer(modifier = Modifier.width(ScreenshotCardTokens.ContentSpacing))
-                ScreenshotCardThumbnail(
-                    thumbnailModel = thumbnailModel,
-                    thumbnailContentDescription = thumbnailContentDescription,
-                    isFavorite = isFavorite,
-                    showFavoriteButton = showFavoriteButton,
-                    onFavoriteClick = onFavoriteClick,
-                )
             }
+        }
+        if (swipeActionsEnabled) {
+            ScreenshotCardSwipePane(
+                revealed = swipeRevealed,
+                onRevealedChange = onSwipeRevealedChange,
+                onEditClick = onEditClick,
+                onDeleteClick = onDeleteClick,
+                onSwipeDragStarted = onSwipeDragStarted,
+            ) { swipeModifier ->
+                cardBody(swipeModifier)
+            }
+        } else {
+            cardBody(Modifier.fillMaxWidth())
         }
         Spacer(modifier = Modifier.height(ScreenshotCardTokens.DividerGap))
         HorizontalDivider(
@@ -470,7 +503,7 @@ private class ScreenshotThumbnailShape(
     override fun hashCode(): Int = progress.hashCode()
 }
 
-private object ScreenshotCardTokens {
+internal object ScreenshotCardTokens {
     val ContainerHorizontalPadding = 16.dp
     val ContainerVerticalPadding = 10.dp
     val ContentSpacing = 44.dp
@@ -490,6 +523,8 @@ private object ScreenshotCardTokens {
     const val ImageCrossfadeMillis = 150
     const val FavoriteIconCrossfadeMillis = 150
     val RowCornerRadius = 10.dp
+    const val SwipeActionWidthFraction = 0.2f
+    const val SwipeRevealWidthFraction = SwipeActionWidthFraction * 2
     const val ThumbnailViewBoxWidth = 62f
     const val ThumbnailViewBoxHeight = 80f
     const val TitleMaxLines = 1
@@ -627,6 +662,25 @@ private fun ScreenshotCardSelectionPreview() {
             onClick = {},
             onFavoriteClick = {},
             showFavoriteButton = false,
+            modifier = Modifier.padding(24.dp),
+        )
+    }
+}
+
+@Preview(name = "Screenshot Card swipe revealed", showBackground = true, widthDp = 360)
+@Composable
+private fun ScreenshotCardSwipeRevealedPreview() {
+    RECAPTheme(dynamicColor = false) {
+        ScreenshotCard(
+            thumbnailModel = R.drawable.bid_landscape_24px,
+            categoryType = RecapCategoryType.ScheduleReservation,
+            title = ScreenshotCardPreviewTitle,
+            description = ScreenshotCardPreviewDescription,
+            isFavorite = false,
+            onClick = {},
+            onFavoriteClick = {},
+            swipeActionsEnabled = true,
+            swipeRevealed = true,
             modifier = Modifier.padding(24.dp),
         )
     }

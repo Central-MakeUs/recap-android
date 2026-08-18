@@ -46,6 +46,7 @@ fun RecapMainScreen(
     onNavigateToRecentOrganizedScreenshots: () -> Unit = {},
     onOrganizeComplete: (List<ScreenshotUploadCandidate>) -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
+    onNavigateToScreenshotEdit: (Long) -> Unit = {},
     pendingHomeNavigationRequestId: Int? = null,
     onHomeNavigationComplete: (Int) -> Unit = {},
     pendingOpenOrganize: Boolean = false,
@@ -187,6 +188,7 @@ fun RecapMainScreen(
                 onNavigateToCollectionFavorites = ::navigateToCollectionFavorites,
                 onNavigateToCollectionTypeDetail = ::navigateToCollectionTypeDetail,
                 onNavigateToScreenshot = onNavigateToScreenshot,
+                onNavigateToScreenshotEdit = onNavigateToScreenshotEdit,
                 openCollectionFavoritesOnEnter = openCollectionFavoritesOnNextEnter,
                 onOpenCollectionFavoritesOnEnterConsumed = {
                     openCollectionFavoritesOnNextEnter = false

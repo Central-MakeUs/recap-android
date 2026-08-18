@@ -750,6 +750,64 @@ class CollectionViewModelTest {
     }
 
     @Test
+    fun `request delete item shows confirm then deletes capture`() = runTest(testDispatcher) {
+        coEvery { cardRepository.deleteCards(any()) } returns Unit
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 1L,
+                    title = "First",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
+
+        viewModel.onAction(CollectionAction.RequestDeleteItem(1L))
+        assertEquals(1L, viewModel.uiState.value.pendingDeleteCaptureId)
+
+        val eventDeferred = async { viewModel.events.first() }
+        viewModel.onAction(CollectionAction.ConfirmDeleteItem)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { cardRepository.deleteCards(setOf(1L)) }
+        assertEquals(
+            CollectionEvent.ShowDeleteSuccessToast(deletedCount = 1),
+            eventDeferred.await(),
+        )
+        assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
+    }
+
+    @Test
+    fun `confirm delete item failure emits failure toast`() = runTest(testDispatcher) {
+        coEvery { cardRepository.deleteCards(any()) } throws IllegalStateException("database failure")
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 1L,
+                    title = "First",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.RequestDeleteItem(1L))
+
+        val eventDeferred = async { viewModel.events.first() }
+        viewModel.onAction(CollectionAction.ConfirmDeleteItem)
+        advanceUntilIdle()
+
+        assertEquals(CollectionEvent.ShowDeleteFailureToast, eventDeferred.await())
+        assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
+    }
+
+    @Test
     fun `updating search query clears selection`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
