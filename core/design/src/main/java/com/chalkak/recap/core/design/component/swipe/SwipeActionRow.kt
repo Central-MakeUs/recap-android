@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -122,10 +120,26 @@ fun SwipeActionRow(
     }
 
     var containerWidthPx by remember { mutableIntStateOf(0) }
+    val target = if (revealed) {
+        SwipeActionRowValue.Revealed
+    } else {
+        SwipeActionRowValue.Resting
+    }
+    val state = remember {
+        AnchoredDraggableState(initialValue = target)
+    }
     Box(
         modifier = modifier
             .fillMaxWidth()
             .onSizeChanged { size ->
+                val measuredRevealPx =
+                    size.width * SwipeActionRowTokens.ActionWidthFraction * actions.size
+                if (measuredRevealPx > 0f) {
+                    state.updateAnchors(
+                        newAnchors = swipeActionRowAnchors(measuredRevealPx),
+                        newTarget = target,
+                    )
+                }
                 if (containerWidthPx != size.width) {
                     containerWidthPx = size.width
                 }
@@ -135,23 +149,15 @@ fun SwipeActionRow(
             containerWidthPx * SwipeActionRowTokens.ActionWidthFraction * actions.size
         }
         val anchors = remember(revealPx) {
-            DraggableAnchors {
-                SwipeActionRowValue.Resting at 0f
-                SwipeActionRowValue.Revealed at -revealPx
-            }
-        }
-        val state = remember {
-            AnchoredDraggableState(
-                initialValue = if (revealed) {
-                    SwipeActionRowValue.Revealed
-                } else {
-                    SwipeActionRowValue.Resting
-                },
-                anchors = anchors,
-            )
+            swipeActionRowAnchors(revealPx)
         }
         SideEffect {
-            state.updateAnchors(anchors)
+            if (revealPx > 0f) {
+                state.updateAnchors(
+                    newAnchors = anchors,
+                    newTarget = target,
+                )
+            }
         }
 
         val currentRevealed = rememberUpdatedState(revealed)
@@ -178,11 +184,6 @@ fun SwipeActionRow(
                 }
         }
         LaunchedEffect(revealed) {
-            val target = if (revealed) {
-                SwipeActionRowValue.Revealed
-            } else {
-                SwipeActionRowValue.Resting
-            }
             if (state.targetValue != target) {
                 state.animateTo(target)
             }
@@ -202,7 +203,6 @@ fun SwipeActionRow(
                     SwipeActionRowActions(
                         actions = actions,
                         revealed = revealed,
-                        containerWidthPx = containerWidthPx,
                         modifier = Modifier.matchParentSize(),
                     )
                 }
@@ -249,20 +249,19 @@ fun SwipeActionRow(
 private fun SwipeActionRowActions(
     actions: List<SwipeAction>,
     revealed: Boolean,
-    containerWidthPx: Int,
     modifier: Modifier = Modifier,
 ) {
-    val actionWidth = with(LocalDensity.current) {
-        (containerWidthPx * SwipeActionRowTokens.ActionWidthFraction).toDp()
-    }
-
     Row(
         modifier = modifier
             .fillMaxSize()
             .clearAndSetSemantics { },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(modifier = Modifier.weight(1f))
+        val contentWeight =
+            (1f - SwipeActionRowTokens.ActionWidthFraction * actions.size).coerceAtLeast(0f)
+        if (contentWeight > 0f) {
+            Box(modifier = Modifier.weight(contentWeight))
+        }
         actions.forEach { action ->
             key(action.label) {
                 SwipeActionButton(
@@ -272,7 +271,7 @@ private fun SwipeActionRowActions(
                     clickEnabled = revealed,
                     onClick = action.onClick,
                     modifier = Modifier
-                        .width(actionWidth)
+                        .weight(SwipeActionRowTokens.ActionWidthFraction)
                         .fillMaxHeight(),
                 )
             }
@@ -329,6 +328,12 @@ private object SwipeActionRowTokens {
     const val OffsetVisibleEpsilon = 0.5f
     val DividerThickness = 1.dp
 }
+
+private fun swipeActionRowAnchors(revealPx: Float): DraggableAnchors<SwipeActionRowValue> =
+    DraggableAnchors {
+        SwipeActionRowValue.Resting at 0f
+        SwipeActionRowValue.Revealed at -revealPx
+    }
 
 @Preview(name = "Swipe Action Row revealed", showBackground = true, widthDp = 360)
 @Composable
