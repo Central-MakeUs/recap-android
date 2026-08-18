@@ -205,7 +205,6 @@ private fun RecentOrganizedScreenshotsContent(
                         onAction(RecentOrganizedScreenshotsAction.EditItem(item.id))
                     },
                     onDeleteClick = {
-                        revealedCaptureId = null
                         onAction(RecentOrganizedScreenshotsAction.RequestDeleteItem(item.id))
                     },
                 ),

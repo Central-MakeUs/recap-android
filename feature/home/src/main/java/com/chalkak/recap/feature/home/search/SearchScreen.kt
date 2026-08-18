@@ -282,7 +282,6 @@ private fun SearchResultsContent(
                             onAction(SearchAction.EditResult(item.captureId))
                         },
                         onDeleteClick = {
-                            revealedCaptureId = null
                             onAction(SearchAction.RequestDeleteResult(item.captureId))
                         },
                     ),

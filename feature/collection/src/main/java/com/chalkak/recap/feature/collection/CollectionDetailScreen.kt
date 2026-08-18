@@ -208,7 +208,6 @@ fun CollectionDetailScreen(
                             onItemEditClick(card.captureId)
                         },
                         onDeleteClick = {
-                            revealedCaptureId = null
                             onAction(CollectionAction.RequestDeleteItem(card.captureId))
                         },
                         modifier = Modifier.recapScreenshotCardItemAnimation(),

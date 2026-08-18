@@ -195,7 +195,6 @@ fun SwipeActionRow(
                     SwipeActionRowActions(
                         actions = actions,
                         revealed = revealed,
-                        onRevealedChange = onRevealedChange,
                         containerWidthPx = containerWidthPx,
                         modifier = Modifier.matchParentSize(),
                     )
@@ -243,7 +242,6 @@ fun SwipeActionRow(
 private fun SwipeActionRowActions(
     actions: List<SwipeAction>,
     revealed: Boolean,
-    onRevealedChange: (Boolean) -> Unit,
     containerWidthPx: Int,
     modifier: Modifier = Modifier,
 ) {
@@ -265,10 +263,7 @@ private fun SwipeActionRowActions(
                     containerColor = action.containerColor,
                     contentColor = action.contentColor,
                     clickEnabled = revealed,
-                    onClick = {
-                        onRevealedChange(false)
-                        action.onClick()
-                    },
+                    onClick = action.onClick,
                     modifier = Modifier
                         .width(actionWidth)
                         .fillMaxHeight(),
