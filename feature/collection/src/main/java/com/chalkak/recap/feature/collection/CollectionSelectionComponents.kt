@@ -25,7 +25,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,7 +35,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -51,6 +49,7 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
+import com.chalkak.recap.core.design.component.swipe.LocalSwipeActionRowActive
 import com.chalkak.recap.core.design.component.swipe.SwipeActionRow
 import com.chalkak.recap.core.design.component.swipe.rememberEditDeleteSwipeActions
 import com.chalkak.recap.core.design.theme.RECAPTheme
@@ -200,16 +199,6 @@ internal fun CollectionSelectableCaptureItem(
     )
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val pressAnimationSpec = tween<Float>(
-        durationMillis = CollectionSelectionTokens.PressAnimationDurationMillis,
-        easing = FastOutSlowInEasing,
-    )
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) CollectionSelectionTokens.PressedScale else 1f,
-        animationSpec = pressAnimationSpec,
-        label = "collection_capture_item_press_scale",
-    )
-    val rowShape = RoundedCornerShape(CollectionSelectionTokens.RowCornerRadius)
     val pressableModifier = if (selection.isActive) {
         Modifier
             .toggleable(
@@ -247,6 +236,20 @@ internal fun CollectionSelectableCaptureItem(
         onDragStarted = onSwipeDragStarted,
         modifier = modifier.fillMaxWidth(),
     ) {
+        val swipeActive = LocalSwipeActionRowActive.current
+        val pressAnimationSpec = tween<Float>(
+            durationMillis = CollectionSelectionTokens.PressAnimationDurationMillis,
+            easing = FastOutSlowInEasing,
+        )
+        val scale by animateFloatAsState(
+            targetValue = if (isPressed && !swipeActive) {
+                CollectionSelectionTokens.PressedScale
+            } else {
+                1f
+            },
+            animationSpec = pressAnimationSpec,
+            label = "collection_capture_item_press_scale",
+        )
         ScreenshotCard(
             thumbnailModel = item.thumbnailModel,
             categoryType = item.categoryType,
@@ -268,7 +271,6 @@ internal fun CollectionSelectableCaptureItem(
                     scaleX = scale
                     scaleY = scale
                 }
-                .clip(rowShape)
                 .background(RecapBackground)
                 .then(pressableModifier),
             leadingContent = {
@@ -296,7 +298,6 @@ private object CollectionSelectionTokens {
     const val ExitAnimationDurationMillis = 150
     const val PressedScale = 0.9875f
     const val PressAnimationDurationMillis = 50
-    val RowCornerRadius = 10.dp
     val CheckboxContainerSize = 24.dp
     val CheckboxIconSize = 16.dp
     val CheckboxEndSpacing = 8.dp

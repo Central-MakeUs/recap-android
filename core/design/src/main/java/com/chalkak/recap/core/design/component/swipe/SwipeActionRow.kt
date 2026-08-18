@@ -11,6 +11,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,11 +19,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
@@ -46,10 +51,16 @@ import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapErrorContainer
+import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading4
+import kotlin.math.abs
 import kotlin.math.roundToInt
+
+val LocalSwipeRevealActions = compositionLocalOf<List<SwipeAction>> { emptyList() }
+
+val LocalSwipeActionRowActive = compositionLocalOf { false }
 
 @Immutable
 data class SwipeAction(
@@ -102,8 +113,9 @@ fun SwipeActionRow(
     content: @Composable () -> Unit,
 ) {
     if (!enabled || actions.isEmpty()) {
-        Box(modifier = modifier) {
+        Column(modifier = modifier.fillMaxWidth()) {
             content()
+            SwipeActionRowDivider()
         }
         return
     }
@@ -141,6 +153,14 @@ fun SwipeActionRow(
         val dragInteractionSource = remember { MutableInteractionSource() }
         val closeInteractionSource = remember { MutableInteractionSource() }
         val isDragged by dragInteractionSource.collectIsDraggedAsState()
+        val offsetActive by remember {
+            derivedStateOf {
+                val offset = state.offset
+                !offset.isNaN() && abs(offset) > SwipeActionRowTokens.OffsetVisibleEpsilon
+            }
+        }
+        val showActions = revealed || offsetActive
+        val suppressPressScale = isDragged || offsetActive
         LaunchedEffect(state) {
             snapshotFlow { state.settledValue }
                 .collect { settled ->
@@ -166,42 +186,53 @@ fun SwipeActionRow(
             }
         }
 
-        Box(modifier = Modifier.fillMaxWidth()) {
-            SwipeActionRowActions(
-                actions = actions,
-                revealed = revealed,
-                onRevealedChange = onRevealedChange,
-                containerWidthPx = containerWidthPx,
-                modifier = Modifier.matchParentSize(),
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .offset {
-                        val rawOffset = state.offset
-                        IntOffset(
-                            x = if (rawOffset.isNaN()) 0 else rawOffset.roundToInt(),
-                            y = 0,
+        CompositionLocalProvider(
+            LocalSwipeRevealActions provides actions,
+            LocalSwipeActionRowActive provides suppressPressScale,
+        ) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                if (showActions) {
+                    SwipeActionRowActions(
+                        actions = actions,
+                        revealed = revealed,
+                        onRevealedChange = onRevealedChange,
+                        containerWidthPx = containerWidthPx,
+                        modifier = Modifier.matchParentSize(),
+                    )
+                }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .offset {
+                            val rawOffset = state.offset
+                            IntOffset(
+                                x = if (rawOffset.isNaN()) 0 else rawOffset.roundToInt(),
+                                y = 0,
+                            )
+                        }
+                        .anchoredDraggable(
+                            state = state,
+                            orientation = Orientation.Horizontal,
+                            interactionSource = dragInteractionSource,
+                        ),
+                ) {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        content()
+                        SwipeActionRowDivider()
+                    }
+                    if (revealed) {
+                        Box(
+                            modifier = Modifier
+                                .matchParentSize()
+                                .clickable(
+                                    interactionSource = closeInteractionSource,
+                                    indication = null,
+                                    role = Role.Button,
+                                    onClick = { onRevealedChange(false) },
+                                )
+                                .clearAndSetSemantics { },
                         )
                     }
-                    .anchoredDraggable(
-                        state = state,
-                        orientation = Orientation.Horizontal,
-                        interactionSource = dragInteractionSource,
-                    ),
-            ) {
-                content()
-                if (revealed) {
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .clickable(
-                                interactionSource = closeInteractionSource,
-                                indication = null,
-                                role = Role.Button,
-                                onClick = { onRevealedChange(false) },
-                            ),
-                    )
                 }
             }
         }
@@ -219,16 +250,11 @@ private fun SwipeActionRowActions(
     val actionWidth = with(LocalDensity.current) {
         (containerWidthPx * SwipeActionRowTokens.ActionWidthFraction).toDp()
     }
-    val actionsModifier = if (revealed) {
-        modifier.fillMaxSize()
-    } else {
-        modifier
-            .fillMaxSize()
-            .clearAndSetSemantics { }
-    }
 
     Row(
-        modifier = actionsModifier,
+        modifier = modifier
+            .fillMaxSize()
+            .clearAndSetSemantics { },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(modifier = Modifier.weight(1f))
@@ -287,8 +313,19 @@ private fun SwipeActionButton(
     }
 }
 
+@Composable
+private fun SwipeActionRowDivider() {
+    HorizontalDivider(
+        modifier = Modifier.fillMaxWidth(),
+        thickness = SwipeActionRowTokens.DividerThickness,
+        color = RecapGray100,
+    )
+}
+
 private object SwipeActionRowTokens {
     const val ActionWidthFraction = 0.2f
+    const val OffsetVisibleEpsilon = 0.5f
+    val DividerThickness = 1.dp
 }
 
 @Preview(name = "Swipe Action Row revealed", showBackground = true, widthDp = 360)
@@ -313,6 +350,51 @@ private fun SwipeActionRowRevealedPreview() {
                 onClick = {},
                 onFavoriteClick = {},
             )
+        }
+    }
+}
+
+@Preview(name = "Swipe Action Row stacked", showBackground = true, widthDp = 360)
+@Composable
+private fun SwipeActionRowStackedPreview() {
+    RECAPTheme(dynamicColor = false) {
+        Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
+            SwipeActionRow(
+                actions = rememberEditDeleteSwipeActions(
+                    onEditClick = {},
+                    onDeleteClick = {},
+                ),
+                revealed = true,
+                onRevealedChange = {},
+            ) {
+                ScreenshotCard(
+                    thumbnailModel = R.drawable.bid_landscape_24px,
+                    categoryType = RecapCategoryType.ScheduleReservation,
+                    title = SwipeActionRowPreviewTitle,
+                    description = SwipeActionRowPreviewDescription,
+                    isFavorite = false,
+                    onClick = {},
+                    onFavoriteClick = {},
+                )
+            }
+            SwipeActionRow(
+                actions = rememberEditDeleteSwipeActions(
+                    onEditClick = {},
+                    onDeleteClick = {},
+                ),
+                revealed = false,
+                onRevealedChange = {},
+            ) {
+                ScreenshotCard(
+                    thumbnailModel = R.drawable.bid_landscape_24px,
+                    categoryType = RecapCategoryType.InfoKnowledge,
+                    title = SwipeActionRowPreviewTitle,
+                    description = SwipeActionRowPreviewDescription,
+                    isFavorite = true,
+                    onClick = {},
+                    onFavoriteClick = {},
+                )
+            }
         }
     }
 }

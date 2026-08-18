@@ -28,8 +28,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,8 +47,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -69,6 +70,8 @@ import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.chip.RecapCategoryChipDefaults
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
+import com.chalkak.recap.core.design.component.swipe.LocalSwipeActionRowActive
+import com.chalkak.recap.core.design.component.swipe.LocalSwipeRevealActions
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
 import com.chalkak.recap.core.design.theme.RecapBlue300
@@ -109,7 +112,9 @@ fun ScreenshotCard(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val pressActive = containerClickEnabled && isPressed
+    val swipeActive = LocalSwipeActionRowActive.current
+    val swipeActions = LocalSwipeRevealActions.current
+    val pressActive = containerClickEnabled && isPressed && !swipeActive
     val pressAnimationSpec = tween<Float>(
         durationMillis = ScreenshotCardTokens.PressAnimationDurationMillis,
         easing = FastOutSlowInEasing,
@@ -119,7 +124,18 @@ fun ScreenshotCard(
         animationSpec = pressAnimationSpec,
         label = "screenshot_card_press_scale",
     )
-    val rowShape = RoundedCornerShape(ScreenshotCardTokens.RowCornerRadius)
+    val swipeActionsModifier = if (swipeActions.isEmpty()) {
+        Modifier
+    } else {
+        Modifier.semantics {
+            customActions = swipeActions.map { action ->
+                CustomAccessibilityAction(label = action.label) {
+                    action.onClick()
+                    true
+                }
+            }
+        }
+    }
     val clearEmbeddedTextSemantics = leadingContent != null && !containerClickEnabled
     val contentContainerModifier = if (containerClickEnabled) {
         Modifier
@@ -127,7 +143,6 @@ fun ScreenshotCard(
                 scaleX = scale
                 scaleY = scale
             }
-            .clip(rowShape)
             .background(RecapBackground)
             .clickable(
                 interactionSource = interactionSource,
@@ -135,23 +150,25 @@ fun ScreenshotCard(
                 role = Role.Button,
                 onClick = onClick,
             )
+            .then(swipeActionsModifier)
     } else {
-        contentModifier
+        contentModifier.then(swipeActionsModifier)
     }
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        Column(
-            modifier = contentContainerModifier,
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(contentContainerModifier),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(
+                    horizontal = horizontalContentPadding,
+                    vertical = ScreenshotCardTokens.ContainerVerticalPadding,
+                ),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = horizontalContentPadding,
-                        vertical = ScreenshotCardTokens.ContainerVerticalPadding,
-                    ),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
                 leadingContent?.invoke()
                 Column(
                     modifier = Modifier
@@ -225,14 +242,7 @@ fun ScreenshotCard(
                     showFavoriteButton = showFavoriteButton,
                     onFavoriteClick = onFavoriteClick,
                 )
-            }
         }
-        Spacer(modifier = Modifier.height(ScreenshotCardTokens.DividerGap))
-        HorizontalDivider(
-            modifier = Modifier.fillMaxWidth(),
-            thickness = ScreenshotCardTokens.DividerThickness,
-            color = RecapGray100,
-        )
     }
 }
 
@@ -477,8 +487,6 @@ internal object ScreenshotCardTokens {
     val ThumbnailBorderWidth = 0.5.dp
     val PlaceholderPaddingStart = 7.dp
     val PlaceholderPaddingBottom = 5.dp
-    val DividerThickness = 1.dp
-    val DividerGap = 2.dp
     val FavoriteIconOffsetX = 35.dp
     val FavoriteIconOffsetY = (-2).dp
     val FavoriteIconTouchSize = 28.dp
@@ -487,7 +495,6 @@ internal object ScreenshotCardTokens {
     const val PressAnimationDurationMillis = 50
     const val ImageCrossfadeMillis = 150
     const val FavoriteIconCrossfadeMillis = 150
-    val RowCornerRadius = 10.dp
     const val ThumbnailViewBoxWidth = 62f
     const val ThumbnailViewBoxHeight = 80f
     const val TitleMaxLines = 1
