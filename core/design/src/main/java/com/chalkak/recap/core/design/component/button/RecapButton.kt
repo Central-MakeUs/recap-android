@@ -65,6 +65,7 @@ import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray500
+import com.chalkak.recap.core.design.theme.RecapGray700
 import com.chalkak.recap.core.design.theme.RecapGray900
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.design.theme.White
@@ -343,7 +344,7 @@ object RecapButtonDefaults {
 
     fun neutralColors(): RecapButtonColors = colors(
         containerColor = RecapGray50,
-        contentColor = RecapGray900,
+        contentColor = RecapGray700,
     )
 
     fun destructiveColors(): RecapButtonColors = colors(
