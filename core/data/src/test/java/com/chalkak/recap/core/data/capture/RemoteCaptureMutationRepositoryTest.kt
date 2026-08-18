@@ -10,12 +10,12 @@ import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
 import com.chalkak.recap.core.model.capture.ReportReason
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.Runs
 import io.mockk.verify
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.test.runTest
@@ -42,6 +42,7 @@ class RemoteCaptureMutationRepositoryTest {
         coVerify(exactly = 0) { captureApi.delete(any()) }
         coVerify(exactly = 0) { captureApi.bulkDelete(any()) }
         verify(exactly = 0) { thumbnailCache.deleteCachedThumbnails(any()) }
+        verify(exactly = 0) { changeNotifier.notifyCapturesDeleted(any()) }
         verify(exactly = 0) { changeNotifier.notifyCaptureChanged() }
     }
 
@@ -49,7 +50,7 @@ class RemoteCaptureMutationRepositoryTest {
     fun `single delete uses delete api and succeeds`() = runTest {
         coEvery { captureApi.delete(1L) } returns Unit
         every { thumbnailCache.deleteCachedThumbnails(any()) } just Runs
-        every { changeNotifier.notifyCaptureChanged() } just Runs
+        every { changeNotifier.notifyCapturesDeleted(any()) } just Runs
         val repository = createRepository()
 
         val result = repository.deleteCaptures(setOf(1L)).getOrThrow()
@@ -59,7 +60,7 @@ class RemoteCaptureMutationRepositoryTest {
         coVerify(exactly = 1) { captureApi.delete(1L) }
         coVerify(exactly = 0) { captureApi.bulkDelete(any()) }
         verify(exactly = 1) { thumbnailCache.deleteCachedThumbnails(setOf(1L)) }
-        verify(exactly = 1) { changeNotifier.notifyCaptureChanged() }
+        verify(exactly = 1) { changeNotifier.notifyCapturesDeleted(setOf(1L)) }
     }
 
     @Test
@@ -74,6 +75,7 @@ class RemoteCaptureMutationRepositoryTest {
         coVerify(exactly = 1) { captureApi.delete(1L) }
         coVerify(exactly = 0) { captureApi.bulkDelete(any()) }
         verify(exactly = 0) { thumbnailCache.deleteCachedThumbnails(any()) }
+        verify(exactly = 0) { changeNotifier.notifyCapturesDeleted(any()) }
         verify(exactly = 0) { changeNotifier.notifyCaptureChanged() }
     }
 
@@ -91,6 +93,7 @@ class RemoteCaptureMutationRepositoryTest {
             captureApi.bulkDelete(BulkDeleteRequestDto(captureIds = listOf(1L, 2L, 3L)))
         }
         verify(exactly = 0) { thumbnailCache.deleteCachedThumbnails(any()) }
+        verify(exactly = 0) { changeNotifier.notifyCapturesDeleted(any()) }
         verify(exactly = 0) { changeNotifier.notifyCaptureChanged() }
     }
 
@@ -98,7 +101,7 @@ class RemoteCaptureMutationRepositoryTest {
     fun `bulk success deletes cache once and notifies once`() = runTest {
         coEvery { captureApi.bulkDelete(any()) } returns Unit
         every { thumbnailCache.deleteCachedThumbnails(any()) } just Runs
-        every { changeNotifier.notifyCaptureChanged() } just Runs
+        every { changeNotifier.notifyCapturesDeleted(any()) } just Runs
         val repository = createRepository()
 
         val result = repository.deleteCaptures(setOf(1L, 2L)).getOrThrow()
@@ -110,7 +113,7 @@ class RemoteCaptureMutationRepositoryTest {
             captureApi.bulkDelete(BulkDeleteRequestDto(captureIds = listOf(1L, 2L)))
         }
         verify(exactly = 1) { thumbnailCache.deleteCachedThumbnails(setOf(1L, 2L)) }
-        verify(exactly = 1) { changeNotifier.notifyCaptureChanged() }
+        verify(exactly = 1) { changeNotifier.notifyCapturesDeleted(setOf(1L, 2L)) }
     }
 
     @Test
@@ -168,6 +171,7 @@ class RemoteCaptureMutationRepositoryTest {
         }
         coVerify(exactly = 0) { captureApi.delete(any()) }
         verify(exactly = 0) { thumbnailCache.deleteCachedThumbnails(any()) }
+        verify(exactly = 0) { changeNotifier.notifyCapturesDeleted(any()) }
         verify(exactly = 0) { changeNotifier.notifyCaptureChanged() }
     }
 
@@ -181,6 +185,7 @@ class RemoteCaptureMutationRepositoryTest {
         }
         coVerify(exactly = 0) { captureApi.bulkDelete(any()) }
         verify(exactly = 0) { thumbnailCache.deleteCachedThumbnails(any()) }
+        verify(exactly = 0) { changeNotifier.notifyCapturesDeleted(any()) }
         verify(exactly = 0) { changeNotifier.notifyCaptureChanged() }
     }
 

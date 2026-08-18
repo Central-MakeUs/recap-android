@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
+import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
 import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.search.SearchRepository
 import com.chalkak.recap.core.data.storage.StorageRepository
@@ -14,7 +15,6 @@ import com.chalkak.recap.core.model.search.SearchScope
 import com.chalkak.recap.core.model.storage.CaptureSort
 import com.chalkak.recap.core.model.storage.StorageOverview
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -37,6 +38,7 @@ class CollectionViewModel @Inject constructor(
     private val captureMutationRepository: CaptureMutationRepository,
     private val thumbnailUpdates: CaptureThumbnailUpdates,
     private val mainContentRecoveryTrigger: MainContentRecoveryTrigger,
+    private val changeNotifier: RemoteCaptureChangeNotifier,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CollectionUiState())
     val uiState: StateFlow<CollectionUiState> = _uiState.asStateFlow()
@@ -51,6 +53,7 @@ class CollectionViewModel @Inject constructor(
     private val isDetailSearchVisible = MutableStateFlow(false)
     private val typeViewMode = MutableStateFlow(CollectionTypeViewMode.Grid)
     private val selection = MutableStateFlow(CollectionSelectionUiState())
+    private val pendingDeleteCaptureId = MutableStateFlow<Long?>(null)
     private var selectionGeneration = 0L
 
     private var latestOverview = StorageOverview(
@@ -59,6 +62,10 @@ class CollectionViewModel @Inject constructor(
         types = emptyList(),
     )
     private var latestDetailCards: CaptureList? = null
+    private var publishedDetailCards: CaptureList? = null
+    private var pendingDetailRemoval: CaptureList? = null
+    private var isDetailListVisible = true
+    private val pendingDeletedSearchCaptureIds = mutableSetOf<Long>()
     private var detailCaptureIds: Set<Long> = emptySet()
     private var favoriteStates: Map<Long, Boolean> = emptyMap()
     private var hasReceivedFirstOverview = false
@@ -87,6 +94,12 @@ class CollectionViewModel @Inject constructor(
                 if (overviewLoadFailed) {
                     storageRepository.refreshOverview()
                 }
+            }
+        }
+
+        viewModelScope.launch {
+            changeNotifier.deletedCaptureIds.collect { ids ->
+                removeDeletedSearchCaptures(ids)
             }
         }
 
@@ -126,8 +139,7 @@ class CollectionViewModel @Inject constructor(
                 }.collect { detail ->
                     latestDetailCards = detail
                     if (!isDetailSearchMode) {
-                        detailCaptureIds = detail?.items?.map { it.captureId }?.toSet().orEmpty()
-                        favoriteStates = detail?.items?.associate { it.captureId to it.isFavorite }.orEmpty()
+                        applyObservedDetailCards(detail)
                     }
                     publishState()
                     detail?.items?.map { it.captureId }?.let { ids ->
@@ -135,6 +147,26 @@ class CollectionViewModel @Inject constructor(
                     }
                 }
         }
+    }
+
+    fun onDetailListVisible() {
+        isDetailListVisible = true
+        if (isDetailSearchMode) {
+            val pendingSearchIds = pendingDeletedSearchCaptureIds.toSet()
+            if (pendingSearchIds.isNotEmpty()) {
+                pendingDeletedSearchCaptureIds.clear()
+                removeDeletedSearchCaptures(pendingSearchIds)
+            }
+            return
+        }
+        val pendingObserve = pendingDetailRemoval ?: return
+        pendingDetailRemoval = null
+        applyObservedDetailCards(pendingObserve, force = true)
+        publishState()
+    }
+
+    fun onDetailListHidden() {
+        isDetailListVisible = false
     }
 
     fun onAction(action: CollectionAction) {
@@ -182,6 +214,7 @@ class CollectionViewModel @Inject constructor(
             CollectionAction.OpenFavoriteDetail -> {
                 clearSelection()
                 clearDetailSearch()
+                pendingDeleteCaptureId.value = null
                 detailFilter.value = CollectionDetailFilter.Favorites
                 detailSort.value = CollectionListSort.Latest
                 publishState()
@@ -192,6 +225,7 @@ class CollectionViewModel @Inject constructor(
             is CollectionAction.OpenTypeDetail -> {
                 clearSelection()
                 clearDetailSearch()
+                pendingDeleteCaptureId.value = null
                 detailFilter.value = CollectionDetailFilter.ByType(action.contentType)
                 detailSort.value = CollectionListSort.Latest
                 publishState()
@@ -200,6 +234,7 @@ class CollectionViewModel @Inject constructor(
             CollectionAction.CloseDetail -> {
                 clearSelection()
                 clearDetailSearch()
+                pendingDeleteCaptureId.value = null
                 detailFilter.value = null
                 detailSort.value = CollectionListSort.Latest
                 publishState()
@@ -250,6 +285,7 @@ class CollectionViewModel @Inject constructor(
             CollectionAction.StartSelection -> {
                 selectionGeneration += 1
                 selection.value = CollectionSelectionUiState(isActive = true)
+                pendingDeleteCaptureId.value = null
                 publishState()
             }
 
@@ -278,6 +314,9 @@ class CollectionViewModel @Inject constructor(
             CollectionAction.DeleteSelected -> showDeleteConfirmDialog()
             CollectionAction.ConfirmDeleteSelected -> deleteSelectedCards()
             CollectionAction.DismissDeleteConfirmDialog -> dismissDeleteConfirmDialog()
+            is CollectionAction.RequestDeleteItem -> requestDeleteItem(action.captureId)
+            CollectionAction.ConfirmDeleteItem -> confirmDeleteItem()
+            CollectionAction.DismissDeleteItem -> dismissDeleteItem()
         }
     }
 
@@ -407,6 +446,8 @@ class CollectionViewModel @Inject constructor(
         detailSearchNextPage = 0
         detailSearchLoadingMore = false
         latestDetailCards?.let { detail ->
+            publishedDetailCards = detail
+            pendingDetailRemoval = null
             detailCaptureIds = detail.items.map { it.captureId }.toSet()
             favoriteStates = detail.items.associate { it.captureId to it.isFavorite }
         }
@@ -428,6 +469,48 @@ class CollectionViewModel @Inject constructor(
         }
         selection.value = current.copy(showDeleteConfirmDialog = false)
         publishState()
+    }
+
+    private fun requestDeleteItem(captureId: Long) {
+        if (captureId !in detailCaptureIds) {
+            return
+        }
+        pendingDeleteCaptureId.value = captureId
+        publishState()
+    }
+
+    private fun dismissDeleteItem() {
+        if (pendingDeleteCaptureId.value == null) {
+            return
+        }
+        pendingDeleteCaptureId.value = null
+        publishState()
+    }
+
+    private fun confirmDeleteItem() {
+        val captureId = pendingDeleteCaptureId.value ?: return
+        pendingDeleteCaptureId.value = null
+        publishState()
+        viewModelScope.launch {
+            val result = captureMutationRepository.deleteCaptures(setOf(captureId))
+            val deleteResult = result.getOrNull()
+            if (result.isFailure || deleteResult == null || captureId !in deleteResult.deletedIds) {
+                _events.emit(CollectionEvent.ShowDeleteFailureToast)
+                return@launch
+            }
+            if (isDetailSearchMode) {
+                detailSearchCards = detailSearchCards.filterNot { card ->
+                    card.captureId == captureId
+                }
+                detailSearchCount = detailSearchCards.size
+                detailCaptureIds = detailSearchCards.map { card -> card.captureId }.toSet()
+                favoriteStates = detailSearchCards.associate { card ->
+                    card.captureId to card.isFavorite
+                }
+            }
+            _events.emit(CollectionEvent.ShowDeleteSuccessToast(deletedCount = 1))
+            publishState()
+        }
     }
 
     private fun deleteSelectedCards() {
@@ -532,6 +615,17 @@ class CollectionViewModel @Inject constructor(
                 detail
             }
         }
+        publishedDetailCards = publishedDetailCards?.let { detail ->
+            val updatedItems = detail.items.map { summary ->
+                if (summary.captureId == captureId) {
+                    changed = true
+                    summary.copy(thumbnailUrl = localPath)
+                } else {
+                    summary
+                }
+            }
+            detail.copy(items = updatedItems)
+        }
         val updatedSearchCards = detailSearchCards.map { card ->
             if (card.captureId == captureId) {
                 changed = true
@@ -544,6 +638,48 @@ class CollectionViewModel @Inject constructor(
         if (changed) {
             publishState()
         }
+    }
+
+    private fun applyObservedDetailCards(
+        detail: CaptureList?,
+        force: Boolean = false,
+    ) {
+        val currentIds = publishedDetailCards?.items?.map { summary -> summary.captureId }?.toSet()
+            .orEmpty()
+        val nextIds = detail?.items?.map { summary -> summary.captureId }?.toSet().orEmpty()
+        val hasRemoval = currentIds.any { id -> id !in nextIds }
+        if (!force && !isDetailListVisible && hasRemoval) {
+            pendingDetailRemoval = detail
+            return
+        }
+        publishedDetailCards = detail
+        pendingDetailRemoval = null
+        detailCaptureIds = nextIds
+        favoriteStates = detail?.items?.associate { summary ->
+            summary.captureId to summary.isFavorite
+        }.orEmpty()
+    }
+
+    private fun removeDeletedSearchCaptures(ids: Set<Long>) {
+        if (ids.isEmpty() || !isDetailSearchMode) {
+            return
+        }
+        if (!isDetailListVisible) {
+            pendingDeletedSearchCaptureIds.addAll(ids)
+            return
+        }
+        val remaining = detailSearchCards.filterNot { card -> card.captureId in ids }
+        val removedCount = detailSearchCards.size - remaining.size
+        if (removedCount == 0) {
+            return
+        }
+        detailSearchCards = remaining
+        detailSearchCount = remaining.size
+        detailCaptureIds = remaining.map { card -> card.captureId }.toSet()
+        favoriteStates = remaining.associate { card ->
+            card.captureId to card.isFavorite
+        }
+        publishState()
     }
 
     private fun clearSelection() {
@@ -578,7 +714,10 @@ class CollectionViewModel @Inject constructor(
                     )
                     .copy(cards = detailSearchCards, count = detailSearchCount)
             } else {
-                (latestDetailCards ?: CaptureList(count = 0, items = emptyList()))
+                (publishedDetailCards ?: latestDetailCards ?: CaptureList(
+                    count = 0,
+                    items = emptyList()
+                ))
                     .toDetailUiModel(
                         filter = activeFilter,
                         sort = detailSort.value,
@@ -607,6 +746,7 @@ class CollectionViewModel @Inject constructor(
                 overview = latestOverview.toOverviewUiModel(),
                 detail = detail,
                 selection = currentSelection,
+                pendingDeleteCaptureId = pendingDeleteCaptureId.value,
             )
         }
     }

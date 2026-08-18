@@ -4,18 +4,22 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
+import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
 import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.search.RecentSearchStore
 import com.chalkak.recap.core.data.search.SearchRepository
 import com.chalkak.recap.core.model.search.SearchScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
@@ -24,13 +28,20 @@ class SearchViewModel @Inject constructor(
     private val recentSearchStore: RecentSearchStore,
     private val thumbnailUpdates: CaptureThumbnailUpdates,
     private val mainContentRecoveryTrigger: MainContentRecoveryTrigger,
+    private val changeNotifier: RemoteCaptureChangeNotifier,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
 
+    private val _events = MutableSharedFlow<SearchEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<SearchEvent> = _events.asSharedFlow()
+
     private var searchJob: Job? = null
     private var loadMoreJob: Job? = null
     private var preserveSessionOnNextDispose = false
+    private var refreshSearchOnNextListVisible = false
+    private var isListVisible = true
+    private val pendingDeletedCaptureIds = mutableSetOf<Long>()
 
     init {
         viewModelScope.launch {
@@ -55,6 +66,32 @@ class SearchViewModel @Inject constructor(
                 }
             }
         }
+        viewModelScope.launch {
+            changeNotifier.deletedCaptureIds.collect { ids ->
+                removeDeletedCaptures(ids)
+            }
+        }
+    }
+
+    fun onListVisible() {
+        isListVisible = true
+        if (refreshSearchOnNextListVisible) {
+            refreshSearchOnNextListVisible = false
+            val submittedQuery = _uiState.value.submittedQuery
+            if (submittedQuery.isNotBlank()) {
+                submitSearch(reset = true, queryOverride = submittedQuery)
+            }
+        }
+        if (pendingDeletedCaptureIds.isEmpty()) {
+            return
+        }
+        val ids = pendingDeletedCaptureIds.toSet()
+        pendingDeletedCaptureIds.clear()
+        removeDeletedCaptures(ids)
+    }
+
+    fun onListHidden() {
+        isListVisible = false
     }
 
     fun onAction(action: SearchAction) {
@@ -99,6 +136,14 @@ class SearchViewModel @Inject constructor(
             is SearchAction.ToggleFavorite -> toggleFavorite(action.captureId)
 
             is SearchAction.SelectResult -> prepareNavigateToDetail()
+            is SearchAction.EditResult -> {
+                refreshSearchOnNextListVisible = true
+                prepareNavigateToDetail()
+            }
+
+            is SearchAction.RequestDeleteResult -> requestDeleteResult(action.captureId)
+            SearchAction.ConfirmDeleteResult -> confirmDeleteResult()
+            SearchAction.DismissDeleteResult -> dismissDeleteResult()
         }
     }
 
@@ -133,8 +178,10 @@ class SearchViewModel @Inject constructor(
                 hasNext = false,
                 nextPage = 0,
                 isLoadingMore = false,
+                pendingDeleteCaptureId = null,
             )
         }
+        pendingDeletedCaptureIds.clear()
     }
 
     private fun submitSearch(
@@ -274,6 +321,84 @@ class SearchViewModel @Inject constructor(
                     }
                 },
             )
+        }
+    }
+
+    private fun requestDeleteResult(captureId: Long) {
+        if (_uiState.value.results.none { item -> item.captureId == captureId }) {
+            return
+        }
+        _uiState.update { state -> state.copy(pendingDeleteCaptureId = captureId) }
+    }
+
+    private fun dismissDeleteResult() {
+        if (_uiState.value.pendingDeleteCaptureId == null) {
+            return
+        }
+        _uiState.update { state -> state.copy(pendingDeleteCaptureId = null) }
+    }
+
+    private fun confirmDeleteResult() {
+        val captureId = _uiState.value.pendingDeleteCaptureId ?: return
+        _uiState.update { state -> state.copy(pendingDeleteCaptureId = null) }
+        viewModelScope.launch {
+            val result = captureMutationRepository.deleteCaptures(setOf(captureId))
+            val deleteResult = result.getOrNull()
+            if (result.isFailure || deleteResult == null || captureId !in deleteResult.deletedIds) {
+                _events.emit(SearchEvent.ShowDeleteFailureToast)
+                return@launch
+            }
+            _uiState.update { state ->
+                val remaining = state.results.filterNot { item -> item.captureId == captureId }
+                state.copy(
+                    results = remaining,
+                    resultCount = (state.resultCount - 1).coerceAtLeast(0L),
+                    phase = searchPhaseAfterRemoval(
+                        remainingIsEmpty = remaining.isEmpty(),
+                        currentPhase = state.phase,
+                    ),
+                )
+            }
+            _events.emit(SearchEvent.ShowDeleteSuccessToast)
+        }
+    }
+
+    private fun removeDeletedCaptures(ids: Set<Long>) {
+        if (ids.isEmpty()) {
+            return
+        }
+        if (!isListVisible) {
+            pendingDeletedCaptureIds.addAll(ids)
+            return
+        }
+        _uiState.update { state ->
+            val remaining = state.results.filterNot { item -> item.captureId in ids }
+            val removedCount = state.results.size - remaining.size
+            if (removedCount == 0) {
+                return@update state
+            }
+            state.copy(
+                results = remaining,
+                resultCount = (state.resultCount - removedCount).coerceAtLeast(0L),
+                phase = searchPhaseAfterRemoval(
+                    remainingIsEmpty = remaining.isEmpty(),
+                    currentPhase = state.phase,
+                ),
+            )
+        }
+    }
+
+    private fun searchPhaseAfterRemoval(
+        remainingIsEmpty: Boolean,
+        currentPhase: SearchContentPhase,
+    ): SearchContentPhase {
+        if (!remainingIsEmpty) {
+            return SearchContentPhase.Results
+        }
+        return if (currentPhase == SearchContentPhase.Results) {
+            SearchContentPhase.Results
+        } else {
+            SearchContentPhase.Empty
         }
     }
 

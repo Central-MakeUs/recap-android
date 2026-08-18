@@ -6,15 +6,18 @@ import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
 import com.chalkak.recap.core.data.home.RecentCapturesRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class RecentOrganizedScreenshotsViewModel @Inject constructor(
@@ -25,8 +28,14 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(RecentOrganizedScreenshotsUiState())
     val uiState: StateFlow<RecentOrganizedScreenshotsUiState> = _uiState.asStateFlow()
 
+    private val _events =
+        MutableSharedFlow<RecentOrganizedScreenshotsEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<RecentOrganizedScreenshotsEvent> = _events.asSharedFlow()
+
     private val refreshKey = MutableStateFlow(0)
     private var loadMoreJob: Job? = null
+    private var isListVisible = true
+    private var pendingRemovalPage: PendingRecentPage? = null
 
     init {
         observeFirstPage()
@@ -42,8 +51,22 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
             RecentOrganizedScreenshotsAction.LoadMore -> loadMore()
             RecentOrganizedScreenshotsAction.Retry -> retry()
             is RecentOrganizedScreenshotsAction.ToggleFavorite -> toggleFavorite(action.id)
+            is RecentOrganizedScreenshotsAction.RequestDeleteItem -> requestDeleteItem(action.id)
+            RecentOrganizedScreenshotsAction.ConfirmDeleteItem -> confirmDeleteItem()
+            RecentOrganizedScreenshotsAction.DismissDeleteItem -> dismissDeleteItem()
             else -> Unit
         }
+    }
+
+    fun onListVisible() {
+        isListVisible = true
+        val pending = pendingRemovalPage ?: return
+        pendingRemovalPage = null
+        applyFirstPage(pending)
+    }
+
+    fun onListHidden() {
+        isListVisible = false
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -58,21 +81,20 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
                     result.fold(
                         onSuccess = { page ->
                             val items = page.toRecentOrganizedScreenshotItems()
-                            _uiState.update { state ->
-                                state.copy(
-                                    phase = if (items.isEmpty()) {
-                                        RecentOrganizedScreenshotsPhase.Empty
-                                    } else {
-                                        RecentOrganizedScreenshotsPhase.Content
-                                    },
-                                    items = items,
-                                    resultCount = page.count,
-                                    hasNext = page.hasNext,
-                                    nextPage = 1,
-                                    isLoadingMore = false,
-                                )
+                            val pending = PendingRecentPage(
+                                items = items,
+                                resultCount = page.count,
+                                hasNext = page.hasNext,
+                            )
+                            val currentIds = _uiState.value.items.map { item -> item.id }.toSet()
+                            val nextIds = items.map { item -> item.id }.toSet()
+                            val hasRemoval = currentIds.any { id -> id !in nextIds }
+                            if (!isListVisible && hasRemoval) {
+                                pendingRemovalPage = pending
+                            } else {
+                                pendingRemovalPage = null
+                                applyFirstPage(pending)
                             }
-                            reconcileThumbnails(items.map { item -> item.id })
                         },
                         onFailure = {
                             _uiState.update { state ->
@@ -106,6 +128,7 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
                 isLoadingMore = false,
                 hasNext = false,
                 nextPage = 0,
+                pendingDeleteCaptureId = null,
             )
         }
         refreshKey.update { value -> value + 1 }
@@ -180,6 +203,45 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
         }
     }
 
+    private fun requestDeleteItem(id: Long) {
+        if (_uiState.value.items.none { item -> item.id == id }) {
+            return
+        }
+        _uiState.update { state -> state.copy(pendingDeleteCaptureId = id) }
+    }
+
+    private fun dismissDeleteItem() {
+        if (_uiState.value.pendingDeleteCaptureId == null) {
+            return
+        }
+        _uiState.update { state -> state.copy(pendingDeleteCaptureId = null) }
+    }
+
+    private fun confirmDeleteItem() {
+        val captureId = _uiState.value.pendingDeleteCaptureId ?: return
+        _uiState.update { state -> state.copy(pendingDeleteCaptureId = null) }
+        viewModelScope.launch {
+            val result = captureMutationRepository.deleteCaptures(setOf(captureId))
+            val deleteResult = result.getOrNull()
+            if (result.isFailure || deleteResult == null || captureId !in deleteResult.deletedIds) {
+                _events.emit(RecentOrganizedScreenshotsEvent.ShowDeleteFailureToast)
+                return@launch
+            }
+            _uiState.update { state ->
+                val remaining = state.items.filterNot { item -> item.id == captureId }
+                state.copy(
+                    items = remaining,
+                    resultCount = (state.resultCount - 1).coerceAtLeast(0L),
+                    phase = recentPhaseAfterRemoval(
+                        remainingIsEmpty = remaining.isEmpty(),
+                        currentPhase = state.phase,
+                    ),
+                )
+            }
+            _events.emit(RecentOrganizedScreenshotsEvent.ShowDeleteSuccessToast)
+        }
+    }
+
     private fun toggleFavorite(id: Long) {
         val currentItem = _uiState.value.items.firstOrNull { item ->
             item.id == id
@@ -218,4 +280,42 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
             }
         }
     }
+
+    private fun applyFirstPage(page: PendingRecentPage) {
+        loadMoreJob?.cancel()
+        _uiState.update { state ->
+            state.copy(
+                phase = recentPhaseAfterRemoval(
+                    remainingIsEmpty = page.items.isEmpty(),
+                    currentPhase = state.phase,
+                ),
+                items = page.items,
+                resultCount = page.resultCount,
+                hasNext = page.hasNext,
+                nextPage = 1,
+                isLoadingMore = false,
+            )
+        }
+        reconcileThumbnails(page.items.map { item -> item.id })
+    }
+
+    private fun recentPhaseAfterRemoval(
+        remainingIsEmpty: Boolean,
+        currentPhase: RecentOrganizedScreenshotsPhase,
+    ): RecentOrganizedScreenshotsPhase {
+        if (!remainingIsEmpty) {
+            return RecentOrganizedScreenshotsPhase.Content
+        }
+        return if (currentPhase == RecentOrganizedScreenshotsPhase.Content) {
+            RecentOrganizedScreenshotsPhase.Content
+        } else {
+            RecentOrganizedScreenshotsPhase.Empty
+        }
+    }
 }
+
+private data class PendingRecentPage(
+    val items: List<RecentOrganizedScreenshotUiModel>,
+    val resultCount: Long,
+    val hasNext: Boolean,
+)

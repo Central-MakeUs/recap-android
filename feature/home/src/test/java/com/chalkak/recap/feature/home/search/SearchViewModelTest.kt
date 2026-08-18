@@ -3,6 +3,7 @@ package com.chalkak.recap.feature.home.search
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.capture.CaptureThumbnailReady
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
+import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
 import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.search.RecentSearchStore
 import com.chalkak.recap.core.data.search.SearchRepository
@@ -42,6 +43,7 @@ class SearchViewModelTest {
     private val thumbnailUpdates = mockk<CaptureThumbnailUpdates>()
     private val recoveryFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private val mainContentRecoveryTrigger = mockk<MainContentRecoveryTrigger>()
+    private val changeNotifier = RemoteCaptureChangeNotifier()
     private lateinit var viewModel: SearchViewModel
 
     @Before
@@ -74,6 +76,7 @@ class SearchViewModelTest {
             recentSearchStore = recentSearchStore,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
+            changeNotifier = changeNotifier,
         )
     }
 
@@ -619,6 +622,62 @@ class SearchViewModelTest {
     }
 
     @Test
+    fun `edit result refreshes submitted query when list becomes visible again`() = runTest {
+        coEvery {
+            searchRepository.search(
+                query = "숙소",
+                scope = SearchScope.ALL,
+                typeCode = null,
+                page = 0,
+                size = 20,
+            )
+        } returnsMany listOf(
+            Result.success(
+                SearchPage(
+                    count = 1L,
+                    hasNext = false,
+                    items = listOf(
+                        SearchResult(
+                            captureId = 7L,
+                            typeCode = ScreenshotContentType.PLACE,
+                            thumbnailUrl = null,
+                            titleHighlighted = "제주 숙소",
+                            summaryHighlighted = "요약",
+                            ocrExcerptHighlighted = null,
+                            isFavorite = false,
+                            organizedAt = "2026-07-19T00:00:00Z",
+                        ),
+                    ),
+                ),
+            ),
+            Result.success(SearchPage(count = 0L, hasNext = false, items = emptyList())),
+        )
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        assertEquals(listOf(7L), viewModel.uiState.value.results.map { it.captureId })
+
+        viewModel.onAction(SearchAction.EditResult(7L))
+        viewModel.onListHidden()
+        viewModel.onAction(SearchAction.LeaveComposition)
+        viewModel.onListVisible()
+        advanceUntilIdle()
+
+        assertEquals(SearchContentPhase.Empty, viewModel.uiState.value.phase)
+        assertTrue(viewModel.uiState.value.results.isEmpty())
+        coVerify(exactly = 2) {
+            searchRepository.search(
+                query = "숙소",
+                scope = SearchScope.ALL,
+                typeCode = null,
+                page = 0,
+                size = 20,
+            )
+        }
+    }
+
+    @Test
     fun `leave composition without detail navigation clears session and restores autoFocus`() = runTest {
         coEvery {
             searchRepository.search(any(), any(), any(), any(), any())
@@ -697,5 +756,139 @@ class SearchViewModelTest {
         assertEquals("", state.submittedQuery)
         assertEquals(SearchContentPhase.Idle, state.phase)
         assertTrue(state.results.isEmpty())
+    }
+
+    @Test
+    fun `request delete result shows confirm then removes item`() = runTest {
+        coEvery {
+            searchRepository.search(any(), any(), any(), any(), any())
+        } returns Result.success(
+            SearchPage(
+                count = 1L,
+                hasNext = false,
+                items = listOf(
+                    SearchResult(
+                        captureId = 7L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "숙소",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-19T00:00:00Z",
+                    ),
+                ),
+            ),
+        )
+        coEvery {
+            captureMutationRepository.deleteCaptures(setOf(7L))
+        } returns Result.success(
+            com.chalkak.recap.core.model.capture.CaptureDeleteResult(
+                deletedIds = setOf(7L),
+                failedIds = emptySet(),
+            ),
+        )
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        viewModel.onAction(SearchAction.RequestDeleteResult(7L))
+        assertEquals(7L, viewModel.uiState.value.pendingDeleteCaptureId)
+
+        viewModel.onAction(SearchAction.ConfirmDeleteResult)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { captureMutationRepository.deleteCaptures(setOf(7L)) }
+        assertTrue(viewModel.uiState.value.results.isEmpty())
+        assertEquals(SearchContentPhase.Results, viewModel.uiState.value.phase)
+        assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
+    }
+
+    @Test
+    fun `confirm delete result failure keeps item and emits failure`() = runTest {
+        coEvery {
+            searchRepository.search(any(), any(), any(), any(), any())
+        } returns Result.success(
+            SearchPage(
+                count = 1L,
+                hasNext = false,
+                items = listOf(
+                    SearchResult(
+                        captureId = 7L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "숙소",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-19T00:00:00Z",
+                    ),
+                ),
+            ),
+        )
+        coEvery {
+            captureMutationRepository.deleteCaptures(setOf(7L))
+        } returns Result.failure(IllegalStateException("network"))
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        viewModel.onAction(SearchAction.RequestDeleteResult(7L))
+        viewModel.onAction(SearchAction.ConfirmDeleteResult)
+        advanceUntilIdle()
+
+        assertEquals(listOf(7L), viewModel.uiState.value.results.map { it.captureId })
+        assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
+    }
+
+    @Test
+    fun `deleted capture stays until list is visible again`() = runTest(testDispatcher) {
+        coEvery {
+            searchRepository.search(any(), any(), any(), any(), any())
+        } returns Result.success(
+            SearchPage(
+                count = 2L,
+                hasNext = false,
+                items = listOf(
+                    SearchResult(
+                        captureId = 7L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "숙소",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-19T00:00:00Z",
+                    ),
+                    SearchResult(
+                        captureId = 8L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "카페",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-18T00:00:00Z",
+                    ),
+                ),
+            ),
+        )
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        viewModel.onListHidden()
+        changeNotifier.notifyCapturesDeleted(setOf(7L))
+        advanceUntilIdle()
+
+        assertEquals(listOf(7L, 8L), viewModel.uiState.value.results.map { it.captureId })
+        assertEquals(2L, viewModel.uiState.value.resultCount)
+
+        viewModel.onListVisible()
+        advanceUntilIdle()
+
+        assertEquals(listOf(8L), viewModel.uiState.value.results.map { it.captureId })
+        assertEquals(1L, viewModel.uiState.value.resultCount)
+        assertEquals(SearchContentPhase.Results, viewModel.uiState.value.phase)
     }
 }

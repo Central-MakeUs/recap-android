@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -45,14 +46,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.animation.recapScreenshotCardItemAnimation
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.OrganizedRelativeTimeFormatter
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
+import com.chalkak.recap.core.design.component.popup.RecapPopup
+import com.chalkak.recap.core.design.component.swipe.SwipeActionRow
+import com.chalkak.recap.core.design.component.swipe.rememberEditDeleteSwipeActions
 import com.chalkak.recap.core.design.component.topbar.RecentOrganizedScreenshotsTopBar
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
+import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray500
 import com.chalkak.recap.core.design.theme.RecapGray700
@@ -111,6 +117,19 @@ fun RecentOrganizedScreenshotsScreen(
             }
         }
     }
+
+    if (uiState.pendingDeleteCaptureId != null) {
+        RecapPopup(
+            title = stringResource(R.string.screenshot_delete_confirm_title),
+            description = stringResource(R.string.screenshot_delete_confirm_description),
+            confirmButtonText = stringResource(R.string.deletion_confirmation_delete_button),
+            cancelButtonText = stringResource(R.string.deletion_confirmation_cancel_button),
+            onConfirmClick = { onAction(RecentOrganizedScreenshotsAction.ConfirmDeleteItem) },
+            onCancelClick = { onAction(RecentOrganizedScreenshotsAction.DismissDeleteItem) },
+            onDismissRequest = { onAction(RecentOrganizedScreenshotsAction.DismissDeleteItem) },
+            confirmButtonColor = RecapError,
+        )
+    }
 }
 
 @Composable
@@ -133,6 +152,7 @@ private fun RecentOrganizedScreenshotsContent(
     val displayCount = uiState.resultCount.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
     val countHeaderItemCount = if (displayCount > 0) 1 else 0
     var lastRequestedPage by remember { mutableIntStateOf(-1) }
+    var revealedCaptureId by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(
         listState,
@@ -161,42 +181,60 @@ private fun RecentOrganizedScreenshotsContent(
             }
     }
 
-    if (visibleItems.isEmpty()) {
-        Column(modifier = modifier.fillMaxSize()) {
-            if (displayCount > 0) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        state = listState,
+        contentPadding = PaddingValues(
+            bottom = RecentOrganizedScreenshotsTokens.ListVerticalPadding +
+                    navigationBarBottomPadding,
+        ),
+    ) {
+        if (displayCount > 0) {
+            item(key = "recent_organized_count") {
                 RecentOrganizedScreenshotsCountText(displayCount = displayCount)
             }
-            RecentOrganizedScreenshotsEmptyContent(
-                onImportClick = {
-                    onAction(RecentOrganizedScreenshotsAction.StartImport)
-                },
-            )
         }
-    } else {
-        LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            state = listState,
-            contentPadding = PaddingValues(
-                bottom = RecentOrganizedScreenshotsTokens.ListVerticalPadding +
-                    navigationBarBottomPadding,
-            ),
-        ) {
-            if (displayCount > 0) {
-                item(key = "recent_organized_count") {
-                    RecentOrganizedScreenshotsCountText(displayCount = displayCount)
-                }
-            }
-            items(
-                items = visibleItems,
-                key = { item -> item.id },
-            ) { item ->
+        items(
+            items = visibleItems,
+            key = { item -> item.id },
+            contentType = { "recent_organized_screenshot" },
+        ) { item ->
+            SwipeActionRow(
+                actions = rememberEditDeleteSwipeActions(
+                    onEditClick = {
+                        revealedCaptureId = null
+                        onAction(RecentOrganizedScreenshotsAction.EditItem(item.id))
+                    },
+                    onDeleteClick = {
+                        onAction(RecentOrganizedScreenshotsAction.RequestDeleteItem(item.id))
+                    },
+                ),
+                revealed = revealedCaptureId == item.id,
+                onRevealedChange = { revealed ->
+                    revealedCaptureId = when {
+                        revealed -> item.id
+                        revealedCaptureId == item.id -> null
+                        else -> revealedCaptureId
+                    }
+                },
+                onDragStarted = {
+                    if (revealedCaptureId != null && revealedCaptureId != item.id) {
+                        revealedCaptureId = null
+                    }
+                },
+                modifier = Modifier
+                    .recapScreenshotCardItemAnimation()
+                    .fillMaxWidth(),
+            ) {
                 ScreenshotCard(
                     thumbnailModel = item.thumbnailModel,
                     categoryType = item.categoryType,
                     title = item.title,
                     description = item.description,
                     isFavorite = item.isFavorite,
-                    onClick = { onAction(RecentOrganizedScreenshotsAction.SelectItem(item.id)) },
+                    onClick = {
+                        onAction(RecentOrganizedScreenshotsAction.SelectItem(item.id))
+                    },
                     onFavoriteClick = {
                         onAction(RecentOrganizedScreenshotsAction.ToggleFavorite(item.id))
                     },
@@ -204,20 +242,30 @@ private fun RecentOrganizedScreenshotsContent(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            if (uiState.isLoadingMore) {
-                item(key = "recent_loading_more") {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = RecapBlue500,
-                            strokeWidth = 2.dp,
-                        )
-                    }
+        }
+        if (visibleItems.isEmpty()) {
+            item(key = "recent_organized_empty") {
+                RecentOrganizedScreenshotsEmptyContent(
+                    onImportClick = {
+                        onAction(RecentOrganizedScreenshotsAction.StartImport)
+                    },
+                    modifier = Modifier.fillParentMaxSize(),
+                )
+            }
+        }
+        if (uiState.isLoadingMore) {
+            item(key = "recent_loading_more") {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = RecapBlue500,
+                        strokeWidth = 2.dp,
+                    )
                 }
             }
         }

@@ -21,6 +21,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -282,6 +283,106 @@ class RecentOrganizedScreenshotsViewModelTest {
         advanceUntilIdle()
 
         assertFalse(viewModel.uiState.value.items.single().isFavorite)
+    }
+
+    @Test
+    fun `request delete item shows confirm then removes item`() = runTest(testDispatcher) {
+        firstPageFlow.tryEmit(
+            Result.success(
+                CapturePage(
+                    count = 1,
+                    hasNext = false,
+                    items = listOf(captureSummary(captureId = 7L, isFavorite = false)),
+                ),
+            ),
+        )
+        coEvery {
+            captureMutationRepository.deleteCaptures(setOf(7L))
+        } returns Result.success(
+            com.chalkak.recap.core.model.capture.CaptureDeleteResult(
+                deletedIds = setOf(7L),
+                failedIds = emptySet(),
+            ),
+        )
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        viewModel.onAction(RecentOrganizedScreenshotsAction.RequestDeleteItem(7L))
+        assertEquals(7L, viewModel.uiState.value.pendingDeleteCaptureId)
+
+        viewModel.onAction(RecentOrganizedScreenshotsAction.ConfirmDeleteItem)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { captureMutationRepository.deleteCaptures(setOf(7L)) }
+        assertTrue(viewModel.uiState.value.items.isEmpty())
+        assertEquals(RecentOrganizedScreenshotsPhase.Content, viewModel.uiState.value.phase)
+        assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
+    }
+
+    @Test
+    fun `confirm delete item failure keeps item`() = runTest(testDispatcher) {
+        firstPageFlow.tryEmit(
+            Result.success(
+                CapturePage(
+                    count = 1,
+                    hasNext = false,
+                    items = listOf(captureSummary(captureId = 7L, isFavorite = false)),
+                ),
+            ),
+        )
+        coEvery {
+            captureMutationRepository.deleteCaptures(setOf(7L))
+        } returns Result.failure(IllegalStateException("network"))
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        viewModel.onAction(RecentOrganizedScreenshotsAction.RequestDeleteItem(7L))
+        viewModel.onAction(RecentOrganizedScreenshotsAction.ConfirmDeleteItem)
+        advanceUntilIdle()
+
+        assertEquals(listOf(7L), viewModel.uiState.value.items.map { it.id })
+        assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
+    }
+
+    @Test
+    fun `hidden list keeps deleted item until visible again`() = runTest(testDispatcher) {
+        firstPageFlow.tryEmit(
+            Result.success(
+                CapturePage(
+                    count = 2,
+                    hasNext = false,
+                    items = listOf(
+                        captureSummary(captureId = 1L, isFavorite = false),
+                        captureSummary(captureId = 2L, isFavorite = false),
+                    ),
+                ),
+            ),
+        )
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        viewModel.onListHidden()
+
+        firstPageFlow.emit(
+            Result.success(
+                CapturePage(
+                    count = 1,
+                    hasNext = false,
+                    items = listOf(captureSummary(captureId = 2L, isFavorite = false)),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals(listOf(1L, 2L), viewModel.uiState.value.items.map { it.id })
+        assertEquals(2L, viewModel.uiState.value.resultCount)
+
+        viewModel.onListVisible()
+        advanceUntilIdle()
+
+        assertEquals(listOf(2L), viewModel.uiState.value.items.map { it.id })
+        assertEquals(1L, viewModel.uiState.value.resultCount)
+        assertEquals(RecentOrganizedScreenshotsPhase.Content, viewModel.uiState.value.phase)
     }
 
     private fun createViewModel(): RecentOrganizedScreenshotsViewModel =

@@ -5,6 +5,7 @@ import com.chalkak.recap.core.model.capture.CapturePage
 import com.chalkak.recap.core.model.capture.CaptureSummary
 import com.chalkak.recap.feature.home.organizedAtMillis
 import com.chalkak.recap.feature.home.thumbnailModel
+import timber.log.Timber
 
 internal fun CaptureSummary.toRecentOrganizedScreenshotUiModel(): RecentOrganizedScreenshotUiModel =
     RecentOrganizedScreenshotUiModel(
@@ -17,5 +18,13 @@ internal fun CaptureSummary.toRecentOrganizedScreenshotUiModel(): RecentOrganize
         isFavorite = isFavorite,
     )
 
-internal fun CapturePage.toRecentOrganizedScreenshotItems(): List<RecentOrganizedScreenshotUiModel> =
-    items.map { summary -> summary.toRecentOrganizedScreenshotUiModel() }
+internal fun CapturePage.toRecentOrganizedScreenshotItems(): List<RecentOrganizedScreenshotUiModel> {
+    items.logThumbnailSummary()
+    return items.map { summary -> summary.toRecentOrganizedScreenshotUiModel() }
+}
+
+private fun List<CaptureSummary>.logThumbnailSummary() {
+    val found = count { summary -> !summary.thumbnailUrl.isNullOrBlank() }
+    val fallback = size - found
+    Timber.d("%d개의 이미지의 썸네일을 찾음, %d개의 이미지가 fallback됨", found, fallback)
+}

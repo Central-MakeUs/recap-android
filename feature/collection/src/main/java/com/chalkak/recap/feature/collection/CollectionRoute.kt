@@ -39,6 +39,7 @@ fun CollectionRoute(
     onNavigateToOrganize: () -> Unit,
     onNavigateToSearch: () -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
+    onNavigateToScreenshotEdit: (Long) -> Unit = {},
     onNavigateBack: () -> Unit = {},
     openCollectionFavoritesOnEnter: Boolean = false,
     onOpenCollectionFavoritesOnEnterConsumed: () -> Unit = {},
@@ -243,10 +244,14 @@ fun CollectionRoute(
                             selection = uiState.selection,
                             searchQuery = uiState.detailSearchQuery,
                             isSearchVisible = uiState.isDetailSearchVisible,
+                            pendingDeleteCaptureId = uiState.pendingDeleteCaptureId,
                             onBackClick = ::handleBack,
                             onAction = ::handleAction,
                             onItemClick = onNavigateToScreenshot,
+                            onItemEditClick = onNavigateToScreenshotEdit,
                             onLeaveDetail = ::closeDetailIfNoDetailDestination,
+                            onDetailListVisible = viewModel::onDetailListVisible,
+                            onDetailListHidden = viewModel::onDetailListHidden,
                         )
                     }
 
@@ -258,10 +263,14 @@ fun CollectionRoute(
                             selection = uiState.selection,
                             searchQuery = uiState.detailSearchQuery,
                             isSearchVisible = uiState.isDetailSearchVisible,
+                            pendingDeleteCaptureId = uiState.pendingDeleteCaptureId,
                             onBackClick = ::handleBack,
                             onAction = ::handleAction,
                             onItemClick = onNavigateToScreenshot,
+                            onItemEditClick = onNavigateToScreenshotEdit,
                             onLeaveDetail = ::closeDetailIfNoDetailDestination,
+                            onDetailListVisible = viewModel::onDetailListVisible,
+                            onDetailListHidden = viewModel::onDetailListHidden,
                         )
                     }
 
@@ -283,7 +292,11 @@ private fun CollectionDetailDestination(
     onBackClick: () -> Unit,
     onAction: (CollectionAction) -> Unit,
     onItemClick: (Long) -> Unit,
+    onItemEditClick: (Long) -> Unit,
+    pendingDeleteCaptureId: Long?,
     onLeaveDetail: () -> Unit,
+    onDetailListVisible: () -> Unit,
+    onDetailListHidden: () -> Unit,
 ) {
     var retainedDetail by remember { mutableStateOf(detail) }
     val isCurrentDestination = backStack.lastOrNull() == route
@@ -292,7 +305,11 @@ private fun CollectionDetailDestination(
     }
 
     DisposableEffect(Unit) {
-        onDispose(onLeaveDetail)
+        onDetailListVisible()
+        onDispose {
+            onDetailListHidden()
+            onLeaveDetail()
+        }
     }
 
     val displayedDetail = retainedDetail ?: return
@@ -302,6 +319,8 @@ private fun CollectionDetailDestination(
         onBackClick = onBackClick,
         onAction = onAction,
         onItemClick = onItemClick,
+        onItemEditClick = onItemEditClick,
+        pendingDeleteCaptureId = pendingDeleteCaptureId,
         searchQuery = searchQuery,
         isSearchVisible = isSearchVisible,
     )

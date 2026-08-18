@@ -16,6 +16,7 @@ data class RecentOrganizedScreenshotsUiState(
     val hasNext: Boolean = false,
     val nextPage: Int = 0,
     val isLoadingMore: Boolean = false,
+    val pendingDeleteCaptureId: Long? = null,
 )
 
 data class RecentOrganizedScreenshotUiModel(
@@ -35,6 +36,15 @@ sealed interface RecentOrganizedScreenshotsAction {
     data object LoadMore : RecentOrganizedScreenshotsAction
     data object Retry : RecentOrganizedScreenshotsAction
     data class SelectItem(val id: Long) : RecentOrganizedScreenshotsAction
+    data class EditItem(val id: Long) : RecentOrganizedScreenshotsAction
+    data class RequestDeleteItem(val id: Long) : RecentOrganizedScreenshotsAction
+    data object ConfirmDeleteItem : RecentOrganizedScreenshotsAction
+    data object DismissDeleteItem : RecentOrganizedScreenshotsAction
     data class ToggleFavorite(val id: Long) : RecentOrganizedScreenshotsAction
 }
-
+
+sealed interface RecentOrganizedScreenshotsEvent {
+    data object ShowDeleteSuccessToast : RecentOrganizedScreenshotsEvent
+    data object ShowDeleteFailureToast : RecentOrganizedScreenshotsEvent
+}
+

@@ -12,8 +12,8 @@ import com.chalkak.recap.core.model.capture.CaptureSummary
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import com.chalkak.recap.core.model.search.SearchResult
 import com.chalkak.recap.core.model.storage.StorageOverview
-import java.time.Instant
 import timber.log.Timber
+import java.time.Instant
 
 enum class CollectionListSort {
     Latest,
@@ -84,6 +84,7 @@ data class CollectionUiState(
     val overview: CollectionOverviewUiModel = CollectionOverviewUiModel(),
     val detail: CollectionDetailUiModel? = null,
     val selection: CollectionSelectionUiState = CollectionSelectionUiState(),
+    val pendingDeleteCaptureId: Long? = null,
 )
 
 sealed interface CollectionAction {
@@ -108,6 +109,9 @@ sealed interface CollectionAction {
     data object DeleteSelected : CollectionAction
     data object ConfirmDeleteSelected : CollectionAction
     data object DismissDeleteConfirmDialog : CollectionAction
+    data class RequestDeleteItem(val captureId: Long) : CollectionAction
+    data object ConfirmDeleteItem : CollectionAction
+    data object DismissDeleteItem : CollectionAction
 }
 
 sealed interface CollectionEvent {

@@ -38,10 +38,13 @@ fun ScreenshotRoute(
     captureId: Long,
     onNavigateBack: () -> Unit,
     onDeleteSucceeded: () -> Unit,
+    openEdit: Boolean = false,
     viewModel: ScreenshotViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val backStack = rememberNavBackStack(ScreenshotDestination.Detail)
+    val backStack = rememberNavBackStack(
+        if (openEdit) ScreenshotDestination.Edit else ScreenshotDestination.Detail,
+    )
     val toastDispatcher = LocalRecapToastDispatcher.current
     val resources = LocalResources.current
     val favoriteAddedToastMessage = stringResource(R.string.screenshot_detail_favorite_added_toast)
@@ -58,6 +61,7 @@ fun ScreenshotRoute(
     var tempTypeSelection by rememberSaveable {
         mutableStateOf(ScreenshotContentType.ETC.name)
     }
+    var openedInitialEdit by rememberSaveable { mutableStateOf(false) }
 
     fun dismissReportSheet() {
         showReportSheet = false
@@ -69,17 +73,32 @@ fun ScreenshotRoute(
         viewModel.bind(captureId)
     }
 
+    LaunchedEffect(openEdit, uiState) {
+        if (!openEdit || openedInitialEdit) {
+            return@LaunchedEffect
+        }
+        if (uiState is ScreenshotUiState.Content) {
+            openedInitialEdit = true
+            viewModel.onAction(ScreenshotAction.PrepareEditDraft)
+            if (backStack.lastOrNull() !is ScreenshotDestination.Edit) {
+                backStack.add(ScreenshotDestination.Edit)
+            }
+        }
+    }
+
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
                 ScreenshotEvent.SaveSucceeded -> {
-                    if (backStack.size > 1) {
-                        backStack.removeLastOrNull()
-                    }
                     toastDispatcher.showToast(
                         message = saveSuccessToastMessage,
                         type = RecapToastType.Success,
                     )
+                    if (openEdit) {
+                        onNavigateBack()
+                    } else if (backStack.size > 1) {
+                        backStack.removeLastOrNull()
+                    }
                 }
 
                 is ScreenshotEvent.SaveFailed -> {
@@ -146,6 +165,10 @@ fun ScreenshotRoute(
             return
         }
         viewModel.onAction(ScreenshotAction.DiscardEditDraft)
+        if (openEdit) {
+            onNavigateBack()
+            return
+        }
         if (backStack.lastOrNull() is ScreenshotDestination.Edit) {
             backStack.removeLastOrNull()
         }
@@ -153,6 +176,10 @@ fun ScreenshotRoute(
 
     fun confirmLeaveEditScreen() {
         viewModel.onAction(ScreenshotAction.DiscardEditDraft)
+        if (openEdit) {
+            onNavigateBack()
+            return
+        }
         if (backStack.lastOrNull() is ScreenshotDestination.Edit) {
             backStack.removeLastOrNull()
         }
@@ -176,8 +203,8 @@ fun ScreenshotRoute(
             backStack = backStack,
             onBack = {
                 when {
-                    backStack.size <= 1 -> onNavigateBack()
                     backStack.lastOrNull() is ScreenshotDestination.Edit -> leaveEditScreen()
+                    backStack.size <= 1 -> onNavigateBack()
                     else -> backStack.removeLastOrNull()
                 }
             },
@@ -236,9 +263,7 @@ fun ScreenshotRoute(
                             ScreenshotDetailScreen(
                                 uiState = uiState,
                                 onAction = viewModel::onAction,
-                                onNavigateBack = {
-                                    backStack.removeLastOrNull()
-                                },
+                                onNavigateBack = ::leaveEditScreen,
                                 onOpenEdit = {},
                                 onOpenFullscreen = {},
                                 onOpenMore = {},

@@ -31,7 +31,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,13 +47,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.animation.recapScreenshotCardItemAnimation
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
+import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
+import com.chalkak.recap.core.design.component.swipe.SwipeActionRow
+import com.chalkak.recap.core.design.component.swipe.rememberEditDeleteSwipeActions
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue500
+import com.chalkak.recap.core.design.theme.RecapError
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray500
@@ -104,6 +112,19 @@ fun SearchScreen(
                 )
             }
         }
+    }
+
+    if (uiState.pendingDeleteCaptureId != null) {
+        RecapPopup(
+            title = stringResource(R.string.screenshot_delete_confirm_title),
+            description = stringResource(R.string.screenshot_delete_confirm_description),
+            confirmButtonText = stringResource(R.string.deletion_confirmation_delete_button),
+            cancelButtonText = stringResource(R.string.deletion_confirmation_cancel_button),
+            onConfirmClick = { onAction(SearchAction.ConfirmDeleteResult) },
+            onCancelClick = { onAction(SearchAction.DismissDeleteResult) },
+            onDismissRequest = { onAction(SearchAction.DismissDeleteResult) },
+            confirmButtonColor = RecapError,
+        )
     }
 }
 
@@ -201,6 +222,7 @@ private fun SearchResultsContent(
 ) {
     val listState = rememberLazyListState()
     val displayCount = resultCount.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+    var revealedCaptureId by remember { mutableStateOf<Long?>(null) }
 
     LaunchedEffect(listState, results.size, hasNext, isLoadingMore) {
         snapshotFlow {
@@ -253,19 +275,52 @@ private fun SearchResultsContent(
                 items = results,
                 key = { item -> item.captureId },
             ) { item ->
-                ScreenshotCard(
-                    thumbnailModel = item.thumbnailModel,
-                    categoryType = item.categoryType,
-                    title = item.title,
-                    description = item.description,
-                    titleHighlightRange = item.titleHighlightRange,
-                    descriptionHighlightRange = item.descriptionHighlightRange,
-                    isFavorite = item.isFavorite,
-                    onClick = { onAction(SearchAction.SelectResult(item.captureId)) },
-                    onFavoriteClick = { onAction(SearchAction.ToggleFavorite(item.captureId)) },
-                    horizontalContentPadding = SearchScreenTokens.HorizontalPadding,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                SwipeActionRow(
+                    actions = rememberEditDeleteSwipeActions(
+                        onEditClick = {
+                            revealedCaptureId = null
+                            onAction(SearchAction.EditResult(item.captureId))
+                        },
+                        onDeleteClick = {
+                            onAction(SearchAction.RequestDeleteResult(item.captureId))
+                        },
+                    ),
+                    revealed = revealedCaptureId == item.captureId,
+                    onRevealedChange = { revealed ->
+                        revealedCaptureId = when {
+                            revealed -> item.captureId
+                            revealedCaptureId == item.captureId -> null
+                            else -> revealedCaptureId
+                        }
+                    },
+                    onDragStarted = {
+                        if (revealedCaptureId != null && revealedCaptureId != item.captureId) {
+                            revealedCaptureId = null
+                        }
+                    },
+                    modifier = Modifier
+                        .recapScreenshotCardItemAnimation()
+                        .fillMaxWidth(),
+                ) {
+                    ScreenshotCard(
+                        thumbnailModel = item.thumbnailModel,
+                        categoryType = item.categoryType,
+                        title = item.title,
+                        description = item.description,
+                        titleHighlightRange = item.titleHighlightRange,
+                        descriptionHighlightRange = item.descriptionHighlightRange,
+                        isFavorite = item.isFavorite,
+                        onClick = { onAction(SearchAction.SelectResult(item.captureId)) },
+                        onFavoriteClick = { onAction(SearchAction.ToggleFavorite(item.captureId)) },
+                        horizontalContentPadding = SearchScreenTokens.HorizontalPadding,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            if (results.isEmpty()) {
+                item(key = "search_empty") {
+                    SearchEmptyContent(modifier = Modifier.fillParentMaxSize())
+                }
             }
             if (isLoadingMore) {
                 item(key = "search_loading_more") {
