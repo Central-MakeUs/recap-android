@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.animation.recapScreenshotCardItemAnimation
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
@@ -162,95 +163,98 @@ fun CollectionDetailScreen(
                     vertical = CollectionDetailTokens.RecapCountVerticalPadding,
                 ),
             )
-            if (detail.cards.isEmpty()) {
-                CollectionDetailEmptyContent(
-                    messageResId = detail.emptyMessageResId,
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    state = listState,
-                    contentPadding = PaddingValues(
-                        top = CollectionDetailTokens.ListVerticalPadding,
-                        bottom = CollectionDetailTokens.ListVerticalPadding + bottomContentPadding,
-                    ),
-                ) {
-                    items(
-                        items = detail.cards,
-                        key = { card -> card.captureId },
-                    ) { card ->
-                        CollectionSelectableCaptureItem(
-                            item = card,
-                            selection = selection,
-                            metadataMode = detail.cardMetadataMode,
-                            onOpenClick = { onItemClick(card.captureId) },
-                            onFavoriteClick = {
-                                onAction(CollectionAction.ToggleFavorite(card.captureId))
-                            },
-                            onSelectionToggle = {
-                                onAction(CollectionAction.ToggleItemSelection(card.captureId))
-                            },
-                            swipeActionsEnabled = swipeActionsEnabled,
-                            swipeRevealed = revealedCaptureId == card.captureId,
-                            onSwipeRevealedChange = { revealed ->
-                                revealedCaptureId = when {
-                                    revealed -> card.captureId
-                                    revealedCaptureId == card.captureId -> null
-                                    else -> revealedCaptureId
-                                }
-                            },
-                            onSwipeDragStarted = {
-                                if (
-                                    revealedCaptureId != null &&
-                                    revealedCaptureId != card.captureId
-                                ) {
-                                    revealedCaptureId = null
-                                }
-                            },
-                            onEditClick = {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = listState,
+                contentPadding = PaddingValues(
+                    top = CollectionDetailTokens.ListVerticalPadding,
+                    bottom = CollectionDetailTokens.ListVerticalPadding + bottomContentPadding,
+                ),
+            ) {
+                items(
+                    items = detail.cards,
+                    key = { card -> card.captureId },
+                ) { card ->
+                    CollectionSelectableCaptureItem(
+                        item = card,
+                        selection = selection,
+                        metadataMode = detail.cardMetadataMode,
+                        onOpenClick = { onItemClick(card.captureId) },
+                        onFavoriteClick = {
+                            onAction(CollectionAction.ToggleFavorite(card.captureId))
+                        },
+                        onSelectionToggle = {
+                            onAction(CollectionAction.ToggleItemSelection(card.captureId))
+                        },
+                        swipeActionsEnabled = swipeActionsEnabled,
+                        swipeRevealed = revealedCaptureId == card.captureId,
+                        onSwipeRevealedChange = { revealed ->
+                            revealedCaptureId = when {
+                                revealed -> card.captureId
+                                revealedCaptureId == card.captureId -> null
+                                else -> revealedCaptureId
+                            }
+                        },
+                        onSwipeDragStarted = {
+                            if (
+                                revealedCaptureId != null &&
+                                revealedCaptureId != card.captureId
+                            ) {
                                 revealedCaptureId = null
-                                onItemEditClick(card.captureId)
-                            },
-                            onDeleteClick = {
-                                revealedCaptureId = null
-                                onAction(CollectionAction.RequestDeleteItem(card.captureId))
-                            },
+                            }
+                        },
+                        onEditClick = {
+                            revealedCaptureId = null
+                            onItemEditClick(card.captureId)
+                        },
+                        onDeleteClick = {
+                            revealedCaptureId = null
+                            onAction(CollectionAction.RequestDeleteItem(card.captureId))
+                        },
+                        modifier = Modifier.recapScreenshotCardItemAnimation(),
+                    )
+                }
+                if (detail.cards.isEmpty()) {
+                    item(key = "collection_detail_empty") {
+                        CollectionDetailEmptyContent(
+                            messageResId = detail.emptyMessageResId,
+                            modifier = Modifier.fillParentMaxSize(),
                         )
                     }
-                    if (detail.isLoadingMore) {
-                        item(key = "collection_detail_loading_more") {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = RecapBlue500,
-                                    strokeWidth = 2.dp,
-                                )
-                            }
+                }
+                if (detail.isLoadingMore) {
+                    item(key = "collection_detail_loading_more") {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = RecapBlue500,
+                                strokeWidth = 2.dp,
+                            )
                         }
                     }
                 }
+            }
 
-                LaunchedEffect(listState, detail.cards.size, detail.hasNext, detail.isLoadingMore) {
-                    snapshotFlow {
-                        val secondLastIndex = detail.cards.lastIndex - 1
-                        secondLastIndex >= 0 &&
+            LaunchedEffect(listState, detail.cards.size, detail.hasNext, detail.isLoadingMore) {
+                snapshotFlow {
+                    val secondLastIndex = detail.cards.lastIndex - 1
+                    secondLastIndex >= 0 &&
                             listState.layoutInfo.visibleItemsInfo.any { item ->
                                 item.index == secondLastIndex
                             }
-                    }
-                        .distinctUntilChanged()
-                        .filter { isSecondLastVisible -> isSecondLastVisible }
-                        .collect {
-                            if (detail.hasNext && !detail.isLoadingMore) {
-                                onAction(CollectionAction.LoadMoreDetailSearch)
-                            }
-                        }
                 }
+                    .distinctUntilChanged()
+                    .filter { isSecondLastVisible -> isSecondLastVisible }
+                    .collect {
+                        if (detail.hasNext && !detail.isLoadingMore) {
+                            onAction(CollectionAction.LoadMoreDetailSearch)
+                        }
+                    }
             }
         }
     }

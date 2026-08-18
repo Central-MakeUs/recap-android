@@ -46,6 +46,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.animation.recapScreenshotCardItemAnimation
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
@@ -180,92 +181,91 @@ private fun RecentOrganizedScreenshotsContent(
             }
     }
 
-    if (visibleItems.isEmpty()) {
-        Column(modifier = modifier.fillMaxSize()) {
-            if (displayCount > 0) {
+    LazyColumn(
+        modifier = modifier.fillMaxSize(),
+        state = listState,
+        contentPadding = PaddingValues(
+            bottom = RecentOrganizedScreenshotsTokens.ListVerticalPadding +
+                    navigationBarBottomPadding,
+        ),
+    ) {
+        if (displayCount > 0) {
+            item(key = "recent_organized_count") {
                 RecentOrganizedScreenshotsCountText(displayCount = displayCount)
             }
-            RecentOrganizedScreenshotsEmptyContent(
-                onImportClick = {
-                    onAction(RecentOrganizedScreenshotsAction.StartImport)
-                },
-            )
         }
-    } else {
-        LazyColumn(
-            modifier = modifier.fillMaxSize(),
-            state = listState,
-            contentPadding = PaddingValues(
-                bottom = RecentOrganizedScreenshotsTokens.ListVerticalPadding +
-                    navigationBarBottomPadding,
-            ),
-        ) {
-            if (displayCount > 0) {
-                item(key = "recent_organized_count") {
-                    RecentOrganizedScreenshotsCountText(displayCount = displayCount)
-                }
-            }
-            items(
-                items = visibleItems,
-                key = { item -> item.id },
-            ) { item ->
-                SwipeActionRow(
-                    actions = rememberEditDeleteSwipeActions(
-                        onEditClick = {
-                            revealedCaptureId = null
-                            onAction(RecentOrganizedScreenshotsAction.EditItem(item.id))
-                        },
-                        onDeleteClick = {
-                            revealedCaptureId = null
-                            onAction(RecentOrganizedScreenshotsAction.RequestDeleteItem(item.id))
-                        },
-                    ),
-                    revealed = revealedCaptureId == item.id,
-                    onRevealedChange = { revealed ->
-                        revealedCaptureId = when {
-                            revealed -> item.id
-                            revealedCaptureId == item.id -> null
-                            else -> revealedCaptureId
-                        }
+        items(
+            items = visibleItems,
+            key = { item -> item.id },
+        ) { item ->
+            SwipeActionRow(
+                actions = rememberEditDeleteSwipeActions(
+                    onEditClick = {
+                        revealedCaptureId = null
+                        onAction(RecentOrganizedScreenshotsAction.EditItem(item.id))
                     },
-                    onDragStarted = {
-                        if (revealedCaptureId != null && revealedCaptureId != item.id) {
-                            revealedCaptureId = null
-                        }
+                    onDeleteClick = {
+                        revealedCaptureId = null
+                        onAction(RecentOrganizedScreenshotsAction.RequestDeleteItem(item.id))
                     },
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    ScreenshotCard(
-                        thumbnailModel = item.thumbnailModel,
-                        categoryType = item.categoryType,
-                        title = item.title,
-                        description = item.description,
-                        isFavorite = item.isFavorite,
-                        onClick = {
-                            onAction(RecentOrganizedScreenshotsAction.SelectItem(item.id))
-                        },
-                        onFavoriteClick = {
-                            onAction(RecentOrganizedScreenshotsAction.ToggleFavorite(item.id))
-                        },
-                        horizontalContentPadding = RecentOrganizedScreenshotsTokens.HorizontalPadding,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-            if (uiState.isLoadingMore) {
-                item(key = "recent_loading_more") {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(24.dp),
-                            color = RecapBlue500,
-                            strokeWidth = 2.dp,
-                        )
+                ),
+                revealed = revealedCaptureId == item.id,
+                onRevealedChange = { revealed ->
+                    revealedCaptureId = when {
+                        revealed -> item.id
+                        revealedCaptureId == item.id -> null
+                        else -> revealedCaptureId
                     }
+                },
+                onDragStarted = {
+                    if (revealedCaptureId != null && revealedCaptureId != item.id) {
+                        revealedCaptureId = null
+                    }
+                },
+                modifier = Modifier
+                    .recapScreenshotCardItemAnimation()
+                    .fillMaxWidth(),
+            ) {
+                ScreenshotCard(
+                    thumbnailModel = item.thumbnailModel,
+                    categoryType = item.categoryType,
+                    title = item.title,
+                    description = item.description,
+                    isFavorite = item.isFavorite,
+                    onClick = {
+                        onAction(RecentOrganizedScreenshotsAction.SelectItem(item.id))
+                    },
+                    onFavoriteClick = {
+                        onAction(RecentOrganizedScreenshotsAction.ToggleFavorite(item.id))
+                    },
+                    horizontalContentPadding = RecentOrganizedScreenshotsTokens.HorizontalPadding,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+        if (visibleItems.isEmpty()) {
+            item(key = "recent_organized_empty") {
+                RecentOrganizedScreenshotsEmptyContent(
+                    onImportClick = {
+                        onAction(RecentOrganizedScreenshotsAction.StartImport)
+                    },
+                    modifier = Modifier.fillParentMaxSize(),
+                )
+            }
+        }
+        if (uiState.isLoadingMore) {
+            item(key = "recent_loading_more") {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = RecapBlue500,
+                        strokeWidth = 2.dp,
+                    )
                 }
             }
         }

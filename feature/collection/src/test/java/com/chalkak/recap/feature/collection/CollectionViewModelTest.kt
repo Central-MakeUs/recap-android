@@ -2,6 +2,7 @@ package com.chalkak.recap.feature.collection
 
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
 import com.chalkak.recap.core.data.capture.MockCaptureMutationRepository
+import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
 import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotImageStorage
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardImageRefs
@@ -51,6 +52,7 @@ class CollectionViewModelTest {
     private val recoveryFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private val mainContentRecoveryTrigger = mockk<MainContentRecoveryTrigger>()
     private val cardsFlow = MutableSharedFlow<List<StoredScreenshotCard>>(replay = 1)
+    private val changeNotifier = RemoteCaptureChangeNotifier()
     private lateinit var captureMutations: MockCaptureMutationRepository
     private lateinit var viewModel: CollectionViewModel
 
@@ -74,6 +76,7 @@ class CollectionViewModelTest {
             captureMutationRepository = captureMutations,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
+            changeNotifier = changeNotifier,
         )
     }
 
@@ -647,6 +650,7 @@ class CollectionViewModelTest {
             captureMutationRepository = captureMutationRepository,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
+            changeNotifier = changeNotifier,
         )
         cardsFlow.emit(
             listOf(
@@ -989,6 +993,7 @@ class CollectionViewModelTest {
             captureMutationRepository = captureMutations,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
+            changeNotifier = changeNotifier,
         )
         runCurrent()
 
@@ -1020,6 +1025,7 @@ class CollectionViewModelTest {
             captureMutationRepository = captureMutations,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
+            changeNotifier = changeNotifier,
         )
         runCurrent()
 
@@ -1054,6 +1060,7 @@ class CollectionViewModelTest {
             captureMutationRepository = captureMutations,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
+            changeNotifier = changeNotifier,
         )
         runCurrent()
 
@@ -1082,6 +1089,7 @@ class CollectionViewModelTest {
             captureMutationRepository = captureMutations,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
+            changeNotifier = changeNotifier,
         )
         runCurrent()
 
@@ -1111,6 +1119,57 @@ class CollectionViewModelTest {
         recoveryFlow.emit(Unit)
         advanceUntilIdle()
         verify(exactly = 2) { storageRepository.refreshOverview() }
+    }
+
+    @Test
+    fun `hidden detail list keeps deleted card until visible again`() = runTest(testDispatcher) {
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 1L,
+                    title = "First",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(200L),
+                ),
+                storedCard(
+                    captureId = 2L,
+                    title = "Second",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
+        assertEquals(
+            listOf(1L, 2L),
+            viewModel.uiState.value.detail?.cards?.map { card -> card.captureId },
+        )
+
+        viewModel.onDetailListHidden()
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 2L,
+                    title = "Second",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        assertEquals(
+            listOf(1L, 2L),
+            viewModel.uiState.value.detail?.cards?.map { card -> card.captureId },
+        )
+
+        viewModel.onDetailListVisible()
+        advanceUntilIdle()
+        assertEquals(
+            listOf(2L),
+            viewModel.uiState.value.detail?.cards?.map { card -> card.captureId },
+        )
     }
 
     private fun storedCard(

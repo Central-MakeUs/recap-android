@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
+import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
 import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.search.RecentSearchStore
 import com.chalkak.recap.core.data.search.SearchRepository
@@ -27,6 +28,7 @@ class SearchViewModel @Inject constructor(
     private val recentSearchStore: RecentSearchStore,
     private val thumbnailUpdates: CaptureThumbnailUpdates,
     private val mainContentRecoveryTrigger: MainContentRecoveryTrigger,
+    private val changeNotifier: RemoteCaptureChangeNotifier,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
@@ -37,6 +39,8 @@ class SearchViewModel @Inject constructor(
     private var searchJob: Job? = null
     private var loadMoreJob: Job? = null
     private var preserveSessionOnNextDispose = false
+    private var isListVisible = true
+    private val pendingDeletedCaptureIds = mutableSetOf<Long>()
 
     init {
         viewModelScope.launch {
@@ -61,6 +65,25 @@ class SearchViewModel @Inject constructor(
                 }
             }
         }
+        viewModelScope.launch {
+            changeNotifier.deletedCaptureIds.collect { ids ->
+                removeDeletedCaptures(ids)
+            }
+        }
+    }
+
+    fun onListVisible() {
+        isListVisible = true
+        if (pendingDeletedCaptureIds.isEmpty()) {
+            return
+        }
+        val ids = pendingDeletedCaptureIds.toSet()
+        pendingDeletedCaptureIds.clear()
+        removeDeletedCaptures(ids)
+    }
+
+    fun onListHidden() {
+        isListVisible = false
     }
 
     fun onAction(action: SearchAction) {
@@ -148,6 +171,7 @@ class SearchViewModel @Inject constructor(
                 pendingDeleteCaptureId = null,
             )
         }
+        pendingDeletedCaptureIds.clear()
     }
 
     private fun submitSearch(
@@ -319,14 +343,52 @@ class SearchViewModel @Inject constructor(
                 state.copy(
                     results = remaining,
                     resultCount = (state.resultCount - 1).coerceAtLeast(0L),
-                    phase = if (remaining.isEmpty()) {
-                        SearchContentPhase.Empty
-                    } else {
-                        state.phase
-                    },
+                    phase = searchPhaseAfterRemoval(
+                        remainingIsEmpty = remaining.isEmpty(),
+                        currentPhase = state.phase,
+                    ),
                 )
             }
             _events.emit(SearchEvent.ShowDeleteSuccessToast)
+        }
+    }
+
+    private fun removeDeletedCaptures(ids: Set<Long>) {
+        if (ids.isEmpty()) {
+            return
+        }
+        if (!isListVisible) {
+            pendingDeletedCaptureIds.addAll(ids)
+            return
+        }
+        _uiState.update { state ->
+            val remaining = state.results.filterNot { item -> item.captureId in ids }
+            val removedCount = state.results.size - remaining.size
+            if (removedCount == 0) {
+                return@update state
+            }
+            state.copy(
+                results = remaining,
+                resultCount = (state.resultCount - removedCount).coerceAtLeast(0L),
+                phase = searchPhaseAfterRemoval(
+                    remainingIsEmpty = remaining.isEmpty(),
+                    currentPhase = state.phase,
+                ),
+            )
+        }
+    }
+
+    private fun searchPhaseAfterRemoval(
+        remainingIsEmpty: Boolean,
+        currentPhase: SearchContentPhase,
+    ): SearchContentPhase {
+        if (!remainingIsEmpty) {
+            return SearchContentPhase.Results
+        }
+        return if (currentPhase == SearchContentPhase.Results) {
+            SearchContentPhase.Results
+        } else {
+            SearchContentPhase.Empty
         }
     }
 

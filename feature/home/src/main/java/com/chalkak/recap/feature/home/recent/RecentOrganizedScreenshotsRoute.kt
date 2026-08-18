@@ -2,6 +2,7 @@ package com.chalkak.recap.feature.home.recent
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -26,6 +27,11 @@ fun RecentOrganizedScreenshotsRoute(
     val toastDispatcher = LocalRecapToastDispatcher.current
     val deleteSuccessToastMessage = stringResource(R.string.screenshot_delete_success_toast)
     val deleteFailureToastMessage = stringResource(R.string.screenshot_detail_delete_error)
+
+    DisposableEffect(viewModel) {
+        viewModel.onListVisible()
+        onDispose { viewModel.onListHidden() }
+    }
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->

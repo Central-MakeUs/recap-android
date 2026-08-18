@@ -250,6 +250,8 @@ fun CollectionRoute(
                             onItemClick = onNavigateToScreenshot,
                             onItemEditClick = onNavigateToScreenshotEdit,
                             onLeaveDetail = ::closeDetailIfNoDetailDestination,
+                            onDetailListVisible = viewModel::onDetailListVisible,
+                            onDetailListHidden = viewModel::onDetailListHidden,
                         )
                     }
 
@@ -267,6 +269,8 @@ fun CollectionRoute(
                             onItemClick = onNavigateToScreenshot,
                             onItemEditClick = onNavigateToScreenshotEdit,
                             onLeaveDetail = ::closeDetailIfNoDetailDestination,
+                            onDetailListVisible = viewModel::onDetailListVisible,
+                            onDetailListHidden = viewModel::onDetailListHidden,
                         )
                     }
 
@@ -291,6 +295,8 @@ private fun CollectionDetailDestination(
     onItemEditClick: (Long) -> Unit,
     pendingDeleteCaptureId: Long?,
     onLeaveDetail: () -> Unit,
+    onDetailListVisible: () -> Unit,
+    onDetailListHidden: () -> Unit,
 ) {
     var retainedDetail by remember { mutableStateOf(detail) }
     val isCurrentDestination = backStack.lastOrNull() == route
@@ -299,7 +305,11 @@ private fun CollectionDetailDestination(
     }
 
     DisposableEffect(Unit) {
-        onDispose(onLeaveDetail)
+        onDetailListVisible()
+        onDispose {
+            onDetailListHidden()
+            onLeaveDetail()
+        }
     }
 
     val displayedDetail = retainedDetail ?: return

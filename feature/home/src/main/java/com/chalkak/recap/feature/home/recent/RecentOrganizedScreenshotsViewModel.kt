@@ -34,6 +34,8 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
 
     private val refreshKey = MutableStateFlow(0)
     private var loadMoreJob: Job? = null
+    private var isListVisible = true
+    private var pendingRemovalPage: PendingRecentPage? = null
 
     init {
         observeFirstPage()
@@ -56,6 +58,17 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
         }
     }
 
+    fun onListVisible() {
+        isListVisible = true
+        val pending = pendingRemovalPage ?: return
+        pendingRemovalPage = null
+        applyFirstPage(pending)
+    }
+
+    fun onListHidden() {
+        isListVisible = false
+    }
+
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeFirstPage() {
         viewModelScope.launch {
@@ -68,21 +81,20 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
                     result.fold(
                         onSuccess = { page ->
                             val items = page.toRecentOrganizedScreenshotItems()
-                            _uiState.update { state ->
-                                state.copy(
-                                    phase = if (items.isEmpty()) {
-                                        RecentOrganizedScreenshotsPhase.Empty
-                                    } else {
-                                        RecentOrganizedScreenshotsPhase.Content
-                                    },
-                                    items = items,
-                                    resultCount = page.count,
-                                    hasNext = page.hasNext,
-                                    nextPage = 1,
-                                    isLoadingMore = false,
-                                )
+                            val pending = PendingRecentPage(
+                                items = items,
+                                resultCount = page.count,
+                                hasNext = page.hasNext,
+                            )
+                            val currentIds = _uiState.value.items.map { item -> item.id }.toSet()
+                            val nextIds = items.map { item -> item.id }.toSet()
+                            val hasRemoval = currentIds.any { id -> id !in nextIds }
+                            if (!isListVisible && hasRemoval) {
+                                pendingRemovalPage = pending
+                            } else {
+                                pendingRemovalPage = null
+                                applyFirstPage(pending)
                             }
-                            reconcileThumbnails(items.map { item -> item.id })
                         },
                         onFailure = {
                             _uiState.update { state ->
@@ -220,11 +232,10 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
                 state.copy(
                     items = remaining,
                     resultCount = (state.resultCount - 1).coerceAtLeast(0L),
-                    phase = if (remaining.isEmpty()) {
-                        RecentOrganizedScreenshotsPhase.Empty
-                    } else {
-                        state.phase
-                    },
+                    phase = recentPhaseAfterRemoval(
+                        remainingIsEmpty = remaining.isEmpty(),
+                        currentPhase = state.phase,
+                    ),
                 )
             }
             _events.emit(RecentOrganizedScreenshotsEvent.ShowDeleteSuccessToast)
@@ -269,4 +280,42 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
             }
         }
     }
+
+    private fun applyFirstPage(page: PendingRecentPage) {
+        loadMoreJob?.cancel()
+        _uiState.update { state ->
+            state.copy(
+                phase = recentPhaseAfterRemoval(
+                    remainingIsEmpty = page.items.isEmpty(),
+                    currentPhase = state.phase,
+                ),
+                items = page.items,
+                resultCount = page.resultCount,
+                hasNext = page.hasNext,
+                nextPage = 1,
+                isLoadingMore = false,
+            )
+        }
+        reconcileThumbnails(page.items.map { item -> item.id })
+    }
+
+    private fun recentPhaseAfterRemoval(
+        remainingIsEmpty: Boolean,
+        currentPhase: RecentOrganizedScreenshotsPhase,
+    ): RecentOrganizedScreenshotsPhase {
+        if (!remainingIsEmpty) {
+            return RecentOrganizedScreenshotsPhase.Content
+        }
+        return if (currentPhase == RecentOrganizedScreenshotsPhase.Content) {
+            RecentOrganizedScreenshotsPhase.Content
+        } else {
+            RecentOrganizedScreenshotsPhase.Empty
+        }
+    }
 }
+
+private data class PendingRecentPage(
+    val items: List<RecentOrganizedScreenshotUiModel>,
+    val resultCount: Long,
+    val hasNext: Boolean,
+)

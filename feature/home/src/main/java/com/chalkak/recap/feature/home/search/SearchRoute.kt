@@ -27,7 +27,9 @@ fun SearchRoute(
     val deleteFailureToastMessage = stringResource(R.string.screenshot_detail_delete_error)
 
     DisposableEffect(viewModel) {
+        viewModel.onListVisible()
         onDispose {
+            viewModel.onListHidden()
             viewModel.onAction(SearchAction.LeaveComposition)
         }
     }

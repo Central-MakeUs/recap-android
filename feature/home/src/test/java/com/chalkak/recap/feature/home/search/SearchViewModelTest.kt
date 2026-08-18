@@ -3,6 +3,7 @@ package com.chalkak.recap.feature.home.search
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.capture.CaptureThumbnailReady
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
+import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
 import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.search.RecentSearchStore
 import com.chalkak.recap.core.data.search.SearchRepository
@@ -42,6 +43,7 @@ class SearchViewModelTest {
     private val thumbnailUpdates = mockk<CaptureThumbnailUpdates>()
     private val recoveryFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private val mainContentRecoveryTrigger = mockk<MainContentRecoveryTrigger>()
+    private val changeNotifier = RemoteCaptureChangeNotifier()
     private lateinit var viewModel: SearchViewModel
 
     @Before
@@ -74,6 +76,7 @@ class SearchViewModelTest {
             recentSearchStore = recentSearchStore,
             thumbnailUpdates = thumbnailUpdates,
             mainContentRecoveryTrigger = mainContentRecoveryTrigger,
+            changeNotifier = changeNotifier,
         )
     }
 
@@ -741,7 +744,7 @@ class SearchViewModelTest {
 
         coVerify(exactly = 1) { captureMutationRepository.deleteCaptures(setOf(7L)) }
         assertTrue(viewModel.uiState.value.results.isEmpty())
-        assertEquals(SearchContentPhase.Empty, viewModel.uiState.value.phase)
+        assertEquals(SearchContentPhase.Results, viewModel.uiState.value.phase)
         assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
     }
 
@@ -780,5 +783,56 @@ class SearchViewModelTest {
 
         assertEquals(listOf(7L), viewModel.uiState.value.results.map { it.captureId })
         assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
+    }
+
+    @Test
+    fun `deleted capture stays until list is visible again`() = runTest(testDispatcher) {
+        coEvery {
+            searchRepository.search(any(), any(), any(), any(), any())
+        } returns Result.success(
+            SearchPage(
+                count = 2L,
+                hasNext = false,
+                items = listOf(
+                    SearchResult(
+                        captureId = 7L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "숙소",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-19T00:00:00Z",
+                    ),
+                    SearchResult(
+                        captureId = 8L,
+                        typeCode = ScreenshotContentType.PLACE,
+                        thumbnailUrl = null,
+                        titleHighlighted = "카페",
+                        summaryHighlighted = "요약",
+                        ocrExcerptHighlighted = null,
+                        isFavorite = false,
+                        organizedAt = "2026-07-18T00:00:00Z",
+                    ),
+                ),
+            ),
+        )
+
+        viewModel.onAction(SearchAction.UpdateQuery("숙소"))
+        viewModel.onAction(SearchAction.SubmitSearch)
+        advanceUntilIdle()
+        viewModel.onListHidden()
+        changeNotifier.notifyCapturesDeleted(setOf(7L))
+        advanceUntilIdle()
+
+        assertEquals(listOf(7L, 8L), viewModel.uiState.value.results.map { it.captureId })
+        assertEquals(2L, viewModel.uiState.value.resultCount)
+
+        viewModel.onListVisible()
+        advanceUntilIdle()
+
+        assertEquals(listOf(8L), viewModel.uiState.value.results.map { it.captureId })
+        assertEquals(1L, viewModel.uiState.value.resultCount)
+        assertEquals(SearchContentPhase.Results, viewModel.uiState.value.phase)
     }
 }

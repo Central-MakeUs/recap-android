@@ -315,7 +315,7 @@ class RecentOrganizedScreenshotsViewModelTest {
 
         coVerify(exactly = 1) { captureMutationRepository.deleteCaptures(setOf(7L)) }
         assertTrue(viewModel.uiState.value.items.isEmpty())
-        assertEquals(RecentOrganizedScreenshotsPhase.Empty, viewModel.uiState.value.phase)
+        assertEquals(RecentOrganizedScreenshotsPhase.Content, viewModel.uiState.value.phase)
         assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
     }
 
@@ -342,6 +342,47 @@ class RecentOrganizedScreenshotsViewModelTest {
 
         assertEquals(listOf(7L), viewModel.uiState.value.items.map { it.id })
         assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
+    }
+
+    @Test
+    fun `hidden list keeps deleted item until visible again`() = runTest(testDispatcher) {
+        firstPageFlow.tryEmit(
+            Result.success(
+                CapturePage(
+                    count = 2,
+                    hasNext = false,
+                    items = listOf(
+                        captureSummary(captureId = 1L, isFavorite = false),
+                        captureSummary(captureId = 2L, isFavorite = false),
+                    ),
+                ),
+            ),
+        )
+
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+        viewModel.onListHidden()
+
+        firstPageFlow.emit(
+            Result.success(
+                CapturePage(
+                    count = 1,
+                    hasNext = false,
+                    items = listOf(captureSummary(captureId = 2L, isFavorite = false)),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals(listOf(1L, 2L), viewModel.uiState.value.items.map { it.id })
+        assertEquals(2L, viewModel.uiState.value.resultCount)
+
+        viewModel.onListVisible()
+        advanceUntilIdle()
+
+        assertEquals(listOf(2L), viewModel.uiState.value.items.map { it.id })
+        assertEquals(1L, viewModel.uiState.value.resultCount)
+        assertEquals(RecentOrganizedScreenshotsPhase.Content, viewModel.uiState.value.phase)
     }
 
     private fun createViewModel(): RecentOrganizedScreenshotsViewModel =

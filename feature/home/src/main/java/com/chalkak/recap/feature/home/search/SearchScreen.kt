@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.animation.recapScreenshotCardItemAnimation
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
@@ -298,7 +299,9 @@ private fun SearchResultsContent(
                             revealedCaptureId = null
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .recapScreenshotCardItemAnimation()
+                        .fillMaxWidth(),
                 ) {
                     ScreenshotCard(
                         thumbnailModel = item.thumbnailModel,
@@ -313,6 +316,11 @@ private fun SearchResultsContent(
                         horizontalContentPadding = SearchScreenTokens.HorizontalPadding,
                         modifier = Modifier.fillMaxWidth(),
                     )
+                }
+            }
+            if (results.isEmpty()) {
+                item(key = "search_empty") {
+                    SearchEmptyContent(modifier = Modifier.fillParentMaxSize())
                 }
             }
             if (isLoadingMore) {
