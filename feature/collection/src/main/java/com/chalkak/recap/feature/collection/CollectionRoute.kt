@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +47,7 @@ fun CollectionRoute(
     openCollectionTypeDetailOnEnter: String? = null,
     onOpenCollectionTypeDetailOnEnterConsumed: () -> Unit = {},
     onPredictiveBackProgress: (Float) -> Unit = {},
+    isCurrentAppDestination: Boolean = true,
     viewModel: CollectionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -245,13 +247,12 @@ fun CollectionRoute(
                             searchQuery = uiState.detailSearchQuery,
                             isSearchVisible = uiState.isDetailSearchVisible,
                             pendingDeleteCaptureId = uiState.pendingDeleteCaptureId,
+                            isCurrentAppDestination = isCurrentAppDestination,
                             onBackClick = ::handleBack,
                             onAction = ::handleAction,
                             onItemClick = onNavigateToScreenshot,
                             onItemEditClick = onNavigateToScreenshotEdit,
                             onLeaveDetail = ::closeDetailIfNoDetailDestination,
-                            onDetailListVisible = viewModel::onDetailListVisible,
-                            onDetailListHidden = viewModel::onDetailListHidden,
                         )
                     }
 
@@ -264,13 +265,12 @@ fun CollectionRoute(
                             searchQuery = uiState.detailSearchQuery,
                             isSearchVisible = uiState.isDetailSearchVisible,
                             pendingDeleteCaptureId = uiState.pendingDeleteCaptureId,
+                            isCurrentAppDestination = isCurrentAppDestination,
                             onBackClick = ::handleBack,
                             onAction = ::handleAction,
                             onItemClick = onNavigateToScreenshot,
                             onItemEditClick = onNavigateToScreenshotEdit,
                             onLeaveDetail = ::closeDetailIfNoDetailDestination,
-                            onDetailListVisible = viewModel::onDetailListVisible,
-                            onDetailListHidden = viewModel::onDetailListHidden,
                         )
                     }
 
@@ -294,37 +294,50 @@ private fun CollectionDetailDestination(
     onItemClick: (Long) -> Unit,
     onItemEditClick: (Long) -> Unit,
     pendingDeleteCaptureId: Long?,
+    isCurrentAppDestination: Boolean,
     onLeaveDetail: () -> Unit,
-    onDetailListVisible: () -> Unit,
-    onDetailListHidden: () -> Unit,
 ) {
-    var retainedDetail by remember { mutableStateOf(detail) }
-    val isCurrentDestination = backStack.lastOrNull() == route
-    if (detail != null && isCurrentDestination) {
-        retainedDetail = detail
+    val currentPresentation = CollectionDetailPresentation(
+        detail = detail,
+        selection = selection,
+        searchQuery = searchQuery,
+        isSearchVisible = isSearchVisible,
+        pendingDeleteCaptureId = pendingDeleteCaptureId,
+    )
+    var retainedPresentation by remember { mutableStateOf(currentPresentation) }
+    val isCurrentDestination = isCurrentAppDestination && backStack.lastOrNull() == route
+    val displayedPresentation = if (isCurrentDestination) {
+        SideEffect { retainedPresentation = currentPresentation }
+        currentPresentation
+    } else {
+        retainedPresentation
     }
 
     DisposableEffect(Unit) {
-        onDetailListVisible()
-        onDispose {
-            onDetailListHidden()
-            onLeaveDetail()
-        }
+        onDispose(onLeaveDetail)
     }
 
-    val displayedDetail = retainedDetail ?: return
+    val displayedDetail = displayedPresentation.detail ?: return
     CollectionDetailScreen(
         detail = displayedDetail,
-        selection = selection,
+        selection = displayedPresentation.selection,
         onBackClick = onBackClick,
         onAction = onAction,
         onItemClick = onItemClick,
         onItemEditClick = onItemEditClick,
-        pendingDeleteCaptureId = pendingDeleteCaptureId,
-        searchQuery = searchQuery,
-        isSearchVisible = isSearchVisible,
+        pendingDeleteCaptureId = displayedPresentation.pendingDeleteCaptureId,
+        searchQuery = displayedPresentation.searchQuery,
+        isSearchVisible = displayedPresentation.isSearchVisible,
     )
 }
+
+private data class CollectionDetailPresentation(
+    val detail: CollectionDetailUiModel?,
+    val selection: CollectionSelectionUiState,
+    val searchQuery: String,
+    val isSearchVisible: Boolean,
+    val pendingDeleteCaptureId: Long?,
+)
 
 private fun NavBackStack<NavKey>.hasDetailDestination(): Boolean =
     any { destination ->

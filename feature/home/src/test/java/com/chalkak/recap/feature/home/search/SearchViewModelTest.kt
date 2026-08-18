@@ -671,7 +671,6 @@ class SearchViewModelTest {
         assertEquals(listOf(7L), viewModel.uiState.value.results.map { it.captureId })
 
         viewModel.onAction(SearchAction.EditResult(7L))
-        viewModel.onListHidden()
         viewModel.onAction(SearchAction.LeaveComposition)
         searchResults.emit(
             Result.success(SearchPage(count = 0L, hasNext = false, items = emptyList())),
@@ -884,7 +883,6 @@ class SearchViewModelTest {
         viewModel.onAction(SearchAction.UpdateQuery("숙소"))
         viewModel.onAction(SearchAction.SubmitSearch)
         advanceUntilIdle()
-        viewModel.onListHidden()
         searchResults.emit(
             Result.success(
                 SearchPage(

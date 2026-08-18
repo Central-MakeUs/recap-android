@@ -2,11 +2,13 @@ package com.chalkak.recap.feature.home.recent
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -23,17 +25,20 @@ fun RecentOrganizedScreenshotsRoute(
     onNavigateToScreenshot: (Long) -> Unit,
     onNavigateToOrganize: () -> Unit,
     onNavigateToScreenshotEdit: (Long) -> Unit = {},
+    isCurrentDestination: Boolean = true,
     viewModel: RecentOrganizedScreenshotsViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    var retainedUiState by remember { mutableStateOf(uiState) }
+    val displayedUiState = if (isCurrentDestination) {
+        SideEffect { retainedUiState = uiState }
+        uiState
+    } else {
+        retainedUiState
+    }
     val toastDispatcher = LocalRecapToastDispatcher.current
     val deleteSuccessToastMessage = stringResource(R.string.screenshot_delete_success_toast)
     val deleteFailureToastMessage = stringResource(R.string.screenshot_detail_delete_error)
-
-    DisposableEffect(viewModel) {
-        viewModel.onListVisible()
-        onDispose { viewModel.onListHidden() }
-    }
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
@@ -81,7 +86,7 @@ fun RecentOrganizedScreenshotsRoute(
 
     RecentOrganizedScreenshotsScreen(
         modifier = modifier.fillMaxSize(),
-        uiState = uiState,
+        uiState = displayedUiState,
         onAction = onAction,
     )
 }

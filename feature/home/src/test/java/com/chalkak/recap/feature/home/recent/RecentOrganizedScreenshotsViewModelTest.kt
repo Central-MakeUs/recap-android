@@ -345,7 +345,7 @@ class RecentOrganizedScreenshotsViewModelTest {
     }
 
     @Test
-    fun `hidden list keeps deleted item until visible again`() = runTest(testDispatcher) {
+    fun `repository update removes item immediately`() = runTest(testDispatcher) {
         firstPageFlow.tryEmit(
             Result.success(
                 CapturePage(
@@ -361,8 +361,6 @@ class RecentOrganizedScreenshotsViewModelTest {
 
         val viewModel = createViewModel()
         advanceUntilIdle()
-        viewModel.onListHidden()
-
         firstPageFlow.emit(
             Result.success(
                 CapturePage(
@@ -372,12 +370,6 @@ class RecentOrganizedScreenshotsViewModelTest {
                 ),
             ),
         )
-        advanceUntilIdle()
-
-        assertEquals(listOf(1L, 2L), viewModel.uiState.value.items.map { it.id })
-        assertEquals(2L, viewModel.uiState.value.resultCount)
-
-        viewModel.onListVisible()
         advanceUntilIdle()
 
         assertEquals(listOf(2L), viewModel.uiState.value.items.map { it.id })

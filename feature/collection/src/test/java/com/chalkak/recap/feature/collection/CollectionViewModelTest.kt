@@ -1134,7 +1134,7 @@ class CollectionViewModelTest {
     }
 
     @Test
-    fun `hidden detail list keeps deleted card until visible again`() = runTest(testDispatcher) {
+    fun `repository update removes detail card immediately`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
                 storedCard(
@@ -1159,7 +1159,6 @@ class CollectionViewModelTest {
             viewModel.uiState.value.detail?.cards?.map { card -> card.captureId },
         )
 
-        viewModel.onDetailListHidden()
         cardsFlow.emit(
             listOf(
                 storedCard(
@@ -1170,13 +1169,6 @@ class CollectionViewModelTest {
                 ),
             ),
         )
-        advanceUntilIdle()
-        assertEquals(
-            listOf(1L, 2L),
-            viewModel.uiState.value.detail?.cards?.map { card -> card.captureId },
-        )
-
-        viewModel.onDetailListVisible()
         advanceUntilIdle()
         assertEquals(
             listOf(2L),

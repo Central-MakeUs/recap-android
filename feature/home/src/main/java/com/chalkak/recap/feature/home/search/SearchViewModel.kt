@@ -37,7 +37,6 @@ class SearchViewModel @Inject constructor(
     private var searchJob: Job? = null
     private var loadMoreJob: Job? = null
     private var preserveSessionOnNextDispose = false
-    private var isListVisible = true
 
     init {
         viewModelScope.launch {
@@ -62,14 +61,6 @@ class SearchViewModel @Inject constructor(
                 }
             }
         }
-    }
-
-    fun onListVisible() {
-        isListVisible = true
-    }
-
-    fun onListHidden() {
-        isListVisible = false
     }
 
     fun onAction(action: SearchAction) {

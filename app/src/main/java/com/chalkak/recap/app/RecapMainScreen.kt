@@ -40,6 +40,7 @@ import dev.chrisbanes.haze.rememberHazeState
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun RecapMainScreen(
+    isCurrentAppDestination: Boolean = true,
     onNavigateToDeveloper: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
@@ -176,6 +177,7 @@ fun RecapMainScreen(
             },
         ) { _ ->
             RecapMainTabNavHost(
+                isCurrentAppDestination = isCurrentAppDestination,
                 hazeState = hazeState,
                 backStack = backStack,
                 onNavigateToDeveloper = onNavigateToDeveloper,

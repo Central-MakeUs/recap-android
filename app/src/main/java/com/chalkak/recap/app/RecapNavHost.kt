@@ -165,6 +165,7 @@ fun RecapNavHost(
                         LocalNavigationEventDispatcherOwner provides mainTabsDispatcherOwner,
                     ) {
                         RecapMainScreen(
+                            isCurrentAppDestination = isMainTabsOnTop,
                             onNavigateToDeveloper = onNavigateToDeveloper,
                             onNavigateToSettings = { backStack.add(AppRoute.Settings) },
                             onNavigateToSearch = { backStack.add(AppRoute.Search) },
@@ -284,6 +285,7 @@ fun RecapNavHost(
 
                 AppRoute.Search -> NavEntry(route) {
                     SearchRoute(
+                        isCurrentDestination = backStack.lastOrNull() == route,
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onNavigateToScreenshot = { captureId ->
                             if (captureId > 0) {
@@ -300,6 +302,7 @@ fun RecapNavHost(
 
                 AppRoute.RecentOrganizedScreenshots -> NavEntry(route) {
                     RecentOrganizedScreenshotsRoute(
+                        isCurrentDestination = backStack.lastOrNull() == route,
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onNavigateToSearch = { backStack.add(AppRoute.Search) },
                         onNavigateToScreenshot = { captureId ->
@@ -373,6 +376,7 @@ fun RecapMainTabNavHost(
     onOpenCollectionTypeDetailOnEnterConsumed: () -> Unit = {},
     showDeveloperLogoShortcut: Boolean = false,
     onCollectionPredictiveBackProgress: (Float) -> Unit = {},
+    isCurrentAppDestination: Boolean = true,
 ) {
     // Home ↔ Collection keeps its short slide+fade and bottom-bar predictive progress.
     NavDisplay(
@@ -403,6 +407,7 @@ fun RecapMainTabNavHost(
 
                 MainTabRoute.Collection -> NavEntry(route) {
                     CollectionRoute(
+                        isCurrentAppDestination = isCurrentAppDestination,
                         hazeState = hazeState,
                         onNavigateToOrganize = onNavigateToOrganize,
                         onNavigateToSearch = onNavigateToSearch,

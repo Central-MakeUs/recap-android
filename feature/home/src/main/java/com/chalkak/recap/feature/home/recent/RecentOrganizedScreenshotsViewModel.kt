@@ -34,8 +34,6 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
 
     private val refreshKey = MutableStateFlow(0)
     private var loadMoreJob: Job? = null
-    private var isListVisible = true
-    private var pendingRemovalPage: PendingRecentPage? = null
 
     init {
         observeFirstPage()
@@ -58,17 +56,6 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
         }
     }
 
-    fun onListVisible() {
-        isListVisible = true
-        val pending = pendingRemovalPage ?: return
-        pendingRemovalPage = null
-        applyFirstPage(pending)
-    }
-
-    fun onListHidden() {
-        isListVisible = false
-    }
-
     @OptIn(ExperimentalCoroutinesApi::class)
     private fun observeFirstPage() {
         viewModelScope.launch {
@@ -86,15 +73,7 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
                                 resultCount = page.count,
                                 hasNext = page.hasNext,
                             )
-                            val currentIds = _uiState.value.items.map { item -> item.id }.toSet()
-                            val nextIds = items.map { item -> item.id }.toSet()
-                            val hasRemoval = currentIds.any { id -> id !in nextIds }
-                            if (!isListVisible && hasRemoval) {
-                                pendingRemovalPage = pending
-                            } else {
-                                pendingRemovalPage = null
-                                applyFirstPage(pending)
-                            }
+                            applyFirstPage(pending)
                         },
                         onFailure = {
                             _uiState.update { state ->
@@ -229,9 +208,13 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
             }
             _uiState.update { state ->
                 val remaining = state.items.filterNot { item -> item.id == captureId }
+                val removedCount = state.items.size - remaining.size
+                if (removedCount == 0) {
+                    return@update state
+                }
                 state.copy(
                     items = remaining,
-                    resultCount = (state.resultCount - 1).coerceAtLeast(0L),
+                    resultCount = (state.resultCount - removedCount).coerceAtLeast(0L),
                     phase = recentPhaseAfterRemoval(
                         remainingIsEmpty = remaining.isEmpty(),
                         currentPhase = state.phase,
