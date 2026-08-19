@@ -77,11 +77,13 @@ class RecentOrganizedScreenshotsViewModelTest {
     }
 
     @Test
-    fun `capture change refresh removes deleted item and resets pagination`() = runTest(testDispatcher) {
+    fun `repository update keeps loaded pages and refreshes their items`() =
+        runTest(testDispatcher) {
+            var secondPageFavorite = false
         firstPageFlow.tryEmit(
             Result.success(
                 CapturePage(
-                    count = 2,
+                    count = 3,
                     hasNext = true,
                     items = listOf(
                         captureSummary(captureId = 1L, isFavorite = false),
@@ -92,13 +94,15 @@ class RecentOrganizedScreenshotsViewModelTest {
         )
         coEvery {
             recentCapturesRepository.getRecentCaptures(page = 1)
-        } returns Result.success(
-            CapturePage(
-                count = 2,
-                hasNext = false,
-                items = listOf(captureSummary(captureId = 3L, isFavorite = false)),
-            ),
-        )
+        } answers {
+            Result.success(
+                CapturePage(
+                    count = 3,
+                    hasNext = false,
+                    items = listOf(captureSummary(captureId = 3L, isFavorite = secondPageFavorite)),
+                ),
+            )
+        }
 
         val viewModel = createViewModel()
         advanceUntilIdle()
@@ -108,11 +112,12 @@ class RecentOrganizedScreenshotsViewModelTest {
         assertEquals(listOf(1L, 2L, 3L), viewModel.uiState.value.items.map { it.id })
         assertEquals(2, viewModel.uiState.value.nextPage)
 
+            secondPageFavorite = true
         firstPageFlow.emit(
             Result.success(
                 CapturePage(
-                    count = 1,
-                    hasNext = false,
+                    count = 2,
+                    hasNext = true,
                     items = listOf(captureSummary(captureId = 2L, isFavorite = false)),
                 ),
             ),
@@ -121,11 +126,15 @@ class RecentOrganizedScreenshotsViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals(RecentOrganizedScreenshotsPhase.Content, state.phase)
-        assertEquals(listOf(2L), state.items.map { it.id })
-        assertEquals(1L, state.resultCount)
+            assertEquals(listOf(2L, 3L), state.items.map { it.id })
+            assertTrue(state.items.last().isFavorite)
+            assertEquals(2L, state.resultCount)
         assertFalse(state.hasNext)
-        assertEquals(1, state.nextPage)
+            assertEquals(2, state.nextPage)
         assertFalse(state.isLoadingMore)
+            coVerify(exactly = 2) {
+                recentCapturesRepository.getRecentCaptures(page = 1)
+            }
     }
 
     @Test

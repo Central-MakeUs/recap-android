@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.capture.CaptureMutationRepository
 import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
 import com.chalkak.recap.core.data.home.RecentCapturesRepository
+import com.chalkak.recap.core.model.capture.CapturePage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -67,13 +68,32 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
                     loadMoreJob?.cancel()
                     result.fold(
                         onSuccess = { page ->
-                            val items = page.toRecentOrganizedScreenshotItems()
-                            val pending = PendingRecentPage(
-                                items = items,
-                                resultCount = page.count,
-                                hasNext = page.hasNext,
+                            val loadedPageCount = _uiState.value.nextPage.coerceAtLeast(1)
+                            val pages = refreshLoadedPages(
+                                firstPage = page,
+                                loadedPageCount = loadedPageCount,
                             )
-                            applyFirstPage(pending)
+                            if (pages == null) {
+                                _uiState.update { state -> state.copy(isLoadingMore = false) }
+                                return@fold
+                            }
+                            val items = pages
+                                .flatMap { loadedPage -> loadedPage.toRecentOrganizedScreenshotItems() }
+                                .distinctBy { item -> item.id }
+                            _uiState.update { state ->
+                                state.copy(
+                                    phase = recentPhaseAfterRemoval(
+                                        remainingIsEmpty = items.isEmpty(),
+                                        currentPhase = state.phase,
+                                    ),
+                                    items = items,
+                                    resultCount = page.count,
+                                    hasNext = pages.last().hasNext,
+                                    nextPage = pages.size,
+                                    isLoadingMore = false,
+                                )
+                            }
+                            reconcileThumbnails(items.map { item -> item.id })
                         },
                         onFailure = {
                             _uiState.update { state ->
@@ -264,22 +284,20 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
         }
     }
 
-    private fun applyFirstPage(page: PendingRecentPage) {
-        loadMoreJob?.cancel()
-        _uiState.update { state ->
-            state.copy(
-                phase = recentPhaseAfterRemoval(
-                    remainingIsEmpty = page.items.isEmpty(),
-                    currentPhase = state.phase,
-                ),
-                items = page.items,
-                resultCount = page.resultCount,
-                hasNext = page.hasNext,
-                nextPage = 1,
-                isLoadingMore = false,
-            )
+    private suspend fun refreshLoadedPages(
+        firstPage: CapturePage,
+        loadedPageCount: Int,
+    ): List<CapturePage>? {
+        val pages = mutableListOf(firstPage)
+        var pageIndex = 1
+        while (pageIndex < loadedPageCount && pages.last().hasNext) {
+            val page = recentCapturesRepository.getRecentCaptures(page = pageIndex).getOrElse {
+                return null
+            }
+            pages += page
+            pageIndex += 1
         }
-        reconcileThumbnails(page.items.map { item -> item.id })
+        return pages
     }
 
     private fun recentPhaseAfterRemoval(
@@ -296,9 +314,3 @@ class RecentOrganizedScreenshotsViewModel @Inject constructor(
         }
     }
 }
-
-private data class PendingRecentPage(
-    val items: List<RecentOrganizedScreenshotUiModel>,
-    val resultCount: Long,
-    val hasNext: Boolean,
-)
