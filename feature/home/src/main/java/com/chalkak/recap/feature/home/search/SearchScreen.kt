@@ -138,6 +138,9 @@ private fun SearchTopBar(
     onCloseClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -160,7 +163,13 @@ private fun SearchTopBar(
                 modifier = Modifier.weight(1f),
                 placeholder = stringResource(R.string.search_screen_placeholder),
             )
-            SearchCloseButton(onClick = onCloseClick)
+            SearchCloseButton(
+                onClick = {
+                    keyboardController?.hide()
+                    focusManager.clearFocus()
+                    onCloseClick()
+                },
+            )
         }
     }
 }
