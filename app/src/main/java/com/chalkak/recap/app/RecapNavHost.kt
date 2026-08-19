@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -64,6 +65,7 @@ fun RecapNavHost(
 ) {
     val context = LocalContext.current
     val backStack = rememberNavBackStack(AppRoute.MainTabs)
+    val currentAppRouteState = rememberUpdatedState(backStack.lastOrNull())
     var requestOpenOrganize by remember { mutableStateOf(false) }
     val analysisStatusFlow = remember(analysisProgressViewModel) {
         analysisProgressViewModel.uiState.map { state ->
@@ -157,7 +159,7 @@ fun RecapNavHost(
         entryProvider = { route ->
             when (route) {
                 AppRoute.MainTabs -> NavEntry(route) {
-                    val isMainTabsOnTop = backStack.lastOrNull() == AppRoute.MainTabs
+                    val isMainTabsOnTop = currentAppRouteState.value == AppRoute.MainTabs
                     val mainTabsDispatcherOwner = rememberNavigationEventDispatcherOwner(
                         enabled = isMainTabsOnTop,
                     )
@@ -285,7 +287,7 @@ fun RecapNavHost(
 
                 AppRoute.Search -> NavEntry(route) {
                     SearchRoute(
-                        isCurrentDestination = backStack.lastOrNull() == route,
+                        isCurrentDestination = currentAppRouteState.value == route,
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onNavigateToScreenshot = { captureId ->
                             if (captureId > 0) {
@@ -302,7 +304,7 @@ fun RecapNavHost(
 
                 AppRoute.RecentOrganizedScreenshots -> NavEntry(route) {
                     RecentOrganizedScreenshotsRoute(
-                        isCurrentDestination = backStack.lastOrNull() == route,
+                        isCurrentDestination = currentAppRouteState.value == route,
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onNavigateToSearch = { backStack.add(AppRoute.Search) },
                         onNavigateToScreenshot = { captureId ->
@@ -378,6 +380,8 @@ fun RecapMainTabNavHost(
     onCollectionPredictiveBackProgress: (Float) -> Unit = {},
     isCurrentAppDestination: Boolean = true,
 ) {
+    val currentAppDestinationState = rememberUpdatedState(isCurrentAppDestination)
+    val currentMainTabRouteState = rememberUpdatedState(backStack.lastOrNull())
     // Home ↔ Collection keeps its short slide+fade and bottom-bar predictive progress.
     NavDisplay(
         backStack = backStack,
@@ -407,7 +411,9 @@ fun RecapMainTabNavHost(
 
                 MainTabRoute.Collection -> NavEntry(route) {
                     CollectionRoute(
-                        isCurrentAppDestination = isCurrentAppDestination,
+                        isCurrentAppDestination = currentAppDestinationState.value,
+                        isCurrentMainTabDestination =
+                            currentMainTabRouteState.value == route,
                         hazeState = hazeState,
                         onNavigateToOrganize = onNavigateToOrganize,
                         onNavigateToSearch = onNavigateToSearch,
