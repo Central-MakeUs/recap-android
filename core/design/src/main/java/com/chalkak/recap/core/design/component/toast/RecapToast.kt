@@ -52,12 +52,11 @@ import com.chalkak.recap.core.design.theme.RecapSuccess
 import com.chalkak.recap.core.design.theme.RecapToastBackground
 import com.chalkak.recap.core.design.theme.RecapToastContent
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
-import dev.chrisbanes.haze.HazeInputScale
+import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.HazeColorEffect
-import dev.chrisbanes.haze.blur.blurEffect
+import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.blur.materials.CupertinoMaterials
-import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 
@@ -156,19 +155,14 @@ fun RecapToast(
     useRealtimeBlur: Boolean = isRecapRealtimeBlurEnabled(),
 ) {
     val hazeModifier = if (useRealtimeBlur) {
-        val blurStyle = CupertinoMaterials.ultraThin()
-        Modifier.hazeEffect(state = hazeState) {
-            inputScale = HazeInputScale.Fixed(0.5f)
-            blurEffect {
-                blurEnabled = true
-                blurRadius = RecapToastDefaults.BlurRadius
-                style = blurStyle
-                colorEffects = listOf(
-                    HazeColorEffect.tint(colors.container),
-                )
-                noiseFactor = RecapToastDefaults.NoiseFactor
-            }
-        }
+        Modifier.hazeBlur(
+            input = HazeInput.Sources(hazeState),
+            style = CupertinoMaterials.ultraThin().then {
+                blurRadius(RecapToastDefaults.BlurRadius)
+                colorEffects(listOf(HazeColorEffect.tint(colors.container)))
+                noiseFactor(RecapToastDefaults.NoiseFactor)
+            },
+        )
     } else {
         Modifier
     }

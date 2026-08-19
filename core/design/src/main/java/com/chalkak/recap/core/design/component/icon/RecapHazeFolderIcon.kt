@@ -43,11 +43,10 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.White
-import dev.chrisbanes.haze.HazeInputScale
+import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.blur.HazeColorEffect
-import dev.chrisbanes.haze.blur.blurEffect
+import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.blur.materials.CupertinoMaterials
-import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlin.math.roundToInt
@@ -56,7 +55,7 @@ import kotlin.math.roundToInt
  * Group 63.svg 기반 헤이즈 폴더 아이콘.
  *
  * [RecapHazeFolderCard]와 같이 뒤 레이어를 [hazeSource], 앞 폴더 글래스를
- * [CupertinoMaterials.ultraThin] [hazeEffect]로 구성한다.
+ * [CupertinoMaterials.ultraThin] [hazeBlur]로 구성한다.
  *
  * [size]는 렌더링뿐 아니라 레이아웃에서 차지하는 크기도 함께 반영한다 (viewBox 190 기준 스케일).
  */
@@ -67,7 +66,6 @@ fun RecapHazeFolderIcon(
     contentDescription: String? = null,
 ) {
     val hazeState = rememberHazeState()
-    val glassStyle = CupertinoMaterials.ultraThin()
     val folderShape = remember { FolderShape }
     val tintBrush = remember { folderTintBrush() }
     val backShape = RoundedCornerShape(RecapHazeFolderIconTokens.BackCornerRadius)
@@ -104,7 +102,7 @@ fun RecapHazeFolderIcon(
                     .background(RecapHazeFolderIconTokens.BackFillColor),
             )
 
-            // Front folder glass: ultraThin hazeEffect (card와 동일 구조)
+            // Front folder glass: ultraThin hazeBlur (card와 동일 구조)
             Box(
                 modifier = Modifier
                     .align(Alignment.TopStart)
@@ -117,18 +115,16 @@ fun RecapHazeFolderIcon(
                         height = RecapHazeFolderIconTokens.FolderHeight,
                     )
                     .clip(folderShape)
-                    .hazeEffect(state = hazeState) {
-                        inputScale = HazeInputScale.Fixed(0.5f)
-                        blurEffect {
-                            blurEnabled = true
-                            blurRadius = RecapHazeFolderIconTokens.BlurRadius
-                            style = glassStyle
-                            colorEffects = listOf(
-                                HazeColorEffect.tint(brush = tintBrush),
+                    .hazeBlur(
+                        input = HazeInput.Sources(hazeState),
+                        style = CupertinoMaterials.ultraThin().then {
+                            blurRadius(RecapHazeFolderIconTokens.BlurRadius)
+                            colorEffects(
+                                listOf(HazeColorEffect.tint(brush = tintBrush)),
                             )
-                            noiseFactor = RecapHazeFolderIconTokens.NoiseFactor
-                        }
-                    }
+                            noiseFactor(RecapHazeFolderIconTokens.NoiseFactor)
+                        },
+                    )
                     .border(
                         width = RecapHazeFolderIconTokens.FrontBorderWidth,
                         color = RecapHazeFolderIconTokens.GlassBorderColor,

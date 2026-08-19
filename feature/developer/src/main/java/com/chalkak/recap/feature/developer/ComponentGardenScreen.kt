@@ -41,8 +41,8 @@ import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.bottomsheet.AiDataTransferConsentBottomSheet
-import com.chalkak.recap.core.design.component.bottomsheet.NotificationPermissionRequestBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.LogoutConfirmationBottomSheet
+import com.chalkak.recap.core.design.component.bottomsheet.NotificationPermissionRequestBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheetDefaults
 import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheetNoticeAlignment
@@ -53,12 +53,12 @@ import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
 import com.chalkak.recap.core.design.component.card.HomeFavoriteCard
 import com.chalkak.recap.core.design.component.card.OrganizedCaptureCard
-import com.chalkak.recap.core.design.component.card.ShareFavoriteGuideCard
 import com.chalkak.recap.core.design.component.card.OrganizedScreenshotSummaryCard
 import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
 import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
+import com.chalkak.recap.core.design.component.card.ShareFavoriteGuideCard
 import com.chalkak.recap.core.design.component.chip.RecapCategoryRoundChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChipWithIcon
@@ -67,6 +67,7 @@ import com.chalkak.recap.core.design.component.icon.RecapHazeFolderIcon
 import com.chalkak.recap.core.design.component.input.RecapInputField
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
+import com.chalkak.recap.core.design.component.swipe.ScreenshotCardSwipeRow
 import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.ProvideRecapToastDispatcher
 import com.chalkak.recap.core.design.component.toast.RecapToast
@@ -82,7 +83,6 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.feature.organize.OrganizeAction
 import com.chalkak.recap.feature.organize.OrganizeUiState
 import com.chalkak.recap.feature.organize.ScreenshotPicker
-import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 
@@ -113,8 +113,9 @@ internal fun ComponentGardenScreen(
     var inputFieldValue by remember { mutableStateOf("") }
     var multilineInputFieldValue by remember { mutableStateOf("") }
     var isScreenshotCardFavorited by remember { mutableStateOf(false) }
+    var isScreenshotCardSwipeRevealed by remember { mutableStateOf(false) }
     var isSortLatest by remember { mutableStateOf(true) }
-    val toastHazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
+    val toastHazeState = rememberHazeState()
     val toastDispatcher = LocalRecapToastDispatcher.current
     val toastPreviewMessage = stringResource(R.string.recap_toast_preview_login_failed_message)
 
@@ -233,19 +234,30 @@ internal fun ComponentGardenScreen(
                     value = searchQuery,
                     onValueChange = { searchQuery = it },
                 )
-                ScreenshotCard(
-                    thumbnailModel = R.drawable.bid_landscape_24px,
-                    categoryType = RecapCategoryType.ShoppingProduct,
-                    title = stringResource(R.string.component_garden_screenshot_card_title),
-                    description = stringResource(
-                        R.string.component_garden_screenshot_card_description
-                    ),
-                    isFavorite = isScreenshotCardFavorited,
-                    onClick = {},
-                    onFavoriteClick = {
-                        isScreenshotCardFavorited = !isScreenshotCardFavorited
+                ScreenshotCardSwipeRow(
+                    onEditClick = {},
+                    onDeleteClick = {},
+                    revealed = isScreenshotCardSwipeRevealed,
+                    onRevealedChange = { revealed ->
+                        isScreenshotCardSwipeRevealed = revealed
                     },
-                )
+                ) {
+                    ScreenshotCard(
+                        thumbnailModel = R.drawable.bid_landscape_24px,
+                        categoryType = RecapCategoryType.ShoppingProduct,
+                        title = stringResource(R.string.component_garden_screenshot_card_title),
+                        description = stringResource(
+                            R.string.component_garden_screenshot_card_description
+                        ),
+                        isFavorite = isScreenshotCardFavorited,
+                        onClick = {},
+                        onFavoriteClick = {
+                            isScreenshotCardFavorited = !isScreenshotCardFavorited
+                        },
+                        suppressPressScale = isGestureActive,
+                        modifier = Modifier.screenshotCardSwipeSemantics(),
+                    )
+                }
                 RecapButton(
                     text = stringResource(R.string.photo_access_permission_request_permission),
                     onClick = {},

@@ -1,7 +1,7 @@
 package com.chalkak.recap.core.data.screenshot.persistence
 
 import com.chalkak.recap.core.data.capture.CaptureRepository
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
 import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
 import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.data.network.RemoteNetworkException
@@ -20,7 +20,7 @@ import org.junit.jupiter.api.assertThrows
 class RemoteScreenshotDetailRepositoryTest {
     private val captureRepository = mockk<CaptureRepository>()
     private val thumbnailCache = mockk<RemoteCaptureThumbnailCache>()
-    private val changeNotifier = RemoteCaptureChangeNotifier()
+    private val changeNotifier = CaptureChangeNotifier()
 
     private val repository = RemoteScreenshotDetailRepository(
         captureRepository = captureRepository,

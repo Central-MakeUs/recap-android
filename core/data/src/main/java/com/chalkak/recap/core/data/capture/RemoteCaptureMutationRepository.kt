@@ -11,15 +11,15 @@ import com.chalkak.recap.core.data.network.runRemoteCatchingSuspend
 import com.chalkak.recap.core.model.capture.CaptureDeleteResult
 import com.chalkak.recap.core.model.capture.ReportReason
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
+import kotlinx.coroutines.CancellationException
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.CancellationException
 
 @Singleton
 class RemoteCaptureMutationRepository @Inject constructor(
     private val captureApi: CaptureApi,
     private val thumbnailCache: RemoteCaptureThumbnailCache,
-    private val changeNotifier: RemoteCaptureChangeNotifier,
+    private val changeNotifier: CaptureChangeNotifier,
 ) : CaptureMutationRepository {
     override suspend fun updateFavorite(
         captureId: Long,
@@ -32,7 +32,7 @@ class RemoteCaptureMutationRepository @Inject constructor(
             )
         }
         if (result.isSuccess) {
-            changeNotifier.notifyCaptureChanged()
+            changeNotifier.emit(CaptureChange.Upserted(setOf(captureId)))
         }
         return result
     }
@@ -56,7 +56,7 @@ class RemoteCaptureMutationRepository @Inject constructor(
             )
         }
         if (result.isSuccess) {
-            changeNotifier.notifyCaptureChanged()
+            changeNotifier.emit(CaptureChange.Upserted(setOf(captureId)))
         }
         return result
     }
@@ -82,7 +82,7 @@ class RemoteCaptureMutationRepository @Inject constructor(
             }
             if (deleteResult.isSuccess) {
                 thumbnailCache.deleteCachedThumbnails(captureIds)
-                changeNotifier.notifyCaptureChanged()
+                changeNotifier.emit(CaptureChange.Deleted(captureIds))
                 Result.success(
                     CaptureDeleteResult(
                         deletedIds = captureIds,

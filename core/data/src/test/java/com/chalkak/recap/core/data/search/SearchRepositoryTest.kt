@@ -1,6 +1,8 @@
 package com.chalkak.recap.core.data.search
 
 import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
+import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.CaptureChange
 import com.chalkak.recap.core.data.capture.remote.CardTypeDto
 import com.chalkak.recap.core.data.network.ApiErrorDto
 import com.chalkak.recap.core.data.network.ApiResponseDto
@@ -17,6 +19,10 @@ import io.mockk.every
 import io.mockk.mockk
 import java.io.IOException
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.runCurrent
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
@@ -27,6 +33,7 @@ import org.junit.jupiter.api.Test
 class SearchRepositoryTest {
     private val searchApi = mockk<SearchApi>()
     private val thumbnailCache = mockk<RemoteCaptureThumbnailCache>(relaxed = true)
+    private val changeNotifier = CaptureChangeNotifier()
     private lateinit var repository: RemoteSearchRepository
 
     @BeforeEach
@@ -37,6 +44,7 @@ class SearchRepositoryTest {
         repository = RemoteSearchRepository(
             searchApi = searchApi,
             thumbnailCache = thumbnailCache,
+            changeNotifier = changeNotifier,
         )
     }
 
@@ -159,5 +167,28 @@ class SearchRepositoryTest {
         val result = repository.search(query = "카드", scope = SearchScope.FAVORITE)
 
         assertTrue(result.exceptionOrNull() is RemoteNetworkException)
+    }
+
+    @Test
+    fun `observeSearch refreshes after capture change`() = runTest {
+        coEvery {
+            searchApi.search("카드", "ALL", null, 0, 20)
+        } returns ApiResponseDto(
+            success = true,
+            data = SearchResponseDto(count = 0L, hasNext = false, items = emptyList()),
+        )
+        val results = async {
+            repository.observeSearch(query = "카드", scope = SearchScope.ALL)
+                .take(2)
+                .toList()
+        }
+        runCurrent()
+
+        changeNotifier.emit(CaptureChange.Upserted(setOf(1L)))
+
+        assertEquals(2, results.await().size)
+        coVerify(exactly = 2) {
+            searchApi.search("카드", "ALL", null, 0, 20)
+        }
     }
 }

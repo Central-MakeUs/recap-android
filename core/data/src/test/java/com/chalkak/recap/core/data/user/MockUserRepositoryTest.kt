@@ -1,7 +1,8 @@
 package com.chalkak.recap.core.data.user
 
 import com.chalkak.recap.core.data.UserPreferencesRepository
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.CaptureChange
+import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
 import com.chalkak.recap.core.data.screenshot.backend.MockScreenshotDataResetter
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
@@ -28,7 +29,7 @@ class MockUserRepositoryTest {
     private val screenshotCardRepository = mockk<ScreenshotCardRepository>()
     private val userPreferencesRepository = mockk<UserPreferencesRepository>()
     private val mockScreenshotDataResetter = mockk<MockScreenshotDataResetter>()
-    private val changeNotifier = mockk<RemoteCaptureChangeNotifier>(relaxed = true)
+    private val changeNotifier = mockk<CaptureChangeNotifier>(relaxed = true)
     private val remoteAuthRepository = mockk<RemoteUserRepository>()
 
     private lateinit var repository: MockUserRepository
@@ -36,7 +37,6 @@ class MockUserRepositoryTest {
     @BeforeEach
     fun setUp() {
         coEvery { mockScreenshotDataResetter.reset() } just runs
-        every { changeNotifier.notifyCaptureChanged() } just runs
         repository = MockUserRepository(
             screenshotCardRepository = screenshotCardRepository,
             userPreferencesRepository = userPreferencesRepository,
@@ -110,7 +110,7 @@ class MockUserRepositoryTest {
 
         assertTrue(result.isSuccess)
         coVerify(exactly = 1) { mockScreenshotDataResetter.reset() }
-        verify(exactly = 1) { changeNotifier.notifyCaptureChanged() }
+        coVerify(exactly = 1) { changeNotifier.emit(CaptureChange.Invalidated) }
     }
 
     @Test

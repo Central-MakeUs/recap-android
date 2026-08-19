@@ -1,7 +1,8 @@
 package com.chalkak.recap.core.data.screenshot.analysis
 
 import com.chalkak.recap.core.data.capture.CaptureRepository
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.CaptureChange
+import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
 import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotUploadPreparer
 import com.chalkak.recap.core.model.PreparedScreenshot
@@ -26,7 +27,7 @@ class RemoteOrganizeFailedException(
 @Singleton
 class RemoteScreenshotAnalysisRepository @Inject constructor(
     private val captureRepository: CaptureRepository,
-    private val changeNotifier: RemoteCaptureChangeNotifier,
+    private val changeNotifier: CaptureChangeNotifier,
     private val screenshotUploadPreparer: ScreenshotUploadPreparer,
     private val crashReporter: CrashReporter,
 ) : ScreenshotAnalysisRepository {
@@ -135,7 +136,7 @@ class RemoteScreenshotAnalysisRepository @Inject constructor(
                         Timber.w(error, "Failed to ack organize result batchId=%s", finalStatus.batchId)
                         crashReporter.recordException(error)
                     }
-                changeNotifier.notifyCaptureChanged()
+                changeNotifier.emit(CaptureChange.Invalidated)
                 return ScreenshotOrganizeOutcome.RemoteCompleted(
                     successCount = finalStatus.successCount,
                     failCount = finalStatus.failCount + preparationFailCount,

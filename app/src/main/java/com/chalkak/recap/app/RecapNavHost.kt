@@ -16,6 +16,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -29,22 +30,22 @@ import androidx.navigationevent.compose.LocalNavigationEventDispatcherOwner
 import androidx.navigationevent.compose.rememberNavigationEventDispatcherOwner
 import com.chalkak.recap.core.design.animation.RecapNavDisplay
 import com.chalkak.recap.core.design.animation.RecapNavigationMotion
+import com.chalkak.recap.core.model.observability.OrganizeTraceEntry
 import com.chalkak.recap.feature.collection.CollectionRoute
 import com.chalkak.recap.feature.home.HomeRoute
 import com.chalkak.recap.feature.home.recent.RecentOrganizedScreenshotsRoute
 import com.chalkak.recap.feature.home.search.SearchRoute
+import com.chalkak.recap.feature.onboarding.screen.OnboardingAddToFavoriteGuideScreen
 import com.chalkak.recap.feature.organize.OrganizeAnalysisStatusRoute
 import com.chalkak.recap.feature.organize.OrganizeAnalysisStatusUiState
-import com.chalkak.recap.feature.settings.account.AccountManagementRoute
-import com.chalkak.recap.feature.settings.data.DataManagementRoute
-import com.chalkak.recap.feature.settings.notification.NotificationSettingsRoute
+import com.chalkak.recap.feature.screenshot.ScreenshotRoute
 import com.chalkak.recap.feature.settings.SettingsAction
 import com.chalkak.recap.feature.settings.SettingsRoute
-import com.chalkak.recap.feature.onboarding.screen.OnboardingAddToFavoriteGuideScreen
+import com.chalkak.recap.feature.settings.account.AccountManagementRoute
+import com.chalkak.recap.feature.settings.data.DataManagementRoute
 import com.chalkak.recap.feature.settings.guide.PrivacyGuideScreen
 import com.chalkak.recap.feature.settings.guide.UsageGuideScreen
-import com.chalkak.recap.feature.screenshot.ScreenshotRoute
-import com.chalkak.recap.core.model.observability.OrganizeTraceEntry
+import com.chalkak.recap.feature.settings.notification.NotificationSettingsRoute
 import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 import dev.chrisbanes.haze.HazeState
 import kotlinx.coroutines.flow.map
@@ -64,6 +65,7 @@ fun RecapNavHost(
 ) {
     val context = LocalContext.current
     val backStack = rememberNavBackStack(AppRoute.MainTabs)
+    val currentAppRouteState = rememberUpdatedState(backStack.lastOrNull())
     var requestOpenOrganize by remember { mutableStateOf(false) }
     val analysisStatusFlow = remember(analysisProgressViewModel) {
         analysisProgressViewModel.uiState.map { state ->
@@ -157,7 +159,7 @@ fun RecapNavHost(
         entryProvider = { route ->
             when (route) {
                 AppRoute.MainTabs -> NavEntry(route) {
-                    val isMainTabsOnTop = backStack.lastOrNull() == AppRoute.MainTabs
+                    val isMainTabsOnTop = currentAppRouteState.value == AppRoute.MainTabs
                     val mainTabsDispatcherOwner = rememberNavigationEventDispatcherOwner(
                         enabled = isMainTabsOnTop,
                     )
@@ -165,6 +167,7 @@ fun RecapNavHost(
                         LocalNavigationEventDispatcherOwner provides mainTabsDispatcherOwner,
                     ) {
                         RecapMainScreen(
+                            isCurrentAppDestination = isMainTabsOnTop,
                             onNavigateToDeveloper = onNavigateToDeveloper,
                             onNavigateToSettings = { backStack.add(AppRoute.Settings) },
                             onNavigateToSearch = { backStack.add(AppRoute.Search) },
@@ -181,6 +184,11 @@ fun RecapNavHost(
                             onNavigateToScreenshot = { captureId ->
                                 if (captureId > 0) {
                                     backStack.add(AppRoute.Screenshot(captureId))
+                                }
+                            },
+                            onNavigateToScreenshotEdit = { captureId ->
+                                if (captureId > 0) {
+                                    backStack.add(AppRoute.Screenshot(captureId, openEdit = true))
                                 }
                             },
                             pendingHomeNavigationRequestId =
@@ -279,10 +287,16 @@ fun RecapNavHost(
 
                 AppRoute.Search -> NavEntry(route) {
                     SearchRoute(
+                        isCurrentDestination = currentAppRouteState.value == route,
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onNavigateToScreenshot = { captureId ->
                             if (captureId > 0) {
                                 backStack.add(AppRoute.Screenshot(captureId))
+                            }
+                        },
+                        onNavigateToScreenshotEdit = { captureId ->
+                            if (captureId > 0) {
+                                backStack.add(AppRoute.Screenshot(captureId, openEdit = true))
                             }
                         },
                     )
@@ -290,11 +304,17 @@ fun RecapNavHost(
 
                 AppRoute.RecentOrganizedScreenshots -> NavEntry(route) {
                     RecentOrganizedScreenshotsRoute(
+                        isCurrentDestination = currentAppRouteState.value == route,
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onNavigateToSearch = { backStack.add(AppRoute.Search) },
                         onNavigateToScreenshot = { captureId ->
                             if (captureId > 0) {
                                 backStack.add(AppRoute.Screenshot(captureId))
+                            }
+                        },
+                        onNavigateToScreenshotEdit = { captureId ->
+                            if (captureId > 0) {
+                                backStack.add(AppRoute.Screenshot(captureId, openEdit = true))
                             }
                         },
                         onNavigateToOrganize = {
@@ -307,6 +327,7 @@ fun RecapNavHost(
                 is AppRoute.Screenshot -> NavEntry(route) {
                     ScreenshotRoute(
                         captureId = route.captureId,
+                        openEdit = route.openEdit,
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onDeleteSucceeded = {
                             backStack.removeLastOrNull()
@@ -350,13 +371,17 @@ fun RecapMainTabNavHost(
     onNavigateToCollectionFavorites: () -> Unit = {},
     onNavigateToCollectionTypeDetail: (String) -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
+    onNavigateToScreenshotEdit: (Long) -> Unit = {},
     openCollectionFavoritesOnEnter: Boolean = false,
     onOpenCollectionFavoritesOnEnterConsumed: () -> Unit = {},
     openCollectionTypeDetailOnEnter: String? = null,
     onOpenCollectionTypeDetailOnEnterConsumed: () -> Unit = {},
     showDeveloperLogoShortcut: Boolean = false,
     onCollectionPredictiveBackProgress: (Float) -> Unit = {},
+    isCurrentAppDestination: Boolean = true,
 ) {
+    val currentAppDestinationState = rememberUpdatedState(isCurrentAppDestination)
+    val currentMainTabRouteState = rememberUpdatedState(backStack.lastOrNull())
     // Home ↔ Collection keeps its short slide+fade and bottom-bar predictive progress.
     NavDisplay(
         backStack = backStack,
@@ -386,10 +411,14 @@ fun RecapMainTabNavHost(
 
                 MainTabRoute.Collection -> NavEntry(route) {
                     CollectionRoute(
+                        isCurrentAppDestination = currentAppDestinationState.value,
+                        isCurrentMainTabDestination =
+                            currentMainTabRouteState.value == route,
                         hazeState = hazeState,
                         onNavigateToOrganize = onNavigateToOrganize,
                         onNavigateToSearch = onNavigateToSearch,
                         onNavigateToScreenshot = onNavigateToScreenshot,
+                        onNavigateToScreenshotEdit = onNavigateToScreenshotEdit,
                         onNavigateBack = { backStack.removeLastIfNotRoot() },
                         openCollectionFavoritesOnEnter = openCollectionFavoritesOnEnter,
                         onOpenCollectionFavoritesOnEnterConsumed =

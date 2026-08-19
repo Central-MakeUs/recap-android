@@ -1,6 +1,6 @@
 package com.chalkak.recap.core.data.home
 
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
 import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
 import com.chalkak.recap.core.data.home.remote.HomeApi
 import com.chalkak.recap.core.data.home.remote.toDomain
@@ -30,7 +30,7 @@ import kotlinx.coroutines.flow.shareIn
 class RemoteHomeRepository(
     private val homeApi: HomeApi,
     private val thumbnailCache: RemoteCaptureThumbnailCache,
-    private val changeNotifier: RemoteCaptureChangeNotifier,
+    private val changeNotifier: CaptureChangeNotifier,
     private val sessionTokenStore: SessionTokenStore,
     repositoryScope: CoroutineScope,
 ) : HomeRepository {
@@ -38,7 +38,7 @@ class RemoteHomeRepository(
     constructor(
         homeApi: HomeApi,
         thumbnailCache: RemoteCaptureThumbnailCache,
-        changeNotifier: RemoteCaptureChangeNotifier,
+        changeNotifier: CaptureChangeNotifier,
         sessionTokenStore: SessionTokenStore,
     ) : this(
         homeApi = homeApi,
@@ -47,6 +47,8 @@ class RemoteHomeRepository(
         sessionTokenStore = sessionTokenStore,
         repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
     )
+
+    private val summaryRefresh = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val sharedSummary =
@@ -60,7 +62,10 @@ class RemoteHomeRepository(
                         ),
                     )
                 } else {
-                    changeNotifier.changes
+                    kotlinx.coroutines.flow.merge(
+                        changeNotifier.changes.map { Unit },
+                        summaryRefresh,
+                    )
                         .onStart { emit(Unit) }
                         .mapLatest {
                             SessionHomeSummary(
@@ -88,7 +93,7 @@ class RemoteHomeRepository(
     override suspend fun prefetchSummary(): Result<HomeSummary> = observeSummary().first()
 
     override fun refreshSummary() {
-        changeNotifier.notifyCaptureChanged()
+        summaryRefresh.tryEmit(Unit)
     }
 
     suspend fun getSummary(): Result<HomeSummary> = fetchSummary()

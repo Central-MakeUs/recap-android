@@ -35,18 +35,19 @@ import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.feature.organize.OrganizeRoute
-import dev.chrisbanes.haze.HazePositionStrategy
 import dev.chrisbanes.haze.rememberHazeState
 
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun RecapMainScreen(
+    isCurrentAppDestination: Boolean = true,
     onNavigateToDeveloper: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToSearch: () -> Unit = {},
     onNavigateToRecentOrganizedScreenshots: () -> Unit = {},
     onOrganizeComplete: (List<ScreenshotUploadCandidate>) -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
+    onNavigateToScreenshotEdit: (Long) -> Unit = {},
     pendingHomeNavigationRequestId: Int? = null,
     onHomeNavigationComplete: (Int) -> Unit = {},
     pendingOpenOrganize: Boolean = false,
@@ -55,7 +56,7 @@ fun RecapMainScreen(
     val context = LocalContext.current
     val backStack = rememberNavBackStack(MainTabRoute.Home)
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
-    val hazeState = rememberHazeState(positionStrategy = HazePositionStrategy.Screen)
+    val hazeState = rememberHazeState()
     var openCollectionFavoritesOnNextEnter by remember { mutableStateOf(false) }
     var openCollectionTypeDetailOnNextEnter by remember { mutableStateOf<String?>(null) }
     var collectionPredictiveBackProgress by remember { mutableFloatStateOf(0f) }
@@ -176,6 +177,7 @@ fun RecapMainScreen(
             },
         ) { _ ->
             RecapMainTabNavHost(
+                isCurrentAppDestination = isCurrentAppDestination,
                 hazeState = hazeState,
                 backStack = backStack,
                 onNavigateToDeveloper = onNavigateToDeveloper,
@@ -188,6 +190,7 @@ fun RecapMainScreen(
                 onNavigateToCollectionFavorites = ::navigateToCollectionFavorites,
                 onNavigateToCollectionTypeDetail = ::navigateToCollectionTypeDetail,
                 onNavigateToScreenshot = onNavigateToScreenshot,
+                onNavigateToScreenshotEdit = onNavigateToScreenshotEdit,
                 openCollectionFavoritesOnEnter = openCollectionFavoritesOnNextEnter,
                 onOpenCollectionFavoritesOnEnterConsumed = {
                     openCollectionFavoritesOnNextEnter = false

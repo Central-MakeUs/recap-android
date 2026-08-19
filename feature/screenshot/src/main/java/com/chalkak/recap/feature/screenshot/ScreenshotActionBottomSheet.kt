@@ -34,6 +34,7 @@ import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapError
+import com.chalkak.recap.core.design.theme.RecapErrorContainer
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray500
@@ -113,7 +114,7 @@ fun ScreenshotActionBottomSheetContent(
             enabled = enabled,
             size = RecapButtonSize.Large,
             colors = RecapButtonDefaults.colors(
-                containerColor = RecapGray50,
+                containerColor = RecapErrorContainer,
                 contentColor = RecapError,
                 disabledContainerColor = RecapGray50.copy(alpha = 0.12f),
                 disabledContentColor = RecapError.copy(alpha = 0.38f),

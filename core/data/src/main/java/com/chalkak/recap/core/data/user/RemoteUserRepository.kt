@@ -1,6 +1,7 @@
 package com.chalkak.recap.core.data.user
 
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.CaptureChange
+import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
 import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
 import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.data.network.mapApiResponse
@@ -35,7 +36,7 @@ class RemoteUserRepository(
     private val sessionTokenStore: SessionTokenStore,
     private val screenshotCardRepository: ScreenshotCardRepository,
     private val thumbnailCache: RemoteCaptureThumbnailCache,
-    private val changeNotifier: RemoteCaptureChangeNotifier,
+    private val changeNotifier: CaptureChangeNotifier,
     repositoryScope: CoroutineScope,
 ) : UserRepository {
     @Inject
@@ -44,7 +45,7 @@ class RemoteUserRepository(
         sessionTokenStore: SessionTokenStore,
         screenshotCardRepository: ScreenshotCardRepository,
         thumbnailCache: RemoteCaptureThumbnailCache,
-        changeNotifier: RemoteCaptureChangeNotifier,
+        changeNotifier: CaptureChangeNotifier,
     ) : this(
         userApi = userApi,
         sessionTokenStore = sessionTokenStore,
@@ -55,6 +56,7 @@ class RemoteUserRepository(
     )
 
     private val consentRefresh = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val dataSummaryRefresh = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val sharedDataSummary =
@@ -68,7 +70,10 @@ class RemoteUserRepository(
                         ),
                     )
                 } else {
-                    changeNotifier.changes
+                    kotlinx.coroutines.flow.merge(
+                        changeNotifier.changes.map { Unit },
+                        dataSummaryRefresh,
+                    )
                         .onStart { emit(Unit) }
                         .mapLatest {
                             SessionDataSummary(
@@ -130,7 +135,7 @@ class RemoteUserRepository(
         observeDataSummary().first()
 
     override fun refreshDataSummary() {
-        changeNotifier.notifyCaptureChanged()
+        dataSummaryRefresh.tryEmit(Unit)
     }
 
     override suspend fun getDataSummary(): Result<DataSummary> =
@@ -194,7 +199,7 @@ class RemoteUserRepository(
         runCatching {
             screenshotCardRepository.deleteAllCards()
             thumbnailCache.clearAll()
-            changeNotifier.notifyCaptureChanged()
+            changeNotifier.emit(CaptureChange.Invalidated)
         }
         return Result.success(Unit)
     }

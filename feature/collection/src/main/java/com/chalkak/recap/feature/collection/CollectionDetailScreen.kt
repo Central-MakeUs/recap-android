@@ -34,7 +34,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.chalkak.recap.core.design.R
+import com.chalkak.recap.core.design.animation.recapScreenshotCardItemAnimation
 import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDefaults
 import com.chalkak.recap.core.design.component.card.ScreenshotCardMetadataMode
@@ -77,6 +81,8 @@ fun CollectionDetailScreen(
     searchQuery: String = "",
     isSearchVisible: Boolean = false,
     onItemClick: (Long) -> Unit = {},
+    onItemEditClick: (Long) -> Unit = {},
+    pendingDeleteCaptureId: Long? = null,
 ) {
     val navigationBarBottomPadding = WindowInsets.navigationBars
         .asPaddingValues()
@@ -84,6 +90,13 @@ fun CollectionDetailScreen(
     val bottomContentPadding = RecapBottomBarDefaults.ContentScrollPadding +
             navigationBarBottomPadding
     val categoryType = detail.categoryType
+    val swipeActionsEnabled = categoryType != null && !selection.isActive
+    var revealedCaptureId by remember { mutableStateOf<Long?>(null) }
+    LaunchedEffect(swipeActionsEnabled) {
+        if (!swipeActionsEnabled) {
+            revealedCaptureId = null
+        }
+    }
     val listState = rememberLazyListState()
     LaunchedEffect(detail.sort, detail.cards.firstOrNull()?.captureId) {
         listState.scrollToItem(0)
@@ -150,70 +163,97 @@ fun CollectionDetailScreen(
                     vertical = CollectionDetailTokens.RecapCountVerticalPadding,
                 ),
             )
-            if (detail.cards.isEmpty()) {
-                CollectionDetailEmptyContent(
-                    messageResId = detail.emptyMessageResId,
-                )
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    state = listState,
-                    contentPadding = PaddingValues(
-                        top = CollectionDetailTokens.ListVerticalPadding,
-                        bottom = CollectionDetailTokens.ListVerticalPadding + bottomContentPadding,
-                    ),
-                ) {
-                    items(
-                        items = detail.cards,
-                        key = { card -> card.captureId },
-                    ) { card ->
-                        CollectionSelectableCaptureItem(
-                            item = card,
-                            selection = selection,
-                            metadataMode = detail.cardMetadataMode,
-                            onOpenClick = { onItemClick(card.captureId) },
-                            onFavoriteClick = {
-                                onAction(CollectionAction.ToggleFavorite(card.captureId))
-                            },
-                            onSelectionToggle = {
-                                onAction(CollectionAction.ToggleItemSelection(card.captureId))
-                            },
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                state = listState,
+                contentPadding = PaddingValues(
+                    top = CollectionDetailTokens.ListVerticalPadding,
+                    bottom = CollectionDetailTokens.ListVerticalPadding + bottomContentPadding,
+                ),
+            ) {
+                items(
+                    items = detail.cards,
+                    key = { card -> card.captureId },
+                ) { card ->
+                    CollectionSelectableCaptureItem(
+                        item = card,
+                        selection = selection,
+                        metadataMode = detail.cardMetadataMode,
+                        onOpenClick = { onItemClick(card.captureId) },
+                        onFavoriteClick = {
+                            onAction(CollectionAction.ToggleFavorite(card.captureId))
+                        },
+                        onSelectionToggle = {
+                            onAction(CollectionAction.ToggleItemSelection(card.captureId))
+                        },
+                        swipeActionsEnabled = swipeActionsEnabled,
+                        swipeRevealed = revealedCaptureId == card.captureId,
+                        onSwipeRevealedChange = { revealed ->
+                            revealedCaptureId = when {
+                                revealed -> card.captureId
+                                revealedCaptureId == card.captureId -> null
+                                else -> revealedCaptureId
+                            }
+                        },
+                        onSwipeDragStarted = {
+                            if (
+                                revealedCaptureId != null &&
+                                revealedCaptureId != card.captureId
+                            ) {
+                                revealedCaptureId = null
+                            }
+                        },
+                        onEditClick = {
+                            revealedCaptureId = null
+                            onItemEditClick(card.captureId)
+                        },
+                        onDeleteClick = {
+                            onAction(CollectionAction.RequestDeleteItem(card.captureId))
+                        },
+                        modifier = Modifier.recapScreenshotCardItemAnimation(),
+                    )
+                }
+                if (detail.cards.isEmpty()) {
+                    item(key = "collection_detail_empty") {
+                        CollectionDetailEmptyContent(
+                            messageResId = detail.emptyMessageResId,
+                            modifier = Modifier.fillParentMaxSize(),
                         )
                     }
-                    if (detail.isLoadingMore) {
-                        item(key = "collection_detail_loading_more") {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(24.dp),
-                                    color = RecapBlue500,
-                                    strokeWidth = 2.dp,
-                                )
-                            }
+                }
+                if (detail.isLoadingMore) {
+                    item(key = "collection_detail_loading_more") {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                color = RecapBlue500,
+                                strokeWidth = 2.dp,
+                            )
                         }
                     }
                 }
+            }
 
-                LaunchedEffect(listState, detail.cards.size, detail.hasNext, detail.isLoadingMore) {
-                    snapshotFlow {
-                        val secondLastIndex = detail.cards.lastIndex - 1
-                        secondLastIndex >= 0 &&
+            LaunchedEffect(listState, detail.cards.size, detail.hasNext, detail.isLoadingMore) {
+                snapshotFlow {
+                    val secondLastIndex = detail.cards.lastIndex - 1
+                    secondLastIndex >= 0 &&
                             listState.layoutInfo.visibleItemsInfo.any { item ->
                                 item.index == secondLastIndex
                             }
-                    }
-                        .distinctUntilChanged()
-                        .filter { isSecondLastVisible -> isSecondLastVisible }
-                        .collect {
-                            if (detail.hasNext && !detail.isLoadingMore) {
-                                onAction(CollectionAction.LoadMoreDetailSearch)
-                            }
-                        }
                 }
+                    .distinctUntilChanged()
+                    .filter { isSecondLastVisible -> isSecondLastVisible }
+                    .collect {
+                        if (detail.hasNext && !detail.isLoadingMore) {
+                            onAction(CollectionAction.LoadMoreDetailSearch)
+                        }
+                    }
             }
         }
     }
@@ -230,6 +270,19 @@ fun CollectionDetailScreen(
             onConfirmClick = { onAction(CollectionAction.ConfirmDeleteSelected) },
             onCancelClick = { onAction(CollectionAction.DismissDeleteConfirmDialog) },
             onDismissRequest = { onAction(CollectionAction.DismissDeleteConfirmDialog) },
+            confirmButtonColor = RecapError,
+        )
+    }
+
+    if (pendingDeleteCaptureId != null) {
+        RecapPopup(
+            title = stringResource(R.string.screenshot_delete_confirm_title),
+            description = stringResource(R.string.screenshot_delete_confirm_description),
+            confirmButtonText = stringResource(R.string.deletion_confirmation_delete_button),
+            cancelButtonText = stringResource(R.string.deletion_confirmation_cancel_button),
+            onConfirmClick = { onAction(CollectionAction.ConfirmDeleteItem) },
+            onCancelClick = { onAction(CollectionAction.DismissDeleteItem) },
+            onDismissRequest = { onAction(CollectionAction.DismissDeleteItem) },
             confirmButtonColor = RecapError,
         )
     }
