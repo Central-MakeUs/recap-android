@@ -7,6 +7,7 @@ import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
 import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.search.RecentSearchStore
 import com.chalkak.recap.core.data.search.SearchRepository
+import com.chalkak.recap.core.model.search.SearchPage
 import com.chalkak.recap.core.model.search.SearchScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -180,38 +181,71 @@ class SearchViewModel @Inject constructor(
                 loadMoreJob?.cancel()
                 result.fold(
                     onSuccess = { page ->
-                    val items = page.toSearchResultItems()
-                    _uiState.update { state ->
-                        state.copy(
-                            phase = if (items.isEmpty()) {
-                                SearchContentPhase.Empty
-                            } else {
-                                SearchContentPhase.Results
-                            },
-                            results = items,
-                            resultCount = page.count,
-                            hasNext = page.hasNext,
-                            nextPage = 1,
-                            isLoadingMore = false,
+                        val loadedPageCount = _uiState.value.nextPage.coerceAtLeast(1)
+                        val pages = refreshLoadedPages(
+                            query = query,
+                            firstPage = page,
+                            loadedPageCount = loadedPageCount,
                         )
-                    }
-                    reconcileThumbnails(items.map { item -> item.captureId })
+                        if (pages == null) {
+                            _uiState.update { state -> state.copy(isLoadingMore = false) }
+                            return@fold
+                        }
+                        val items = pages
+                            .flatMap { loadedPage -> loadedPage.toSearchResultItems() }
+                            .distinctBy { item -> item.captureId }
+                        _uiState.update { state ->
+                            state.copy(
+                                phase = if (items.isEmpty()) {
+                                    SearchContentPhase.Empty
+                                } else {
+                                    SearchContentPhase.Results
+                                },
+                                results = items,
+                                resultCount = page.count,
+                                hasNext = pages.last().hasNext,
+                                nextPage = pages.size,
+                                isLoadingMore = false,
+                            )
+                        }
+                        reconcileThumbnails(items.map { item -> item.captureId })
                     },
                     onFailure = {
-                    _uiState.update { state ->
-                        state.copy(
-                            phase = SearchContentPhase.Error,
-                            results = emptyList(),
-                            resultCount = 0L,
-                            hasNext = false,
-                            nextPage = 0,
-                            isLoadingMore = false,
-                        )
-                    }
+                        _uiState.update { state ->
+                            state.copy(
+                                phase = SearchContentPhase.Error,
+                                results = emptyList(),
+                                resultCount = 0L,
+                                hasNext = false,
+                                nextPage = 0,
+                                isLoadingMore = false,
+                            )
+                        }
                     },
                 )
             }
         }
+    }
+
+    private suspend fun refreshLoadedPages(
+        query: String,
+        firstPage: SearchPage,
+        loadedPageCount: Int,
+    ): List<SearchPage>? {
+        val pages = mutableListOf(firstPage)
+        var pageIndex = 1
+        while (pageIndex < loadedPageCount && pages.last().hasNext) {
+            val page = searchRepository.search(
+                query = query,
+                scope = SearchScope.ALL,
+                page = pageIndex,
+            ).getOrElse {
+                return null
+            }
+            pages += page
+            pageIndex += 1
+        }
+        return pages
     }
 
     private fun loadMore() {

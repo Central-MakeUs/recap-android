@@ -439,6 +439,65 @@ class SearchViewModelTest {
     }
 
     @Test
+    fun `repository update keeps loaded pages and refreshes their items`() =
+        runTest(testDispatcher) {
+            val searchResults = MutableSharedFlow<Result<SearchPage>>(replay = 1)
+            var secondPageFavorite = false
+            every {
+                searchRepository.observeSearch("screen", SearchScope.ALL, null, 20)
+            } returns searchResults
+            searchResults.emit(
+                Result.success(
+                    SearchPage(
+                        count = 2L,
+                        hasNext = true,
+                        items = listOf(searchResult(captureId = 1L, isFavorite = false)),
+                    ),
+                ),
+            )
+            coEvery {
+                searchRepository.search("screen", SearchScope.ALL, null, 1, 20)
+            } answers {
+                Result.success(
+                    SearchPage(
+                        count = 2L,
+                        hasNext = false,
+                        items = listOf(
+                            searchResult(captureId = 2L, isFavorite = secondPageFavorite),
+                        ),
+                    ),
+                )
+            }
+
+            viewModel.onAction(SearchAction.UpdateQuery("screen"))
+            viewModel.onAction(SearchAction.SubmitSearch)
+            advanceUntilIdle()
+            viewModel.onAction(SearchAction.LoadMore)
+            advanceUntilIdle()
+
+            secondPageFavorite = true
+            searchResults.emit(
+                Result.success(
+                    SearchPage(
+                        count = 2L,
+                        hasNext = true,
+                        items = listOf(searchResult(captureId = 1L, isFavorite = false)),
+                    ),
+                ),
+            )
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertEquals(listOf(1L, 2L), state.results.map { it.captureId })
+            assertTrue(state.results.last().isFavorite)
+            assertFalse(state.hasNext)
+            assertEquals(2, state.nextPage)
+            coVerify(exactly = 2) {
+                searchRepository.search("screen", SearchScope.ALL, null, 1, 20)
+            }
+        }
+
+    @Test
     fun `clearing query returns to Idle and clears results`() = runTest {
         coEvery {
             searchRepository.search(any(), any(), any(), any(), any())
@@ -909,4 +968,18 @@ class SearchViewModelTest {
         assertEquals(1L, viewModel.uiState.value.resultCount)
         assertEquals(SearchContentPhase.Results, viewModel.uiState.value.phase)
     }
+
+    private fun searchResult(
+        captureId: Long,
+        isFavorite: Boolean,
+    ) = SearchResult(
+        captureId = captureId,
+        typeCode = ScreenshotContentType.ETC,
+        thumbnailUrl = null,
+        titleHighlighted = "screen $captureId",
+        summaryHighlighted = "summary",
+        ocrExcerptHighlighted = null,
+        isFavorite = isFavorite,
+        organizedAt = "2026-08-19T00:00:00Z",
+    )
 }
