@@ -32,30 +32,33 @@
 <table>
   <tr>
     <td width="33.33%"><img src="https://github.com/user-attachments/assets/a6387e6a-eb23-4aae-91b3-fcf22e43f224" alt="Recap 앱 소개 화면" width="100%" /></td>
-    <td width="33.33%"><img src="https://github.com/user-attachments/assets/f3836e9e-a3ec-44f6-af7b-ece2b7b73d53" alt="Recap 홈 화면" width="100%" /></td>
-    <td width="33.33%"><img src="https://github.com/user-attachments/assets/06fe02a3-2849-45aa-afc1-83184fea557e" alt="Recap 스크린샷 정리 화면" width="100%" /></td>
+    <td width="33.33%"><img src="https://github.com/user-attachments/assets/0bbfcc0d-6842-4b7d-8f5f-462b366c7926" alt="Recap 스크린샷 업로드" width="100%" /></td>
+    <td width="33.33%"><img src="https://github.com/user-attachments/assets/68cb34dc-b46c-491a-8f87-a51af9ae62a9" alt="Recap AI 자동 요약" width="100%" /></td>
   </tr>
   <tr>
-    <td width="33.33%"><img src="https://github.com/user-attachments/assets/c71ec50b-3462-460c-a98f-4f6bde02c67e" alt="Recap AI 분석 화면" width="100%" /></td>
-    <td width="33.33%"><img src="https://github.com/user-attachments/assets/80149b21-10fb-4f60-9132-30b79aaf92f7" alt="Recap 컬렉션 화면" width="100%" /></td>
-    <td width="33.33%"><img src="https://github.com/user-attachments/assets/0ca4cfd3-1515-470c-8baa-c509df4e0ee4" alt="Recap 스크린샷 상세 화면" width="100%" /></td>
+    <td width="33.33%"><img src="https://github.com/user-attachments/assets/5c829d1c-03f9-42de-a394-dea7b198286f" alt="Recap 유형별 자동 분류" width="100%" /></td>
+    <td width="33.33%"><img src="https://github.com/user-attachments/assets/fdc491ef-93f0-4bdb-8bbf-cec49ba04de5" alt="Recap 스크린샷 검색" width="100%" /></td>
+    <td width="33.33%"><img src="https://github.com/user-attachments/assets/51d727f1-9aa4-40af-9e6d-4937e7355f41" alt="Recap 캡처하고, 전송하기" width="100%" /></td>
   </tr>
 </table>
 
 ## 기술 스택
 
-| 영역 | 기술 |
-|:--|:--|
-| Language | Kotlin |
-| UI | Jetpack Compose, Material 3 |
-| Architecture | Multi-module MVVM, immutable `UiState`, sealed `Action` |
-| Navigation | AndroidX Navigation3 |
-| Dependency Injection | Hilt, KSP |
-| Async | Kotlin Coroutines, Flow |
-| Persistence | Room, DataStore |
-| Image | Coil |
-| Observability | Timber, Firebase Crashlytics, Firebase Performance |
-| Analysis | 서버 기반 OCR·AI 분석 |
+| 영역                   | 기술                                                      |
+|:---------------------|:--------------------------------------------------------|
+| Language             | Kotlin 2.4                                              |
+| UI                   | Jetpack Compose, Material 3, Lottie                     |
+| Architecture         | Multi-module MVVM, immutable `UiState`, sealed `Action` |
+| Navigation           | AndroidX Navigation3                                    |
+| Dependency Injection | Hilt, KSP                                               |
+| Async                | Kotlin Coroutines, Flow                                 |
+| Network              | Retrofit, OkHttp, Kotlinx Serialization                 |
+| Auth                 | Kakao Login                                             |
+| Persistence          | Room, DataStore                                         |
+| Image                | Coil                                                    |
+| Observability        | Timber, Firebase Crashlytics, Firebase Performance      |
+| Analysis             | 서버 기반 OCR·AI 분석                                         |
+| Test                 | JUnit 5, Compose Preview Screenshot Testing             |
 
 ## 프로젝트 구조
 
@@ -78,6 +81,7 @@ Recap은 `:app`을 중심으로 재사용 계층인 `:core:*`와 화면 단위 �
 - UI 상태는 immutable `UiState`로 표현하고 사용자 입력은 sealed `Action`으로 명시합니다.
 - ViewModel은 상태 생성과 action 처리에 집중합니다.
 - Repository가 로컬 저장소와 외부 연동의 세부 구현을 감춥니다.
+- 스크린샷 도메인 backend는 빌드 시점에 Mock 또는 Remote로 고정됩니다. debug 기본값은 Mock이며, qa/release는 Remote입니다.
 
 ## 앱 정보
 
@@ -86,18 +90,22 @@ Recap은 `:app`을 중심으로 재사용 계층인 `:core:*`와 화면 단위 �
 | Package                | `com.chalkak.recap`       |
 | minSdk                 | 30                        |
 | targetSdk / compileSdk | 37                        |
+| Kotlin / AGP           | 2.4.10 / 9.3.1            |
+| JDK                    | 17                        |
 | Version                | `1.1.0` (`versionCode` 8) |
+| Build types            | debug, qa, release        |
 
 ## 문서
 
-| 문서 | 내용 |
-|:--|:--|
-| [`docs/PROJECT.md`](docs/PROJECT.md) | 프로젝트 구조와 개발 컨벤션 |
-| [`docs/TESTING.md`](docs/TESTING.md) | 테스트 및 검증 정책 |
-| [`docs/LOCAL_DATA.md`](docs/LOCAL_DATA.md) | 로컬 데이터 구조와 저장 정책 |
-| [`docs/ANALYSIS_DATA_SOURCE.md`](docs/ANALYSIS_DATA_SOURCE.md) | Mock/Remote build-time (`USE_MOCK_BACKEND`) 선택 |
-| [`docs/MOCK_REMOTE_CHANGE.md`](docs/MOCK_REMOTE_CHANGE.md) | 제거된 런타임 Mock/Remote 전환 계층 역사 스냅샷 |
-| [`docs/SCREENSHOT_MOCK_DATA.md`](docs/SCREENSHOT_MOCK_DATA.md) | Mock 스크린샷 분석 결과 계약 |
-| [`docs/ORGANIZE_OVERLAY_NAVIGATION.md`](docs/ORGANIZE_OVERLAY_NAVIGATION.md) | 스크린샷 정리 플로우와 내비게이션 구조 |
-| [`docs/BACKLOG.md`](docs/BACKLOG.md) | 후속 작업 백로그 |
-| [`docs/handoff/HANDOFF.md`](docs/handoff/HANDOFF.md) | Codex ↔ Cursor 활성 handoff 채널 |
+| 문서                                                                           | 내용                                             |
+|:-----------------------------------------------------------------------------|:-----------------------------------------------|
+| [`docs/PROJECT.md`](docs/PROJECT.md)                                         | 프로젝트 구조와 개발 컨벤션                                |
+| [`docs/TESTING.md`](docs/TESTING.md)                                         | 테스트 및 검증 정책                                    |
+| [`docs/qa/GUIDE.md`](docs/qa/GUIDE.md)                                       | 디자인 QA(스크린샷·VM) 오케스트라 지침                       |
+| [`docs/LOCAL_DATA.md`](docs/LOCAL_DATA.md)                                   | 로컬 데이터 구조와 저장 정책                               |
+| [`docs/ANALYSIS_DATA_SOURCE.md`](docs/ANALYSIS_DATA_SOURCE.md)               | Mock/Remote build-time (`USE_MOCK_BACKEND`) 선택 |
+| [`docs/MOCK_REMOTE_CHANGE.md`](docs/MOCK_REMOTE_CHANGE.md)                   | 제거된 런타임 Mock/Remote 전환 계층 역사 스냅샷               |
+| [`docs/SCREENSHOT_MOCK_DATA.md`](docs/SCREENSHOT_MOCK_DATA.md)               | Mock 스크린샷 분석 결과 계약                             |
+| [`docs/ORGANIZE_OVERLAY_NAVIGATION.md`](docs/ORGANIZE_OVERLAY_NAVIGATION.md) | 스크린샷 정리 플로우와 내비게이션 구조                          |
+| [`docs/BACKLOG.md`](docs/BACKLOG.md)                                         | 후속 작업 백로그                                      |
+| [`docs/handoff/HANDOFF.md`](docs/handoff/HANDOFF.md)                         | Codex ↔ Cursor 활성 handoff 채널                   |
