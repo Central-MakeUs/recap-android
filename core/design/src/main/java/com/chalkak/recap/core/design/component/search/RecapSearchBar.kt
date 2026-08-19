@@ -196,7 +196,11 @@ fun RecapSearchBar(
             if (value.isNotEmpty() && !isNavigationEntry) {
                 RecapSearchBarClearButton(
                     enabled = isEditable,
-                    onClick = { onValueChange("") },
+                    onClick = {
+                        onValueChange("")
+                        focusRequester.requestFocus()
+                        keyboardController?.show()
+                    },
                 )
             }
         }
