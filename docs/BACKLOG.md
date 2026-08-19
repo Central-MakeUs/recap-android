@@ -20,13 +20,6 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Next: `me()` 실패 전용 안내/재시도 UX를 둘지 결정
   - Handoff: not started
 
-- [ ] 2026-07-18 - `docs/LOCAL_DATA.md`를 현재 로컬 저장 구현에 맞게 갱신
-  - Context: `screenshot_cards` / repository 섹션은 `captureId`·`typeCode`·`organizedAt`·Room v1로 맞춰졌다.
-    image storage는 코드가 `captureId`와 썸네일 생성 API를 쓰는데 문서는 `imageId`·파이프라인 없음으로 남아 있고, 테스트 목록에 없는
-    `RecapDatabaseMigration2To3Test`·key fields가 남아 있다. Remote content PATCH는 이미 연결됐다.
-  - Next: image storage API/썸네일 설명을 코드에 맞추고, 존재하지 않는 migration·key fields 테스트 설명을 제거한다
-  - Handoff: not started
-
 - [ ] 2026-07-08 - `:core:data` Robolectric 테스트를 JUnit5로 통일
   - Context: `ScreenshotCardDaoTest`, `ScreenshotImageStorageTest`는 Robolectric JUnit5 확장(`RobolectricExtension`)이 클래스패스에서 해석되지 않아 JUnit4 `@RunWith(RobolectricTestRunner::class)` + Vintage 엔진으로 작성됨. 같은 모듈에 JUnit5 테스트와 JUnit4 테스트가 혼재함
   - Next: Robolectric JUnit5 연동 의존성/설정을 정리한 뒤 해당 테스트를 JUnit5 스타일로 이전하고, `docs/TESTING.md`에 Android Context/Room 단위 테스트 러너 기준을 명시
@@ -52,6 +45,11 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 - 없음
 
 ## Done
+
+- [x] 2026-07-18 - `docs/LOCAL_DATA.md`를 현재 로컬 저장 구현에 맞게 갱신
+  - Result: image storage를 `captureId`·썸네일 생성/캐시 API로 맞추고, Remote content PATCH 연결 및 존재하지 않는 migration·key fields 테스트 설명을 제거했다.
+  - Closed: 2026-08-20
+  - Handoff: not started (backlog 직접 구현)
 
 - [x] 2026-07-31 - 작은 기기·고배율·3버튼 내비에서 깨지는 고정 레이아웃/패딩 전역 대응
   - Result: `RecapSpacing`/compact 화면 템플릿 등 전역 레이아웃 시스템은 도입하지 않는다.
