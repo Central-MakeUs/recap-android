@@ -39,6 +39,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -187,10 +189,16 @@ private fun SearchIdleContent(
     onAction: (SearchAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val focusManager = LocalFocusManager.current
     RecentSearchesSection(
         recentSearches = recentSearches,
         onClearAllClick = { onAction(SearchAction.ClearAllRecentSearches) },
-        onRecentSearchClick = { onAction(SearchAction.SelectRecentSearch(it)) },
+        onRecentSearchClick = { term ->
+            keyboardController?.hide()
+            focusManager.clearFocus()
+            onAction(SearchAction.SelectRecentSearch(term))
+        },
         onRemoveRecentSearchClick = { onAction(SearchAction.RemoveRecentSearch(it)) },
         modifier = modifier
             .fillMaxSize()
