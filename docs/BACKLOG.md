@@ -20,34 +20,11 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Next: `me()` 실패 전용 안내/재시도 UX를 둘지 결정
   - Handoff: not started
 
-- [ ] 2026-07-31 - 작은 기기·고배율·3버튼 내비에서 깨지는 고정 레이아웃/패딩 전역 대응
-  - Context: 화면·컴포넌트 간격이 ~6.7인치 기준 고정 `dp`로 맞춰져 있어, 작은 물리 화면 + 높은 디스플레이/폰트 배율 + 3버튼 내비게이션(inset) 조합에서 온보딩 등 풀뷰포트 화면의 CTA·일러스트·텍스트가 잘리거나 겹친다. `core/design`에 Spacing/compact 레이아웃 시스템이 없고, 로컬 `*Tokens` 고정값·스크롤 없는 Column·큰 고정 높이 일러스트(예: Landing `120/90/58.dp`, AddToFavorite `238.dp`)가 원인. Permission/Upload만 scroll+pinned CTA. insets도 화면마다 `safeDrawing`/`navigationBars` 제각각.
-  - Next: (1) `core/design`에 scrollable body + pinned bottom actions + compact 시 일러스트 축소/숨김용 화면 템플릿 (2) 풀스크린 플로우 insets 계약 통일 (3) `RecapSpacing` 시맨틱 토큰 + compact/fontScale에서 여유 간격만 축소. 온보딩을 첫 적용·레퍼런스로 두고 이후 화면은 점진 적용. 고정 padding 일괄 축소만으로는 부족.
-  - Handoff: not started
-
-- [ ] 2026-07-25 - 정리 알림 클릭 딥링크
-  - Context: 정리 진행/완료 알림 클릭은 현재 MainActivity 실행만 한다. 확인 화면의 NotificationPermissionRequestBottomSheet → POST_NOTIFICATIONS 요청 및 `organizeCompleteNotificationEnabled` 동기화는 완료.
-  - Next: 완료/부분실패 결과 화면으로 PendingIntent 딥링크
-  - Handoff: not started
-
-- [ ] 2026-08-05 - 계정별 vs 기기 공통 설정 추가 분류
-  - Context: 세션·계정 격리 작업에서 owner wipe 시 유지/삭제할 preference 분류는 현재 salt·onboarding·deviceId·알림 설정 유지로 확정됐지만, 이후 추가 설정 키의 계정 종속 여부는 아직 정책이 없다.
-  - Next: 새 preference 추가 시 계정 종속/기기 공통 분류 기준을 문서화
-  - Handoff: not started
-
-- [ ] 2026-07-18 - `docs/LOCAL_DATA.md`를 CaptureDetailResponse 동기화 스키마에 맞게 갱신
-  - Context: 스크린샷 mock 계약이 `captureId: Long` / `typeCode` / `organizedAt` / Room v1로 리셋되었지만 `LOCAL_DATA.md`는 여전히 imageId·key_fields·migration 설명을 담고 있음
-  - Next: LOCAL_DATA.md의 screenshot_cards / repository / image storage 섹션을 현재 구현과 맞추고 레거시 migration 문서 제거
-  - Handoff: not started
-
-- [ ] 2026-07-14 - 카카오 로그인 SDK 예외 처리 보강
-  - Context: `KakaoLoginClient`는 `ClientErrorCause.Cancelled`만 `AuthError.Cancelled`로 매핑하고, 그 외 Talk 실패는 무조건 Account fallback 또는 `ProviderUnavailable`/`Unknown`으로 뭉개짐. 카카오 문서 예외 플로우(`AccessDenied`, 계정 미로그인 `Unknown` 등)와 케이스별 UX 분기·메시지가 없고, 온보딩 UI도 아직 `signInWithKakao`를 호출하지 않음
-  - Next: Kakao SDK `AuthError`/`AuthErrorCause`를 `AuthError` 도메인으로 세분화하고, Cancelled 시 Account fallback 금지·AccessDenied/Unknown별 사용자 메시지·재시도 정책을 정의한 뒤 ViewModel 연동
-  - Ref: https://developers.kakao.com/docs/ko/kakaologin/android#exceptions
-  - Handoff: not started
-
-- [ ] 2026-07-07 - 테스트 전략을 TDD 중심으로 구체화
-  - Context: 현재 특별한 테스트 코드 체계 없음
+- [ ] 2026-07-18 - `docs/LOCAL_DATA.md`를 현재 로컬 저장 구현에 맞게 갱신
+  - Context: `screenshot_cards` / repository 섹션은 `captureId`·`typeCode`·`organizedAt`·Room v1로 맞춰졌다.
+    image storage는 코드가 `captureId`와 썸네일 생성 API를 쓰는데 문서는 `imageId`·파이프라인 없음으로 남아 있고, 테스트 목록에 없는
+    `RecapDatabaseMigration2To3Test`·key fields가 남아 있다. Remote content PATCH는 이미 연결됐다.
+  - Next: image storage API/썸네일 설명을 코드에 맞추고, 존재하지 않는 migration·key fields 테스트 설명을 제거한다
   - Handoff: not started
 
 - [ ] 2026-07-08 - `:core:data` Robolectric 테스트를 JUnit5로 통일
@@ -55,27 +32,13 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Next: Robolectric JUnit5 연동 의존성/설정을 정리한 뒤 해당 테스트를 JUnit5 스타일로 이전하고, `docs/TESTING.md`에 Android Context/Room 단위 테스트 러너 기준을 명시
   - Handoff: not started
 
-- [ ] 2026-07-08 - 정리 플로우 스크린샷 그리드 스크롤 시 이미지 재로딩 체감 개선
-  - Context: `feature/organize` 선택/확인 화면이 Coil 3 `AsyncImage` + MediaStore `content://` URI를 기본 `ImageLoader`로 렌더링함. 메모리 캐시 miss·재디코딩·placeholder 부재로 스크롤 복귀 시 이미지가 다시 불러와지는 것처럼 보일 수 있음
-  - Handoff: not started
-
 - [ ] 2026-07-08 - Coroutine dispatcher DI 패턴 도입
   - Context: 현재 `Dispatchers.IO` 직접 사용과 `@VisibleForTesting` 테스트 훅이 섞여 있어 비동기 코드 테스트 제어 방식이 일관되지 않음. `@IoDispatcher` 등 qualifier 기반 Hilt provider를 추가하고 ViewModel/Repository/Storage의 blocking work dispatcher를 생성자 주입으로 점진 이전할 필요가 있음
-  - Handoff: not started
-
-- [ ] 2026-07-10 - minSdk 30에서 Haze 미지원 fallback 구현
-  - Context: 현재 `minSdk = 30`인데 `dev.chrisbanes.haze` glass/blur 효과가 API 30 기기에서 정상 적용되지 않음. `RecapBottomBar`, `RecapHazeFolderCard`, 홈/보관함 `hazeSource` 연동 등 Haze 사용 UI에 대체 렌더링(반투명 배경·단색 tint 등) fallback이 필요함
   - Handoff: not started
 
 - [ ] 2026-07-10 - Navigation3 entry별 ViewModel 수명 범위 구성
   - Context: 각 `NavDisplay`에 ViewModelStore entry decorator가 없어 화면의 Hilt ViewModel이 Activity 범위에 남고, pop 이후에도 화면 상태·Room Flow·대용량 이미지 목록이 유지되거나 재진입 시 재사용될 수 있음
   - Next: `lifecycle-viewmodel-navigation3`과 `rememberViewModelStoreNavEntryDecorator()`를 내비게이션 계층에 적용하고, 의도적으로 공유할 ViewModel만 상위 범위로 분리
-  - Handoff: not started
-
-- [ ] 2026-07-24 - RecapNavDisplay OverlayScene/공유 요소 lifecycle 패리티
-  - Context: `feature/033-navigaion-3-animation`에서 `RecapNavDisplay`를 공식 `NavDisplay` thin wrapper로 되돌림. OverlayScene/shared-element 패리티는 회복 가능 방향. 대신 저항 preview(`PredictiveMaxFraction` remapping), custom commit completion, interrupted-transition planner/back commit queue는 포기하고 edge full-range predictive + `EDGE_NONE` None으로 단순화함
-  - Next: OverlayScene/공유 요소가 실제로 필요해지면 공식 `NavDisplay` 확장 훅을 사용하고, 빠른 역전 입력 레이어 회귀가 나면 planner 재도입 여부를 재평가
-  - Note: 2026-07-23 공식 NavDisplay 복원 방향과 다시 정렬. Main tab Home↔Collection은 계속 공식 `NavDisplay` + predictive None
   - Handoff: not started
 
 - [ ] 2026-07-12 - `:core:design` → `:core:model` 의존성 재검토
@@ -89,6 +52,34 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 - 없음
 
 ## Done
+
+- [x] 2026-07-31 - 작은 기기·고배율·3버튼 내비에서 깨지는 고정 레이아웃/패딩 전역 대응
+  - Result: `RecapSpacing`/compact 화면 템플릿 등 전역 레이아웃 시스템은 도입하지 않는다.
+  - Closed: 2026-08-20 (won't fix)
+
+- [x] 2026-07-10 - minSdk 30에서 Haze 미지원 fallback 구현
+  - Result: 실시간 blur 경로만 API 제약 대상이다. BottomBar/Toast는 이미 API 33 미만에서 realtime blur를 끄고,
+    `RecapHazeFolderCard`/`RecapHazeFolderIcon` static haze는 영향 없음으로 추가 fallback을 두지 않는다.
+  - Closed: 2026-08-20 (won't fix)
+
+- [x] 2026-07-14 - 카카오 로그인 SDK 예외 처리 보강
+  - Result: Cancelled만 구분하고 나머지는 Account fallback/`ProviderUnavailable`/`Unknown`으로 처리하는 현재 경로로
+    충분하다고 판단해 세분화하지 않는다.
+  - Closed: 2026-08-20 (won't fix)
+
+- [x] 2026-08-05 - 계정별 vs 기기 공통 설정 추가 분류
+  - Result: `clearAccountScopedPreferences()`와 `docs/LOCAL_DATA.md`에 기기 공통(온보딩·deviceId·알림) vs 계정
+    종속(AI 동의) 분류, 신규 키 등록 위치가 있다.
+  - Closed: 2026-08-19 (이미 반영된 상태로 Open에서 Done으로 이동)
+
+- [x] 2026-07-08 - 정리 플로우 스크린샷 그리드 스크롤 시 이미지 재로딩 체감 개선
+  - Result: 선택 그리드는 Coil `ImageLoader` + `MediaStoreThumbnail` fetcher/keyer로 시스템 썸네일과 캐시 키를 사용한다.
+  - Closed: 2026-08-19 (이미 구현된 상태로 Open에서 Done으로 이동)
+
+- [x] 2026-07-07 - 테스트 전략을 TDD 중심으로 구체화
+  - Result: `docs/TESTING.md`에 TDD 우선순위가 있고, 모듈별 JUnit5 단위 테스트와 Compose Preview Screenshot Testing이
+    운영 중이다.
+  - Closed: 2026-08-19 (이미 반영된 상태로 Open에서 Done으로 이동)
 
 - [x] 2026-07-22 (updated 2026-08-05) - 세션 유효성·온보딩·오프라인을 통합한 앱 진입 라우팅과 계정 전환 시 로컬 데이터 격리
   - Result: `hasSession`(refresh token) × `onboardingCompleted`로 `RecapEntryMode` 파생, Reauth, 카카오 owner hash wipe, 로그인 Connectivity gate, Main 오프라인은 캐시 읽기/쓰기 큐 없이 Error+수동 재시도, foreground·validated 복구 시 Error만 자동 refresh 1회(`MainContentRecoveryTrigger`).
