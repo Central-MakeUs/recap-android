@@ -9,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -197,6 +198,12 @@ fun ScreenshotRoute(
     val useFullscreenFade =
         currentTop is ScreenshotDestination.Fullscreen ||
             previousTop is ScreenshotDestination.Fullscreen
+    // NavEntry content can outlive entryProvider recomposition. Read this State inside
+    // each entry so Detail/Edit relinquish raster ownership before shared transition
+    // activity is observable on the following frame.
+    val fullscreenOwnsSharedImageRaster = rememberUpdatedState(
+        currentTop is ScreenshotDestination.Fullscreen,
+    )
 
     SharedTransitionLayout {
         RecapNavDisplay(
@@ -254,6 +261,8 @@ fun ScreenshotRoute(
                             sharedTransitionScope = this@SharedTransitionLayout,
                             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                             enableSharedImageBounds = useFullscreenFade,
+                            fullscreenOwnsSharedImageRaster =
+                                fullscreenOwnsSharedImageRaster.value,
                         )
                     }
 
@@ -270,6 +279,8 @@ fun ScreenshotRoute(
                                 sharedTransitionScope = this@SharedTransitionLayout,
                                 animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                                 enableSharedImageBounds = useFullscreenFade,
+                                fullscreenOwnsSharedImageRaster =
+                                    fullscreenOwnsSharedImageRaster.value,
                             )
                         } else {
                             ScreenshotEditScreen(
@@ -291,6 +302,8 @@ fun ScreenshotRoute(
                                 sharedTransitionScope = this@SharedTransitionLayout,
                                 animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                                 enableSharedImageBounds = useFullscreenFade,
+                                fullscreenOwnsSharedImageRaster =
+                                    fullscreenOwnsSharedImageRaster.value,
                             )
                         }
                     }

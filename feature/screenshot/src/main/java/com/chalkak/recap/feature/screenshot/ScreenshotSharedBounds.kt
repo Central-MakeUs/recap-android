@@ -24,8 +24,8 @@ internal val ScreenshotSharedImageCornerRadius = 10.dp
  * the frame throughout (sharedElement would uniformly scale Fullscreen's tall Fit
  * frame into Detail's 3:4 hole and look letterboxed).
  *
- * Enter/exit None avoids frame crossfade blur. Detail/Edit suppress their raster while
- * the transition is active, leaving Fullscreen as the single raster owner.
+ * Enter/exit None avoids frame crossfade blur. Detail/Edit keep only this geometry
+ * while Fullscreen owns the raster or the transition is active.
  * The frame's child owns rounded clipping. Leaving the overlay itself unclipped lets
  * Fullscreen's Fit-sized frame draw its zoom layer outside those fixed bounds while
  * predictive back unwinds the transform.
@@ -47,6 +47,17 @@ internal fun Modifier.screenshotSharedImageBounds(
         )
     }
 }
+
+/**
+ * Fullscreen claims raster ownership as soon as it becomes the back-stack top.
+ * The transition-active fallback keeps the target empty through the committed pop tail.
+ */
+internal fun shouldSuppressSharedImageContent(
+    enableSharedImageBounds: Boolean,
+    fullscreenOwnsSharedImageRaster: Boolean,
+    isSharedTransitionActive: Boolean,
+): Boolean = enableSharedImageBounds &&
+        (fullscreenOwnsSharedImageRaster || isSharedTransitionActive)
 
 /**
  * Fades the Detail/Edit fullscreen chip while it rides the shared image frame

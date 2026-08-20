@@ -1,5 +1,8 @@
 package com.chalkak.recap.feature.screenshot
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -24,9 +27,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -81,6 +81,7 @@ fun ScreenshotEditScreen(
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     enableSharedImageBounds: Boolean = false,
+    fullscreenOwnsSharedImageRaster: Boolean = false,
 ) {
     val draft = content.editDraft
     val canDone = draft.isTitleValid() &&
@@ -142,6 +143,7 @@ fun ScreenshotEditScreen(
                     sharedTransitionScope = sharedTransitionScope,
                     animatedVisibilityScope = animatedVisibilityScope,
                     enableSharedImageBounds = enableSharedImageBounds,
+                    fullscreenOwnsSharedImageRaster = fullscreenOwnsSharedImageRaster,
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
@@ -283,13 +285,17 @@ private fun ScreenshotEditImagePreview(
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
     enableSharedImageBounds: Boolean,
+    fullscreenOwnsSharedImageRaster: Boolean,
 ) {
     var imageLoadFailed by remember(imageModel) { mutableStateOf(false) }
     val showPlaceholder = imageModel == null || imageLoadFailed
     val imageShape = RoundedCornerShape(ScreenshotSharedImageCornerRadius)
     val imageInteractionSource = remember { MutableInteractionSource() }
-    val hideRasterForSharedTransition =
-        enableSharedImageBounds && sharedTransitionScope?.isTransitionActive == true
+    val suppressSharedImageContent = shouldSuppressSharedImageContent(
+        enableSharedImageBounds = enableSharedImageBounds,
+        fullscreenOwnsSharedImageRaster = fullscreenOwnsSharedImageRaster,
+        isSharedTransitionActive = sharedTransitionScope?.isTransitionActive == true,
+    )
     val sharedBoundsModifier = if (showPlaceholder || !enableSharedImageBounds) {
         Modifier
     } else {
@@ -306,70 +312,72 @@ private fun ScreenshotEditImagePreview(
             .height(ScreenshotEditTokens.EditImagePreviewHeight)
             .then(sharedBoundsModifier),
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(imageShape)
-                .border(
-                    width = ScreenshotEditTokens.EditImagePreviewBorderWidth,
-                    color = RecapGray100,
-                    shape = imageShape,
-                )
-                .clickable(
-                    enabled = !showPlaceholder,
-                    interactionSource = imageInteractionSource,
-                    indication = null,
-                    role = Role.Button,
-                    onClick = onOpenFullscreen,
-                ),
-        ) {
-            if (showPlaceholder) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(RecapImagePlaceholderBackground),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.recap_placeholder_1),
+        if (!suppressSharedImageContent) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(imageShape)
+                    .border(
+                        width = ScreenshotEditTokens.EditImagePreviewBorderWidth,
+                        color = RecapGray100,
+                        shape = imageShape,
+                    )
+                    .clickable(
+                        enabled = !showPlaceholder,
+                        interactionSource = imageInteractionSource,
+                        indication = null,
+                        role = Role.Button,
+                        onClick = onOpenFullscreen,
+                    ),
+            ) {
+                if (showPlaceholder) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(RecapImagePlaceholderBackground),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.recap_placeholder_1),
+                            contentDescription = stringResource(
+                                R.string.screenshot_image_placeholder_content_description,
+                            ),
+                            modifier = Modifier.size(width = 24.dp, height = 21.dp),
+                        )
+                    }
+                } else {
+                    AsyncImage(
+                        model = imageModel,
                         contentDescription = stringResource(
                             R.string.screenshot_image_placeholder_content_description,
                         ),
-                        modifier = Modifier.size(width = 24.dp, height = 21.dp),
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                        onError = { imageLoadFailed = true },
                     )
                 }
-            } else if (!hideRasterForSharedTransition) {
-                AsyncImage(
-                    model = imageModel,
-                    contentDescription = stringResource(
-                        R.string.screenshot_image_placeholder_content_description,
+            }
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .screenshotFullscreenChipTransition(
+                        animatedVisibilityScope = animatedVisibilityScope,
+                    )
+                    .size(48.dp)
+                    .clickable(
+                        enabled = !showPlaceholder,
+                        onClick = onOpenFullscreen,
+                        role = Role.Button,
                     ),
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize(),
-                    onError = { imageLoadFailed = true },
+                contentAlignment = Alignment.Center,
+            ) {
+                ScreenshotEditFullscreenChipButton(
+                    enabled = !showPlaceholder,
+                    contentDescription = stringResource(
+                        R.string.screenshot_detail_fullscreen_content_description,
+                    ),
                 )
             }
-        }
-        Box(
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .screenshotFullscreenChipTransition(
-                    animatedVisibilityScope = animatedVisibilityScope,
-                )
-                .size(48.dp)
-                .clickable(
-                    enabled = !showPlaceholder,
-                    onClick = onOpenFullscreen,
-                    role = Role.Button,
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            ScreenshotEditFullscreenChipButton(
-                enabled = !showPlaceholder,
-                contentDescription = stringResource(
-                    R.string.screenshot_detail_fullscreen_content_description,
-                ),
-            )
         }
     }
 }
