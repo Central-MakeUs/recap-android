@@ -92,7 +92,7 @@ Recap은 `:app`을 중심으로 재사용 계층인 `:core:*`와 화면 단위 �
 | targetSdk / compileSdk | 37                        |
 | Kotlin / AGP           | 2.4.10 / 9.3.1            |
 | JDK                    | 17                        |
-| Version                | `1.1.0` (`versionCode` 8) |
+| Version                | `1.1.1` (`versionCode` 9) |
 | Build types            | debug, qa, release        |
 
 ## 문서
@@ -108,4 +108,4 @@ Recap은 `:app`을 중심으로 재사용 계층인 `:core:*`와 화면 단위 �
 | [`docs/SCREENSHOT_MOCK_DATA.md`](docs/SCREENSHOT_MOCK_DATA.md)               | Mock 스크린샷 분석 결과 계약                             |
 | [`docs/ORGANIZE_OVERLAY_NAVIGATION.md`](docs/ORGANIZE_OVERLAY_NAVIGATION.md) | 스크린샷 정리 플로우와 내비게이션 구조                          |
 | [`docs/BACKLOG.md`](docs/BACKLOG.md)                                         | 후속 작업 백로그                                      |
-| [`docs/handoff/HANDOFF.md`](docs/handoff/HANDOFF.md)                         | Codex ↔ Cursor 활성 handoff 채널                   |
+| [`docs/handoff/HANDOFF.md`](docs/handoff/HANDOFF.md)                         | 3단 워크플로우 전용 Codex ↔ Cursor handoff 채널          |

@@ -1,5 +1,8 @@
 package com.chalkak.recap.feature.screenshot
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,9 +25,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.animation.AnimatedVisibilityScope
-import androidx.compose.animation.ExperimentalSharedTransitionApi
-import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -54,6 +54,7 @@ import com.chalkak.recap.core.design.category.toRecapCategoryType
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
+import com.chalkak.recap.core.design.component.button.RecapFullscreenIconButton
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
@@ -73,7 +74,6 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
-import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import java.time.Instant
@@ -91,6 +91,7 @@ fun ScreenshotDetailScreen(
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
     enableSharedImageBounds: Boolean = false,
+    fullscreenOwnsSharedImageRaster: Boolean = false,
 ) {
     Surface(
         modifier = modifier.fillMaxSize(),
@@ -121,6 +122,7 @@ fun ScreenshotDetailScreen(
                 sharedTransitionScope = sharedTransitionScope,
                 animatedVisibilityScope = animatedVisibilityScope,
                 enableSharedImageBounds = enableSharedImageBounds,
+                fullscreenOwnsSharedImageRaster = fullscreenOwnsSharedImageRaster,
             )
         }
     }
@@ -137,14 +139,17 @@ private fun ScreenshotDetailContent(
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
     enableSharedImageBounds: Boolean,
+    fullscreenOwnsSharedImageRaster: Boolean,
 ) {
     val card = content.card
     val analysis = card.analysisResult
-    val imageModel = resolveScreenshotImageModel(
-        storedImagePath = card.imageRefs.storedImagePath,
-        sourceImageUri = card.imageRefs.sourceImageUri,
-        thumbnailPath = card.imageRefs.thumbnailPath,
-        priority = ScreenshotImageResolvePriority.Fullscreen,
+    val imageModel = rememberBoundedScreenshotImageRequest(
+        resolveScreenshotImageModel(
+            storedImagePath = card.imageRefs.storedImagePath,
+            sourceImageUri = card.imageRefs.sourceImageUri,
+            thumbnailPath = card.imageRefs.thumbnailPath,
+            priority = ScreenshotImageResolvePriority.Fullscreen,
+        ),
     )
     val contentType = analysis.typeCode
     val categoryType = contentType.toRecapCategoryType()
@@ -174,6 +179,7 @@ private fun ScreenshotDetailContent(
                 sharedTransitionScope = sharedTransitionScope,
                 animatedVisibilityScope = animatedVisibilityScope,
                 enableSharedImageBounds = enableSharedImageBounds,
+                fullscreenOwnsSharedImageRaster = fullscreenOwnsSharedImageRaster,
             )
             Column(
                 modifier = Modifier
@@ -400,11 +406,17 @@ private fun ScreenshotDetailHeroImage(
     sharedTransitionScope: SharedTransitionScope?,
     animatedVisibilityScope: AnimatedVisibilityScope?,
     enableSharedImageBounds: Boolean,
+    fullscreenOwnsSharedImageRaster: Boolean,
 ) {
     var imageLoadFailed by remember(imageModel) { mutableStateOf(false) }
     val showPlaceholder = imageModel == null || imageLoadFailed
     val imageInteractionSource = remember { MutableInteractionSource() }
     val imageShape = RoundedCornerShape(ScreenshotSharedImageCornerRadius)
+    val suppressSharedImageContent = shouldSuppressSharedImageContent(
+        enableSharedImageBounds = enableSharedImageBounds,
+        fullscreenOwnsSharedImageRaster = fullscreenOwnsSharedImageRaster,
+        isSharedTransitionActive = sharedTransitionScope?.isTransitionActive == true,
+    )
     val sharedBoundsModifier = if (showPlaceholder || !enableSharedImageBounds) {
         Modifier
     } else {
@@ -418,7 +430,7 @@ private fun ScreenshotDetailHeroImage(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center,
     ) {
-        // Shared bounds on the frame that owns the chip so BottomEnd tracks morph.
+        // The frame owns shared geometry; the chip fades independently at BottomEnd.
         Box(
             modifier = Modifier
                 .padding(vertical = ScreenshotDetailTokens.HeroImageVerticalPadding)
@@ -426,103 +438,63 @@ private fun ScreenshotDetailHeroImage(
                 .aspectRatio(ScreenshotDetailTokens.HeroImageAspectRatio)
                 .then(sharedBoundsModifier),
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(imageShape)
-                    .border(
-                        width = ScreenshotDetailTokens.HeroImageBorderWidth,
-                        color = RecapGray100,
-                        shape = imageShape,
-                    )
-                    .clickable(
-                        enabled = !showPlaceholder,
-                        interactionSource = imageInteractionSource,
-                        indication = null,
-                        role = Role.Button,
-                        onClick = onFullscreenClick,
-                    ),
-            ) {
-                if (showPlaceholder) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(RecapImagePlaceholderBackground),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.recap_placeholder_1),
+            if (!suppressSharedImageContent) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(imageShape)
+                        .border(
+                            width = ScreenshotDetailTokens.HeroImageBorderWidth,
+                            color = RecapGray100,
+                            shape = imageShape,
+                        )
+                        .clickable(
+                            enabled = !showPlaceholder,
+                            interactionSource = imageInteractionSource,
+                            indication = null,
+                            role = Role.Button,
+                            onClick = onFullscreenClick,
+                        ),
+                ) {
+                    if (showPlaceholder) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(RecapImagePlaceholderBackground),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.recap_placeholder_1),
+                                contentDescription = stringResource(
+                                    R.string.screenshot_image_placeholder_content_description,
+                                ),
+                                modifier = Modifier.size(width = 24.dp, height = 21.dp),
+                            )
+                        }
+                    } else {
+                        AsyncImage(
+                            model = imageModel,
                             contentDescription = stringResource(
                                 R.string.screenshot_image_placeholder_content_description,
                             ),
-                            modifier = Modifier.size(width = 24.dp, height = 21.dp),
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize(),
+                            onError = { imageLoadFailed = true },
                         )
                     }
-                } else {
-                    AsyncImage(
-                        model = imageModel,
-                        contentDescription = stringResource(
-                            R.string.screenshot_image_placeholder_content_description,
-                        ),
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize(),
-                        onError = { imageLoadFailed = true },
-                    )
                 }
             }
 
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .screenshotFullscreenChipTransition(
-                        animatedVisibilityScope = animatedVisibilityScope,
-                    )
-                    .size(ScreenshotDetailTokens.FullscreenButtonSize)
-                    .clickable(
-                        enabled = !showPlaceholder,
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        role = Role.Button,
-                        onClick = onFullscreenClick,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                ScreenshotFullscreenChipButton(
-                    enabled = !showPlaceholder,
-                    contentDescription = stringResource(
-                        R.string.screenshot_detail_fullscreen_content_description,
-                    ),
-                )
-            }
+            RecapFullscreenIconButton(
+                visible = !suppressSharedImageContent,
+                contentDescription = stringResource(
+                    R.string.screenshot_detail_fullscreen_content_description,
+                ),
+                onClick = onFullscreenClick,
+                modifier = Modifier.align(Alignment.BottomEnd),
+                enabled = !showPlaceholder,
+            )
         }
-    }
-}
-
-/** Temporary outlined fullscreen chip. Kept private until Edit/Fullscreen refactor. */
-@Composable
-private fun ScreenshotFullscreenChipButton(
-    contentDescription: String,
-    enabled: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    val shape = RoundedCornerShape(ScreenshotDetailTokens.FullscreenChipCornerRadius)
-    Box(
-        modifier = modifier
-            .size(ScreenshotDetailTokens.FullscreenChipSize)
-            .background(color = White, shape = shape)
-            .border(
-                width = ScreenshotDetailTokens.FullscreenChipBorderWidth,
-                color = RecapGray200,
-                shape = shape,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_fullscreen_24),
-            contentDescription = contentDescription,
-            tint = if (enabled) RecapGray900 else RecapGray900.copy(alpha = 0.38f),
-            modifier = Modifier.size(ScreenshotDetailTokens.FullscreenChipIconSize),
-        )
     }
 }
 
@@ -732,10 +704,5 @@ private object ScreenshotDetailTokens {
     val BodyToDisclaimerSpacing = 20.dp
     val SectionSpacing = 17.dp
     val MetaRowSpacing = 8.dp
-    val FullscreenButtonSize = 41.dp
-    val FullscreenChipSize = 21.dp
-    val FullscreenChipIconSize = 13.5.dp
-    val FullscreenChipCornerRadius = 2.dp
-    val FullscreenChipBorderWidth = 0.5.dp
     val ErrorStateSpacing = 16.dp
 }

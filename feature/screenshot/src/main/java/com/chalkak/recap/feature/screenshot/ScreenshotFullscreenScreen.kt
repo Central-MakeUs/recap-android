@@ -1,9 +1,11 @@
 package com.chalkak.recap.feature.screenshot
 
 import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.EnterExitState
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -65,9 +67,11 @@ fun ScreenshotFullscreenScreen(
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    sharedImageRasterHandoffCompleted: Boolean = sharedTransitionScope == null,
 ) {
-    var imageLoadFailed by remember(imageModel) { mutableStateOf(false) }
-    val showPlaceholder = imageModel == null || imageLoadFailed
+    val requestModel = rememberBoundedScreenshotImageRequest(imageModel)
+    var imageLoadFailed by remember(requestModel) { mutableStateOf(false) }
+    val showPlaceholder = requestModel == null || imageLoadFailed
     val imageShape = RoundedCornerShape(ScreenshotSharedImageCornerRadius)
     val sharedBoundsModifier = if (showPlaceholder) {
         Modifier
@@ -77,16 +81,36 @@ fun ScreenshotFullscreenScreen(
             animatedVisibilityScope = animatedVisibilityScope,
         )
     }
-    // Hide destination Fit frame for the pre-match frame, then keep Crop until the
-    // shared transition finishes so the resting Fit layout never flashes early.
-    var hasCompletedSharedEntry by remember {
-        mutableStateOf(sharedTransitionScope == null)
+    // The outgoing entry can outlive the route-level handoff reset by one frame.
+    // Keep completion latched locally until this Fullscreen composition is disposed.
+    var hasObservedSharedImageRasterHandoff by remember {
+        mutableStateOf(sharedImageRasterHandoffCompleted)
     }
+    val hasCompletedSharedEntry =
+        hasObservedSharedImageRasterHandoff || sharedImageRasterHandoffCompleted
     val isSharedTransitionActive = sharedTransitionScope?.isTransitionActive == true
-    LaunchedEffect(isSharedTransitionActive) {
-        if (!isSharedTransitionActive && sharedTransitionScope != null) {
-            hasCompletedSharedEntry = true
+    LaunchedEffect(sharedImageRasterHandoffCompleted) {
+        if (sharedImageRasterHandoffCompleted) {
+            hasObservedSharedImageRasterHandoff = true
         }
+    }
+    val zoomUnwindProgress = if (animatedVisibilityScope != null) {
+        animatedVisibilityScope.transition.animateFloat(
+            transitionSpec = {
+                tween(
+                    durationMillis = RecapNavigationMotion.SlideDurationMillis,
+                    easing = FastOutSlowInEasing,
+                )
+            },
+            label = "screenshotFullscreenZoomUnwind",
+        ) { enterExitState ->
+            fullscreenZoomUnwindTarget(
+                enterExitState = enterExitState,
+                hasCompletedSharedEntry = hasCompletedSharedEntry,
+            )
+        }
+    } else {
+        null
     }
     val imageAlpha =
         if (sharedTransitionScope != null &&
@@ -195,7 +219,7 @@ fun ScreenshotFullscreenScreen(
                     }
                 } else {
                     RecapPinchZoomAsyncImage(
-                        model = imageModel,
+                        model = requestModel,
                         contentDescription = stringResource(
                             R.string.screenshot_image_placeholder_content_description,
                         ),
@@ -209,10 +233,17 @@ fun ScreenshotFullscreenScreen(
                         shape = imageShape,
                         borderWidth = ScreenshotFullscreenTokens.ImageBorderWidth,
                         borderColor = RecapGray100,
-                        dropShadow = imageDropShadow,
+                        // A blurred layer over a tall screenshot multiplies native bitmap and
+                        // texture memory. Keep shadow chrome off the raster owner.
+                        dropShadow = null,
                         imageFrameModifier = sharedBoundsModifier,
                         contentScale = imageContentScale,
-                        expandLayoutToZoom = hasCompletedSharedEntry,
+                        gesturesEnabled = !(
+                            hasCompletedSharedEntry && isSharedTransitionActive
+                        ),
+                        zoomUnwindProgress = {
+                            zoomUnwindProgress?.value ?: 0f
+                        },
                         onError = { imageLoadFailed = true },
                     )
                 }
@@ -285,6 +316,17 @@ private fun ScreenshotFullscreenTopBar(
             )
         }
     }
+}
+
+internal fun fullscreenZoomUnwindTarget(
+    enterExitState: EnterExitState,
+    hasCompletedSharedEntry: Boolean,
+): Float = if (
+    hasCompletedSharedEntry && enterExitState == EnterExitState.PostExit
+) {
+    1f
+} else {
+    0f
 }
 
 private object ScreenshotFullscreenTokens {

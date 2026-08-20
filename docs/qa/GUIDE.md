@@ -1,8 +1,8 @@
-# Design QA Guide (Draft)
+# Design QA Guide
 
-> 디자인 QA 오케스트라 지침 초안이다.  
+> 디자인 QA 검증 기준이다.
 > 작은 화면·고배율·시스템 내비(특히 3버튼 inset)에서 레이아웃이 깨지지 않는지 검증하는 기준을 정의한다.  
-> 구현/리뷰 에이전트는 화면 레이아웃 변경 시 이 문서를 따른다.
+> 구현/리뷰 에이전트는 `docs/TESTING.md`가 지정한 레이아웃 변경 시 이 문서를 따른다.
 
 관련 이슈: [#43 작은 기기·고배율·3버튼 내비 고정 레이아웃/패딩 전역 대응](https://github.com/Central-MakeUs/recap-android/issues/43)
 
@@ -36,7 +36,8 @@
 
 ### 오케스트라 운영 원칙
 
-1. **매트릭스를 줄이지 않는다.** 아래 Screenshot Spec / VM Spec은 기본 최소 집합이다. 화면 특성상 일부 조합을 생략할 때는 이유를 기록한다.
+1. **요청된 매트릭스를 임의로 줄이지 않는다.** Screenshot Test는 사용자가 명시적으로 요청한 경우에만 §3을 적용한다. VM QA 대상이면 §4의 매트릭스를 기본
+   최소 집합으로 삼고, 화면 특성상 일부 조합을 생략할 때는 이유를 기록한다.
 2. **온보딩 풀뷰포트를 레퍼런스로 둔다.** (#43) 이후 화면은 점진 적용하되, 동일 판정 기준을 쓴다.
 3. **실패는 재현 조건과 함께 기록한다.** `(screen, width×height, fontScale, navMode)` 네 튜플을 남긴다.
 4. **고정 padding 일괄 축소를 해결로 인정하지 않는다.** scrollable body + pinned CTA + compact 시 일러스트 축소/숨김 + inset 계약 통일 방향과 맞는지 확인한다.
@@ -46,8 +47,11 @@
 
 ## 3. Compose Screenshot Test Spec
 
-Compose Screenshot / Preview 캡처의 기본 매트릭스다.  
-가능하면 CI 또는 로컬 screenshot test로 자동화하고, 자동화 전이면 Preview + 수동 캡처로 동일 조합을 커버한다.
+이 절은 사용자가 Screenshot Test를 명시적으로 요청한 경우에만 적용한다. 레이아웃 변경이나 기존 screenshot test 존재만으로 Gradle screenshot
+task를 실행하거나 golden을 갱신하지 않는다.
+
+요청 시 사용하는 Compose Screenshot / Preview 캡처의 기본 매트릭스다. 가능하면 CI 또는 로컬 screenshot test로 자동화하고, 자동화 전이면
+Preview + 수동 캡처로 동일 조합을 커버한다.
 
 ### 3.1 Screen sizes
 
@@ -198,15 +202,15 @@ VM QA:
 
 ## 5. 작업 게이트 (오케스트라 체크리스트)
 
-레이아웃/간격/`core/design` 템플릿 변경 PR 또는 handoff 완료 전:
+레이아웃/간격/`core/design` 템플릿 변경 완료 전:
 
-- [ ] Screenshot Spec 최소 매트릭스 확인 (또는 생략 사유 기록)
-- [ ] Emulator A (Gesture) 확인
-- [ ] Emulator B (3-button) 확인
+- [ ] 사용자가 Screenshot Test를 요청했으면 Screenshot Spec 최소 매트릭스 확인 (또는 생략 사유 기록)
+- [ ] 작은 화면·고배율·system inset 위험이 있으면 Emulator A (Gesture) 확인
+- [ ] 작은 화면·고배율·system inset 위험이 있으면 Emulator B (3-button) 확인
 - [ ] 실패 튜플이 있으면 구현 이슈로 되돌리거나 BACKLOG에 범위 밖 항목으로 분리
 - [ ] 고정 padding 일괄 축소만으로 “완료” 처리하지 않음
 
-문서만 변경한 경우 Design QA 게이트는 생략한다.
+VM A/B 필수 범위와 생략 조건은 `docs/TESTING.md`의 「레이아웃 QA」를 따른다. 문서만 변경한 경우 Design QA 게이트는 생략한다.
 
 ---
 
@@ -215,7 +219,7 @@ VM QA:
 ```markdown
 ## Design QA Result
 - Scope: <screens / components>
-- Screenshot matrix: 320×640 / 360×800 / 412×915 × fontScale 1.0·1.3·1.5
+- Screenshot matrix: NOT REQUESTED | 320×640 / 360×800 / 412×915 × fontScale 1.0·1.3·1.5
   - Result: PASS | FAIL
   - Failures: (screen, size, fontScale) — note
 - VM:
@@ -224,9 +228,11 @@ VM QA:
 - Open questions: ...
 ```
 
+Screenshot Test가 요청되지 않았다면 `Screenshot matrix` 항목은 생략할 수 있다.
+
 ---
 
-## 7. Out of scope (현재 초안)
+## 7. Out of scope
 
 - 다크모드
 - 태블릿 / landscape 전용 레이아웃
@@ -235,12 +241,12 @@ VM QA:
 
 ---
 
-## 8. 미결 (초안 TODO)
+## 8. 미결
 
 - Compose Screenshot 도구·`@QaPhoneMatrix`·주요 feature screenshotTest는 도입됨 (§3.6). 남은 작업은 golden 갱신/검증과 미커버 상태 확장
 - golden image 저장 경로와 diff threshold
 - Emulator AVD 이름·API level·정확한 dpi 프로파일 고정
 - CI에서 Screenshot Spec 자동 실행 여부
-- Design QA 결과를 `TESTING.md` / handoff Result에 의무 링크로 넣을지 여부
+- CI에서 VM A/B 검증을 자동화할지 여부
 
 이 섹션은 도구/커버리지가 바뀌면 갱신한다.

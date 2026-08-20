@@ -9,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -197,8 +198,29 @@ fun ScreenshotRoute(
     val useFullscreenFade =
         currentTop is ScreenshotDestination.Fullscreen ||
             previousTop is ScreenshotDestination.Fullscreen
+    val fullscreenIsTop = currentTop is ScreenshotDestination.Fullscreen
+    var fullscreenRasterHandoffCompleted by remember {
+        mutableStateOf(initialFullscreenRasterHandoffCompleted(fullscreenIsTop))
+    }
+    // NavEntry content can outlive entryProvider recomposition. Read this State inside
+    // each entry so a recreated predictive-back target sees the persistent raster owner.
+    val fullscreenOwnsSharedImageRaster = rememberUpdatedState(
+        fullscreenIsTop && fullscreenRasterHandoffCompleted,
+    )
+    val fullscreenRasterHandoffCompletedState = rememberUpdatedState(
+        fullscreenRasterHandoffCompleted,
+    )
 
     SharedTransitionLayout {
+        val isSharedImageTransitionActive = isTransitionActive
+        LaunchedEffect(fullscreenIsTop, isSharedImageTransitionActive) {
+            fullscreenRasterHandoffCompleted = nextFullscreenRasterHandoffCompleted(
+                currentValue = fullscreenRasterHandoffCompleted,
+                fullscreenIsTop = fullscreenIsTop,
+                isSharedTransitionActive = isSharedImageTransitionActive,
+            )
+        }
+
         RecapNavDisplay(
             backStack = backStack,
             onBack = {
@@ -254,6 +276,8 @@ fun ScreenshotRoute(
                             sharedTransitionScope = this@SharedTransitionLayout,
                             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                             enableSharedImageBounds = useFullscreenFade,
+                            fullscreenOwnsSharedImageRaster =
+                                fullscreenOwnsSharedImageRaster.value,
                         )
                     }
 
@@ -270,6 +294,8 @@ fun ScreenshotRoute(
                                 sharedTransitionScope = this@SharedTransitionLayout,
                                 animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                                 enableSharedImageBounds = useFullscreenFade,
+                                fullscreenOwnsSharedImageRaster =
+                                    fullscreenOwnsSharedImageRaster.value,
                             )
                         } else {
                             ScreenshotEditScreen(
@@ -291,6 +317,8 @@ fun ScreenshotRoute(
                                 sharedTransitionScope = this@SharedTransitionLayout,
                                 animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                                 enableSharedImageBounds = useFullscreenFade,
+                                fullscreenOwnsSharedImageRaster =
+                                    fullscreenOwnsSharedImageRaster.value,
                             )
                         }
                     }
@@ -310,6 +338,8 @@ fun ScreenshotRoute(
                             onNavigateBack = { backStack.removeLastOrNull() },
                             sharedTransitionScope = this@SharedTransitionLayout,
                             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                            sharedImageRasterHandoffCompleted =
+                                fullscreenRasterHandoffCompletedState.value,
                         )
                     }
 

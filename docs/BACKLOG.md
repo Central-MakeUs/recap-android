@@ -2,18 +2,32 @@
 
 Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공유해야 하는 후속 항목은 이 문서에 남긴다.
 
-작업에 착수할 때는 항목을 `docs/handoff/HANDOFF.md`로 옮기고, 이 문서에는 상태만 갱신한다.
+`codex-plan` → `cursor-implement` → `codex-review` 3단 워크플로우로 착수할 때만 항목을 `docs/handoff/HANDOFF.md`로
+옮기고 이 문서에는 상태를 갱신한다. 일반 직접 구현이나 Cursor 단독 작업은 `HANDOFF.md`를 사용하지 않으며, 필요한 context와 완료 결과를 이 문서에 직접
+갱신한다.
 
 ## 작성 규칙
 
 - 한 항목은 가능한 한 한 줄 요약으로 시작한다.
-- 구현 스펙 수준의 긴 내용은 `HANDOFF.md`로 옮긴다.
+- 3단 워크플로우에서 구현 스펙 수준의 긴 내용은 `HANDOFF.md`로 옮긴다. 그 밖의 작업은 항목에 필요한 범위만 유지한다.
 - 구현 중 발견된 기술 부채는 이 문서에 저장한다.
 - 개인 메모리, 임시 생각, 이미 해결된 디버깅 로그는 남기지 않는다.
 - 날짜는 `YYYY-MM-DD` 형식으로 쓴다.
 - 상태는 섹션으로 관리하고, 항목 자체는 목록으로 누적한다.
 
 ## Open
+
+- [ ] 2026-08-20 - 스크린샷 predictive back raster handoff 상태 통합
+  - Context: Detail/Edit/Fullscreen 간 shared image 전환에서 raster 소유권과 zoom unwind 수명주기를 제어하는 상태가
+    `ScreenshotRoute`, `ScreenshotFullscreenScreen`, `ScreenshotSharedBounds` 및 Detail/Edit 화면에 여러
+    boolean과 latch(`fullscreenRasterHandoffCompleted`, `fullscreenOwnsSharedImageRaster`,
+    `hasObservedSharedImageRasterHandoff`, `hasCompletedSharedEntry`, `isSharedTransitionActive`)로
+    분산되어 있다. 현재 동작에는 필요하지만 상태 조합과 NavEntry 수명 관계를 추적하기 어렵고 잘못된 조합을 만들기 쉽다.
+  - Next: predictive back 진입·취소·완료와 NavEntry 재생성/폐기까지 표현하는 route-scoped coordinator 또는 명시적
+    transition state로 통합하고, 화면에는 필요한 파생 상태만 전달한다. 기존 메모리 상한, 단일 raster 소유권, zoom unwind 및 시작·종료 플리커
+    방지 동작을 유지한다.
+  - Priority: Medium
+  - Handoff: not started
 
 - [ ] 2026-08-05 - 카카오 `me()` 실패가 로그인 전체를 막는 실패 경로의 UX 정리
   - Context: 소유자 해시 판정을 위해 `signInWithKakao`가 `kakaoLoginClient.fetchUserProfile()`을 새로 호출한다. 일시적 네트워크 오류로 `me()`가 실패하면 카카오 로그인 자체는 성공했는데도 `AuthError.ProviderUnavailable`로 로그인이 실패하고, 일반 로그인 실패 토스트만 노출되어 원인·재시도 안내가 없다.
@@ -118,8 +132,9 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Closed: 2026-08-03 (이미 구현된 상태로 Open에서 Done으로 이동)
 
 - [x] 2026-07-25 - Remote 스크린샷 상세 content 편집 API 연결
-  - Context: Remote 상세 로드(`ScreenshotDetailRepository` + `CaptureRepository.getDetail`)와 삭제/즐겨찾기는 연결됐지만 `CaptureApi`에 title/summary/body/type PATCH가 없어 편집 저장은 Room `updateCardContent`만 호출한다. Remote에서는 저장이 실패(save error)한다.
-  - Next: 서버 content update API 확정 후 `CaptureMutationRepository`에 updateContent를 추가하고 `ScreenshotViewModel.saveEdit`을 ~~Switching mutation으로 위임~~ `CaptureMutationRepository`(BuildConfig로 선택된 Mock/Remote)로 위임
+  - Result: `ScreenshotViewModel.saveEdit`이 build-time 선택된 `CaptureMutationRepository.updateCapture`
+    를 호출한다. Mock은 Room content를 갱신하고, Remote는 `PATCH /api/v1/captures/{captureId}`로
+    title/summary/body/type을 저장한다.
   - Handoff: not started
 
 - [x] 2026-07-30 - 빠른 전역 navigation push/pop 역전의 화면 레이어 안정화

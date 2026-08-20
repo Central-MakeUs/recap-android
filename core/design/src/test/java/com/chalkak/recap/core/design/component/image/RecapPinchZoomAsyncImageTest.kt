@@ -158,6 +158,41 @@ class RecapPinchZoomAsyncImageTest {
         )
     }
 
+    @Test
+    fun `zoom unwind starts from current pinch transform`() {
+        val offset = Offset(240f, -160f)
+
+        assertEquals(4f, pinchZoomScaleAtUnwindProgress(4f, 0f), Delta)
+        assertEquals(offset, pinchZoomOffsetAtUnwindProgress(offset, 0f))
+    }
+
+    @Test
+    fun `zoom unwind interpolates pinch transform toward identity`() {
+        val offset = Offset(240f, -160f)
+
+        assertEquals(2.5f, pinchZoomScaleAtUnwindProgress(4f, 0.5f), Delta)
+        assertEquals(
+            Offset(120f, -80f),
+            pinchZoomOffsetAtUnwindProgress(offset, 0.5f),
+        )
+    }
+
+    @Test
+    fun `zoom unwind finishes at Fit center`() {
+        val offset = Offset(240f, -160f)
+
+        assertEquals(1f, pinchZoomScaleAtUnwindProgress(4f, 1f), Delta)
+        assertEquals(Offset.Zero, pinchZoomOffsetAtUnwindProgress(offset, 1f))
+    }
+
+    @Test
+    fun `zoom unwind clamps progress to valid range`() {
+        val offset = Offset(240f, -160f)
+
+        assertEquals(4f, pinchZoomScaleAtUnwindProgress(4f, -1f), Delta)
+        assertEquals(Offset.Zero, pinchZoomOffsetAtUnwindProgress(offset, 2f))
+    }
+
     private fun emptyStart(offset: Float, visualSize: Float, viewportSize: Float): Float {
         val restStart = viewportSize / 2f - visualSize / 2f
         return (restStart + offset).coerceAtLeast(0f)
