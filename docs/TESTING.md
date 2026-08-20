@@ -4,11 +4,12 @@
 
 ## 현재 상태
 
-- 현재 프로젝트에는 특별한 테스트 코드 체계가 없다.
+- 현재 프로젝트는 `:app`, `:core:*`, `:feature:*`의 대상 모듈에 로컬 단위 테스트를 두는 멀티모듈 테스트 체계를 운영한다.
 - 로컬 단위 테스트는 JUnit5 중심으로 작성한다.
 - 기존 JUnit4 테스트는 JUnit Vintage engine으로 당분간 함께 실행한다.
 - Compose UI test, AndroidX test 의존성은 설정되어 있다.
 - MockK, Turbine, coroutines-test, Room testing 의존성이 설정되어 있다.
+- Compose Preview Screenshot Testing은 `:app`, `:core:design` 및 UI가 있는 `:feature:*` 모듈에 적용되어 있다.
 
 현재 설정된 주요 테스트 의존성:
 
@@ -24,6 +25,8 @@ Instrumentation/Compose UI test는 AndroidX Compose test가 JUnit4 rule 기반�
 
 ## Compose Preview Screenshot Testing
 
+- Screenshot Test의 추가·기준 이미지 갱신·실행은 사용자가 명시적으로 요청한 경우에만 수행한다. 레이아웃 변경이나 기존 screenshot test 존재만으로 자동
+  실행하지 않는다.
 - 플러그인: `com.android.compose.screenshot` (`libs.plugins.compose.screenshot`, `0.0.1-alpha16`)
 - `gradle.properties`와 모듈 `android.experimental.enableScreenshotTest`로 `screenshotTest` source set을 켠다
 - Preview는 `src/screenshotTest/...`에 두고 `@Preview` + `@PreviewTest`로 지정한다
@@ -52,7 +55,7 @@ Firebase Observability 수동 확인(qa/release 기기):
 - qa/release: Crashlytics·Performance ON
 - 강제 non-fatal / organize·share custom trace가 Firebase 콘솔에 보이는지 확인
 
-로컬 단위 테스트가 추가된 뒤 기본 test 명령:
+전체 debug 로컬 단위 테스트:
 
 ```powershell
 $env:GRADLE_USER_HOME="$env:USERPROFILE\.gradle"; .\gradlew.bat testDebugUnitTest
@@ -60,19 +63,40 @@ $env:GRADLE_USER_HOME="$env:USERPROFILE\.gradle"; .\gradlew.bat testDebugUnitTes
 
 ## 파일 위치
 
-- 현재 `:app` 단일 모듈의 main source는 `app/src/main/java/...`에 있다.
-- 로컬 단위 테스트는 `app/src/test/java/...`에 둔다.
-- Android instrumentation / Compose UI 테스트는 `app/src/androidTest/java/...`에 둔다.
+- production 코드는 대상 모듈의 `src/main/java/...`에 둔다.
+- 로컬 단위 테스트는 대상 모듈의 `src/test/java/...` 또는 `src/test/kotlin/...`에 둔다.
+- Android instrumentation / Compose UI 테스트는 대상 모듈의 `src/androidTest/java/...` 또는
+  `src/androidTest/kotlin/...`에 둔다.
+- Preview Screenshot 테스트는 screenshot plugin을 적용한 대상 모듈의 `src/screenshotTest/java/...` 또는
+  `src/screenshotTest/kotlin/...`에 둔다.
 - 패키지 경로는 대상 클래스와 동일하게 미러링한다.
 
 예:
 
 ```text
-app/src/main/java/com/chalkak/recap/feature/home/HomeViewModel.kt
-app/src/test/java/com/chalkak/recap/feature/home/HomeViewModelTest.kt
+feature/home/src/main/java/com/chalkak/recap/feature/home/HomeViewModel.kt
+feature/home/src/test/java/com/chalkak/recap/feature/home/HomeViewModelTest.kt
 ```
 
-추후 멀티모듈 전환 후에는 각 모듈의 `src/test/java` 또는 `src/test/kotlin` 아래에 대상 클래스 경로를 미러링한다.
+## 변경 유형별 필수 검증
+
+- production 코드 변경: 영향받는 모듈의 `testDebugUnitTest`와 루트 `assembleDebug`를 실행한다. 영향 범위가 여러 모듈이거나 불명확하면 루트
+  `testDebugUnitTest`를 실행한다.
+- 테스트 코드만 변경: 해당 모듈의 관련 테스트를 실행한다. production compile 영향이 있으면 `assembleDebug`도 실행한다.
+- Gradle plugin/dependency/build type 변경: 관련 테스트와 영향받는 build를 실행하며, qa/release 전용 설정을 바꿨다면 해당
+  variant도 검증한다.
+- 문서만 변경: Gradle 빌드·테스트는 생략할 수 있으며 문서 링크, 명령, 현재 코드 사실을 정적으로 확인한다.
+- 실행할 수 없는 필수 검증이 있으면 생략하지 않은 것처럼 보고하지 말고 원인과 영향 범위를 완료 응답에 남긴다.
+
+### 레이아웃 QA
+
+- 레이아웃, 간격, typography, `core/design` 템플릿 또는 화면 구조 변경은 관련 Compose Preview를 확인한다.
+- `validateDebugScreenshotTest`, 기준 이미지 갱신, screenshot test 추가·수정은 사용자가 명시적으로 요청한 경우에만 수행한다. 요청되지
+  않았다면 미실행 사유를 따로 보고할 필요가 없다.
+- 작은 화면·고배율·시스템 navigation inset에 영향을 줄 수 있는 변경(풀뷰포트, pinned bottom CTA, 고정 높이/패딩, `WindowInsets`
+  /system bar 처리)은 `docs/qa/GUIDE.md`의 Emulator A(gesture)와 B(3-button)를 모두 확인한다.
+- 위 위험과 무관한 시각 변경은 VM A/B 검증을 생략할 수 있지만, 완료 응답 또는 3단 handoff Result에 생략 사유를 기록한다.
+- 문서만 변경한 경우 레이아웃 QA는 생략한다.
 
 ## 네이밍
 
@@ -194,12 +218,14 @@ viewModel.uiState.test {
 
 ## Result 작성 규칙
 
-`docs/handoff/HANDOFF.md`의 Result 섹션에 다음을 남긴다.
+`codex-plan` → `cursor-implement` → `codex-review` 3단 워크플로우를 사용한 경우에만 `docs/handoff/HANDOFF.md`의
+Result 섹션에 결과를 남긴다. 그 밖의 작업은 `HANDOFF.md`를 읽거나 수정하지 않고 작업 완료 응답에 같은 수준의 변경·검증·미검증 사항을 보고한다.
 
 ```markdown
 ## Cursor Result
 - Changed files: ...
-- Build/test: .\gradlew.bat assembleDebug GREEN, .\gradlew.bat testDebugUnitTest GREEN
+- Build/test: .\gradlew.bat testDebugUnitTest GREEN, .\gradlew.bat assembleDebug GREEN
+- Design QA: not applicable - no layout change
 - Open questions: none
 ```
 
@@ -208,6 +234,7 @@ viewModel.uiState.test {
 ```markdown
 ## Cursor Result
 - Changed files: docs/TESTING.md
-- Build/test: not run - docs only
+- Build/test: not run - docs only; links/commands/current facts checked
+- Design QA: not applicable - docs only
 - Open questions: none
 ```

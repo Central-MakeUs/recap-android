@@ -2,12 +2,14 @@
 
 Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공유해야 하는 후속 항목은 이 문서에 남긴다.
 
-작업에 착수할 때는 항목을 `docs/handoff/HANDOFF.md`로 옮기고, 이 문서에는 상태만 갱신한다.
+`codex-plan` → `cursor-implement` → `codex-review` 3단 워크플로우로 착수할 때만 항목을 `docs/handoff/HANDOFF.md`로
+옮기고 이 문서에는 상태를 갱신한다. 일반 직접 구현이나 Cursor 단독 작업은 `HANDOFF.md`를 사용하지 않으며, 필요한 context와 완료 결과를 이 문서에 직접
+갱신한다.
 
 ## 작성 규칙
 
 - 한 항목은 가능한 한 한 줄 요약으로 시작한다.
-- 구현 스펙 수준의 긴 내용은 `HANDOFF.md`로 옮긴다.
+- 3단 워크플로우에서 구현 스펙 수준의 긴 내용은 `HANDOFF.md`로 옮긴다. 그 밖의 작업은 항목에 필요한 범위만 유지한다.
 - 구현 중 발견된 기술 부채는 이 문서에 저장한다.
 - 개인 메모리, 임시 생각, 이미 해결된 디버깅 로그는 남기지 않는다.
 - 날짜는 `YYYY-MM-DD` 형식으로 쓴다.
@@ -130,8 +132,9 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Closed: 2026-08-03 (이미 구현된 상태로 Open에서 Done으로 이동)
 
 - [x] 2026-07-25 - Remote 스크린샷 상세 content 편집 API 연결
-  - Context: Remote 상세 로드(`ScreenshotDetailRepository` + `CaptureRepository.getDetail`)와 삭제/즐겨찾기는 연결됐지만 `CaptureApi`에 title/summary/body/type PATCH가 없어 편집 저장은 Room `updateCardContent`만 호출한다. Remote에서는 저장이 실패(save error)한다.
-  - Next: 서버 content update API 확정 후 `CaptureMutationRepository`에 updateContent를 추가하고 `ScreenshotViewModel.saveEdit`을 ~~Switching mutation으로 위임~~ `CaptureMutationRepository`(BuildConfig로 선택된 Mock/Remote)로 위임
+  - Result: `ScreenshotViewModel.saveEdit`이 build-time 선택된 `CaptureMutationRepository.updateCapture`
+    를 호출한다. Mock은 Room content를 갱신하고, Remote는 `PATCH /api/v1/captures/{captureId}`로
+    title/summary/body/type을 저장한다.
   - Handoff: not started
 
 - [x] 2026-07-30 - 빠른 전역 navigation push/pop 역전의 화면 레이어 안정화
