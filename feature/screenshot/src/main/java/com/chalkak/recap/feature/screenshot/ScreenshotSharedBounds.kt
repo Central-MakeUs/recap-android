@@ -66,3 +66,12 @@ internal fun nextFullscreenRasterHandoffCompleted(
     !fullscreenIsTop && !isSharedTransitionActive -> false
     else -> currentValue
 }
+
+/**
+ * Recreated composition with Fullscreen already on top never sees a shared
+ * transition, so the latch must start completed. Pending enter still starts
+ * false because [ScreenshotRoute] is first composed on Detail or Edit.
+ */
+internal fun initialFullscreenRasterHandoffCompleted(
+    fullscreenIsTop: Boolean,
+): Boolean = fullscreenIsTop

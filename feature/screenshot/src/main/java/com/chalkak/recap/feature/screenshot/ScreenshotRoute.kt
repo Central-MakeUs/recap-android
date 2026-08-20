@@ -199,7 +199,9 @@ fun ScreenshotRoute(
         currentTop is ScreenshotDestination.Fullscreen ||
             previousTop is ScreenshotDestination.Fullscreen
     val fullscreenIsTop = currentTop is ScreenshotDestination.Fullscreen
-    var fullscreenRasterHandoffCompleted by remember { mutableStateOf(false) }
+    var fullscreenRasterHandoffCompleted by remember {
+        mutableStateOf(initialFullscreenRasterHandoffCompleted(fullscreenIsTop))
+    }
     // NavEntry content can outlive entryProvider recomposition. Read this State inside
     // each entry so a recreated predictive-back target sees the persistent raster owner.
     val fullscreenOwnsSharedImageRaster = rememberUpdatedState(

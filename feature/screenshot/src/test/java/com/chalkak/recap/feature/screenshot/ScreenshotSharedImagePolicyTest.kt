@@ -92,4 +92,14 @@ class ScreenshotSharedImagePolicyTest {
             ),
         )
     }
+
+    @Test
+    fun `restored resting fullscreen initializes raster ownership`() {
+        assertTrue(initialFullscreenRasterHandoffCompleted(fullscreenIsTop = true))
+    }
+
+    @Test
+    fun `detail or edit start does not initialize raster ownership`() {
+        assertFalse(initialFullscreenRasterHandoffCompleted(fullscreenIsTop = false))
+    }
 }
