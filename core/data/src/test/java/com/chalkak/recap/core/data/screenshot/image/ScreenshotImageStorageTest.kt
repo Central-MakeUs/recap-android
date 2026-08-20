@@ -173,6 +173,17 @@ class ScreenshotImageStorageTest {
     }
 
     @Test
+    fun `thumbnail target size caps extra long screenshots by pixel budget`() {
+        val (width, height) = screenshotThumbnailTargetSize(
+            width = 2880,
+            height = 12780,
+        )
+
+        assertTrue(width.toLong() * height <= 2_000_000)
+        assertEquals(2880f / 12780f, width.toFloat() / height, 0.001f)
+    }
+
+    @Test
     fun createThumbnailFromStoredImage_doesNotReopenOriginalUri() {
         val captureId = 6L
         val sourceFile = writeSolidJpeg(

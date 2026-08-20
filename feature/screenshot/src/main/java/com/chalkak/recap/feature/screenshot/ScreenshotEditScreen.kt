@@ -87,11 +87,13 @@ fun ScreenshotEditScreen(
             content.hasUnsavedEditChanges() &&
             !content.isSaving
     val fieldsEnabled = !content.isSaving
-    val imageModel = resolveScreenshotImageModel(
-        storedImagePath = content.card.imageRefs.storedImagePath,
-        sourceImageUri = content.card.imageRefs.sourceImageUri,
-        thumbnailPath = content.card.imageRefs.thumbnailPath,
-        priority = ScreenshotImageResolvePriority.Fullscreen,
+    val imageModel = rememberBoundedScreenshotImageRequest(
+        resolveScreenshotImageModel(
+            storedImagePath = content.card.imageRefs.storedImagePath,
+            sourceImageUri = content.card.imageRefs.sourceImageUri,
+            thumbnailPath = content.card.imageRefs.thumbnailPath,
+            priority = ScreenshotImageResolvePriority.Fullscreen,
+        ),
     )
 
     val navigationBarBottomPadding = WindowInsets.navigationBars
@@ -286,6 +288,8 @@ private fun ScreenshotEditImagePreview(
     val showPlaceholder = imageModel == null || imageLoadFailed
     val imageShape = RoundedCornerShape(ScreenshotSharedImageCornerRadius)
     val imageInteractionSource = remember { MutableInteractionSource() }
+    val hideRasterForSharedTransition =
+        enableSharedImageBounds && sharedTransitionScope?.isTransitionActive == true
     val sharedBoundsModifier = if (showPlaceholder || !enableSharedImageBounds) {
         Modifier
     } else {
@@ -334,7 +338,7 @@ private fun ScreenshotEditImagePreview(
                         modifier = Modifier.size(width = 24.dp, height = 21.dp),
                     )
                 }
-            } else {
+            } else if (!hideRasterForSharedTransition) {
                 AsyncImage(
                     model = imageModel,
                     contentDescription = stringResource(

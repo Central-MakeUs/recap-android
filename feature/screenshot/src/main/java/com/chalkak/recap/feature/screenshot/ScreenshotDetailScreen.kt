@@ -140,11 +140,13 @@ private fun ScreenshotDetailContent(
 ) {
     val card = content.card
     val analysis = card.analysisResult
-    val imageModel = resolveScreenshotImageModel(
-        storedImagePath = card.imageRefs.storedImagePath,
-        sourceImageUri = card.imageRefs.sourceImageUri,
-        thumbnailPath = card.imageRefs.thumbnailPath,
-        priority = ScreenshotImageResolvePriority.Fullscreen,
+    val imageModel = rememberBoundedScreenshotImageRequest(
+        resolveScreenshotImageModel(
+            storedImagePath = card.imageRefs.storedImagePath,
+            sourceImageUri = card.imageRefs.sourceImageUri,
+            thumbnailPath = card.imageRefs.thumbnailPath,
+            priority = ScreenshotImageResolvePriority.Fullscreen,
+        ),
     )
     val contentType = analysis.typeCode
     val categoryType = contentType.toRecapCategoryType()
@@ -405,6 +407,8 @@ private fun ScreenshotDetailHeroImage(
     val showPlaceholder = imageModel == null || imageLoadFailed
     val imageInteractionSource = remember { MutableInteractionSource() }
     val imageShape = RoundedCornerShape(ScreenshotSharedImageCornerRadius)
+    val hideRasterForSharedTransition =
+        enableSharedImageBounds && sharedTransitionScope?.isTransitionActive == true
     val sharedBoundsModifier = if (showPlaceholder || !enableSharedImageBounds) {
         Modifier
     } else {
@@ -458,7 +462,7 @@ private fun ScreenshotDetailHeroImage(
                             modifier = Modifier.size(width = 24.dp, height = 21.dp),
                         )
                     }
-                } else {
+                } else if (!hideRasterForSharedTransition) {
                     AsyncImage(
                         model = imageModel,
                         contentDescription = stringResource(

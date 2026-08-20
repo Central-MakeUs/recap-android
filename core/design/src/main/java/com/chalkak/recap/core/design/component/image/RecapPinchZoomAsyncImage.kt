@@ -17,10 +17,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredHeight
-import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,10 +45,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.round
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
@@ -68,13 +63,9 @@ import kotlin.math.abs
  * - 확대는 Fit 프레임(clip/border/shadow) 전체를 스케일해 bound가 같이 커진다
  *
  * Modifier order for shared transitions (docs):
- * graphicsLayer → size → dropShadow → [imageFrameModifier] → clip → border.
- * [dropShadow] stays on the sized frame and outside shared bounds so the
- * shadow follows zoom without inflating the shared measured rect.
- * [graphicsLayer] stays outside clip/sharedBounds so the rounded frame grows with pinch.
- *
- * [expandLayoutToZoom] bakes pan/scale into layout so [imageFrameModifier] (sharedBounds)
- * reports the visual zoomed rect, including corners that sit off-screen.
+ * Fit size → [imageFrameModifier] → graphicsLayer → dropShadow → clip → border.
+ * The measured frame and image request stay Fit-sized. Pinch and transition unwind are
+ * draw transforms inside the shared frame so overlay promotion does not drop them.
  */
 @Composable
 fun RecapPinchZoomAsyncImage(
@@ -91,11 +82,9 @@ fun RecapPinchZoomAsyncImage(
     /** Applied after size constraints and before clip/border (e.g. sharedBounds). */
     imageFrameModifier: Modifier = Modifier,
     contentScale: ContentScale = ContentScale.Fit,
-    /**
-     * When true, measured frame size/offset match the pinch visual so sharedBounds
-     * can morph from the zoomed rect. Pinch state is not reset.
-     */
-    expandLayoutToZoom: Boolean = false,
+    gesturesEnabled: Boolean = true,
+    /** 0 keeps the current pinch transform; 1 unwinds it to Fit/center. */
+    zoomUnwindProgress: () -> Float = { 0f },
     onTap: (() -> Unit)? = null,
     onError: (() -> Unit)? = null,
 ) {
@@ -137,68 +126,32 @@ fun RecapPinchZoomAsyncImage(
         BoxWithConstraints(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(
-                    model,
-                    imageAspectRatio,
-                    paddingLeftPx,
-                    paddingTopPx,
-                    paddingRightPx,
-                    paddingBottomPx,
-                    minFlingVelocityPx,
-                ) {
-                    coroutineScope {
-                        val gestureScope = this
-                        var flingJob: Job? = null
-                        fun cancelFling() {
-                            flingJob?.cancel()
-                            flingJob = null
-                        }
+                .then(
+                    if (gesturesEnabled) {
+                        Modifier.pointerInput(
+                            model,
+                            imageAspectRatio,
+                            paddingLeftPx,
+                            paddingTopPx,
+                            paddingRightPx,
+                            paddingBottomPx,
+                            minFlingVelocityPx,
+                        ) {
+                            coroutineScope {
+                                val gestureScope = this
+                                var flingJob: Job? = null
+                                fun cancelFling() {
+                                    flingJob?.cancel()
+                                    flingJob = null
+                                }
 
-                        fun applyTransform(centroid: Offset, pan: Offset, zoom: Float) {
-                            val newScale = (scale * zoom).coerceIn(
-                                RecapPinchZoomImageTokens.MinScale,
-                                RecapPinchZoomImageTokens.MaxScale,
-                            )
-                            val availableWidth = size.width - paddingLeftPx - paddingRightPx
-                            val availableHeight = size.height - paddingTopPx - paddingBottomPx
-                            val transformCenter = Offset(
-                                x = paddingLeftPx + availableWidth / 2f,
-                                y = paddingTopPx + availableHeight / 2f,
-                            )
-                            val (fitWidth, fitHeight) = pinchZoomFitSize(
-                                availableWidth = availableWidth,
-                                availableHeight = availableHeight,
-                                imageAspectRatio = imageAspectRatio,
-                            )
-                            offset = clampPinchZoomOffset(
-                                offset = pinchZoomOffset(
-                                    currentOffset = offset,
-                                    currentScale = scale,
-                                    newScale = newScale,
-                                    centroid = centroid,
-                                    pan = pan,
-                                    transformCenter = transformCenter,
-                                ),
-                                visualWidth = fitWidth * newScale,
-                                visualHeight = fitHeight * newScale,
-                                viewportWidth = size.width.toFloat(),
-                                viewportHeight = size.height.toFloat(),
-                                restCenter = transformCenter,
-                            )
-                            scale = newScale
-                        }
-
-                        detectPinchZoomPanGestures(
-                            onTouchDown = ::cancelFling,
-                            onTransform = ::applyTransform,
-                            onSinglePointerFling = { velocity ->
-                                if (
-                                    scale > RecapPinchZoomImageTokens.MinScale &&
-                                    shouldStartPinchZoomFling(velocity, minFlingVelocityPx)
-                                ) {
+                                fun applyTransform(centroid: Offset, pan: Offset, zoom: Float) {
+                                    val newScale = (scale * zoom).coerceIn(
+                                        RecapPinchZoomImageTokens.MinScale,
+                                        RecapPinchZoomImageTokens.MaxScale,
+                                    )
                                     val availableWidth = size.width - paddingLeftPx - paddingRightPx
-                                    val availableHeight =
-                                        size.height - paddingTopPx - paddingBottomPx
+                                    val availableHeight = size.height - paddingTopPx - paddingBottomPx
                                     val transformCenter = Offset(
                                         x = paddingLeftPx + availableWidth / 2f,
                                         y = paddingTopPx + availableHeight / 2f,
@@ -208,30 +161,73 @@ fun RecapPinchZoomAsyncImage(
                                         availableHeight = availableHeight,
                                         imageAspectRatio = imageAspectRatio,
                                     )
-                                    val flingScale = scale
-                                    flingJob = gestureScope.launch {
-                                        animatePinchZoomFling(
-                                            initialOffset = offset,
-                                            velocity = velocity,
-                                            decay = flingDecay,
-                                            clamp = { candidate ->
-                                                clampPinchZoomOffset(
-                                                    offset = candidate,
-                                                    visualWidth = fitWidth * flingScale,
-                                                    visualHeight = fitHeight * flingScale,
-                                                    viewportWidth = size.width.toFloat(),
-                                                    viewportHeight = size.height.toFloat(),
-                                                    restCenter = transformCenter,
-                                                )
-                                            },
-                                            onOffset = { offset = it },
-                                        )
-                                    }
+                                    offset = clampPinchZoomOffset(
+                                        offset = pinchZoomOffset(
+                                            currentOffset = offset,
+                                            currentScale = scale,
+                                            newScale = newScale,
+                                            centroid = centroid,
+                                            pan = pan,
+                                            transformCenter = transformCenter,
+                                        ),
+                                        visualWidth = fitWidth * newScale,
+                                        visualHeight = fitHeight * newScale,
+                                        viewportWidth = size.width.toFloat(),
+                                        viewportHeight = size.height.toFloat(),
+                                        restCenter = transformCenter,
+                                    )
+                                    scale = newScale
                                 }
-                            },
-                        )
-                    }
-                }
+
+                                detectPinchZoomPanGestures(
+                                    onTouchDown = ::cancelFling,
+                                    onTransform = ::applyTransform,
+                                    onSinglePointerFling = { velocity ->
+                                        if (
+                                            scale > RecapPinchZoomImageTokens.MinScale &&
+                                            shouldStartPinchZoomFling(velocity, minFlingVelocityPx)
+                                        ) {
+                                            val availableWidth =
+                                                size.width - paddingLeftPx - paddingRightPx
+                                            val availableHeight =
+                                                size.height - paddingTopPx - paddingBottomPx
+                                            val transformCenter = Offset(
+                                                x = paddingLeftPx + availableWidth / 2f,
+                                                y = paddingTopPx + availableHeight / 2f,
+                                            )
+                                            val (fitWidth, fitHeight) = pinchZoomFitSize(
+                                                availableWidth = availableWidth,
+                                                availableHeight = availableHeight,
+                                                imageAspectRatio = imageAspectRatio,
+                                            )
+                                            val flingScale = scale
+                                            flingJob = gestureScope.launch {
+                                                animatePinchZoomFling(
+                                                    initialOffset = offset,
+                                                    velocity = velocity,
+                                                    decay = flingDecay,
+                                                    clamp = { candidate ->
+                                                        clampPinchZoomOffset(
+                                                            offset = candidate,
+                                                            visualWidth = fitWidth * flingScale,
+                                                            visualHeight = fitHeight * flingScale,
+                                                            viewportWidth = size.width.toFloat(),
+                                                            viewportHeight = size.height.toFloat(),
+                                                            restCenter = transformCenter,
+                                                        )
+                                                    },
+                                                    onOffset = { offset = it },
+                                                )
+                                            }
+                                        }
+                                    },
+                                )
+                            }
+                        }
+                    } else {
+                        Modifier
+                    },
+                )
                 .then(
                     if (onTap != null) {
                         Modifier.pointerInput(onTap) {
@@ -244,8 +240,6 @@ fun RecapPinchZoomAsyncImage(
                 .padding(resolvedPadding),
             contentAlignment = Alignment.Center,
         ) {
-            val layoutScale = if (expandLayoutToZoom) scale else RecapPinchZoomImageTokens.MinScale
-            val layerScale = if (expandLayoutToZoom) RecapPinchZoomImageTokens.MinScale else scale
             val imageSizeModifier = if (imageAspectRatio > 0f && maxWidth > 0.dp && maxHeight > 0.dp) {
                 val availableAspect = maxWidth / maxHeight
                 val fitWidth: Dp
@@ -257,15 +251,9 @@ fun RecapPinchZoomAsyncImage(
                     fitHeight = maxHeight
                     fitWidth = maxHeight * imageAspectRatio
                 }
-                if (expandLayoutToZoom) {
-                    Modifier
-                        .requiredWidth(fitWidth * layoutScale)
-                        .requiredHeight(fitHeight * layoutScale)
-                } else {
-                    Modifier
-                        .width(fitWidth)
-                        .height(fitHeight)
-                }
+                Modifier
+                    .width(fitWidth)
+                    .height(fitHeight)
             } else {
                 Modifier.fillMaxSize()
             }
@@ -274,28 +262,19 @@ fun RecapPinchZoomAsyncImage(
             val hasBorder = borderWidth != Dp.Unspecified && borderColor != Color.Unspecified
 
             Box(
-                modifier = Modifier
-                    .offset {
-                        if (expandLayoutToZoom) {
-                            offset.round()
-                        } else {
-                            IntOffset.Zero
-                        }
-                    }
-                    .graphicsLayer {
-                        scaleX = layerScale
-                        scaleY = layerScale
-                        if (expandLayoutToZoom) {
-                            translationX = 0f
-                            translationY = 0f
-                        } else {
-                            translationX = offset.x
-                            translationY = offset.y
-                        }
-                    },
+                modifier = imageSizeModifier.then(imageFrameModifier),
             ) {
                 Box(
-                    modifier = imageSizeModifier
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            val progress = zoomUnwindProgress().coerceIn(0f, 1f)
+                            scaleX = pinchZoomScaleAtUnwindProgress(scale, progress)
+                            scaleY = scaleX
+                            val animatedOffset = pinchZoomOffsetAtUnwindProgress(offset, progress)
+                            translationX = animatedOffset.x
+                            translationY = animatedOffset.y
+                        }
                         .then(
                             if (dropShadow != null && shape != null) {
                                 Modifier.dropShadow(shape = clipShape, shadow = dropShadow)
@@ -303,7 +282,6 @@ fun RecapPinchZoomAsyncImage(
                                 Modifier
                             },
                         )
-                        .then(imageFrameModifier)
                         .then(if (shape != null) Modifier.clip(clipShape) else Modifier)
                         .then(
                             if (hasBorder && shape != null) {
@@ -338,6 +316,22 @@ fun RecapPinchZoomAsyncImage(
             }
         }
     }
+}
+
+internal fun pinchZoomScaleAtUnwindProgress(
+    scale: Float,
+    progress: Float,
+): Float {
+    val fraction = progress.coerceIn(0f, 1f)
+    return scale + (RecapPinchZoomImageTokens.MinScale - scale) * fraction
+}
+
+internal fun pinchZoomOffsetAtUnwindProgress(
+    offset: Offset,
+    progress: Float,
+): Offset {
+    val fraction = progress.coerceIn(0f, 1f)
+    return if (fraction == 1f) Offset.Zero else offset * (1f - fraction)
 }
 
 internal fun pinchZoomFitSize(
