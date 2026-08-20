@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -50,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.category.toLabelResId
+import com.chalkak.recap.core.design.component.button.RecapFullscreenIconButton
 import com.chalkak.recap.core.design.component.input.RecapInputField
 import com.chalkak.recap.core.design.component.input.RecapSelectField
 import com.chalkak.recap.core.design.component.popup.RecapPopupContent
@@ -66,7 +66,6 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption3
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
-import com.chalkak.recap.core.design.theme.White
 
 @OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
@@ -305,7 +304,7 @@ private fun ScreenshotEditImagePreview(
         )
     }
 
-    // Shared bounds on the frame that owns the chip so BottomEnd tracks morph.
+    // The frame owns shared geometry; the chip fades independently at BottomEnd.
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -357,55 +356,16 @@ private fun ScreenshotEditImagePreview(
                     )
                 }
             }
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .screenshotFullscreenChipTransition(
-                        animatedVisibilityScope = animatedVisibilityScope,
-                    )
-                    .size(48.dp)
-                    .clickable(
-                        enabled = !showPlaceholder,
-                        onClick = onOpenFullscreen,
-                        role = Role.Button,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                ScreenshotEditFullscreenChipButton(
-                    enabled = !showPlaceholder,
-                    contentDescription = stringResource(
-                        R.string.screenshot_detail_fullscreen_content_description,
-                    ),
-                )
-            }
         }
-    }
-}
 
-/** Temporary outlined fullscreen chip. Kept private until Edit refactor. */
-@Composable
-private fun ScreenshotEditFullscreenChipButton(
-    contentDescription: String,
-    enabled: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    val shape = RoundedCornerShape(ScreenshotEditTokens.FullscreenChipCornerRadius)
-    Box(
-        modifier = modifier
-            .size(ScreenshotEditTokens.FullscreenChipSize)
-            .background(color = White, shape = shape)
-            .border(
-                width = ScreenshotEditTokens.FullscreenChipBorderWidth,
-                color = RecapGray200,
-                shape = shape,
+        RecapFullscreenIconButton(
+            visible = !suppressSharedImageContent,
+            contentDescription = stringResource(
+                R.string.screenshot_detail_fullscreen_content_description,
             ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_fullscreen_24),
-            contentDescription = contentDescription,
-            tint = if (enabled) RecapGray900 else RecapGray900.copy(alpha = 0.38f),
-            modifier = Modifier.size(ScreenshotEditTokens.FullscreenChipIconSize),
+            onClick = onOpenFullscreen,
+            modifier = Modifier.align(Alignment.BottomEnd),
+            enabled = !showPlaceholder,
         )
     }
 }
@@ -475,8 +435,4 @@ private object ScreenshotEditTokens {
     val EditImagePreviewBorderWidth = 0.5.dp
     val TextActionMinSize = 46.dp
     val ScrollBottomPadding = 16.dp
-    val FullscreenChipSize = 21.dp
-    val FullscreenChipIconSize = 13.5.dp
-    val FullscreenChipCornerRadius = 2.dp
-    val FullscreenChipBorderWidth = 0.5.dp
 }

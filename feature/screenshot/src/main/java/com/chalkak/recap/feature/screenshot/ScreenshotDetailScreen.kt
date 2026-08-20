@@ -54,6 +54,7 @@ import com.chalkak.recap.core.design.category.toRecapCategoryType
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
+import com.chalkak.recap.core.design.component.button.RecapFullscreenIconButton
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
 import com.chalkak.recap.core.design.theme.RECAPTheme
 import com.chalkak.recap.core.design.theme.RecapBackground
@@ -73,7 +74,6 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading1
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
-import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import java.time.Instant
@@ -430,7 +430,7 @@ private fun ScreenshotDetailHeroImage(
         modifier = Modifier.fillMaxWidth(),
         contentAlignment = Alignment.Center,
     ) {
-        // Shared bounds on the frame that owns the chip so BottomEnd tracks morph.
+        // The frame owns shared geometry; the chip fades independently at BottomEnd.
         Box(
             modifier = Modifier
                 .padding(vertical = ScreenshotDetailTokens.HeroImageVerticalPadding)
@@ -483,60 +483,18 @@ private fun ScreenshotDetailHeroImage(
                         )
                     }
                 }
-
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .screenshotFullscreenChipTransition(
-                            animatedVisibilityScope = animatedVisibilityScope,
-                        )
-                        .size(ScreenshotDetailTokens.FullscreenButtonSize)
-                        .clickable(
-                            enabled = !showPlaceholder,
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
-                            role = Role.Button,
-                            onClick = onFullscreenClick,
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    ScreenshotFullscreenChipButton(
-                        enabled = !showPlaceholder,
-                        contentDescription = stringResource(
-                            R.string.screenshot_detail_fullscreen_content_description,
-                        ),
-                    )
-                }
             }
-        }
-    }
-}
 
-/** Temporary outlined fullscreen chip. Kept private until Edit/Fullscreen refactor. */
-@Composable
-private fun ScreenshotFullscreenChipButton(
-    contentDescription: String,
-    enabled: Boolean,
-    modifier: Modifier = Modifier,
-) {
-    val shape = RoundedCornerShape(ScreenshotDetailTokens.FullscreenChipCornerRadius)
-    Box(
-        modifier = modifier
-            .size(ScreenshotDetailTokens.FullscreenChipSize)
-            .background(color = White, shape = shape)
-            .border(
-                width = ScreenshotDetailTokens.FullscreenChipBorderWidth,
-                color = RecapGray200,
-                shape = shape,
-            ),
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(R.drawable.ic_fullscreen_24),
-            contentDescription = contentDescription,
-            tint = if (enabled) RecapGray900 else RecapGray900.copy(alpha = 0.38f),
-            modifier = Modifier.size(ScreenshotDetailTokens.FullscreenChipIconSize),
-        )
+            RecapFullscreenIconButton(
+                visible = !suppressSharedImageContent,
+                contentDescription = stringResource(
+                    R.string.screenshot_detail_fullscreen_content_description,
+                ),
+                onClick = onFullscreenClick,
+                modifier = Modifier.align(Alignment.BottomEnd),
+                enabled = !showPlaceholder,
+            )
+        }
     }
 }
 
@@ -746,10 +704,5 @@ private object ScreenshotDetailTokens {
     val BodyToDisclaimerSpacing = 20.dp
     val SectionSpacing = 17.dp
     val MetaRowSpacing = 8.dp
-    val FullscreenButtonSize = 41.dp
-    val FullscreenChipSize = 21.dp
-    val FullscreenChipIconSize = 13.5.dp
-    val FullscreenChipCornerRadius = 2.dp
-    val FullscreenChipBorderWidth = 0.5.dp
     val ErrorStateSpacing = 16.dp
 }

@@ -6,8 +6,6 @@ import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.SharedTransitionScope.ResizeMode.Companion.RemeasureToBounds
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -58,22 +56,3 @@ internal fun shouldSuppressSharedImageContent(
     isSharedTransitionActive: Boolean,
 ): Boolean = enableSharedImageBounds &&
         (fullscreenOwnsSharedImageRaster || isSharedTransitionActive)
-
-/**
- * Fades the Detail/Edit fullscreen chip while it rides the shared image frame
- * (apply [screenshotSharedImageBounds] on the chip's parent so BottomEnd tracks
- * the morphing bounds).
- */
-@OptIn(ExperimentalSharedTransitionApi::class)
-@Composable
-internal fun Modifier.screenshotFullscreenChipTransition(
-    animatedVisibilityScope: AnimatedVisibilityScope?,
-): Modifier {
-    if (animatedVisibilityScope == null) return this
-    return with(animatedVisibilityScope) {
-        this@screenshotFullscreenChipTransition.animateEnterExit(
-            enter = fadeIn(),
-            exit = fadeOut(),
-        )
-    }
-}
