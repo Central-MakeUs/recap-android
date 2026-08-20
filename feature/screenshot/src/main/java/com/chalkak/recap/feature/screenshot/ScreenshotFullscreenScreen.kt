@@ -67,6 +67,7 @@ fun ScreenshotFullscreenScreen(
     modifier: Modifier = Modifier,
     sharedTransitionScope: SharedTransitionScope? = null,
     animatedVisibilityScope: AnimatedVisibilityScope? = null,
+    sharedImageRasterHandoffCompleted: Boolean = sharedTransitionScope == null,
 ) {
     val requestModel = rememberBoundedScreenshotImageRequest(imageModel)
     var imageLoadFailed by remember(requestModel) { mutableStateOf(false) }
@@ -80,15 +81,17 @@ fun ScreenshotFullscreenScreen(
             animatedVisibilityScope = animatedVisibilityScope,
         )
     }
-    // Hide destination Fit frame for the pre-match frame, then keep Crop until the
-    // shared transition finishes so the resting Fit layout never flashes early.
-    var hasCompletedSharedEntry by remember {
-        mutableStateOf(sharedTransitionScope == null)
+    // The outgoing entry can outlive the route-level handoff reset by one frame.
+    // Keep completion latched locally until this Fullscreen composition is disposed.
+    var hasObservedSharedImageRasterHandoff by remember {
+        mutableStateOf(sharedImageRasterHandoffCompleted)
     }
+    val hasCompletedSharedEntry =
+        hasObservedSharedImageRasterHandoff || sharedImageRasterHandoffCompleted
     val isSharedTransitionActive = sharedTransitionScope?.isTransitionActive == true
-    LaunchedEffect(isSharedTransitionActive) {
-        if (!isSharedTransitionActive && sharedTransitionScope != null) {
-            hasCompletedSharedEntry = true
+    LaunchedEffect(sharedImageRasterHandoffCompleted) {
+        if (sharedImageRasterHandoffCompleted) {
+            hasObservedSharedImageRasterHandoff = true
         }
     }
     val zoomUnwindProgress = if (animatedVisibilityScope != null) {

@@ -15,6 +15,18 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
 
 ## Open
 
+- [ ] 2026-08-20 - 스크린샷 predictive back raster handoff 상태 통합
+  - Context: Detail/Edit/Fullscreen 간 shared image 전환에서 raster 소유권과 zoom unwind 수명주기를 제어하는 상태가
+    `ScreenshotRoute`, `ScreenshotFullscreenScreen`, `ScreenshotSharedBounds` 및 Detail/Edit 화면에 여러
+    boolean과 latch(`fullscreenRasterHandoffCompleted`, `fullscreenOwnsSharedImageRaster`,
+    `hasObservedSharedImageRasterHandoff`, `hasCompletedSharedEntry`, `isSharedTransitionActive`)로
+    분산되어 있다. 현재 동작에는 필요하지만 상태 조합과 NavEntry 수명 관계를 추적하기 어렵고 잘못된 조합을 만들기 쉽다.
+  - Next: predictive back 진입·취소·완료와 NavEntry 재생성/폐기까지 표현하는 route-scoped coordinator 또는 명시적
+    transition state로 통합하고, 화면에는 필요한 파생 상태만 전달한다. 기존 메모리 상한, 단일 raster 소유권, zoom unwind 및 시작·종료 플리커
+    방지 동작을 유지한다.
+  - Priority: Medium
+  - Handoff: not started
+
 - [ ] 2026-08-05 - 카카오 `me()` 실패가 로그인 전체를 막는 실패 경로의 UX 정리
   - Context: 소유자 해시 판정을 위해 `signInWithKakao`가 `kakaoLoginClient.fetchUserProfile()`을 새로 호출한다. 일시적 네트워크 오류로 `me()`가 실패하면 카카오 로그인 자체는 성공했는데도 `AuthError.ProviderUnavailable`로 로그인이 실패하고, 일반 로그인 실패 토스트만 노출되어 원인·재시도 안내가 없다.
   - Next: `me()` 실패 전용 안내/재시도 UX를 둘지 결정

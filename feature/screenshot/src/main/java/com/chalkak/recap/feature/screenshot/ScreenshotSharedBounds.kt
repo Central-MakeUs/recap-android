@@ -47,8 +47,8 @@ internal fun Modifier.screenshotSharedImageBounds(
 }
 
 /**
- * Fullscreen claims raster ownership as soon as it becomes the back-stack top.
- * The transition-active fallback keeps the target empty through the committed pop tail.
+ * Fullscreen owns the raster after the route-level handoff completes. The active
+ * fallback keeps Detail/Edit empty through predictive back, including its committed tail.
  */
 internal fun shouldSuppressSharedImageContent(
     enableSharedImageBounds: Boolean,
@@ -56,3 +56,13 @@ internal fun shouldSuppressSharedImageContent(
     isSharedTransitionActive: Boolean,
 ): Boolean = enableSharedImageBounds &&
         (fullscreenOwnsSharedImageRaster || isSharedTransitionActive)
+
+internal fun nextFullscreenRasterHandoffCompleted(
+    currentValue: Boolean,
+    fullscreenIsTop: Boolean,
+    isSharedTransitionActive: Boolean,
+): Boolean = when {
+    fullscreenIsTop && isSharedTransitionActive -> true
+    !fullscreenIsTop && !isSharedTransitionActive -> false
+    else -> currentValue
+}

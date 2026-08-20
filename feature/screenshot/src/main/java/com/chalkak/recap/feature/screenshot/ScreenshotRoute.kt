@@ -198,14 +198,27 @@ fun ScreenshotRoute(
     val useFullscreenFade =
         currentTop is ScreenshotDestination.Fullscreen ||
             previousTop is ScreenshotDestination.Fullscreen
+    val fullscreenIsTop = currentTop is ScreenshotDestination.Fullscreen
+    var fullscreenRasterHandoffCompleted by remember { mutableStateOf(false) }
     // NavEntry content can outlive entryProvider recomposition. Read this State inside
-    // each entry so Detail/Edit relinquish raster ownership before shared transition
-    // activity is observable on the following frame.
+    // each entry so a recreated predictive-back target sees the persistent raster owner.
     val fullscreenOwnsSharedImageRaster = rememberUpdatedState(
-        currentTop is ScreenshotDestination.Fullscreen,
+        fullscreenIsTop && fullscreenRasterHandoffCompleted,
+    )
+    val fullscreenRasterHandoffCompletedState = rememberUpdatedState(
+        fullscreenRasterHandoffCompleted,
     )
 
     SharedTransitionLayout {
+        val isSharedImageTransitionActive = isTransitionActive
+        LaunchedEffect(fullscreenIsTop, isSharedImageTransitionActive) {
+            fullscreenRasterHandoffCompleted = nextFullscreenRasterHandoffCompleted(
+                currentValue = fullscreenRasterHandoffCompleted,
+                fullscreenIsTop = fullscreenIsTop,
+                isSharedTransitionActive = isSharedImageTransitionActive,
+            )
+        }
+
         RecapNavDisplay(
             backStack = backStack,
             onBack = {
@@ -323,6 +336,8 @@ fun ScreenshotRoute(
                             onNavigateBack = { backStack.removeLastOrNull() },
                             sharedTransitionScope = this@SharedTransitionLayout,
                             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                            sharedImageRasterHandoffCompleted =
+                                fullscreenRasterHandoffCompletedState.value,
                         )
                     }
 
