@@ -1,7 +1,8 @@
 package com.chalkak.recap.core.data.screenshot.analysis
 
 import com.chalkak.recap.core.data.capture.CaptureRepository
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.CaptureChange
+import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
 import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotUploadPreparer
 import com.chalkak.recap.core.model.LocalImage
@@ -36,13 +37,12 @@ import kotlin.time.Duration.Companion.milliseconds
 @OptIn(ExperimentalCoroutinesApi::class)
 class RemoteScreenshotAnalysisRepositoryTest {
     private val captureRepository = mockk<CaptureRepository>()
-    private val changeNotifier = mockk<RemoteCaptureChangeNotifier>()
+    private val changeNotifier = mockk<CaptureChangeNotifier>(relaxed = true)
     private val screenshotUploadPreparer = mockk<ScreenshotUploadPreparer>()
     private lateinit var repository: RemoteScreenshotAnalysisRepository
 
     @BeforeEach
     fun setUp() {
-        every { changeNotifier.notifyCaptureChanged() } just Runs
         repository = RemoteScreenshotAnalysisRepository(
             captureRepository = captureRepository,
             changeNotifier = changeNotifier,
@@ -157,7 +157,7 @@ class RemoteScreenshotAnalysisRepositoryTest {
             captureRepository.getOrganizeStatus(9L)
             captureRepository.ackOrganizeResult(9L)
         }
-        verify(exactly = 1) { changeNotifier.notifyCaptureChanged() }
+        coVerify(exactly = 1) { changeNotifier.emit(CaptureChange.Invalidated) }
     }
 
     @Test
@@ -240,7 +240,7 @@ class RemoteScreenshotAnalysisRepositoryTest {
 
         assertEquals(OrganizeStatus.FAILED, error.status)
         coVerify(exactly = 1) { captureRepository.ackOrganizeResult(3L) }
-        verify(exactly = 0) { changeNotifier.notifyCaptureChanged() }
+        coVerify(exactly = 0) { changeNotifier.emit(any()) }
     }
 
     @Test
@@ -508,7 +508,7 @@ class RemoteScreenshotAnalysisRepositoryTest {
             outcome,
         )
         coVerify(exactly = 0) { captureRepository.issueUploadUrls(any()) }
-        verify(exactly = 0) { changeNotifier.notifyCaptureChanged() }
+        coVerify(exactly = 0) { changeNotifier.emit(any()) }
     }
 
     private class RecordingCrashReporter :

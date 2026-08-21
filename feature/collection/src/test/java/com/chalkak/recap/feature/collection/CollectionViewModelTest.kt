@@ -26,6 +26,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -62,6 +63,25 @@ class CollectionViewModelTest {
         every { thumbnailUpdates.thumbnailReady } returns MutableSharedFlow()
         every { thumbnailUpdates.resolveLocalPath(any()) } returns null
         every { mainContentRecoveryTrigger.recoveries } returns recoveryFlow
+        every {
+            searchRepository.observeSearch(any(), any(), any(), any())
+        } answers {
+            val query = firstArg<String>()
+            val scope = secondArg<com.chalkak.recap.core.model.search.SearchScope>()
+            val typeCode = thirdArg<ScreenshotContentType?>()
+            val size = arg<Int>(3)
+            flow {
+                emit(
+                    searchRepository.search(
+                        query = query,
+                        scope = scope,
+                        typeCode = typeCode,
+                        page = 0,
+                        size = size,
+                    ),
+                )
+            }
+        }
         captureMutations = MockCaptureMutationRepository(
             screenshotCardRepository = cardRepository,
             screenshotImageStorage = imageStorage,
@@ -750,6 +770,64 @@ class CollectionViewModelTest {
     }
 
     @Test
+    fun `request delete item shows confirm then deletes capture`() = runTest(testDispatcher) {
+        coEvery { cardRepository.deleteCards(any()) } returns Unit
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 1L,
+                    title = "First",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
+
+        viewModel.onAction(CollectionAction.RequestDeleteItem(1L))
+        assertEquals(1L, viewModel.uiState.value.pendingDeleteCaptureId)
+
+        val eventDeferred = async { viewModel.events.first() }
+        viewModel.onAction(CollectionAction.ConfirmDeleteItem)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { cardRepository.deleteCards(setOf(1L)) }
+        assertEquals(
+            CollectionEvent.ShowDeleteSuccessToast(deletedCount = 1),
+            eventDeferred.await(),
+        )
+        assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
+    }
+
+    @Test
+    fun `confirm delete item failure emits failure toast`() = runTest(testDispatcher) {
+        coEvery { cardRepository.deleteCards(any()) } throws IllegalStateException("database failure")
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 1L,
+                    title = "First",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.RequestDeleteItem(1L))
+
+        val eventDeferred = async { viewModel.events.first() }
+        viewModel.onAction(CollectionAction.ConfirmDeleteItem)
+        advanceUntilIdle()
+
+        assertEquals(CollectionEvent.ShowDeleteFailureToast, eventDeferred.await())
+        assertNull(viewModel.uiState.value.pendingDeleteCaptureId)
+    }
+
+    @Test
     fun `updating search query clears selection`() = runTest(testDispatcher) {
         cardsFlow.emit(
             listOf(
@@ -1053,6 +1131,49 @@ class CollectionViewModelTest {
         recoveryFlow.emit(Unit)
         advanceUntilIdle()
         verify(exactly = 2) { storageRepository.refreshOverview() }
+    }
+
+    @Test
+    fun `repository update removes detail card immediately`() = runTest(testDispatcher) {
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 1L,
+                    title = "First",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(200L),
+                ),
+                storedCard(
+                    captureId = 2L,
+                    title = "Second",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        viewModel.onAction(CollectionAction.OpenTypeDetail(ScreenshotContentType.SHOPPING))
+        advanceUntilIdle()
+        assertEquals(
+            listOf(1L, 2L),
+            viewModel.uiState.value.detail?.cards?.map { card -> card.captureId },
+        )
+
+        cardsFlow.emit(
+            listOf(
+                storedCard(
+                    captureId = 2L,
+                    title = "Second",
+                    contentType = ScreenshotContentType.SHOPPING,
+                    organizedAt = Instant.ofEpochMilli(100L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+        assertEquals(
+            listOf(2L),
+            viewModel.uiState.value.detail?.cards?.map { card -> card.captureId },
+        )
     }
 
     private fun storedCard(

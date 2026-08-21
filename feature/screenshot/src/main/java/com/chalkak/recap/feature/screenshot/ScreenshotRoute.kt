@@ -9,6 +9,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -38,10 +39,13 @@ fun ScreenshotRoute(
     captureId: Long,
     onNavigateBack: () -> Unit,
     onDeleteSucceeded: () -> Unit,
+    openEdit: Boolean = false,
     viewModel: ScreenshotViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val backStack = rememberNavBackStack(ScreenshotDestination.Detail)
+    val backStack = rememberNavBackStack(
+        if (openEdit) ScreenshotDestination.Edit else ScreenshotDestination.Detail,
+    )
     val toastDispatcher = LocalRecapToastDispatcher.current
     val resources = LocalResources.current
     val favoriteAddedToastMessage = stringResource(R.string.screenshot_detail_favorite_added_toast)
@@ -58,6 +62,7 @@ fun ScreenshotRoute(
     var tempTypeSelection by rememberSaveable {
         mutableStateOf(ScreenshotContentType.ETC.name)
     }
+    var openedInitialEdit by rememberSaveable { mutableStateOf(false) }
 
     fun dismissReportSheet() {
         showReportSheet = false
@@ -69,17 +74,32 @@ fun ScreenshotRoute(
         viewModel.bind(captureId)
     }
 
+    LaunchedEffect(openEdit, uiState) {
+        if (!openEdit || openedInitialEdit) {
+            return@LaunchedEffect
+        }
+        if (uiState is ScreenshotUiState.Content) {
+            openedInitialEdit = true
+            viewModel.onAction(ScreenshotAction.PrepareEditDraft)
+            if (backStack.lastOrNull() !is ScreenshotDestination.Edit) {
+                backStack.add(ScreenshotDestination.Edit)
+            }
+        }
+    }
+
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
                 ScreenshotEvent.SaveSucceeded -> {
-                    if (backStack.size > 1) {
-                        backStack.removeLastOrNull()
-                    }
                     toastDispatcher.showToast(
                         message = saveSuccessToastMessage,
                         type = RecapToastType.Success,
                     )
+                    if (openEdit) {
+                        onNavigateBack()
+                    } else if (backStack.size > 1) {
+                        backStack.removeLastOrNull()
+                    }
                 }
 
                 is ScreenshotEvent.SaveFailed -> {
@@ -146,6 +166,10 @@ fun ScreenshotRoute(
             return
         }
         viewModel.onAction(ScreenshotAction.DiscardEditDraft)
+        if (openEdit) {
+            onNavigateBack()
+            return
+        }
         if (backStack.lastOrNull() is ScreenshotDestination.Edit) {
             backStack.removeLastOrNull()
         }
@@ -153,6 +177,10 @@ fun ScreenshotRoute(
 
     fun confirmLeaveEditScreen() {
         viewModel.onAction(ScreenshotAction.DiscardEditDraft)
+        if (openEdit) {
+            onNavigateBack()
+            return
+        }
         if (backStack.lastOrNull() is ScreenshotDestination.Edit) {
             backStack.removeLastOrNull()
         }
@@ -170,14 +198,35 @@ fun ScreenshotRoute(
     val useFullscreenFade =
         currentTop is ScreenshotDestination.Fullscreen ||
             previousTop is ScreenshotDestination.Fullscreen
+    val fullscreenIsTop = currentTop is ScreenshotDestination.Fullscreen
+    var fullscreenRasterHandoffCompleted by remember {
+        mutableStateOf(initialFullscreenRasterHandoffCompleted(fullscreenIsTop))
+    }
+    // NavEntry content can outlive entryProvider recomposition. Read this State inside
+    // each entry so a recreated predictive-back target sees the persistent raster owner.
+    val fullscreenOwnsSharedImageRaster = rememberUpdatedState(
+        fullscreenIsTop && fullscreenRasterHandoffCompleted,
+    )
+    val fullscreenRasterHandoffCompletedState = rememberUpdatedState(
+        fullscreenRasterHandoffCompleted,
+    )
 
     SharedTransitionLayout {
+        val isSharedImageTransitionActive = isTransitionActive
+        LaunchedEffect(fullscreenIsTop, isSharedImageTransitionActive) {
+            fullscreenRasterHandoffCompleted = nextFullscreenRasterHandoffCompleted(
+                currentValue = fullscreenRasterHandoffCompleted,
+                fullscreenIsTop = fullscreenIsTop,
+                isSharedTransitionActive = isSharedImageTransitionActive,
+            )
+        }
+
         RecapNavDisplay(
             backStack = backStack,
             onBack = {
                 when {
-                    backStack.size <= 1 -> onNavigateBack()
                     backStack.lastOrNull() is ScreenshotDestination.Edit -> leaveEditScreen()
+                    backStack.size <= 1 -> onNavigateBack()
                     else -> backStack.removeLastOrNull()
                 }
             },
@@ -227,6 +276,8 @@ fun ScreenshotRoute(
                             sharedTransitionScope = this@SharedTransitionLayout,
                             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                             enableSharedImageBounds = useFullscreenFade,
+                            fullscreenOwnsSharedImageRaster =
+                                fullscreenOwnsSharedImageRaster.value,
                         )
                     }
 
@@ -236,15 +287,15 @@ fun ScreenshotRoute(
                             ScreenshotDetailScreen(
                                 uiState = uiState,
                                 onAction = viewModel::onAction,
-                                onNavigateBack = {
-                                    backStack.removeLastOrNull()
-                                },
+                                onNavigateBack = ::leaveEditScreen,
                                 onOpenEdit = {},
                                 onOpenFullscreen = {},
                                 onOpenMore = {},
                                 sharedTransitionScope = this@SharedTransitionLayout,
                                 animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                                 enableSharedImageBounds = useFullscreenFade,
+                                fullscreenOwnsSharedImageRaster =
+                                    fullscreenOwnsSharedImageRaster.value,
                             )
                         } else {
                             ScreenshotEditScreen(
@@ -266,6 +317,8 @@ fun ScreenshotRoute(
                                 sharedTransitionScope = this@SharedTransitionLayout,
                                 animatedVisibilityScope = LocalNavAnimatedContentScope.current,
                                 enableSharedImageBounds = useFullscreenFade,
+                                fullscreenOwnsSharedImageRaster =
+                                    fullscreenOwnsSharedImageRaster.value,
                             )
                         }
                     }
@@ -285,6 +338,8 @@ fun ScreenshotRoute(
                             onNavigateBack = { backStack.removeLastOrNull() },
                             sharedTransitionScope = this@SharedTransitionLayout,
                             animatedVisibilityScope = LocalNavAnimatedContentScope.current,
+                            sharedImageRasterHandoffCompleted =
+                                fullscreenRasterHandoffCompletedState.value,
                         )
                     }
 

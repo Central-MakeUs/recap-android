@@ -12,12 +12,31 @@ import com.chalkak.recap.core.model.search.SearchScope
 import com.chalkak.recap.core.model.storage.CaptureSort
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 
 @Singleton
 class MockSearchRepository @Inject constructor(
     private val screenshotCardRepository: ScreenshotCardRepository,
 ) : SearchRepository {
+    override fun observeSearch(
+        query: String,
+        scope: SearchScope,
+        typeCode: ScreenshotContentType?,
+        size: Int,
+    ): Flow<Result<SearchPage>> =
+        screenshotCardRepository.observeStoredCards().map { cards ->
+            cards.map { it.toCaptureSummary() }
+                .toSearchPage(
+                    query = query,
+                    scope = scope,
+                    typeCode = typeCode,
+                    page = 0,
+                    size = size,
+                )
+        }
+
     override suspend fun search(
         query: String,
         scope: SearchScope,
@@ -25,26 +44,41 @@ class MockSearchRepository @Inject constructor(
         page: Int,
         size: Int,
     ): Result<SearchPage> {
-        val filtered = screenshotCardRepository.observeStoredCards().first()
+        return screenshotCardRepository.observeStoredCards().first()
             .map { it.toCaptureSummary() }
-            .filterByScope(scope = scope, typeCode = typeCode)
-            .matchesSearch(query)
-            .sortedByOrganizedAt(CaptureSort.Latest)
-
-        val safePage = page.coerceAtLeast(0)
-        val safeSize = size.coerceAtLeast(1)
-        val fromIndex = (safePage * safeSize).coerceAtMost(filtered.size)
-        val toIndex = (fromIndex + safeSize).coerceAtMost(filtered.size)
-        val pageItems = filtered.subList(fromIndex, toIndex)
-
-        return Result.success(
-            SearchPage(
-                count = filtered.size.toLong(),
-                hasNext = toIndex < filtered.size,
-                items = pageItems.map { it.toSearchResult(query) },
-            ),
-        )
+            .toSearchPage(
+                query = query,
+                scope = scope,
+                typeCode = typeCode,
+                page = page,
+                size = size,
+            )
     }
+}
+
+private fun List<CaptureSummary>.toSearchPage(
+    query: String,
+    scope: SearchScope,
+    typeCode: ScreenshotContentType?,
+    page: Int,
+    size: Int,
+): Result<SearchPage> {
+    val filtered = filterByScope(scope = scope, typeCode = typeCode)
+        .matchesSearch(query)
+        .sortedByOrganizedAt(CaptureSort.Latest)
+    val safePage = page.coerceAtLeast(0)
+    val safeSize = size.coerceAtLeast(1)
+    val fromIndex = (safePage * safeSize).coerceAtMost(filtered.size)
+    val toIndex = (fromIndex + safeSize).coerceAtMost(filtered.size)
+    val pageItems = filtered.subList(fromIndex, toIndex)
+
+    return Result.success(
+        SearchPage(
+            count = filtered.size.toLong(),
+            hasNext = toIndex < filtered.size,
+            items = pageItems.map { it.toSearchResult(query) },
+        ),
+    )
 }
 
 private fun List<CaptureSummary>.filterByScope(

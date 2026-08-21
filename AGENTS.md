@@ -56,7 +56,7 @@
 3. 변경 범위는 사용자 요청과 직접 관련 파일로 제한한다.
 4. 기존 naming, package, architecture, code style을 따른다.
 5. 단순한 취향 차이 때문에 동작 중인 코드를 다시 작성하거나 요청과 무관한 리팩터링을 하지 않는다.
-6. 변경 후 `docs/TESTING.md` 기준에 맞는 검증을 수행한다.
+6. 변경 후 `docs/TESTING.md` 기준에 맞는 테스트·빌드와 필요한 레이아웃 QA를 수행한다.
 7. 3단 handoff 워크플로우를 사용하는 경우에만 `docs/handoff/HANDOFF.md`를 읽고 Status, Spec, Files to touch, Acceptance criteria를 확인한다.
 8. 3단 handoff 워크플로우를 사용하는 경우에만 결과를 `HANDOFF.md`의 Result 섹션에 기록한다.
 
@@ -175,7 +175,9 @@ Android Studio / JetBrains MCP, ADB, mobile-mcp 등 런타임 또는 IDE 기반 
 
 ```markdown
 ## Cursor Result
-- Changed files: app/.../MainActivity.kt, app/.../ui/AppRoot.kt
-- Build/test: .\gradlew.bat assembleDebug GREEN
+
+- Changed files: app/.../RecapStartupViewModel.kt, app/.../RecapStartupViewModelTest.kt
+- Build/test: .\gradlew.bat testDebugUnitTest GREEN, .\gradlew.bat assembleDebug GREEN
+- Design QA: not applicable - no layout change
 - Open questions: none
 ```

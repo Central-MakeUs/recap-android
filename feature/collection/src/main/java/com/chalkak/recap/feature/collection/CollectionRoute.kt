@@ -5,9 +5,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalResources
@@ -39,12 +41,15 @@ fun CollectionRoute(
     onNavigateToOrganize: () -> Unit,
     onNavigateToSearch: () -> Unit = {},
     onNavigateToScreenshot: (Long) -> Unit = {},
+    onNavigateToScreenshotEdit: (Long) -> Unit = {},
     onNavigateBack: () -> Unit = {},
     openCollectionFavoritesOnEnter: Boolean = false,
     onOpenCollectionFavoritesOnEnterConsumed: () -> Unit = {},
     openCollectionTypeDetailOnEnter: String? = null,
     onOpenCollectionTypeDetailOnEnterConsumed: () -> Unit = {},
     onPredictiveBackProgress: (Float) -> Unit = {},
+    isCurrentAppDestination: Boolean = true,
+    isCurrentMainTabDestination: Boolean = true,
     viewModel: CollectionViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -60,6 +65,8 @@ fun CollectionRoute(
         else -> CollectionDestination.Overview
     }
     val backStack = rememberNavBackStack(initialDestination)
+    val currentAppDestinationState = rememberUpdatedState(isCurrentAppDestination)
+    val currentMainTabDestinationState = rememberUpdatedState(isCurrentMainTabDestination)
     val isAtRoot = backStack.size <= 1
     val canPredictivePopWithinCollection =
         !uiState.selection.isActive && !uiState.isDetailSearchVisible
@@ -85,6 +92,12 @@ fun CollectionRoute(
         }
         if (openCollectionTypeDetailOnEnter != null) {
             onOpenCollectionTypeDetailOnEnterConsumed()
+        }
+    }
+
+    LaunchedEffect(isCurrentMainTabDestination) {
+        if (!isCurrentMainTabDestination) {
+            viewModel.onAction(CollectionAction.CloseDetail)
         }
     }
 
@@ -137,8 +150,12 @@ fun CollectionRoute(
         onPredictiveBackProgress(predictiveProgress)
     }
 
-    LaunchedEffect(backStack.lastOrNull(), uiState.detail) {
-        if (uiState.detail != null) return@LaunchedEffect
+    LaunchedEffect(
+        backStack.lastOrNull(),
+        uiState.detail,
+        isCurrentMainTabDestination,
+    ) {
+        if (!isCurrentMainTabDestination || uiState.detail != null) return@LaunchedEffect
         when (val route = backStack.lastOrNull()) {
             CollectionDestination.FavoriteDetail -> {
                 viewModel.onAction(CollectionAction.OpenFavoriteDetail)
@@ -166,12 +183,10 @@ fun CollectionRoute(
             CollectionAction.OpenSearch -> onNavigateToSearch()
 
             CollectionAction.OpenFavoriteDetail -> {
-                viewModel.onAction(action)
                 backStack.add(CollectionDestination.FavoriteDetail)
             }
 
             is CollectionAction.OpenTypeDetail -> {
-                viewModel.onAction(action)
                 backStack.add(CollectionDestination.TypeDetail(action.contentType.name))
             }
 
@@ -243,9 +258,13 @@ fun CollectionRoute(
                             selection = uiState.selection,
                             searchQuery = uiState.detailSearchQuery,
                             isSearchVisible = uiState.isDetailSearchVisible,
+                            pendingDeleteCaptureId = uiState.pendingDeleteCaptureId,
+                            isCurrentAppDestination = currentAppDestinationState.value,
+                            isCurrentMainTabDestination = currentMainTabDestinationState.value,
                             onBackClick = ::handleBack,
                             onAction = ::handleAction,
                             onItemClick = onNavigateToScreenshot,
+                            onItemEditClick = onNavigateToScreenshotEdit,
                             onLeaveDetail = ::closeDetailIfNoDetailDestination,
                         )
                     }
@@ -258,9 +277,13 @@ fun CollectionRoute(
                             selection = uiState.selection,
                             searchQuery = uiState.detailSearchQuery,
                             isSearchVisible = uiState.isDetailSearchVisible,
+                            pendingDeleteCaptureId = uiState.pendingDeleteCaptureId,
+                            isCurrentAppDestination = currentAppDestinationState.value,
+                            isCurrentMainTabDestination = currentMainTabDestinationState.value,
                             onBackClick = ::handleBack,
                             onAction = ::handleAction,
                             onItemClick = onNavigateToScreenshot,
+                            onItemEditClick = onNavigateToScreenshotEdit,
                             onLeaveDetail = ::closeDetailIfNoDetailDestination,
                         )
                     }
@@ -283,29 +306,55 @@ private fun CollectionDetailDestination(
     onBackClick: () -> Unit,
     onAction: (CollectionAction) -> Unit,
     onItemClick: (Long) -> Unit,
+    onItemEditClick: (Long) -> Unit,
+    pendingDeleteCaptureId: Long?,
+    isCurrentAppDestination: Boolean,
+    isCurrentMainTabDestination: Boolean,
     onLeaveDetail: () -> Unit,
 ) {
-    var retainedDetail by remember { mutableStateOf(detail) }
-    val isCurrentDestination = backStack.lastOrNull() == route
-    if (detail != null && isCurrentDestination) {
-        retainedDetail = detail
+    val currentPresentation = CollectionDetailPresentation(
+        detail = detail,
+        selection = selection,
+        searchQuery = searchQuery,
+        isSearchVisible = isSearchVisible,
+        pendingDeleteCaptureId = pendingDeleteCaptureId,
+    )
+    var retainedPresentation by remember { mutableStateOf(currentPresentation) }
+    val isCurrentDestination = isCurrentAppDestination &&
+            isCurrentMainTabDestination &&
+            backStack.lastOrNull() == route
+    val displayedPresentation = if (isCurrentDestination) {
+        SideEffect { retainedPresentation = currentPresentation }
+        currentPresentation
+    } else {
+        retainedPresentation
     }
 
     DisposableEffect(Unit) {
         onDispose(onLeaveDetail)
     }
 
-    val displayedDetail = retainedDetail ?: return
+    val displayedDetail = displayedPresentation.detail ?: return
     CollectionDetailScreen(
         detail = displayedDetail,
-        selection = selection,
+        selection = displayedPresentation.selection,
         onBackClick = onBackClick,
         onAction = onAction,
         onItemClick = onItemClick,
-        searchQuery = searchQuery,
-        isSearchVisible = isSearchVisible,
+        onItemEditClick = onItemEditClick,
+        pendingDeleteCaptureId = displayedPresentation.pendingDeleteCaptureId,
+        searchQuery = displayedPresentation.searchQuery,
+        isSearchVisible = displayedPresentation.isSearchVisible,
     )
 }
+
+private data class CollectionDetailPresentation(
+    val detail: CollectionDetailUiModel?,
+    val selection: CollectionSelectionUiState,
+    val searchQuery: String,
+    val isSearchVisible: Boolean,
+    val pendingDeleteCaptureId: Long?,
+)
 
 private fun NavBackStack<NavKey>.hasDetailDestination(): Boolean =
     any { destination ->

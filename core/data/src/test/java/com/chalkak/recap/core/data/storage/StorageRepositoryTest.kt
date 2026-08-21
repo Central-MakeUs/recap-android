@@ -1,7 +1,7 @@
 package com.chalkak.recap.core.data.storage
 
 import app.cash.turbine.test
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
 import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
 import com.chalkak.recap.core.data.capture.remote.CaptureListResponseDto
 import com.chalkak.recap.core.data.capture.remote.CaptureSummaryResponseDto
@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test
 class StorageRepositoryTest {
     private val storageApi = mockk<StorageApi>()
     private val thumbnailCache = mockk<RemoteCaptureThumbnailCache>(relaxed = true)
-    private val changeNotifier = RemoteCaptureChangeNotifier()
+    private val changeNotifier = CaptureChangeNotifier()
     private val sessionTokenStore = mockk<SessionTokenStore>()
     private val refreshToken = MutableStateFlow<String?>("refresh-token")
     private val testDispatcher = UnconfinedTestDispatcher()

@@ -14,12 +14,13 @@
 포함:
 - `:core:data` `BuildConfig.USE_MOCK_BACKEND`로 프로세스 수명 동안 Mock/Remote 고정
 - Home / Storage / Capture command / Capture 상세 / 최근 정리 / 분석 / User data-summary·consent·delete repository에 동일 선택 적용
+- Capture 상세 content 편집은 선택된 `CaptureMutationRepository`를 통해 Mock은 Room, Remote는
+  `PATCH /api/v1/captures/{captureId}`에 반영
 - Auth(`getAccountInfo` / `withdraw`)는 Mock 선택에서도 Remote 경로 유지
 
 포함하지 않음:
 - 런타임 Mock/Remote 전환 UI 또는 DataStore mode
 - Splash에서 backend hydrate 대기
-- Capture 상세 content 편집(Remote PATCH) — 로드/삭제/즐겨찾기는 연결됨
 - instrumentation 테스트용 Hilt replacement 인프라
 
 ## 빌드별 effective backend

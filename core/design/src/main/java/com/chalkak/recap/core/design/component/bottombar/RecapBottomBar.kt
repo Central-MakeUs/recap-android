@@ -54,14 +54,13 @@ import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.RecapBlue50
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray200
-import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapCaption1
-import dev.chrisbanes.haze.HazeInputScale
+import com.chalkak.recap.core.design.theme.White
+import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.blur.HazeColorEffect
-import dev.chrisbanes.haze.blur.blurEffect
+import dev.chrisbanes.haze.blur.hazeBlur
 import dev.chrisbanes.haze.blur.materials.CupertinoMaterials
-import dev.chrisbanes.haze.hazeEffect
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 
@@ -153,19 +152,14 @@ private fun RecapBottomBarNavPill(
     val collectionSelectedStrength = selectionFraction.value.coerceIn(0f, 1f)
 
     val glassModifier = if (useRealtimeBlur) {
-        val pillBlurStyle = CupertinoMaterials.ultraThin()
-        Modifier.hazeEffect(state = hazeState) {
-            inputScale = HazeInputScale.Fixed(0.5f)
-            blurEffect {
-                blurEnabled = true
-                blurRadius = RecapBottomBarDefaults.GlassBlurRadius
-                style = pillBlurStyle
-                colorEffects = listOf(
-                    HazeColorEffect.tint(RecapBottomBarDefaults.GlassTintColor),
-                )
-                noiseFactor = RecapBottomBarDefaults.GlassNoiseFactor
-            }
-        }
+        Modifier.hazeBlur(
+            input = HazeInput.Sources(hazeState),
+            style = CupertinoMaterials.ultraThin().then {
+                blurRadius(RecapBottomBarDefaults.GlassBlurRadius)
+                colorEffects(listOf(HazeColorEffect.tint(RecapBottomBarDefaults.GlassTintColor)))
+                noiseFactor(RecapBottomBarDefaults.GlassNoiseFactor)
+            },
+        )
     } else {
         Modifier.background(
             color = RecapBottomBarDefaults.GlassFallbackColor,

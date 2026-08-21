@@ -58,7 +58,10 @@ sealed interface AppRoute : NavKey {
     data object RecentOrganizedScreenshots : AppRoute
 
     @Serializable
-    data class Screenshot(val captureId: Long) : AppRoute
+    data class Screenshot(
+        val captureId: Long,
+        val openEdit: Boolean = false,
+    ) : AppRoute
 
     @Serializable
     data object OrganizeAnalysisStatus : AppRoute

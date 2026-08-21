@@ -1,7 +1,8 @@
 package com.chalkak.recap.core.data.screenshot.persistence
 
 import com.chalkak.recap.core.data.capture.CaptureRepository
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.CaptureChange
+import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
 import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
 import com.chalkak.recap.core.data.capture.toStoredScreenshotCard
 import com.chalkak.recap.core.data.network.RemoteApiException
@@ -16,12 +17,12 @@ import kotlinx.coroutines.flow.onStart
 class RemoteScreenshotDetailRepository @Inject constructor(
     private val captureRepository: CaptureRepository,
     private val thumbnailCache: RemoteCaptureThumbnailCache,
-    private val changeNotifier: RemoteCaptureChangeNotifier,
+    private val changeNotifier: CaptureChangeNotifier,
 ) : ScreenshotDetailRepository {
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeCard(captureId: Long): Flow<StoredScreenshotCard?> {
         return changeNotifier.changes
-            .onStart { emit(Unit) }
+            .onStart { emit(CaptureChange.Invalidated) }
             .mapLatest { fetchCard(captureId) }
     }
 

@@ -1,6 +1,7 @@
 package com.chalkak.recap.core.data.storage
 
-import com.chalkak.recap.core.data.capture.RemoteCaptureChangeNotifier
+import com.chalkak.recap.core.data.capture.CaptureChange
+import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
 import com.chalkak.recap.core.data.capture.RemoteCaptureThumbnailCache
 import com.chalkak.recap.core.data.capture.remote.toCardTypeDto
 import com.chalkak.recap.core.data.capture.remote.toDomain
@@ -36,7 +37,7 @@ import kotlinx.coroutines.flow.shareIn
 class RemoteStorageRepository(
     private val storageApi: StorageApi,
     private val thumbnailCache: RemoteCaptureThumbnailCache,
-    private val changeNotifier: RemoteCaptureChangeNotifier,
+    private val changeNotifier: CaptureChangeNotifier,
     private val sessionTokenStore: SessionTokenStore,
     repositoryScope: CoroutineScope,
 ) : StorageRepository {
@@ -44,7 +45,7 @@ class RemoteStorageRepository(
     constructor(
         storageApi: StorageApi,
         thumbnailCache: RemoteCaptureThumbnailCache,
-        changeNotifier: RemoteCaptureChangeNotifier,
+        changeNotifier: CaptureChangeNotifier,
         sessionTokenStore: SessionTokenStore,
     ) : this(
         storageApi = storageApi,
@@ -53,6 +54,8 @@ class RemoteStorageRepository(
         sessionTokenStore = sessionTokenStore,
         repositoryScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
     )
+
+    private val overviewRefresh = kotlinx.coroutines.flow.MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val sharedOverview =
@@ -66,7 +69,10 @@ class RemoteStorageRepository(
                         ),
                     )
                 } else {
-                    changeNotifier.changes
+                    kotlinx.coroutines.flow.merge(
+                        changeNotifier.changes.map { Unit },
+                        overviewRefresh,
+                    )
                         .onStart { emit(Unit) }
                         .mapLatest {
                             SessionStorageOverview(
@@ -97,7 +103,7 @@ class RemoteStorageRepository(
         observeOverview(searchQuery = "").first()
 
     override fun refreshOverview() {
-        changeNotifier.notifyCaptureChanged()
+        overviewRefresh.tryEmit(Unit)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -107,7 +113,7 @@ class RemoteStorageRepository(
         searchQuery: String,
     ): Flow<CaptureList> {
         return changeNotifier.changes
-            .onStart { emit(Unit) }
+            .onStart { emit(CaptureChange.Invalidated) }
             .mapLatest {
                 getCapturesByType(typeCode = typeCode, sort = sort)
                     .getOrElse { CaptureList(count = 0, items = emptyList()) }
@@ -120,7 +126,7 @@ class RemoteStorageRepository(
         searchQuery: String,
     ): Flow<CaptureList> {
         return changeNotifier.changes
-            .onStart { emit(Unit) }
+            .onStart { emit(CaptureChange.Invalidated) }
             .mapLatest {
                 getFavoriteCaptures()
                     .map { list -> list.copy(items = list.items.sortedByOrganizedAt(sort)) }

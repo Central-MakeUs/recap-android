@@ -33,6 +33,7 @@ data class SearchUiState(
     val nextPage: Int = 0,
     val isLoadingMore: Boolean = false,
     val autoFocus: Boolean = true,
+    val pendingDeleteCaptureId: Long? = null,
 )
 
 sealed interface SearchAction {
@@ -47,5 +48,14 @@ sealed interface SearchAction {
     data class RemoveRecentSearch(val term: String) : SearchAction
     data object ClearAllRecentSearches : SearchAction
     data class SelectResult(val captureId: Long) : SearchAction
+    data class EditResult(val captureId: Long) : SearchAction
+    data class RequestDeleteResult(val captureId: Long) : SearchAction
+    data object ConfirmDeleteResult : SearchAction
+    data object DismissDeleteResult : SearchAction
     data class ToggleFavorite(val captureId: Long) : SearchAction
+}
+
+sealed interface SearchEvent {
+    data object ShowDeleteSuccessToast : SearchEvent
+    data object ShowDeleteFailureToast : SearchEvent
 }

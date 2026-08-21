@@ -28,8 +28,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,6 +45,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -106,10 +105,11 @@ fun ScreenshotCard(
     leadingContent: (@Composable () -> Unit)? = null,
     titleHighlightRange: IntRange? = null,
     descriptionHighlightRange: IntRange? = null,
+    suppressPressScale: Boolean = false,
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val pressActive = containerClickEnabled && isPressed
+    val pressActive = containerClickEnabled && isPressed && !suppressPressScale
     val pressAnimationSpec = tween<Float>(
         durationMillis = ScreenshotCardTokens.PressAnimationDurationMillis,
         easing = FastOutSlowInEasing,
@@ -119,7 +119,6 @@ fun ScreenshotCard(
         animationSpec = pressAnimationSpec,
         label = "screenshot_card_press_scale",
     )
-    val rowShape = RoundedCornerShape(ScreenshotCardTokens.RowCornerRadius)
     val clearEmbeddedTextSemantics = leadingContent != null && !containerClickEnabled
     val contentContainerModifier = if (containerClickEnabled) {
         Modifier
@@ -127,7 +126,6 @@ fun ScreenshotCard(
                 scaleX = scale
                 scaleY = scale
             }
-            .clip(rowShape)
             .background(RecapBackground)
             .clickable(
                 interactionSource = interactionSource,
@@ -139,21 +137,20 @@ fun ScreenshotCard(
         contentModifier
     }
 
-    Column(modifier = modifier.fillMaxWidth()) {
-        Column(
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .then(contentContainerModifier),
+    ) {
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .then(contentContainerModifier),
+                .padding(
+                    horizontal = horizontalContentPadding,
+                    vertical = ScreenshotCardTokens.ContainerVerticalPadding,
+                ),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(
-                        horizontal = horizontalContentPadding,
-                        vertical = ScreenshotCardTokens.ContainerVerticalPadding,
-                    ),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
                 leadingContent?.invoke()
                 Column(
                     modifier = Modifier
@@ -227,14 +224,7 @@ fun ScreenshotCard(
                     showFavoriteButton = showFavoriteButton,
                     onFavoriteClick = onFavoriteClick,
                 )
-            }
         }
-        Spacer(modifier = Modifier.height(ScreenshotCardTokens.DividerGap))
-        HorizontalDivider(
-            modifier = Modifier.fillMaxWidth(),
-            thickness = ScreenshotCardTokens.DividerThickness,
-            color = RecapGray100,
-        )
     }
 }
 
@@ -248,6 +238,25 @@ private fun ScreenshotCardThumbnail(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
+    val thumbnailWidthPx = remember(density) {
+        with(density) { ScreenshotCardTokens.ThumbnailWidth.roundToPx() }
+    }
+    val thumbnailHeightPx = remember(density) {
+        with(density) { ScreenshotCardTokens.ThumbnailHeight.roundToPx() }
+    }
+    val imageRequest = remember(
+        context,
+        thumbnailModel,
+        thumbnailWidthPx,
+        thumbnailHeightPx,
+    ) {
+        ImageRequest.Builder(context)
+            .data(thumbnailModel)
+            .size(thumbnailWidthPx, thumbnailHeightPx)
+            .crossfade(ScreenshotCardTokens.ImageCrossfadeMillis)
+            .build()
+    }
     val rectProgress by animateFloatAsState(
         targetValue = if (showFavoriteButton) 0f else 1f,
         animationSpec = if (showFavoriteButton) {
@@ -289,10 +298,7 @@ private fun ScreenshotCardThumbnail(
                     ),
             )
             AsyncImage(
-                model = ImageRequest.Builder(context)
-                    .data(thumbnailModel)
-                    .crossfade(ScreenshotCardTokens.ImageCrossfadeMillis)
-                    .build(),
+                model = imageRequest,
                 contentDescription = thumbnailContentDescription,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
@@ -470,7 +476,7 @@ private class ScreenshotThumbnailShape(
     override fun hashCode(): Int = progress.hashCode()
 }
 
-private object ScreenshotCardTokens {
+internal object ScreenshotCardTokens {
     val ContainerHorizontalPadding = 16.dp
     val ContainerVerticalPadding = 10.dp
     val ContentSpacing = 44.dp
@@ -479,8 +485,6 @@ private object ScreenshotCardTokens {
     val ThumbnailBorderWidth = 0.5.dp
     val PlaceholderPaddingStart = 7.dp
     val PlaceholderPaddingBottom = 5.dp
-    val DividerThickness = 1.dp
-    val DividerGap = 2.dp
     val FavoriteIconOffsetX = 35.dp
     val FavoriteIconOffsetY = (-2).dp
     val FavoriteIconTouchSize = 28.dp
@@ -489,7 +493,6 @@ private object ScreenshotCardTokens {
     const val PressAnimationDurationMillis = 50
     const val ImageCrossfadeMillis = 150
     const val FavoriteIconCrossfadeMillis = 150
-    val RowCornerRadius = 10.dp
     const val ThumbnailViewBoxWidth = 62f
     const val ThumbnailViewBoxHeight = 80f
     const val TitleMaxLines = 1

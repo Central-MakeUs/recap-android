@@ -17,6 +17,7 @@ import kotlinx.coroutines.CancellationException
 import timber.log.Timber
 import androidx.core.graphics.scale
 import androidx.core.graphics.createBitmap
+import kotlin.math.sqrt
 
 @Singleton
 class ScreenshotImageStorage @Inject constructor(
@@ -213,11 +214,23 @@ class ScreenshotImageStorage @Inject constructor(
             height = bounds.outHeight,
             orientation = orientation,
         )
-        val targetWidth = halfDimension(orientedWidth)
-        val targetHeight = halfDimension(orientedHeight)
+        val (targetWidth, targetHeight) = screenshotThumbnailTargetSize(
+            width = orientedWidth,
+            height = orientedHeight,
+        )
+        val (rawTargetWidth, rawTargetHeight) = orientedSize(
+            width = targetWidth,
+            height = targetHeight,
+            orientation = orientation,
+        )
 
         val decodeOptions = BitmapFactory.Options().apply {
-            inSampleSize = thumbnailInSampleSize(bounds.outWidth, bounds.outHeight)
+            inSampleSize = thumbnailInSampleSize(
+                rawWidth = bounds.outWidth,
+                rawHeight = bounds.outHeight,
+                targetWidth = rawTargetWidth,
+                targetHeight = rawTargetHeight,
+            )
             inPreferredConfig = Bitmap.Config.ARGB_8888
         }
         val decoded = openInputStream()?.use { input ->
@@ -373,10 +386,6 @@ class ScreenshotImageStorage @Inject constructor(
         const val BACKUP_SUFFIX = ".bak"
         const val JPEG_QUALITY = 80
 
-        fun halfDimension(pixels: Int): Int {
-            return ((pixels + 1) / 2).coerceAtLeast(1)
-        }
-
         fun orientedSize(width: Int, height: Int, orientation: Int): Pair<Int, Int> {
             return when (orientation) {
                 ExifInterface.ORIENTATION_ROTATE_90,
@@ -389,11 +398,37 @@ class ScreenshotImageStorage @Inject constructor(
             }
         }
 
-        fun thumbnailInSampleSize(rawWidth: Int, rawHeight: Int): Int {
-            if (rawWidth <= 1 || rawHeight <= 1) {
-                return 1
+        fun thumbnailInSampleSize(
+            rawWidth: Int,
+            rawHeight: Int,
+            targetWidth: Int,
+            targetHeight: Int,
+        ): Int {
+            var sampleSize = 1
+            while (
+                rawWidth / (sampleSize * 2) >= targetWidth &&
+                rawHeight / (sampleSize * 2) >= targetHeight
+            ) {
+                sampleSize *= 2
             }
-            return 2
+            return sampleSize
         }
     }
+}
+
+private const val ScreenshotThumbnailPixelBudget = 2_000_000L
+
+internal fun screenshotThumbnailTargetSize(
+    width: Int,
+    height: Int,
+    pixelBudget: Long = ScreenshotThumbnailPixelBudget,
+): Pair<Int, Int> {
+    val halfWidth = ((width + 1) / 2).coerceAtLeast(1)
+    val halfHeight = ((height + 1) / 2).coerceAtLeast(1)
+    val halfPixels = halfWidth.toLong() * halfHeight
+    if (halfPixels <= pixelBudget) return halfWidth to halfHeight
+
+    val scale = sqrt(pixelBudget.toDouble() / halfPixels.toDouble())
+    return (halfWidth * scale).toInt().coerceAtLeast(1) to
+        (halfHeight * scale).toInt().coerceAtLeast(1)
 }

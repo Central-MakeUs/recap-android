@@ -7,15 +7,19 @@ import com.chalkak.recap.core.data.capture.CaptureThumbnailUpdates
 import com.chalkak.recap.core.data.network.MainContentRecoveryTrigger
 import com.chalkak.recap.core.data.search.RecentSearchStore
 import com.chalkak.recap.core.data.search.SearchRepository
+import com.chalkak.recap.core.model.search.SearchPage
 import com.chalkak.recap.core.model.search.SearchScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
@@ -27,6 +31,9 @@ class SearchViewModel @Inject constructor(
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(SearchUiState())
     val uiState: StateFlow<SearchUiState> = _uiState.asStateFlow()
+
+    private val _events = MutableSharedFlow<SearchEvent>(extraBufferCapacity = 1)
+    val events: SharedFlow<SearchEvent> = _events.asSharedFlow()
 
     private var searchJob: Job? = null
     private var loadMoreJob: Job? = null
@@ -99,6 +106,11 @@ class SearchViewModel @Inject constructor(
             is SearchAction.ToggleFavorite -> toggleFavorite(action.captureId)
 
             is SearchAction.SelectResult -> prepareNavigateToDetail()
+            is SearchAction.EditResult -> prepareNavigateToDetail()
+
+            is SearchAction.RequestDeleteResult -> requestDeleteResult(action.captureId)
+            SearchAction.ConfirmDeleteResult -> confirmDeleteResult()
+            SearchAction.DismissDeleteResult -> dismissDeleteResult()
         }
     }
 
@@ -133,6 +145,7 @@ class SearchViewModel @Inject constructor(
                 hasNext = false,
                 nextPage = 0,
                 isLoadingMore = false,
+                pendingDeleteCaptureId = null,
             )
         }
     }
@@ -161,45 +174,78 @@ class SearchViewModel @Inject constructor(
                 )
             }
 
-            val result = searchRepository.search(
+            searchRepository.observeSearch(
                 query = query,
                 scope = SearchScope.ALL,
-                page = 0,
-            )
-
-            result.fold(
-                onSuccess = { page ->
-                    val items = page.toSearchResultItems()
-                    _uiState.update { state ->
-                        state.copy(
-                            phase = if (items.isEmpty()) {
-                                SearchContentPhase.Empty
-                            } else {
-                                SearchContentPhase.Results
-                            },
-                            results = items,
-                            resultCount = page.count,
-                            hasNext = page.hasNext,
-                            nextPage = 1,
-                            isLoadingMore = false,
+            ).collect { result ->
+                loadMoreJob?.cancel()
+                result.fold(
+                    onSuccess = { page ->
+                        val loadedPageCount = _uiState.value.nextPage.coerceAtLeast(1)
+                        val pages = refreshLoadedPages(
+                            query = query,
+                            firstPage = page,
+                            loadedPageCount = loadedPageCount,
                         )
-                    }
-                    reconcileThumbnails(items.map { item -> item.captureId })
-                },
-                onFailure = {
-                    _uiState.update { state ->
-                        state.copy(
-                            phase = SearchContentPhase.Error,
-                            results = emptyList(),
-                            resultCount = 0L,
-                            hasNext = false,
-                            nextPage = 0,
-                            isLoadingMore = false,
-                        )
-                    }
-                },
-            )
+                        if (pages == null) {
+                            _uiState.update { state -> state.copy(isLoadingMore = false) }
+                            return@fold
+                        }
+                        val items = pages
+                            .flatMap { loadedPage -> loadedPage.toSearchResultItems() }
+                            .distinctBy { item -> item.captureId }
+                        _uiState.update { state ->
+                            state.copy(
+                                phase = if (items.isEmpty()) {
+                                    SearchContentPhase.Empty
+                                } else {
+                                    SearchContentPhase.Results
+                                },
+                                results = items,
+                                resultCount = page.count,
+                                hasNext = pages.last().hasNext,
+                                nextPage = pages.size,
+                                isLoadingMore = false,
+                            )
+                        }
+                        reconcileThumbnails(items.map { item -> item.captureId })
+                    },
+                    onFailure = {
+                        _uiState.update { state ->
+                            state.copy(
+                                phase = SearchContentPhase.Error,
+                                results = emptyList(),
+                                resultCount = 0L,
+                                hasNext = false,
+                                nextPage = 0,
+                                isLoadingMore = false,
+                            )
+                        }
+                    },
+                )
+            }
         }
+    }
+
+    private suspend fun refreshLoadedPages(
+        query: String,
+        firstPage: SearchPage,
+        loadedPageCount: Int,
+    ): List<SearchPage>? {
+        val pages = mutableListOf(firstPage)
+        var pageIndex = 1
+        while (pageIndex < loadedPageCount && pages.last().hasNext) {
+            val page = searchRepository.search(
+                query = query,
+                scope = SearchScope.ALL,
+                page = pageIndex,
+            ).getOrElse {
+                return null
+            }
+            pages += page
+            pageIndex += 1
+        }
+        return pages
     }
 
     private fun loadMore() {
@@ -274,6 +320,63 @@ class SearchViewModel @Inject constructor(
                     }
                 },
             )
+        }
+    }
+
+    private fun requestDeleteResult(captureId: Long) {
+        if (_uiState.value.results.none { item -> item.captureId == captureId }) {
+            return
+        }
+        _uiState.update { state -> state.copy(pendingDeleteCaptureId = captureId) }
+    }
+
+    private fun dismissDeleteResult() {
+        if (_uiState.value.pendingDeleteCaptureId == null) {
+            return
+        }
+        _uiState.update { state -> state.copy(pendingDeleteCaptureId = null) }
+    }
+
+    private fun confirmDeleteResult() {
+        val captureId = _uiState.value.pendingDeleteCaptureId ?: return
+        _uiState.update { state -> state.copy(pendingDeleteCaptureId = null) }
+        viewModelScope.launch {
+            val result = captureMutationRepository.deleteCaptures(setOf(captureId))
+            val deleteResult = result.getOrNull()
+            if (result.isFailure || deleteResult == null || captureId !in deleteResult.deletedIds) {
+                _events.emit(SearchEvent.ShowDeleteFailureToast)
+                return@launch
+            }
+            _uiState.update { state ->
+                val remaining = state.results.filterNot { item -> item.captureId == captureId }
+                val removedCount = state.results.size - remaining.size
+                if (removedCount == 0) {
+                    return@update state
+                }
+                state.copy(
+                    results = remaining,
+                    resultCount = (state.resultCount - removedCount).coerceAtLeast(0L),
+                    phase = searchPhaseAfterRemoval(
+                        remainingIsEmpty = remaining.isEmpty(),
+                        currentPhase = state.phase,
+                    ),
+                )
+            }
+            _events.emit(SearchEvent.ShowDeleteSuccessToast)
+        }
+    }
+
+    private fun searchPhaseAfterRemoval(
+        remainingIsEmpty: Boolean,
+        currentPhase: SearchContentPhase,
+    ): SearchContentPhase {
+        if (!remainingIsEmpty) {
+            return SearchContentPhase.Results
+        }
+        return if (currentPhase == SearchContentPhase.Results) {
+            SearchContentPhase.Results
+        } else {
+            SearchContentPhase.Empty
         }
     }
 

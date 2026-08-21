@@ -156,14 +156,17 @@
 주요 API:
 - `resolveImagesDirectory()`
 - `resolveThumbnailsDirectory()`
-- `buildImagePath(imageId)`
-- `buildThumbnailPath(imageId)`
-- `copyImageFromUri(imageId, sourceUri)`
+- `buildImagePath(captureId)` / `buildThumbnailPath(captureId)`
+- `copyImageFromUri(captureId, sourceUri)`
+- `createThumbnailFromUri(captureId, sourceUri)` / `createThumbnailFromStoredImage(captureId)`
+- `cacheThumbnailBytes(captureId, bytes)`
+- `clearStoredImages()` / `deleteStoredImages(captureIds)`
 
 주의사항:
-- 현재 썸네일 생성 pipeline은 없다.
-- `copyImageFromUri`는 실패 시 예외를 던지지 않고 `null`을 반환한다.
-- 파일명은 현재 `imageId` 그대로 사용한다. 외부 입력을 직접 imageId로 쓰는 경우 path-safe 값인지 확인해야 한다.
+- 원본 파일명은 `captureId` 문자열, 썸네일은 `{captureId}.jpg`다.
+- Mock 경로는 URI 또는 저장된 원본에서 폭/높이 50% JPEG(품질 80) 썸네일을 만든다. Remote 목록/상세는 `RemoteCaptureThumbnailCache`가 서버 바이트를 `cacheThumbnailBytes`로 같은 경로에 둔다.
+- `copyImageFromUri`와 썸네일 생성/캐시는 실패 시 예외를 던지지 않고 `null`을 반환한다.
+- `clearStoredImages()`는 계정 전환 wipe용이다. 디렉터리를 완전히 비우지 못하면 `false`를 반환한다.
 
 ## Preference DataStore
 
@@ -251,13 +254,7 @@
 개발자 옵션의 스크린샷 데이터 초기화와 Mock `deleteAccountData`는 `MockScreenshotDataResetter`로 Mock Room 카드와 private 원본/썸네일만 삭제한다. session token·onboarding·MOCK consent·일반 사용자 설정은 유지한다. Remote 빌드에서도 이 액션은 서버 데이터 삭제로 바뀌지 않는다.
 BuildConfig backend 선택 자체는 resetter와 무관하며, 런타임 모드 전환(및 전환 시 wipe)은 없다.
 
-## 현재 연결되지 않은 부분
-
-다음 항목은 구현체는 존재하지만 아직 앱 flow에 완전히 연결되지 않았다.
-
-- Capture 상세 content 편집(Remote PATCH)은 아직 없다. (상세 로드는 `ScreenshotDetailRepository`, 즐겨찾기/삭제는 `CaptureMutationRepository`)
-- 썸네일 생성 pipeline(원본→썸네일)은 Mock 경로에 제한적으로만 있다.
-- 이미지 bytes는 Room BLOB으로 저장하지 않는다.
+상세 로드는 `ScreenshotDetailRepository`, 즐겨찾기·content 편집·삭제는 `CaptureMutationRepository`다. Remote content 편집은 `PATCH /api/v1/captures/{captureId}`다.
 
 Remote 업로드/정리 파이프라인(`issueUploadUrls` → PUT → `organize` → status poll → ack)은
 `RemoteScreenshotAnalysisRepository`에서 `CaptureRepository`를 통해 연결된다.
@@ -268,17 +265,15 @@ Remote 업로드/정리 파이프라인(`issueUploadUrls` → PUT → `organize`
 - `UserPreferencesRepositoryTest`
 - `ScreenshotImageStorageTest`
 - `ScreenshotCardDaoTest`
-- `RecapDatabaseMigration2To3Test`
 - `AccountOwnerStoreTest` / `AccountOwnerHasherTest`
 - `LocalAppDataResetterTest`
 
 검증 범위:
 - DataStore 기본값/저장
-- 앱 private image/thumbnail directory 및 stable path
+- 앱 private image/thumbnail directory, `captureId` 기반 path, JPEG 썸네일 생성
 - screenshot card 저장 순서
-- key fields 교체 저장
 - favorite state 독립 갱신
-- card 삭제 시 key fields 제거
+- card 삭제
 - repository round-trip
 - 소유자 해시/salt 저장·초기화와 salt별 해시 분리
 - 계정 전환 wipe의 fail-closed 동작(이미지 삭제 실패 시 해시 미갱신)과 로그아웃 reset의 fail-open 동작
