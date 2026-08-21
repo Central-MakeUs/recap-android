@@ -178,6 +178,55 @@ class ScreenshotAnalysisProgressViewModelTest {
     }
 
     @Test
+    fun `local analysis failures expose partial terminal result`() = runTest(testDispatcher) {
+        val first = analysisResult(1L)
+        coEvery {
+            repository.organize(
+                any(),
+                any()
+            )
+        } returns ScreenshotOrganizeOutcome.LocalResults(
+            results = listOf(first),
+            analysisFailCount = 1,
+        )
+
+        viewModel.startAnalysis(samplePrepared(count = 2))
+        runCurrent()
+
+        val state = viewModel.uiState.value
+        assertEquals(
+            OrganizeTerminalResult.PartialSuccess(successCount = 1, failCount = 1),
+            state.terminalResult,
+        )
+        assertEquals(2, state.completedCount)
+        assertEquals(listOf(first), state.results)
+        assertFalse(state.isRunning)
+    }
+
+    @Test
+    fun `local analysis failures with no persisted results expose all failed`() =
+        runTest(testDispatcher) {
+            coEvery {
+                repository.organize(
+                    any(),
+                    any()
+                )
+            } returns ScreenshotOrganizeOutcome.LocalResults(
+                results = emptyList(),
+                analysisFailCount = 2,
+            )
+
+            viewModel.startAnalysis(samplePrepared(count = 2))
+            runCurrent()
+
+            val state = viewModel.uiState.value
+            assertEquals(OrganizeTerminalResult.AllFailed, state.terminalResult)
+            assertEquals(2, state.completedCount)
+            assertTrue(state.results.isEmpty())
+            assertFalse(state.isRunning)
+        }
+
+    @Test
     fun `repository inputs use prepared jpeg payload`() = runTest(testDispatcher) {
         coEvery { repository.organize(any(), any()) } returns ScreenshotOrganizeOutcome.LocalResults(
             emptyList(),

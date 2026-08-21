@@ -17,7 +17,12 @@ object ScreenshotAnalysisModule {
     fun provideScreenshotAnalysisRepository(
         mockProvider: Provider<MockScreenshotAnalysisRepository>,
         remoteProvider: Provider<RemoteScreenshotAnalysisRepository>,
+        demoProvider: Provider<DemoScreenshotAnalysisRepository>,
     ): ScreenshotAnalysisRepository {
+        // qa/release uses the demo catalog instead of Remote. Debug keeps Mock/Remote.
+        if (!BuildConfig.DEBUG) {
+            return demoProvider.get()
+        }
         return BackendSelection.select(
             useMockBackend = BuildConfig.USE_MOCK_BACKEND,
             mockProvider = mockProvider,

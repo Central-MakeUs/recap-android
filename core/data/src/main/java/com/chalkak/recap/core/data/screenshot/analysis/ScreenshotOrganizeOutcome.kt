@@ -9,6 +9,7 @@ sealed interface ScreenshotOrganizeOutcome {
         val results: List<ScreenshotAnalysisResult>,
         val sourceImages: List<LocalImage> = emptyList(),
         val preparationFailCount: Int = 0,
+        val analysisFailCount: Int = 0,
     ) : ScreenshotOrganizeOutcome
 
     data class RemoteCompleted(

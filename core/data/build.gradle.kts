@@ -64,7 +64,7 @@ android {
             buildConfigField(
                 "boolean",
                 "USE_MOCK_BACKEND",
-                "false",
+                "true",
             )
         }
     }

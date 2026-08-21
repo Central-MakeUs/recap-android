@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">RECAP</string>
+    <string name="app_name">Recap Demo</string>
     <string name="bottom_nav_home">홈</string>
     <string name="bottom_nav_organize">업로드</string>
     <string name="bottom_nav_collection">보관함</string>

@@ -7,7 +7,6 @@ import android.os.Bundle
 import android.provider.MediaStore
 import com.chalkak.recap.core.data.screenshot.permission.ImagePermissionRepository
 import com.chalkak.recap.core.data.screenshot.permission.currentImageAccessLevel
-import com.chalkak.recap.core.data.screenshot.permission.imagePermissionRequest as platformImagePermissionRequest
 import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.LocalImage
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -15,6 +14,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import com.chalkak.recap.core.data.screenshot.permission.imagePermissionRequest as platformImagePermissionRequest
 
 @Singleton
 class LocalScreenshotDataSource @Inject constructor(
@@ -45,27 +45,11 @@ class LocalScreenshotDataSource @Inject constructor(
             MediaStore.Images.Media.DISPLAY_NAME,
             MediaStore.Images.Media.DATE_ADDED,
         )
-        val pathSelection = screenshotRelativePaths.joinToString(separator = " OR ") {
-            "${MediaStore.Images.Media.RELATIVE_PATH} = ?"
-        }
-        val queryArgs = Bundle().apply {
-            putString(ContentResolver.QUERY_ARG_SQL_SELECTION, "($pathSelection)")
-            putStringArray(
-                ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
-                screenshotRelativePaths.toTypedArray(),
-            )
-            putStringArray(
-                ContentResolver.QUERY_ARG_SORT_COLUMNS,
-                arrayOf(MediaStore.Images.Media.DATE_ADDED),
-            )
-            putInt(
-                ContentResolver.QUERY_ARG_SORT_DIRECTION,
-                ContentResolver.QUERY_SORT_DIRECTION_DESCENDING,
-            )
-            if (limit != null) {
-                putInt(ContentResolver.QUERY_ARG_LIMIT, limit)
-            }
-        }
+        // qa/release demo: load every MediaStore image so catalog files outside Screenshots/ appear.
+        val queryArgs = screenshotImageQueryArgs(
+            limit = limit,
+            restrictToScreenshotFolders = BuildConfig.DEBUG,
+        )
 
         return runCatching {
             context.contentResolver.query(collection, projection, queryArgs, null)?.use { cursor ->
@@ -91,10 +75,37 @@ class LocalScreenshotDataSource @Inject constructor(
 
     private companion object {
         const val MILLIS_PER_SECOND = 1_000L
+    }
+}
 
-        val screenshotRelativePaths = listOf(
-            "DCIM/Screenshots/",
-            "Pictures/Screenshots/"
+internal val screenshotRelativePaths = listOf(
+    "DCIM/Screenshots/",
+    "Pictures/Screenshots/",
+)
+
+internal fun screenshotImageQueryArgs(
+    limit: Int?,
+    restrictToScreenshotFolders: Boolean,
+): Bundle = Bundle().apply {
+    if (restrictToScreenshotFolders) {
+        val pathSelection = screenshotRelativePaths.joinToString(separator = " OR ") {
+            "${MediaStore.Images.Media.RELATIVE_PATH} = ?"
+        }
+        putString(ContentResolver.QUERY_ARG_SQL_SELECTION, "($pathSelection)")
+        putStringArray(
+            ContentResolver.QUERY_ARG_SQL_SELECTION_ARGS,
+            screenshotRelativePaths.toTypedArray(),
         )
+    }
+    putStringArray(
+        ContentResolver.QUERY_ARG_SORT_COLUMNS,
+        arrayOf(MediaStore.Images.Media.DATE_ADDED),
+    )
+    putInt(
+        ContentResolver.QUERY_ARG_SORT_DIRECTION,
+        ContentResolver.QUERY_SORT_DIRECTION_DESCENDING,
+    )
+    if (limit != null) {
+        putInt(ContentResolver.QUERY_ARG_LIMIT, limit)
     }
 }

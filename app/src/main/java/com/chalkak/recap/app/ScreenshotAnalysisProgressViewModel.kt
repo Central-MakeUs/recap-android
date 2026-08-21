@@ -207,13 +207,15 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                             finishOrganizeCancelled(trace)
                             return@launch
                         }
+                        val failCount = outcome.preparationFailCount + outcome.analysisFailCount
                         val terminal = when {
-                            persisted.isEmpty() && outcome.preparationFailCount > 0 ->
+                            persisted.isEmpty() && failCount > 0 ->
                                 OrganizeTerminalResult.AllFailed
-                            outcome.preparationFailCount > 0 ->
+
+                            failCount > 0 ->
                                 OrganizeTerminalResult.PartialSuccess(
                                     successCount = persisted.size,
-                                    failCount = outcome.preparationFailCount,
+                                    failCount = failCount,
                                 )
                             else -> OrganizeTerminalResultMapper.fromLocalPersisted(
                                 persistedCount = persisted.size,
@@ -221,16 +223,16 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                                 saveFailed = false,
                             )
                         }
-                        if (outcome.preparationFailCount > 0) {
+                        if (failCount > 0) {
                             crashReporter.recordException(
                                 IllegalStateException(
-                                    "Screenshot preparation failed count=${outcome.preparationFailCount}",
+                                    "Screenshot organize failed preparation=${outcome.preparationFailCount} analysis=${outcome.analysisFailCount}",
                                 ),
                             )
                         }
                         _uiState.value = _uiState.value.copy(
                             isRunning = false,
-                            completedCount = (persisted.size + outcome.preparationFailCount)
+                            completedCount = (persisted.size + failCount)
                                 .coerceIn(0, totalCount),
                             progress = 1f,
                             results = persisted.toList(),

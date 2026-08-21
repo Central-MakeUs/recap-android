@@ -86,7 +86,7 @@ class UseMockBackendPropertyTest {
     }
 
     @Test
-    fun `effectiveForRelease is always remote`() {
-        assertFalse(UseMockBackendProperty.effectiveForRelease())
+    fun `effectiveForRelease uses mock so demo catalog can persist locally`() {
+        assertTrue(UseMockBackendProperty.effectiveForRelease())
     }
 }
