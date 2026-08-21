@@ -13,7 +13,11 @@
 
 포함:
 - `:core:data` `BuildConfig.USE_MOCK_BACKEND`로 프로세스 수명 동안 Mock/Remote 고정
-- Home / Storage / Capture command / Capture 상세 / 최근 정리 / 분석 / User data-summary·consent·delete repository에 동일 선택 적용
+- Home / Storage / Capture command / Capture 상세 / 최근 정리 / User data-summary·consent·delete
+  repository에 동일 선택 적용
+- `ScreenshotAnalysisRepository`는 debug/qa/release 모두 `DemoScreenshotAnalysisRepository`(고정 20장
+  카탈로그)를 사용한다. `USE_MOCK_BACKEND`로 Mock/Remote 분석을 고르지 않는다.
+- 데모 카탈로그 조회를 위해 `LocalScreenshotDataSource`는 Screenshots 폴더 제한 없이 MediaStore 이미지 전체를 읽는다.
 - Capture 상세 content 편집은 선택된 `CaptureMutationRepository`를 통해 Mock은 Room, Remote는
   `PATCH /api/v1/captures/{captureId}`에 반영
 - Auth(`getAccountInfo` / `withdraw`)는 Mock 선택에서도 Remote 경로 유지
@@ -81,7 +85,6 @@ MockUserRepository (Mock 선택 시)
 
 동일 `BuildConfig.USE_MOCK_BACKEND`를 사용하는 Hilt 제공:
 
-- `ScreenshotAnalysisRepository`
 - `HomeRepository`
 - `RecentCapturesRepository`
 - `StorageRepository`

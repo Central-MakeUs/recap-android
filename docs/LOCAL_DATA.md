@@ -20,7 +20,7 @@
 │   └── AccountOwnerHasher.kt           # SHA-256("{salt}|kakao:{id}")
 └── screenshot/
     ├── permission/                     # 이미지 권한 인터페이스/모듈
-    ├── analysis/                       # 분석 repository (mock/remote, BuildConfig 선택)
+    ├── analysis/                       # 분석 repository (전 빌드 Demo 카탈로그)
     ├── backend/                        # MockScreenshotDataResetter 등
     ├── image/                          # 앱 private 이미지 경로 관리
     └── persistence/                    # 분석 카드 Room 저장
@@ -43,8 +43,8 @@
 - `queryAllScreenshots()`
 
 현재 조회 범위:
-- `MediaStore.Images.Media`
-- `RELATIVE_PATH = "DCIM/Screenshots/"` 또는 `"Pictures/Screenshots/"`
+
+- `MediaStore.Images.Media` 전체 (Screenshots 폴더로 제한하지 않음). 데모 카탈로그 파일이 다른 경로에 있어도 피커에 나타나게 한다.
 - 최신순 정렬: `DATE_ADDED DESC`
 
 주의사항:

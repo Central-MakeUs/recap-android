@@ -45,10 +45,10 @@ class LocalScreenshotDataSource @Inject constructor(
             MediaStore.Images.Media.DISPLAY_NAME,
             MediaStore.Images.Media.DATE_ADDED,
         )
-        // qa/release demo: load every MediaStore image so catalog files outside Screenshots/ appear.
+        // Demo catalog files may live outside Screenshots/; load every MediaStore image.
         val queryArgs = screenshotImageQueryArgs(
             limit = limit,
-            restrictToScreenshotFolders = BuildConfig.DEBUG,
+            restrictToScreenshotFolders = false,
         )
 
         return runCatching {

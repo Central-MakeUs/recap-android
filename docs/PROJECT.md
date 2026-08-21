@@ -123,9 +123,12 @@ core.data.screenshot 하위:
 - `RecapDatabase`: Room database (`screenshot_cards` 등)
 - 스크린샷 분석/저장:
   - `ScreenshotCardRepository`
-  - `ScreenshotAnalysisRepository` (build-time Mock/Remote 선택, 요약 `docs/ANALYSIS_DATA_SOURCE.md`, 과거 런타임 전환 스냅샷 `docs/MOCK_REMOTE_CHANGE.md`)
-  - 동일 기준이 분석뿐 아니라 Home/Storage/Capture command 등 스크린샷 도메인 전역 backend에 적용된다.
-  - `LocalScreenshotDataSource` / `ImagePermissionRepository`
+  - `ScreenshotAnalysisRepository` (모든 빌드 타입에서 `DemoScreenshotAnalysisRepository`; 카탈로그 요약
+    `docs/ANALYSIS_DATA_SOURCE.md`, 과거 런타임 전환 스냅샷 `docs/MOCK_REMOTE_CHANGE.md`)
+  - Home/Storage/Capture command 등 나머지 스크린샷 도메인 backend는 `BuildConfig.USE_MOCK_BACKEND`로
+    Mock/Remote가 선택된다.
+  - `LocalScreenshotDataSource` / `ImagePermissionRepository` (데모 카탈로그 파일이 Screenshots 폴더 밖에 있을 수 있어
+    MediaStore 이미지 전체를 조회한다)
 - OCR/AI 분석은 서버에서 수행한다. 로컬 ML Kit OCR 및 Firebase AI 클라이언트는 사용하지 않는다.
 - 스크린샷 도메인 backend는 `:core:data`의 `BuildConfig.USE_MOCK_BACKEND`로 프로세스 수명 동안 고정된다.
   - 기본값: debug `true`, qa/release `false` (qa/release는 Remote 고정)
