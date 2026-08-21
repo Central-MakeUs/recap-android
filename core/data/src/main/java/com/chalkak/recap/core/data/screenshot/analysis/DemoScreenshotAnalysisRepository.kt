@@ -48,6 +48,7 @@ class DemoScreenshotAnalysisRepository(
             onProgress(0, 0)
             return ScreenshotOrganizeOutcome.LocalResults(emptyList())
         }
+        delay(INITIAL_ANALYSIS_DELAY_MILLIS.milliseconds)
         val results = ArrayList<ScreenshotAnalysisResult>(total)
         val sourceImages = ArrayList<LocalImage>(total)
         var preparationFailCount = 0
@@ -106,8 +107,9 @@ class DemoScreenshotAnalysisRepository(
     }
 
     internal companion object {
-        const val MIN_ANALYSIS_DELAY_MILLIS = 500L
-        const val MAX_ANALYSIS_DELAY_MILLIS = 800L
+        const val INITIAL_ANALYSIS_DELAY_MILLIS = 1_500L
+        const val MIN_ANALYSIS_DELAY_MILLIS = 800L
+        const val MAX_ANALYSIS_DELAY_MILLIS = 1000L
 
         fun randomAnalysisDelayMillis(): Long =
             Random.nextLong(MIN_ANALYSIS_DELAY_MILLIS, MAX_ANALYSIS_DELAY_MILLIS + 1)
