@@ -3,7 +3,7 @@ package com.chalkak.recap.core.data.backend
 import javax.inject.Provider
 
 /**
- * Build-time Mock/Remote selection helpers shared by Hilt modules and observability.
+ * Build-time Mock/Remote selection helpers shared by Hilt modules.
  */
 object BackendSelection {
     fun <T> select(
@@ -17,9 +17,6 @@ object BackendSelection {
             remoteProvider.get()
         }
     }
-
-    fun backendModeLabel(useMockBackend: Boolean): String =
-        if (useMockBackend) "mock" else "remote"
 }
 fun <T> select(
     useMockBackend: Boolean,

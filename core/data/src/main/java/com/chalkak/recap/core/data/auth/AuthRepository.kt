@@ -16,14 +16,13 @@ import com.chalkak.recap.core.data.network.mapHttpException
 import com.chalkak.recap.core.model.auth.AuthError
 import com.chalkak.recap.core.model.auth.AuthProvider
 import com.chalkak.recap.core.model.auth.AuthSignInResult
-import com.chalkak.recap.core.model.auth.KakaoUserProfile
 import com.chalkak.recap.core.model.auth.SocialAuthCredential
 import com.chalkak.recap.core.model.observability.CrashReporter
 import com.chalkak.recap.core.model.observability.ObservabilityKeys
+import retrofit2.HttpException
 import java.io.IOException
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
-import retrofit2.HttpException
 
 class AuthRepository @Inject constructor(
     private val kakaoLoginClient: KakaoLoginClient,
@@ -51,9 +50,6 @@ class AuthRepository @Inject constructor(
                 Result.failure(error)
             },
         )
-
-    suspend fun getKakaoUserProfile(): Result<KakaoUserProfile> =
-        kakaoLoginClient.fetchUserProfile().alsoReportAuthFailure()
 
     /**
      * 카카오 user.id 해시로 로컬 데이터 소유자를 맞춘다.
@@ -175,7 +171,6 @@ class AuthRepository @Inject constructor(
                 crashReporter.setCustomKey(ObservabilityKeys.AUTH_ERROR_CODE, authError.code)
                 crashReporter.recordException(error)
             }
-            AuthError.Network -> crashReporter.recordException(error)
             else -> Unit
         }
     }

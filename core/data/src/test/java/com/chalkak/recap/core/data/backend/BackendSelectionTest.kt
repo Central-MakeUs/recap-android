@@ -1,12 +1,12 @@
 package com.chalkak.recap.core.data.backend
 
-import javax.inject.Provider
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import javax.inject.Provider
 
 class BackendSelectionTest {
     @Test
@@ -43,12 +43,6 @@ class BackendSelectionTest {
         assertSame(remote, selected)
         assertEquals(0, mockProvider.getCount)
         assertEquals(1, remoteProvider.getCount)
-    }
-
-    @Test
-    fun `backendModeLabel maps mock and remote`() {
-        assertEquals("mock", BackendSelection.backendModeLabel(useMockBackend = true))
-        assertEquals("remote", BackendSelection.backendModeLabel(useMockBackend = false))
     }
 
     private class CountingProvider<T>(private val value: T) : Provider<T> {

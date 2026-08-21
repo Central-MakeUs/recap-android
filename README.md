@@ -85,15 +85,15 @@ Recap은 `:app`을 중심으로 재사용 계층인 `:core:*`와 화면 단위 �
 
 ## 앱 정보
 
-| 항목                     | 값                         |
-|:-----------------------|:--------------------------|
-| Package                | `com.chalkak.recap`       |
-| minSdk                 | 30                        |
-| targetSdk / compileSdk | 37                        |
-| Kotlin / AGP           | 2.4.10 / 9.3.1            |
-| JDK                    | 17                        |
-| Version                | `1.1.1` (`versionCode` 9) |
-| Build types            | debug, qa, release        |
+| 항목                     | 값                          |
+|:-----------------------|:---------------------------|
+| Package                | `com.chalkak.recap`        |
+| minSdk                 | 30                         |
+| targetSdk / compileSdk | 37                         |
+| Kotlin / AGP           | 2.4.10 / 9.3.1             |
+| JDK                    | 17                         |
+| Version                | `1.1.2` (`versionCode` 10) |
+| Build types            | debug, qa, release         |
 
 ## 문서
 

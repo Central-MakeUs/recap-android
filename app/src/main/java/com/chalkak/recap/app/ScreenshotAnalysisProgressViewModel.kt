@@ -25,7 +25,6 @@ import com.chalkak.recap.core.model.observability.OrganizeTraceEntry
 import com.chalkak.recap.core.model.observability.PerformanceTrace
 import com.chalkak.recap.core.model.observability.PerformanceTraceNames
 import com.chalkak.recap.core.model.observability.PerformanceTracer
-import com.chalkak.recap.core.model.observability.imageCountBucket
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -105,15 +104,14 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
         analysisJob = viewModelScope.launch {
             screenshotAnalysisRunState.beginRun()
             val runId = organizeProgressTracker.onStarted(totalCount)
-            val bucket = imageCountBucket(totalCount)
             crashReporter.setCustomKey(ObservabilityKeys.ORGANIZE_ACTIVE, true)
-            crashReporter.setCustomKey(ObservabilityKeys.IMAGE_COUNT_BUCKET, bucket)
+            crashReporter.setCustomKey(ObservabilityKeys.IMAGE_COUNT, totalCount)
             crashReporter.setCustomKey(ObservabilityKeys.ORGANIZE_PHASE, "running")
             val trace = performanceTracer.startTrace(
                 PerformanceTraceNames.ORGANIZE_REMOTE_END_TO_END,
             )
             activeOrganizeTrace = trace
-            trace.putAttribute(ObservabilityKeys.IMAGE_COUNT_BUCKET, bucket)
+            trace.putAttribute(ObservabilityKeys.IMAGE_COUNT, totalCount.toString())
             trace.putAttribute(ObservabilityKeys.ENTRY, entry)
             try {
                 _uiState.value = ScreenshotAnalysisProgressUiState(
