@@ -5,23 +5,23 @@ import com.chalkak.recap.core.data.capture.CaptureChange
 import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
 import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotUploadPreparer
-import com.chalkak.recap.core.model.PreparedScreenshot
 import com.chalkak.recap.core.model.LocalImage
+import com.chalkak.recap.core.model.PreparedScreenshot
 import com.chalkak.recap.core.model.capture.OrganizeBatch
 import com.chalkak.recap.core.model.capture.OrganizeStatus
 import com.chalkak.recap.core.model.capture.OrganizeStatusDetail
 import com.chalkak.recap.core.model.capture.UploadItem
 import com.chalkak.recap.core.model.capture.UploadUrls
+import io.mockk.Runs
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
-import io.mockk.Runs
 import io.mockk.verify
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -244,6 +244,118 @@ class RemoteScreenshotAnalysisRepositoryTest {
     }
 
     @Test
+    fun `organize throws when status is cancelled after ack without recording`() = runTest {
+        val crashReporter = RecordingCrashReporter()
+        repository = RemoteScreenshotAnalysisRepository(
+            captureRepository = captureRepository,
+            changeNotifier = changeNotifier,
+            screenshotUploadPreparer = screenshotUploadPreparer,
+            crashReporter = crashReporter,
+        )
+        coEvery { captureRepository.issueUploadUrls(1) } returns Result.success(
+            UploadUrls(
+                uploads = listOf(
+                    UploadItem(
+                        imageKey = "key-1",
+                        uploadUrl = "https://up/1"
+                    )
+                )
+            ),
+        )
+        coEvery {
+            captureRepository.uploadImage(any(), any(), any())
+        } returns Result.success(Unit)
+        coEvery { captureRepository.organize(any()) } returns Result.success(
+            OrganizeBatch(batchId = 4L, totalCount = 1, status = OrganizeStatus.PROCESSING),
+        )
+        coEvery { captureRepository.getOrganizeStatus(4L) } returns Result.success(
+            OrganizeStatusDetail(
+                batchId = 4L,
+                status = OrganizeStatus.CANCELLED,
+                totalCount = 1,
+                successCount = 0,
+                failCount = 0,
+            ),
+        )
+        coEvery { captureRepository.ackOrganizeResult(4L) } returns Result.success(Unit)
+
+        val error = assertThrows<RemoteOrganizeFailedException> {
+            repository.organize(
+                inputs = listOf(
+                    ScreenshotAnalysisInput(
+                        fileName = "a.png",
+                        uri = "content://1",
+                        jpegBytes = byteArrayOf(9),
+                    ),
+                ),
+            )
+        }
+
+        assertEquals(OrganizeStatus.CANCELLED, error.status)
+        assertTrue(crashReporter.exceptions.isEmpty())
+        coVerify(exactly = 1) { captureRepository.ackOrganizeResult(4L) }
+    }
+
+    @Test
+    fun `ack failure does not record a non-fatal`() = runTest {
+        val crashReporter = RecordingCrashReporter()
+        repository = RemoteScreenshotAnalysisRepository(
+            captureRepository = captureRepository,
+            changeNotifier = changeNotifier,
+            screenshotUploadPreparer = screenshotUploadPreparer,
+            crashReporter = crashReporter,
+        )
+        coEvery { captureRepository.issueUploadUrls(1) } returns Result.success(
+            UploadUrls(
+                uploads = listOf(
+                    UploadItem(
+                        imageKey = "key-1",
+                        uploadUrl = "https://up/1"
+                    )
+                )
+            ),
+        )
+        coEvery {
+            captureRepository.uploadImage(any(), any(), any())
+        } returns Result.success(Unit)
+        coEvery { captureRepository.organize(any()) } returns Result.success(
+            OrganizeBatch(batchId = 5L, totalCount = 1, status = OrganizeStatus.PROCESSING),
+        )
+        coEvery { captureRepository.getOrganizeStatus(5L) } returns Result.success(
+            OrganizeStatusDetail(
+                batchId = 5L,
+                status = OrganizeStatus.COMPLETED,
+                totalCount = 1,
+                successCount = 1,
+                failCount = 0,
+            ),
+        )
+        coEvery { captureRepository.ackOrganizeResult(5L) } returns Result.failure(
+            IllegalStateException("ack failed"),
+        )
+
+        val outcome = repository.organize(
+            inputs = listOf(
+                ScreenshotAnalysisInput(
+                    fileName = "a.png",
+                    uri = "content://1",
+                    jpegBytes = byteArrayOf(9),
+                ),
+            ),
+        )
+
+        assertEquals(
+            ScreenshotOrganizeOutcome.RemoteCompleted(
+                successCount = 1,
+                failCount = 0,
+                status = OrganizeStatus.COMPLETED,
+            ),
+            outcome,
+        )
+        assertTrue(crashReporter.exceptions.isEmpty())
+    }
+
+    @Test
     fun `organize uploads preprepared input before pending input and keeps image key order`() =
         runTest {
             val pendingImage = LocalImage("content://pending", "pending.png", 1L)
@@ -397,6 +509,23 @@ class RemoteScreenshotAnalysisRepositoryTest {
         )
         coVerify(exactly = 0) { captureRepository.issueUploadUrls(any()) }
         coVerify(exactly = 0) { changeNotifier.emit(any()) }
+    }
+
+    private class RecordingCrashReporter :
+        com.chalkak.recap.core.model.observability.CrashReporter {
+        val exceptions = mutableListOf<Throwable>()
+
+        override fun setCustomKey(key: String, value: String) = Unit
+
+        override fun setCustomKey(key: String, value: Boolean) = Unit
+
+        override fun setCustomKey(key: String, value: Int) = Unit
+
+        override fun log(message: String) = Unit
+
+        override fun recordException(throwable: Throwable) {
+            exceptions += throwable
+        }
     }
 }
 
