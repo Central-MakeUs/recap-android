@@ -15,8 +15,8 @@
 - minSdk: 30
 - targetSdk: 37
 - compileSdk: 37
-- versionCode: 9
-- versionName: `1.1.1`
+- versionCode: 10
+- versionName: `1.1.2`
 - MainActivity: `app/src/main/java/com/chalkak/recap/MainActivity.kt`
 - Application: `app/src/main/java/com/chalkak/recap/RecapApplication.kt`
 
