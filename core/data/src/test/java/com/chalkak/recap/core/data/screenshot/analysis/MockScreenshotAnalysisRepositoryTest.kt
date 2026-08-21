@@ -91,6 +91,18 @@ class MockScreenshotAnalysisRepositoryTest {
     }
 
     @Test
+    fun `analyze returns catalog result for demo file name`() = runTest {
+        val repository = repository(captureId = 99L)
+
+        val result = repository.analyze(ScreenshotAnalysisInput(fileName = "demo_1.jpeg"))
+        val expected = DemoScreenshotAnalysisCatalog.resultForFileName("demo_1.jpeg")
+
+        assertEquals(expected, result)
+        assertEquals(2_026_000_001L, result.captureId)
+        assertEquals(ScreenshotContentType.SCHEDULE, result.typeCode)
+    }
+
+    @Test
     fun `analyze uses injected organizedAt instant`() = runTest {
         val fixedInstant = Instant.parse("2024-06-01T10:30:00Z")
         val repository = repository(captureId = 1L, organizedAt = fixedInstant)

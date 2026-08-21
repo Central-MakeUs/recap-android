@@ -6,10 +6,10 @@ import com.chalkak.recap.core.model.PreparedScreenshot
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
 
 @Singleton
@@ -85,6 +85,8 @@ class MockScreenshotAnalysisRepository @Inject constructor(
     }
 
     private fun buildResult(input: ScreenshotAnalysisInput): ScreenshotAnalysisResult {
+        DemoScreenshotAnalysisCatalog.resultForFileName(input.fileName)?.let { return it }
+
         val captureId = randomizer.captureId()
         return ScreenshotAnalysisResult(
             captureId = captureId,

@@ -1,0 +1,43 @@
+{
+  "type": "object",
+  "properties": {
+    "type": {
+      "type": "string",
+      "enum": [
+        "JOB",
+        "SHOPPING",
+        "PLACE",
+        "SCHEDULE",
+        "KNOWLEDGE",
+        "CONTENT",
+        "BENEFIT",
+        "RECORD",
+        "ETC"
+      ],
+      "description": "스크린샷의 정보 유형. 반드시 허용된 9개 값 중 정확히 하나를 선택한다."
+    },
+    "title": {
+      "type": "string",
+      "description": "스크린샷의 핵심 내용을 나타내는 1~30자의 한 줄 제목."
+    },
+    "summary": {
+      "type": "string",
+      "description": "title보다 구체적인 최대 80자의 한 줄 요약. title이나 body 첫 줄을 그대로 반복하지 않는다."
+    },
+    "body": {
+      "type": "string",
+      "description": "유형별 템플릿에 따라 핵심 정보를 구조화한 최대 1000자의 순수 텍스트 본문. 이미지에서 확인되지 않는 정보는 생성하지 않는다."
+    },
+    "extractedText": {
+      "type": "string",
+      "description": "스크린샷에 보이는 텍스트를 가능한 한 빠짐없이 원문에 가깝게 기록한 OCR용 문자열. 요약하거나 재구성하지 않는다."
+    }
+  },
+  "required": [
+    "type",
+    "title",
+    "summary",
+    "body",
+    "extractedText"
+  ]
+}
