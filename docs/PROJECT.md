@@ -15,8 +15,8 @@
 - minSdk: 30
 - targetSdk: 37
 - compileSdk: 37
-- versionCode: 9
-- versionName: `1.1.1`
+- versionCode: 10
+- versionName: `1.1.2`
 - MainActivity: `app/src/main/java/com/chalkak/recap/MainActivity.kt`
 - Application: `app/src/main/java/com/chalkak/recap/RecapApplication.kt`
 
@@ -34,7 +34,7 @@
 - Image loading: Coil
 - Logging: Timber
 - Crash reporting: Firebase Crashlytics
-- Performance: Firebase Performance Monitoring (auto + organize/share custom traces)
+- Performance: Firebase Performance Monitoring (auto + organize custom traces)
 
 ## 빌드 명령
 

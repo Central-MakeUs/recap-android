@@ -10,8 +10,6 @@ import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.core.model.PreparedScreenshot
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
-import com.chalkak.recap.core.model.observability.PerformanceTrace
-import com.chalkak.recap.core.model.observability.PerformanceTracer
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -26,7 +24,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
@@ -120,28 +117,6 @@ class ShareIntakeViewModelTest {
         viewModel.completePendingShareIntake("stale-session")
 
         assertEquals(current, viewModel.pendingShareIntake.value)
-    }
-
-    @Test
-    fun `completion stops the active share trace as cancelled`() = runTest(testDispatcher) {
-        val performanceTracer = RecordingPerformanceTracer()
-        val viewModel = createViewModel(
-            fingerprint = "share-fingerprint",
-            parseResult = ::sampleParseResult,
-            performanceTracer = performanceTracer,
-        )
-
-        viewModel.submitShareIntent(mockk())
-        advanceUntilIdle()
-        val sessionId = viewModel.pendingShareIntake.value?.sessionId
-        val trace = performanceTracer.traces.single()
-        assertFalse(trace.isStopped)
-
-        viewModel.completePendingShareIntake(sessionId!!)
-
-        assertTrue(trace.isStopped)
-        assertEquals("discard", trace.attributes["gate"])
-        assertEquals("cancel", trace.attributes["outcome"])
     }
 
     @Test
@@ -314,7 +289,6 @@ class ShareIntakeViewModelTest {
     private fun createViewModel(
         fingerprint: String,
         parseResult: () -> ShareImageParseResult,
-        performanceTracer: PerformanceTracer = PerformanceTracer.NoOp,
     ): ShareIntakeViewModel {
         return ShareIntakeViewModel(
             savedStateHandle = SavedStateHandle(),
@@ -322,7 +296,6 @@ class ShareIntakeViewModelTest {
             userPreferencesRepository = userPreferencesRepository,
             sharedAnalysisRequestStore = sharedAnalysisRequestStore,
             crashReporter = com.chalkak.recap.core.model.observability.CrashReporter.NoOp,
-            performanceTracer = performanceTracer,
             context = context,
         ).apply {
             ioDispatcher = testDispatcher
@@ -369,25 +342,5 @@ class ShareIntakeViewModelTest {
             ),
             rejectedCount = 0,
         )
-    }
-
-    private class RecordingPerformanceTracer : PerformanceTracer {
-        val traces = mutableListOf<RecordingPerformanceTrace>()
-
-        override fun startTrace(name: String): PerformanceTrace =
-            RecordingPerformanceTrace().also(traces::add)
-    }
-
-    private class RecordingPerformanceTrace : PerformanceTrace {
-        val attributes = mutableMapOf<String, String>()
-        var isStopped = false
-
-        override fun putAttribute(key: String, value: String) {
-            attributes[key] = value
-        }
-
-        override fun stop() {
-            isStopped = true
-        }
     }
 }
