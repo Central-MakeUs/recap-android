@@ -49,11 +49,10 @@ qa 빌드(Performance 플러그인 instrumentation 포함):
 $env:GRADLE_USER_HOME="$env:USERPROFILE\.gradle"; .\gradlew.bat assembleQa
 ```
 
-Firebase Observability 수동 확인(qa/release 기기):
+Firebase Observability 수동 확인:
 
-- DEBUG: Crashlytics/Performance collection OFF
-- qa/release: Crashlytics·Performance ON
-- 강제 non-fatal / organize custom trace가 Firebase 콘솔에 보이는지 확인
+- debug/qa/release: Crashlytics/Performance collection OFF (데모 배포, 콘솔로 보내지 않음)
+- debug와 qa는 Firebase Performance bytecode instrumentation도 OFF
 
 전체 debug 로컬 단위 테스트:
 

@@ -33,8 +33,9 @@
 - Persistence: DataStore, Room
 - Image loading: Coil
 - Logging: Timber
-- Crash reporting: Firebase Crashlytics
-- Performance: Firebase Performance Monitoring (auto + organize custom traces)
+- Crash reporting: Firebase Crashlytics (의존성은 유지, 데모 배포라 collection은 debug/qa/release 모두 OFF)
+- Performance: Firebase Performance Monitoring (auto + organize custom traces; collection은 모두 OFF,
+  debug/qa는 instrumentation도 OFF)
 
 ## 빌드 명령
 
