@@ -4,7 +4,7 @@
 
 ## 프로젝트 정체성
 
-- 앱 이름: RECAP
+- 앱 이름: Recap
 - 현재 목표: 사용자가 선택하거나 공유한 스크린샷을 서버 OCR/AI 분석으로 정리하고, 컬렉션으로 관리한다.
 - 현재 지원 방향: 화이트모드 우선
 
@@ -15,8 +15,8 @@
 - minSdk: 30
 - targetSdk: 37
 - compileSdk: 37
-- versionCode: 10
-- versionName: `1.1.2`
+- versionCode: 11
+- versionName: `1.1.3`
 - MainActivity: `app/src/main/java/com/chalkak/recap/MainActivity.kt`
 - Application: `app/src/main/java/com/chalkak/recap/RecapApplication.kt`
 

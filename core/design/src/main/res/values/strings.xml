@@ -362,7 +362,7 @@
     <string name="onboarding_add_to_favorite_guide_step_4">즐겨찾기에 Recap이 추가되면 완료!\n≡ 을 드래그 해 상단으로 끌어올수록, 즐겨찾기 앞쪽에 배치돼요.</string>
     <string name="onboarding_add_to_favorite_guide_touch_1">더보기 누르기</string>
     <string name="onboarding_add_to_favorite_guide_touch_2">편집 누르기</string>
-    <string name="onboarding_add_to_favorite_guide_touch_3">RECAP 체크하기</string>
+    <string name="onboarding_add_to_favorite_guide_touch_3">Recap 체크하기</string>
     <string name="onboarding_add_to_favorite_guide_page_indicator">%1$d / %2$d</string>
     <string name="onboarding_add_to_favorite_guide_step_image_content_description">공유 즐겨찾기 등록 방법 %1$d단계</string>
     <string name="onboarding_add_to_favorite_guide_previous_content_description">이전 등록 방법 보기</string>
