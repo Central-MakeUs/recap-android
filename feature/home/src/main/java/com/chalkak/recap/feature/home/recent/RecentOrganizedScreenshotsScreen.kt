@@ -50,7 +50,6 @@ import com.chalkak.recap.core.design.animation.recapScreenshotCardItemAnimation
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
-import com.chalkak.recap.core.design.component.card.OrganizedRelativeTimeFormatter
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.swipe.ScreenshotCardSwipeRow
@@ -138,15 +137,6 @@ private fun RecentOrganizedScreenshotsContent(
     onAction: (RecentOrganizedScreenshotsAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val nowMillis = remember { System.currentTimeMillis() }
-    val visibleItems = remember(uiState.items, nowMillis) {
-        uiState.items.filter { item ->
-            OrganizedRelativeTimeFormatter.isVisible(
-                organizedAtMillis = item.organizedAtMillis,
-                nowMillis = nowMillis,
-            )
-        }
-    }
     val listState = rememberLazyListState()
     val displayCount = uiState.resultCount.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
     val countHeaderItemCount = if (displayCount > 0) 1 else 0
@@ -155,14 +145,14 @@ private fun RecentOrganizedScreenshotsContent(
 
     LaunchedEffect(
         listState,
-        visibleItems.size,
+        uiState.items.size,
         countHeaderItemCount,
         uiState.hasNext,
         uiState.isLoadingMore,
         uiState.nextPage,
     ) {
         snapshotFlow {
-            val secondLastIndex = countHeaderItemCount + visibleItems.lastIndex - 1
+            val secondLastIndex = countHeaderItemCount + uiState.items.lastIndex - 1
             secondLastIndex >= countHeaderItemCount &&
                 listState.layoutInfo.visibleItemsInfo.any { item -> item.index == secondLastIndex }
         }
@@ -194,7 +184,7 @@ private fun RecentOrganizedScreenshotsContent(
             }
         }
         items(
-            items = visibleItems,
+            items = uiState.items,
             key = { item -> item.id },
             contentType = { "recent_organized_screenshot" },
         ) { item ->
@@ -243,7 +233,7 @@ private fun RecentOrganizedScreenshotsContent(
                 )
             }
         }
-        if (visibleItems.isEmpty()) {
+        if (uiState.items.isEmpty()) {
             item(key = "recent_organized_empty") {
                 RecentOrganizedScreenshotsEmptyContent(
                     onImportClick = {
