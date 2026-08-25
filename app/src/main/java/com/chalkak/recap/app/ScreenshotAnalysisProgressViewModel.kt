@@ -92,6 +92,9 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
         }
     }
 
+    suspend fun tryMarkOrganizeNotificationPermissionPromptShown(): Boolean =
+        userPreferencesRepository.tryMarkOrganizeNotificationPermissionPromptShown()
+
     fun startAnalysis(
         candidates: List<ScreenshotUploadCandidate>,
         entry: String = OrganizeTraceEntry.HOME_ORGANIZE,

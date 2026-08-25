@@ -348,6 +348,8 @@ fun RecapNavHost(
                                 organizeCompleteNotificationEnabled,
                             onOrganizeCompleteNotificationEnabledChange =
                                 analysisProgressViewModel::setOrganizeCompleteNotificationEnabled,
+                            onTryMarkOrganizeNotificationPermissionPromptShown =
+                                analysisProgressViewModel::tryMarkOrganizeNotificationPermissionPromptShown,
                         )
                     }
                 }

@@ -43,6 +43,7 @@ fun OrganizeAnalysisStatusRoute(
     notificationsEnabled: Boolean? = null,
     organizeCompleteNotificationEnabled: Boolean? = null,
     onOrganizeCompleteNotificationEnabledChange: (Boolean) -> Unit = {},
+    onTryMarkOrganizeNotificationPermissionPromptShown: suspend () -> Boolean = { false },
 ) {
     when (uiState) {
         OrganizeAnalysisStatusUiState.Hidden -> Unit
@@ -59,6 +60,8 @@ fun OrganizeAnalysisStatusRoute(
                 organizeCompleteNotificationEnabled = organizeCompleteNotificationEnabled,
                 onOrganizeCompleteNotificationEnabledChange =
                     onOrganizeCompleteNotificationEnabledChange,
+                onTryMarkOrganizeNotificationPermissionPromptShown =
+                    onTryMarkOrganizeNotificationPermissionPromptShown,
             )
         }
     }

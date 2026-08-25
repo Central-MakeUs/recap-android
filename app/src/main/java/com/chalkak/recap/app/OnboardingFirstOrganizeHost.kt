@@ -12,11 +12,11 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.chalkak.recap.core.model.observability.OrganizeTraceEntry
 import com.chalkak.recap.feature.onboarding.OnboardingRoute
 import com.chalkak.recap.feature.organize.OrganizeAnalysisStatusRoute
 import com.chalkak.recap.feature.organize.OrganizeAnalysisStatusUiState
 import com.chalkak.recap.feature.organize.OrganizeRoute
-import com.chalkak.recap.core.model.observability.OrganizeTraceEntry
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 
@@ -129,6 +129,8 @@ fun OnboardingFirstOrganizeHost(
                         organizeCompleteNotificationEnabled,
                     onOrganizeCompleteNotificationEnabledChange =
                         analysisProgressViewModel::setOrganizeCompleteNotificationEnabled,
+                    onTryMarkOrganizeNotificationPermissionPromptShown =
+                        analysisProgressViewModel::tryMarkOrganizeNotificationPermissionPromptShown,
                 )
             }
         }
