@@ -15,7 +15,9 @@ fun ScreenshotAnalysisProgressUiState.toOrganizeAnalysisStatusUiState(): Organiz
         is OrganizeTerminalResult.PartialSuccess -> OrganizeAnalysisStatusUiState.PartialFailed(
             successCount = result.successCount,
         )
-        OrganizeTerminalResult.AllFailed -> OrganizeAnalysisStatusUiState.Failed
+        is OrganizeTerminalResult.AllFailed -> OrganizeAnalysisStatusUiState.Failed(
+            usageLimitExceeded = result.usageLimitExceeded,
+        )
     }
 }
 

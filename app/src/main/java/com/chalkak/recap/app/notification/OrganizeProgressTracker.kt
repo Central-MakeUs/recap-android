@@ -1,8 +1,5 @@
 package com.chalkak.recap.app.notification
 
-import java.util.concurrent.atomic.AtomicInteger
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -10,6 +7,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import java.util.concurrent.atomic.AtomicInteger
+import javax.inject.Inject
+import javax.inject.Singleton
 
 data class OrganizeProgressSnapshot(
     val isRunning: Boolean = false,
@@ -58,7 +58,7 @@ class OrganizeProgressTracker @Inject constructor() {
             completedCount = when (result) {
                 is OrganizeTerminalResult.AllSuccess -> result.successCount
                 is OrganizeTerminalResult.PartialSuccess -> result.successCount + result.failCount
-                OrganizeTerminalResult.AllFailed -> _snapshot.value.completedCount
+                is OrganizeTerminalResult.AllFailed -> _snapshot.value.completedCount
             },
             totalCount = _snapshot.value.totalCount,
         )

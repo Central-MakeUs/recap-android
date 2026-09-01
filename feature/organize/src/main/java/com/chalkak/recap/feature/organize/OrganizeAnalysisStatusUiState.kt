@@ -15,7 +15,9 @@ sealed interface OrganizeAnalysisStatusUiState {
         val successCount: Int,
     ) : OrganizeAnalysisStatusUiState
 
-    data object Failed : OrganizeAnalysisStatusUiState
+    data class Failed(
+        val usageLimitExceeded: Boolean = false,
+    ) : OrganizeAnalysisStatusUiState
 
     data class PartialFailed(
         val successCount: Int,

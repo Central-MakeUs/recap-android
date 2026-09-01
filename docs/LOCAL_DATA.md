@@ -224,16 +224,19 @@
 - `setOnboardingCompleted(completed)`
 - `organizeCompleteNotificationEnabled: Flow<Boolean>`
 - `setOrganizeCompleteNotificationEnabled(enabled)`
+- `tryMarkOrganizeNotificationPermissionPromptShown()`
 - `getAiDataTransferConsentStatus()` / `setAiDataTransferConsent(consented, consentedAt)`
 - `clearAccountScopedPreferences()`
 
 저장 key:
 - `onboarding_completed`
 - `organize_complete_notification_enabled`
+- `organize_notification_permission_prompt_shown`
 - `ai_data_transfer_consented` / `ai_data_transfer_consented_at` (MOCK consent SoT)
 
 주의사항:
 - 일반 사용자 설정은 같은 `user_preferences` DataStore에 추가한다. 계정 소유자 해시만 예외적으로 `account_owner` DataStore를 사용한다.
+- organize 알림 권한 안내 시트 표시 기록은 설치 후 1회 정책이므로 계정 전환·로그아웃 시에도 유지한다.
 - AI 동의 DataStore 값은 MOCK backend에서만 사용한다. REMOTE는 서버 consent API가 SoT다.
 - AI 동의는 계정 종속 값이라 `clearAccountScopedPreferences()`가 지운다. 계정 전환 wipe와 로그아웃 reset이 이 API를 호출한다. 계정별로 다시 받아야 하는 설정을 추가할 때는 여기에도 등록한다.
 - 스크린샷 backend(Mock/Remote)는 DataStore가 아니라 `:core:data` `BuildConfig.USE_MOCK_BACKEND`로 빌드 시 고정된다. 자세한 선택은 `docs/ANALYSIS_DATA_SOURCE.md`를 본다.

@@ -42,7 +42,7 @@ class OrganizeTerminalResultMapperTest {
     @Test
     fun `fromRemote maps failed and cancelled to all failed`() {
         assertEquals(
-            OrganizeTerminalResult.AllFailed,
+            OrganizeTerminalResult.AllFailed(),
             OrganizeTerminalResultMapper.fromRemote(
                 ScreenshotOrganizeOutcome.RemoteCompleted(
                     successCount = 0,
@@ -52,7 +52,7 @@ class OrganizeTerminalResultMapperTest {
             ),
         )
         assertEquals(
-            OrganizeTerminalResult.AllFailed,
+            OrganizeTerminalResult.AllFailed(),
             OrganizeTerminalResultMapper.fromRemote(
                 ScreenshotOrganizeOutcome.RemoteCompleted(
                     successCount = 0,
@@ -74,7 +74,7 @@ class OrganizeTerminalResultMapperTest {
             ),
         )
         assertEquals(
-            OrganizeTerminalResult.AllFailed,
+            OrganizeTerminalResult.AllFailed(),
             OrganizeTerminalResultMapper.fromLocalPersisted(
                 persistedCount = 0,
                 totalCount = 3,
@@ -113,7 +113,7 @@ class OrganizeProgressTrackerTest {
         )
 
         tracker.terminalResults.test {
-            tracker.onTerminal(firstRun, OrganizeTerminalResult.AllFailed)
+            tracker.onTerminal(firstRun, OrganizeTerminalResult.AllFailed())
             expectNoEvents()
             tracker.onTerminal(secondRun, OrganizeTerminalResult.AllSuccess(5))
             assertEquals(OrganizeTerminalResult.AllSuccess(5), awaitItem())
