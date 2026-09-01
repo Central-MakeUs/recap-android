@@ -28,6 +28,7 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 @Composable
 fun OrganizeFailedContent(
     modifier: Modifier = Modifier,
+    usageLimitExceeded: Boolean = false,
 ) {
     Column(
         modifier = modifier,
@@ -44,7 +45,13 @@ fun OrganizeFailedContent(
         )
         Spacer(modifier = Modifier.height(OrganizeFailedTokens.IconToTitleSpacing))
         Text(
-            text = stringResource(R.string.organize_failed_title),
+            text = stringResource(
+                if (usageLimitExceeded) {
+                    R.string.organize_failed_usage_limit_title
+                } else {
+                    R.string.organize_failed_title
+                },
+            ),
             style = RecapHeading2,
             color = Black,
             textAlign = TextAlign.Center,
@@ -85,5 +92,18 @@ private object OrganizeFailedTokens {
 private fun OrganizeFailedContentPreview() {
     RECAPTheme {
         OrganizeFailedContent()
+    }
+}
+
+@Preview(
+    name = "Organize Failed Content Usage Limit",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 780,
+)
+@Composable
+private fun OrganizeFailedContentUsageLimitPreview() {
+    RECAPTheme {
+        OrganizeFailedContent(usageLimitExceeded = true)
     }
 }

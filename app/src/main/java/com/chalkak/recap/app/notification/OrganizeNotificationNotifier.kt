@@ -109,7 +109,7 @@ class OrganizeNotificationNotifier @Inject constructor(
                     )
             }
 
-            OrganizeTerminalResult.AllFailed -> {
+            is OrganizeTerminalResult.AllFailed -> {
                 context.getString(R.string.organize_notification_failure_title) to
                     context.getString(R.string.organize_notification_failure_text)
             }

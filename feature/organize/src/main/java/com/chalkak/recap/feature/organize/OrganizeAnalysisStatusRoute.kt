@@ -137,7 +137,7 @@ private fun OrganizeAnalysisStatusScaffold(
                                 )
                             }
 
-                            OrganizeAnalysisStatusUiState.Failed -> {
+                            is OrganizeAnalysisStatusUiState.Failed -> {
                                 OrganizeFailedContent(
                                     modifier = Modifier
                                         .align(Alignment.Center)
@@ -145,6 +145,7 @@ private fun OrganizeAnalysisStatusScaffold(
                                         .offset(
                                             y = OrganizeAnalysisStatusTokens.FailedContentOffsetY,
                                         ),
+                                    usageLimitExceeded = state.usageLimitExceeded,
                                 )
                             }
 
@@ -222,7 +223,7 @@ private fun OrganizeAnalysisStatusUiState.contentKey(): String = when (this) {
     OrganizeAnalysisStatusUiState.Hidden -> "hidden"
     is OrganizeAnalysisStatusUiState.Progress -> "progress"
     is OrganizeAnalysisStatusUiState.Success -> "success"
-    OrganizeAnalysisStatusUiState.Failed -> "failed"
+    is OrganizeAnalysisStatusUiState.Failed -> "failed"
     is OrganizeAnalysisStatusUiState.PartialFailed -> "partial_failed"
 }
 
@@ -242,7 +243,7 @@ private fun OrganizeAnalysisStatusUiState.toButtonModel(): OrganizeStatusButtonM
         style = OrganizeStatusButtonStyle.Primary,
     )
 
-    OrganizeAnalysisStatusUiState.Failed -> OrganizeStatusButtonModel(
+    is OrganizeAnalysisStatusUiState.Failed -> OrganizeStatusButtonModel(
         textRes = R.string.organize_failed_close,
         style = OrganizeStatusButtonStyle.Primary,
     )
@@ -291,6 +292,40 @@ private fun OrganizeAnalysisStatusRouteSuccessPreview() {
     RECAPTheme {
         OrganizeAnalysisStatusRoute(
             uiState = OrganizeAnalysisStatusUiState.Success(successCount = 5),
+            onCancelClick = {},
+            onDismissClick = {},
+        )
+    }
+}
+
+@Preview(
+    name = "Organize Analysis Status Failed",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 780,
+)
+@Composable
+private fun OrganizeAnalysisStatusRouteFailedPreview() {
+    RECAPTheme {
+        OrganizeAnalysisStatusRoute(
+            uiState = OrganizeAnalysisStatusUiState.Failed(),
+            onCancelClick = {},
+            onDismissClick = {},
+        )
+    }
+}
+
+@Preview(
+    name = "Organize Analysis Status Failed Usage Limit",
+    showBackground = true,
+    widthDp = 360,
+    heightDp = 780,
+)
+@Composable
+private fun OrganizeAnalysisStatusRouteFailedUsageLimitPreview() {
+    RECAPTheme {
+        OrganizeAnalysisStatusRoute(
+            uiState = OrganizeAnalysisStatusUiState.Failed(usageLimitExceeded = true),
             onCancelClick = {},
             onDismissClick = {},
         )
