@@ -92,7 +92,7 @@ Recap은 `:app`을 중심으로 재사용 계층인 `:core:*`와 화면 단위 �
 | targetSdk / compileSdk | 37                         |
 | Kotlin / AGP           | 2.4.10 / 9.3.1             |
 | JDK                    | 17                         |
-| Version                | `1.1.3` (`versionCode` 11) |
+| Version                | `1.1.4` (`versionCode` 12) |
 | Build types            | debug, qa, release         |
 
 ## 문서
