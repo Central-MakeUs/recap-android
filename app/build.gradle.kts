@@ -16,7 +16,9 @@ plugins {
 android {
     namespace = "com.chalkak.recap"
     compileSdk {
-        version = release(37)
+        version = release(37) {
+            minorApiLevel = 2
+        }
     }
 
     val kakaoNativeAppKey = providers.provider {

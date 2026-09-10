@@ -10,7 +10,9 @@ plugins {
 android {
     namespace = "com.chalkak.recap.core.data"
     compileSdk {
-        version = release(37)
+        version = release(37) {
+            minorApiLevel = 2
+        }
     }
 
     // Debug-only: -P/gradle.properties, else local.properties (same as KAKAO_NATIVE_APP_KEY).
