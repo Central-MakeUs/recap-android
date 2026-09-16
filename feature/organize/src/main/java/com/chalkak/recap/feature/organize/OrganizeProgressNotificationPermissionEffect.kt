@@ -9,8 +9,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -37,8 +37,8 @@ fun OrganizeProgressNotificationPermissionEffect(
     if (LocalInspectionMode.current) return
 
     val context = LocalContext.current
-    var showNotificationPermissionSheet by remember { mutableStateOf(false) }
-    var awaitingSettingsPermissionResult by remember { mutableStateOf(false) }
+    var showNotificationPermissionSheet by rememberSaveable { mutableStateOf(false) }
+    var awaitingSettingsPermissionResult by rememberSaveable { mutableStateOf(false) }
     val currentTryMarkPromptShown = rememberUpdatedState(
         onTryMarkOrganizeNotificationPermissionPromptShown,
     )
