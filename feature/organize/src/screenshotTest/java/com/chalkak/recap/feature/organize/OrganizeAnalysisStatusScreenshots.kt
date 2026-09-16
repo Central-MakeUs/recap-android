@@ -38,7 +38,7 @@ fun OrganizeAnalysisStatusSuccessScreenshot() {
 fun OrganizeAnalysisStatusFailedScreenshot() {
     RECAPTheme(dynamicColor = false) {
         OrganizeAnalysisStatusRoute(
-            uiState = OrganizeAnalysisStatusUiState.Failed,
+            uiState = OrganizeAnalysisStatusUiState.Failed(),
             onCancelClick = {},
             onDismissClick = {},
         )

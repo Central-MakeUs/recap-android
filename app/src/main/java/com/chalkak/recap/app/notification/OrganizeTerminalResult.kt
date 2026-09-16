@@ -13,7 +13,9 @@ sealed interface OrganizeTerminalResult {
         val failCount: Int,
     ) : OrganizeTerminalResult
 
-    data object AllFailed : OrganizeTerminalResult
+    data class AllFailed(
+        val usageLimitExceeded: Boolean = false,
+    ) : OrganizeTerminalResult
 }
 
 object OrganizeTerminalResultMapper {
@@ -31,7 +33,7 @@ object OrganizeTerminalResultMapper {
             OrganizeStatus.FAILED,
             OrganizeStatus.CANCELLED,
             OrganizeStatus.PROCESSING,
-            -> OrganizeTerminalResult.AllFailed
+                -> OrganizeTerminalResult.AllFailed()
         }
     }
 
@@ -49,6 +51,6 @@ object OrganizeTerminalResultMapper {
                 failCount = (totalCount - persistedCount).coerceAtLeast(1),
             )
         }
-        return OrganizeTerminalResult.AllFailed
+        return OrganizeTerminalResult.AllFailed()
     }
 }

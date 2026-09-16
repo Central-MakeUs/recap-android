@@ -46,6 +46,15 @@ class UserPreferencesRepositoryTest {
     }
 
     @Test
+    fun `organize notification permission prompt is marked only once`() = runTest {
+        assertTrue(repository.tryMarkOrganizeNotificationPermissionPromptShown())
+
+        repository = UserPreferencesRepository(dataStore)
+
+        assertFalse(repository.tryMarkOrganizeNotificationPermissionPromptShown())
+    }
+
+    @Test
     fun `organizeCompleteNotificationEnabled migrates legacy key`() = runTest {
         val legacyKey = booleanPreferencesKey("organize_complete_enabled")
         dataStore = InMemoryPreferencesDataStore(

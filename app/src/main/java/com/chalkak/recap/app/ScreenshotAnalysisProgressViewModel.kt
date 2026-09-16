@@ -8,6 +8,7 @@ import com.chalkak.recap.app.notification.OrganizeProgressTracker
 import com.chalkak.recap.app.notification.OrganizeTerminalResult
 import com.chalkak.recap.app.notification.OrganizeTerminalResultMapper
 import com.chalkak.recap.core.data.UserPreferencesRepository
+import com.chalkak.recap.core.data.network.isUsageLimitExceeded
 import com.chalkak.recap.core.data.screenshot.analysis.RemoteOrganizeFailedException
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisInput
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRepository
@@ -91,6 +92,9 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
             userPreferencesRepository.setOrganizeCompleteNotificationEnabled(enabled)
         }
     }
+
+    suspend fun tryMarkOrganizeNotificationPermissionPromptShown(): Boolean =
+        userPreferencesRepository.tryMarkOrganizeNotificationPermissionPromptShown()
 
     fun startAnalysis(
         candidates: List<ScreenshotUploadCandidate>,
@@ -207,7 +211,7 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                         }
                         val terminal = when {
                             persisted.isEmpty() && outcome.preparationFailCount > 0 ->
-                                OrganizeTerminalResult.AllFailed
+                                OrganizeTerminalResult.AllFailed()
                             outcome.preparationFailCount > 0 ->
                                 OrganizeTerminalResult.PartialSuccess(
                                     successCount = persisted.size,
@@ -258,19 +262,23 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                 throw cancellation
             } catch (throwable: Exception) {
                 Timber.e(throwable, "Screenshot analysis failed")
-                if (throwable !is RemoteOrganizeFailedException) {
+                val usageLimitExceeded = throwable.isUsageLimitExceeded()
+                if (throwable !is RemoteOrganizeFailedException && !usageLimitExceeded) {
                     crashReporter.recordException(throwable)
                 }
+                val terminal = OrganizeTerminalResult.AllFailed(
+                    usageLimitExceeded = usageLimitExceeded,
+                )
                 _uiState.value = _uiState.value.copy(
                     isRunning = false,
                     errorMessage = ANALYSIS_ERROR_MESSAGE,
-                    terminalResult = OrganizeTerminalResult.AllFailed,
+                    terminalResult = terminal,
                 )
                 organizeProgressTracker.onTerminal(
                     runId = runId,
-                    result = OrganizeTerminalResult.AllFailed,
+                    result = terminal,
                 )
-                finishOrganizeSuccess(trace, OrganizeTerminalResult.AllFailed)
+                finishOrganizeSuccess(trace, terminal)
             } finally {
                 screenshotAnalysisRunState.endRun()
                 if (activeOrganizeRunToken === runToken) {
@@ -413,7 +421,7 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
             when (this) {
                 is OrganizeTerminalResult.AllSuccess -> "success"
                 is OrganizeTerminalResult.PartialSuccess -> "partial"
-                OrganizeTerminalResult.AllFailed -> "fail"
+                is OrganizeTerminalResult.AllFailed -> "fail"
             }
     }
 }

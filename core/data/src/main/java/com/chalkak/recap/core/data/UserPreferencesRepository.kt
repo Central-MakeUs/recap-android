@@ -39,6 +39,21 @@ class UserPreferencesRepository @Inject constructor(
         }
     }
 
+    /**
+     * Marks the organize notification permission prompt as shown and returns whether this call
+     * performed the first mark.
+     */
+    suspend fun tryMarkOrganizeNotificationPermissionPromptShown(): Boolean {
+        var marked = false
+        dataStore.edit { preferences ->
+            if (preferences[ORGANIZE_NOTIFICATION_PERMISSION_PROMPT_SHOWN] != true) {
+                preferences[ORGANIZE_NOTIFICATION_PERMISSION_PROMPT_SHOWN] = true
+                marked = true
+            }
+        }
+        return marked
+    }
+
     suspend fun getAiDataTransferConsentStatus(): ConsentStatus {
         val preferences = dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).first()
         return ConsentStatus(
@@ -75,6 +90,8 @@ class UserPreferencesRepository @Inject constructor(
             booleanPreferencesKey("organize_complete_notification_enabled")
         val LEGACY_ORGANIZE_COMPLETE_ENABLED =
             booleanPreferencesKey("organize_complete_enabled")
+        val ORGANIZE_NOTIFICATION_PERMISSION_PROMPT_SHOWN =
+            booleanPreferencesKey("organize_notification_permission_prompt_shown")
         val AI_DATA_TRANSFER_CONSENTED =
             booleanPreferencesKey("ai_data_transfer_consented")
         val AI_DATA_TRANSFER_CONSENTED_AT =

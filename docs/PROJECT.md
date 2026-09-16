@@ -14,9 +14,9 @@
 - 패키지명: `com.chalkak.recap`
 - minSdk: 30
 - targetSdk: 37
-- compileSdk: 37
-- versionCode: 11
-- versionName: `1.1.3`
+- compileSdk: 37.2
+- versionCode: 12
+- versionName: `1.1.4`
 - MainActivity: `app/src/main/java/com/chalkak/recap/MainActivity.kt`
 - Application: `app/src/main/java/com/chalkak/recap/RecapApplication.kt`
 

@@ -4,6 +4,7 @@ import android.net.Uri
 import com.chalkak.recap.app.notification.OrganizeProgressTracker
 import com.chalkak.recap.app.notification.OrganizeTerminalResult
 import com.chalkak.recap.core.data.UserPreferencesRepository
+import com.chalkak.recap.core.data.network.RemoteApiException
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisInput
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRepository
 import com.chalkak.recap.core.data.screenshot.analysis.ScreenshotAnalysisRunState
@@ -15,6 +16,7 @@ import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.core.model.PreparedScreenshot
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.core.model.capture.OrganizeStatus
+import com.chalkak.recap.core.model.observability.CrashReporter
 import com.chalkak.recap.core.model.observability.PerformanceTrace
 import com.chalkak.recap.core.model.observability.PerformanceTracer
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
@@ -53,6 +55,7 @@ class ScreenshotAnalysisProgressViewModelTest {
     private val userPreferencesRepository = mockk<UserPreferencesRepository>(relaxed = true)
     private val organizeCompleteNotificationEnabled = MutableStateFlow(false)
     private lateinit var performanceTracer: RecordingPerformanceTracer
+    private lateinit var crashReporter: RecordingCrashReporter
     private lateinit var viewModel: ScreenshotAnalysisProgressViewModel
 
     @BeforeEach
@@ -62,6 +65,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             userPreferencesRepository.organizeCompleteNotificationEnabled
         } returns organizeCompleteNotificationEnabled
         performanceTracer = RecordingPerformanceTracer()
+        crashReporter = RecordingCrashReporter()
         viewModel = ScreenshotAnalysisProgressViewModel(
             screenshotAnalysisRepository = repository,
             screenshotCardRepository = screenshotCardRepository,
@@ -69,7 +73,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             screenshotAnalysisRunState = screenshotAnalysisRunState,
             organizeProgressTracker = OrganizeProgressTracker(),
             userPreferencesRepository = userPreferencesRepository,
-            crashReporter = com.chalkak.recap.core.model.observability.CrashReporter.NoOp,
+            crashReporter = crashReporter,
             performanceTracer = performanceTracer,
         ).apply {
             ioDispatcher = testDispatcher
@@ -292,10 +296,37 @@ class ScreenshotAnalysisProgressViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals("Failed to analyze screenshot", state.errorMessage)
-        assertEquals(OrganizeTerminalResult.AllFailed, state.terminalResult)
+        assertEquals(OrganizeTerminalResult.AllFailed(), state.terminalResult)
         assertFalse(state.isRunning)
         assertTrue(state.isStatusVisible)
         assertFalse(screenshotAnalysisRunState.isRunning.value)
+        assertEquals(1, crashReporter.recorded.size)
+    }
+
+    @Test
+    fun `usage limit exceeded sets failed title flag and skips crash report`() =
+        runTest(testDispatcher) {
+            coEvery { repository.organize(any(), any()) } throws RemoteApiException(
+                code = "HTTP_429",
+                message = "이번 달 AI 분석 사용량을 초과했습니다",
+            )
+
+            viewModel.startAnalysis(samplePrepared(count = 1))
+            runCurrent()
+
+            val state = viewModel.uiState.value
+            assertEquals("Failed to analyze screenshot", state.errorMessage)
+            assertEquals(
+                OrganizeTerminalResult.AllFailed(usageLimitExceeded = true),
+                state.terminalResult,
+            )
+            assertEquals(
+                OrganizeAnalysisStatusUiState.Failed(usageLimitExceeded = true),
+                state.toOrganizeAnalysisStatusUiState(),
+            )
+            assertFalse(state.isRunning)
+            assertTrue(state.isStatusVisible)
+            assertTrue(crashReporter.recorded.isEmpty())
     }
 
     @Test
@@ -472,7 +503,7 @@ class ScreenshotAnalysisProgressViewModelTest {
         assertEquals("Failed to save screenshot analysis result", state.errorMessage)
         assertTrue(state.results.isEmpty())
         assertFalse(state.isRunning)
-        assertEquals(OrganizeTerminalResult.AllFailed, state.terminalResult)
+        assertEquals(OrganizeTerminalResult.AllFailed(), state.terminalResult)
         coVerify(exactly = 0) {
             screenshotCardRepository.saveAnalysisResults(
                 results = listOf(secondResult),
@@ -517,6 +548,22 @@ class ScreenshotAnalysisProgressViewModelTest {
             isFavorite = false,
             organizedAt = Instant.ofEpochMilli(1000L),
         )
+    }
+
+    private class RecordingCrashReporter : CrashReporter {
+        val recorded = mutableListOf<Throwable>()
+
+        override fun setCustomKey(key: String, value: String) = Unit
+
+        override fun setCustomKey(key: String, value: Boolean) = Unit
+
+        override fun setCustomKey(key: String, value: Int) = Unit
+
+        override fun log(message: String) = Unit
+
+        override fun recordException(throwable: Throwable) {
+            recorded += throwable
+        }
     }
 
     private class RecordingPerformanceTracer : PerformanceTracer {

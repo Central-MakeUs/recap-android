@@ -1,5 +1,6 @@
 package com.chalkak.recap.app
 
+import com.chalkak.recap.app.notification.OrganizeTerminalResult
 import com.chalkak.recap.feature.organize.OrganizeAnalysisStatusUiState
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -39,5 +40,24 @@ class OrganizeAnalysisStatusMapperTest {
         )
 
         assertNull(result)
+    }
+
+    @Test
+    fun `all failed maps usage limit exceeded to failed status`() {
+        val generic = ScreenshotAnalysisProgressUiState(
+            terminalResult = OrganizeTerminalResult.AllFailed(),
+        )
+        val usageLimit = ScreenshotAnalysisProgressUiState(
+            terminalResult = OrganizeTerminalResult.AllFailed(usageLimitExceeded = true),
+        )
+
+        assertEquals(
+            OrganizeAnalysisStatusUiState.Failed(),
+            generic.toOrganizeAnalysisStatusUiState(),
+        )
+        assertEquals(
+            OrganizeAnalysisStatusUiState.Failed(usageLimitExceeded = true),
+            usageLimit.toOrganizeAnalysisStatusUiState(),
+        )
     }
 }
