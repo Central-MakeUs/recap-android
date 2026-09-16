@@ -1,6 +1,5 @@
 package com.chalkak.recap.feature.developer
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -14,16 +13,8 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.outlined.BrokenImage
-import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.Image
-import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,27 +34,19 @@ import com.chalkak.recap.core.design.category.RecapCategoryType
 import com.chalkak.recap.core.design.component.bottomsheet.AiDataTransferConsentBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.LogoutConfirmationBottomSheet
 import com.chalkak.recap.core.design.component.bottomsheet.NotificationPermissionRequestBottomSheet
-import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheet
-import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheetDefaults
-import com.chalkak.recap.core.design.component.bottomsheet.RecapActionBottomSheetNoticeAlignment
-import com.chalkak.recap.core.design.component.bottomsheet.WithdrawalConfirmationBottomSheet
 import com.chalkak.recap.core.design.component.button.RecapButton
-import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.FrequentSaveTypeFolderCard
 import com.chalkak.recap.core.design.component.card.HomeFavoriteCard
-import com.chalkak.recap.core.design.component.card.OrganizedCaptureCard
 import com.chalkak.recap.core.design.component.card.OrganizedScreenshotSummaryCard
 import com.chalkak.recap.core.design.component.card.RecapHazeFolderCard
 import com.chalkak.recap.core.design.component.card.RecentOrganizedScreenshotCard
-import com.chalkak.recap.core.design.component.card.ReviewRequiredScreenshotCard
 import com.chalkak.recap.core.design.component.card.ScreenshotCard
 import com.chalkak.recap.core.design.component.card.ShareFavoriteGuideCard
 import com.chalkak.recap.core.design.component.chip.RecapCategoryRoundChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChip
 import com.chalkak.recap.core.design.component.chip.RecapCategoryTextChipWithIcon
 import com.chalkak.recap.core.design.component.chip.RecapSortToggle
-import com.chalkak.recap.core.design.component.icon.RecapHazeFolderIcon
 import com.chalkak.recap.core.design.component.input.RecapInputField
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.search.RecapSearchBar
@@ -91,15 +74,9 @@ import dev.chrisbanes.haze.rememberHazeState
 internal fun ComponentGardenScreen(
     modifier: Modifier = Modifier,
 ) {
-    var showPhotoAccessPermissionBottomSheet by remember { mutableStateOf(false) }
-    var showImageLoadFailureBottomSheet by remember { mutableStateOf(false) }
     var showNotificationPermissionRequestBottomSheet by remember { mutableStateOf(false) }
     var showAiDataTransferConsentBottomSheet by remember { mutableStateOf(false) }
-    var showNotificationDisabledBottomSheet by remember { mutableStateOf(false) }
-    var showDeletionConfirmationActionBottomSheet by remember { mutableStateOf(false) }
-    var showUnsavedChangesBottomSheet by remember { mutableStateOf(false) }
     var showLogoutConfirmationBottomSheet by remember { mutableStateOf(false) }
-    var showWithdrawalConfirmationBottomSheet by remember { mutableStateOf(false) }
     var showScreenshotPicker by remember { mutableStateOf(false) }
     var showConfirmPopupError by remember { mutableStateOf(false) }
     var showConfirmPopupPrimary by remember { mutableStateOf(false) }
@@ -108,7 +85,6 @@ internal fun ComponentGardenScreen(
             OrganizeUiState(isLoading = false),
         )
     }
-    var withdrawalConfirmationChecked by remember { mutableStateOf(false) }
     var searchQuery by remember { mutableStateOf("") }
     var inputFieldValue by remember { mutableStateOf("") }
     var multilineInputFieldValue by remember { mutableStateOf("") }
@@ -142,14 +118,6 @@ internal fun ComponentGardenScreen(
             ComponentGardenSection(
                 title = stringResource(R.string.component_garden_home_cards_section_title),
             ) {
-                ReviewRequiredScreenshotCard(
-                    reviewRequiredCount = ComponentGardenReviewRequiredCount,
-                    onClick = {},
-                )
-                OrganizedCaptureCard(
-                    organizedCaptureCount = ComponentGardenOrganizedCaptureCount,
-                    onClick = {},
-                )
                 OrganizedScreenshotSummaryCard(
                     organizedCount = ComponentGardenOrganizedScreenshotSummaryCount,
                 )
@@ -175,11 +143,6 @@ internal fun ComponentGardenScreen(
                 title = stringResource(R.string.component_garden_haze_folder_cards_section_title),
             ) {
                 ComponentGardenHazeFolderCards()
-            }
-            ComponentGardenSection(
-                title = stringResource(R.string.component_garden_haze_folder_icon_section_title),
-            ) {
-                RecapHazeFolderIcon(size = 120.dp)
             }
             ComponentGardenSection(
                 title = stringResource(R.string.component_garden_category_chips_section_title),
@@ -331,26 +294,6 @@ internal fun ComponentGardenScreen(
             ) {
                 Button(
                     modifier = Modifier.fillMaxWidth(),
-                    onClick = { showPhotoAccessPermissionBottomSheet = true },
-                ) {
-                    Text(
-                        text = stringResource(
-                            R.string.component_garden_photo_access_permission_bottom_sheet_button
-                        ),
-                    )
-                }
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { showImageLoadFailureBottomSheet = true },
-                ) {
-                    Text(
-                        text = stringResource(
-                            R.string.component_garden_image_load_failure_bottom_sheet_button
-                        ),
-                    )
-                }
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
                     onClick = { showNotificationPermissionRequestBottomSheet = true },
                 ) {
                     Text(
@@ -369,36 +312,7 @@ internal fun ComponentGardenScreen(
                         ),
                     )
                 }
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { showNotificationDisabledBottomSheet = true },
-                ) {
-                    Text(
-                        text = stringResource(
-                            R.string.component_garden_notification_disabled_bottom_sheet_button
-                        ),
-                    )
-                }
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { showDeletionConfirmationActionBottomSheet = true },
-                ) {
-                    Text(
-                        text = stringResource(
-                            R.string.component_garden_deletion_confirmation_bottom_sheet_button
-                        ),
-                    )
-                }
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = { showUnsavedChangesBottomSheet = true },
-                ) {
-                    Text(
-                        text = stringResource(
-                            R.string.component_garden_unsaved_changes_bottom_sheet_button
-                        ),
-                    )
-                }
+
                 Button(
                     modifier = Modifier.fillMaxWidth(),
                     onClick = { showLogoutConfirmationBottomSheet = true },
@@ -406,19 +320,6 @@ internal fun ComponentGardenScreen(
                     Text(
                         text = stringResource(
                             R.string.component_garden_logout_confirmation_bottom_sheet_button
-                        ),
-                    )
-                }
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        withdrawalConfirmationChecked = false
-                        showWithdrawalConfirmationBottomSheet = true
-                    },
-                ) {
-                    Text(
-                        text = stringResource(
-                            R.string.component_garden_withdrawal_confirmation_bottom_sheet_button
                         ),
                     )
                 }
@@ -435,45 +336,6 @@ internal fun ComponentGardenScreen(
             }
         }
     }
-
-    if (showPhotoAccessPermissionBottomSheet) {
-        RecapActionBottomSheet(
-            icon = Icons.Outlined.Image,
-            iconContentDescription = stringResource(
-                R.string.photo_access_permission_icon_content_description
-            ),
-            iconStyle = RecapActionBottomSheetDefaults.primaryIconStyle(),
-            title = stringResource(R.string.photo_access_permission_title),
-            description = stringResource(R.string.photo_access_permission_description),
-            topNotice = stringResource(R.string.photo_access_permission_notice),
-            primaryButtonText = stringResource(R.string.photo_access_permission_request_permission),
-            secondaryButtonText = stringResource(R.string.photo_access_permission_later_button),
-            onDismissRequest = { showPhotoAccessPermissionBottomSheet = false },
-            onPrimaryClick = { showPhotoAccessPermissionBottomSheet = false },
-            onSecondaryClick = { showPhotoAccessPermissionBottomSheet = false },
-        )
-    }
-    if (showImageLoadFailureBottomSheet) {
-        RecapActionBottomSheet(
-            icon = Icons.Outlined.BrokenImage,
-            iconContentDescription = null,
-            iconStyle = RecapActionBottomSheetDefaults.errorIconStyle(),
-            title = stringResource(R.string.image_load_failure_title),
-            description = stringResource(R.string.image_load_failure_description),
-            primaryButtonText = stringResource(R.string.image_load_failure_retry_button),
-            secondaryButtonText = stringResource(R.string.image_load_failure_home_button),
-            onDismissRequest = { showImageLoadFailureBottomSheet = false },
-            onPrimaryClick = { showImageLoadFailureBottomSheet = false },
-            onSecondaryClick = { showImageLoadFailureBottomSheet = false },
-            primaryButtonLeadingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.Refresh,
-                    contentDescription = null,
-                    modifier = Modifier.fillMaxSize(),
-                )
-            },
-        )
-    }
     if (showNotificationPermissionRequestBottomSheet) {
         NotificationPermissionRequestBottomSheet(
             onDismissRequest = { showNotificationPermissionRequestBottomSheet = false },
@@ -489,85 +351,11 @@ internal fun ComponentGardenScreen(
             onPrivacyPolicyClick = {},
         )
     }
-    if (showNotificationDisabledBottomSheet) {
-        RecapActionBottomSheet(
-            icon = Icons.Outlined.NotificationsOff,
-            iconContentDescription = stringResource(
-                R.string.notification_disabled_icon_content_description
-            ),
-            iconStyle = RecapActionBottomSheetDefaults.surfaceVariantIconStyle(),
-            title = stringResource(R.string.notification_disabled_title),
-            description = stringResource(R.string.notification_disabled_description),
-            bottomNotice = stringResource(R.string.notification_disabled_notice),
-            bottomNoticeAlignment = RecapActionBottomSheetNoticeAlignment.Center,
-            primaryButtonText = stringResource(R.string.notification_disabled_settings_button),
-            secondaryButtonText = stringResource(R.string.notification_disabled_later_button),
-            bottomPadding = 40.dp,
-            onDismissRequest = { showNotificationDisabledBottomSheet = false },
-            onPrimaryClick = { showNotificationDisabledBottomSheet = false },
-            onSecondaryClick = { showNotificationDisabledBottomSheet = false },
-        )
-    }
-    if (showDeletionConfirmationActionBottomSheet) {
-        RecapActionBottomSheet(
-            icon = Icons.Outlined.Delete,
-            iconContentDescription = stringResource(
-                R.string.deletion_confirmation_icon_content_description
-            ),
-            iconStyle = RecapActionBottomSheetDefaults.deleteIconStyle(),
-            title = stringResource(R.string.deletion_confirmation_preview_title),
-            description = stringResource(R.string.deletion_confirmation_preview_description),
-            primaryButtonText = stringResource(R.string.deletion_confirmation_delete_button),
-            secondaryButtonText = stringResource(R.string.deletion_confirmation_cancel_button),
-            onDismissRequest = { showDeletionConfirmationActionBottomSheet = false },
-            onPrimaryClick = { showDeletionConfirmationActionBottomSheet = false },
-            onSecondaryClick = { showDeletionConfirmationActionBottomSheet = false },
-            textSpacing = 12.dp,
-            bottomPadding = 40.dp,
-            primaryButtonColors = RecapActionBottomSheetDefaults.destructiveFilledColors(),
-            primaryButtonElevation = 0.dp,
-            secondaryButtonColors = RecapButtonDefaults.outlinedColors(),
-            secondaryButtonSize = RecapButtonSize.Medium,
-            secondaryButtonBorder = BorderStroke(
-                width = 1.dp,
-                color = MaterialTheme.colorScheme.outlineVariant,
-            ),
-        )
-    }
-    if (showUnsavedChangesBottomSheet) {
-        RecapActionBottomSheet(
-            icon = Icons.Outlined.ErrorOutline,
-            iconContentDescription = stringResource(
-                R.string.unsaved_changes_icon_content_description
-            ),
-            iconStyle = RecapActionBottomSheetDefaults.warningIconStyle(),
-            title = stringResource(R.string.unsaved_changes_title),
-            description = stringResource(R.string.unsaved_changes_description),
-            primaryButtonText = stringResource(R.string.unsaved_changes_keep_editing_button),
-            secondaryButtonText = stringResource(
-                R.string.unsaved_changes_exit_without_saving_button
-            ),
-            onDismissRequest = { showUnsavedChangesBottomSheet = false },
-            onPrimaryClick = { showUnsavedChangesBottomSheet = false },
-            onSecondaryClick = { showUnsavedChangesBottomSheet = false },
-            textSpacing = 12.dp,
-            secondaryButtonColors = RecapActionBottomSheetDefaults.destructiveTextColors(),
-        )
-    }
     if (showLogoutConfirmationBottomSheet) {
         LogoutConfirmationBottomSheet(
             onDismissRequest = { showLogoutConfirmationBottomSheet = false },
             onCancelClick = { showLogoutConfirmationBottomSheet = false },
             onLogoutClick = { showLogoutConfirmationBottomSheet = false },
-        )
-    }
-    if (showWithdrawalConfirmationBottomSheet) {
-        WithdrawalConfirmationBottomSheet(
-            checked = withdrawalConfirmationChecked,
-            onCheckedChange = { withdrawalConfirmationChecked = it },
-            onDismissRequest = { showWithdrawalConfirmationBottomSheet = false },
-            onCancelClick = { showWithdrawalConfirmationBottomSheet = false },
-            onWithdrawClick = { showWithdrawalConfirmationBottomSheet = false },
         )
     }
     if (showScreenshotPicker) {
@@ -644,7 +432,7 @@ private fun OrganizeUiState.reduceGardenAction(action: OrganizeAction): Organize
         OrganizeAction.StartOrganizing,
         OrganizeAction.AgreeAiDataTransferConsent,
         OrganizeAction.DismissAiDataTransferConsent,
-        -> this
+            -> this
     }
 }
 
@@ -754,8 +542,6 @@ private fun ComponentGardenScreenPreview() {
     }
 }
 
-private const val ComponentGardenReviewRequiredCount = 3
-private const val ComponentGardenOrganizedCaptureCount = 12
 private const val ComponentGardenOrganizedScreenshotSummaryCount = 128
 private const val ComponentGardenFrequentSaveTypeCount = 12
 private const val ComponentGardenScreenshotPickerMaxCount = 20
