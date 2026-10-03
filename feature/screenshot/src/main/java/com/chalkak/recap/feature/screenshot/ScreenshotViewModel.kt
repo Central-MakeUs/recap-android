@@ -17,6 +17,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -30,10 +32,13 @@ class ScreenshotViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<ScreenshotUiState>(ScreenshotUiState.Loading)
     val uiState: StateFlow<ScreenshotUiState> = _uiState.asStateFlow()
 
-    private val eventChannel = Channel<ScreenshotEvent>(Channel.BUFFERED)
+    private val eventChannel = Channel<BoundScreenshotEvent>(Channel.BUFFERED)
     val events = eventChannel.receiveAsFlow()
+        .filter { it.bindingGeneration == bindingGeneration }
+        .map { it.event }
 
     private var boundCaptureId: Long? = null
+    private var bindingGeneration = 0L
     private var observeJob: Job? = null
     private var favoriteJob: Job? = null
     private var saveJob: Job? = null
@@ -47,6 +52,7 @@ class ScreenshotViewModel @Inject constructor(
         if (boundCaptureId == captureId && observeJob?.isActive == true) {
             return
         }
+        bindingGeneration += 1
         boundCaptureId = captureId
         observeCard(captureId)
     }
@@ -149,6 +155,7 @@ class ScreenshotViewModel @Inject constructor(
     private fun toggleFavorite() {
         val content = _uiState.value as? ScreenshotUiState.Content ?: return
         if (content.isFavoriteUpdating || content.isDeleting) return
+        val generation = bindingGeneration
         val captureId = content.card.analysisResult.captureId
         val previousFavorite = content.card.analysisResult.isFavorite
         val nextFavorite = !previousFavorite
@@ -163,12 +170,14 @@ class ScreenshotViewModel @Inject constructor(
             )
         }
         favoriteJob = viewModelScope.launch {
+            if (generation != bindingGeneration) return@launch
             val result = withContext(ioDispatcher) {
                 captureMutationRepository.updateFavorite(
                     captureId = captureId,
                     isFavorite = nextFavorite,
                 )
             }
+            if (generation != bindingGeneration) return@launch
             if (result.isFailure) {
                 _uiState.updateContent {
                     it.copy(
@@ -182,7 +191,7 @@ class ScreenshotViewModel @Inject constructor(
                 return@launch
             }
             _uiState.updateContent { it.copy(isFavoriteUpdating = false) }
-            eventChannel.send(ScreenshotEvent.ShowFavoriteToast(isFavorite = nextFavorite))
+            sendEvent(generation, ScreenshotEvent.ShowFavoriteToast(isFavorite = nextFavorite))
         }
     }
 
@@ -253,9 +262,11 @@ class ScreenshotViewModel @Inject constructor(
             }
             return
         }
+        val generation = bindingGeneration
         val captureId = content.card.analysisResult.captureId
         saveJob?.cancel()
         saveJob = viewModelScope.launch {
+            if (generation != bindingGeneration) return@launch
             _uiState.updateContent {
                 it.copy(
                     editDraft = normalized,
@@ -275,33 +286,41 @@ class ScreenshotViewModel @Inject constructor(
                     )
                 }
             } catch (cancellation: CancellationException) {
-                _uiState.updateContent { it.copy(isSaving = false) }
+                if (generation == bindingGeneration) {
+                    _uiState.updateContent { it.copy(isSaving = false) }
+                }
                 throw cancellation
             } catch (_: Exception) {
+                if (generation != bindingGeneration) return@launch
                 _uiState.updateContent { it.copy(isSaving = false) }
-                eventChannel.send(
+                sendEvent(
+                    generation,
                     ScreenshotEvent.SaveFailed(R.string.screenshot_edit_save_error),
                 )
                 return@launch
             }
+            if (generation != bindingGeneration) return@launch
             if (updated.isFailure) {
                 _uiState.updateContent { it.copy(isSaving = false) }
-                eventChannel.send(
+                sendEvent(
+                    generation,
                     ScreenshotEvent.SaveFailed(R.string.screenshot_edit_save_error),
                 )
                 return@launch
             }
             _uiState.updateContent { it.copy(isSaving = false) }
-            eventChannel.send(ScreenshotEvent.SaveSucceeded)
+            sendEvent(generation, ScreenshotEvent.SaveSucceeded)
         }
     }
 
     private fun deleteScreenshot() {
         val content = _uiState.value as? ScreenshotUiState.Content ?: return
         if (content.isDeleting || content.isSaving) return
+        val generation = bindingGeneration
         val captureId = content.card.analysisResult.captureId
         deleteJob?.cancel()
         deleteJob = viewModelScope.launch {
+            if (generation != bindingGeneration) return@launch
             _uiState.updateContent {
                 it.copy(
                     isDeleting = true,
@@ -316,6 +335,7 @@ class ScreenshotViewModel @Inject constructor(
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (_: Exception) {
+                if (generation != bindingGeneration) return@launch
                 _uiState.updateContent {
                     it.copy(
                         isDeleting = false,
@@ -324,6 +344,7 @@ class ScreenshotViewModel @Inject constructor(
                 }
                 return@launch
             }
+            if (generation != bindingGeneration) return@launch
             val deleteResult = result.getOrNull()
             if (result.isFailure ||
                 deleteResult == null ||
@@ -337,7 +358,7 @@ class ScreenshotViewModel @Inject constructor(
                 }
                 return@launch
             }
-            eventChannel.send(ScreenshotEvent.DeleteSucceeded)
+            sendEvent(generation, ScreenshotEvent.DeleteSucceeded)
         }
     }
 
@@ -347,10 +368,12 @@ class ScreenshotViewModel @Inject constructor(
     ) {
         val content = _uiState.value as? ScreenshotUiState.Content ?: return
         if (content.isReporting || content.isDeleting || content.isSaving) return
+        val generation = bindingGeneration
         val captureId = content.card.analysisResult.captureId
         val normalizedDetail = detail?.trim()?.takeIf { it.isNotEmpty() }
         reportJob?.cancel()
         reportJob = viewModelScope.launch {
+            if (generation != bindingGeneration) return@launch
             _uiState.updateContent {
                 it.copy(
                     isReporting = true,
@@ -366,18 +389,23 @@ class ScreenshotViewModel @Inject constructor(
                     )
                 }
             } catch (cancellation: CancellationException) {
-                _uiState.updateContent { it.copy(isReporting = false) }
+                if (generation == bindingGeneration) {
+                    _uiState.updateContent { it.copy(isReporting = false) }
+                }
                 throw cancellation
             } catch (_: Exception) {
+                if (generation != bindingGeneration) return@launch
                 _uiState.updateContent { it.copy(isReporting = false) }
-                eventChannel.send(
+                sendEvent(
+                    generation,
                     ScreenshotEvent.ReportFailed(R.string.screenshot_report_error_toast),
                 )
                 return@launch
             }
+            if (generation != bindingGeneration) return@launch
             _uiState.updateContent { it.copy(isReporting = false) }
             if (result.isSuccess) {
-                eventChannel.send(ScreenshotEvent.ReportSucceeded)
+                sendEvent(generation, ScreenshotEvent.ReportSucceeded)
                 return@launch
             }
             val apiCode = (result.exceptionOrNull() as? RemoteApiException)?.code
@@ -385,12 +413,19 @@ class ScreenshotViewModel @Inject constructor(
                 "ALREADY_REPORTED" -> R.string.screenshot_report_already_reported_toast
                 else -> R.string.screenshot_report_error_toast
             }
-            eventChannel.send(
+            sendEvent(
+                generation,
                 ScreenshotEvent.ReportFailed(
                     messageResId = messageResId,
                     dismissSheet = apiCode == "ALREADY_REPORTED",
                 ),
             )
+        }
+    }
+
+    private suspend fun sendEvent(generation: Long, event: ScreenshotEvent) {
+        if (generation == bindingGeneration) {
+            eventChannel.send(BoundScreenshotEvent(generation, event))
         }
     }
 
@@ -402,3 +437,8 @@ class ScreenshotViewModel @Inject constructor(
         }
     }
 }
+
+private data class BoundScreenshotEvent(
+    val bindingGeneration: Long,
+    val event: ScreenshotEvent,
+)
