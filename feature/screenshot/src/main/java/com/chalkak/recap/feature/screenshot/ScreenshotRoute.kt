@@ -1,5 +1,6 @@
 package com.chalkak.recap.feature.screenshot
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.ExperimentalSharedTransitionApi
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.layout.fillMaxSize
@@ -161,6 +162,7 @@ fun ScreenshotRoute(
     fun leaveEditScreen() {
         // Prefer uiState over contentState snapshot (NavEntry content can be remembered).
         val content = uiState as? ScreenshotUiState.Content
+        if (content?.isSaving == true) return
         if (content != null && content.hasUnsavedEditChanges()) {
             viewModel.onAction(ScreenshotAction.ShowDiscardEditConfirmDialog)
             return
@@ -348,6 +350,12 @@ fun ScreenshotRoute(
             },
         )
     }
+
+    // A direct swipe-to-edit entry has no inner destination to pop, so own its back action.
+    BackHandler(
+        enabled = backStack.size == 1 && currentTop is ScreenshotDestination.Edit,
+        onBack = ::leaveEditScreen,
+    )
 
     if (showActionSheet && contentState != null) {
         ScreenshotActionBottomSheet(
