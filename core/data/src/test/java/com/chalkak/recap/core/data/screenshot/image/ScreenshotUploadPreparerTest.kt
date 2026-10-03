@@ -18,6 +18,7 @@ import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -26,6 +27,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [30])
@@ -42,6 +44,7 @@ class ScreenshotUploadPreparerTest {
     }
 
     @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun `prepare converts png to jpeg bytes`() = runTest {
         val source = writeSolidPng(fileName = "sample.png", width = 40, height = 30)
 
@@ -52,6 +55,7 @@ class ScreenshotUploadPreparerTest {
     }
 
     @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun `prepare converts jpeg to jpeg bytes preserving size`() = runTest {
         val source = writeSolidJpeg(fileName = "sample.jpg", width = 50, height = 20)
 
@@ -61,6 +65,7 @@ class ScreenshotUploadPreparerTest {
     }
 
     @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun `prepare applies exif orientation to output dimensions`() = runTest {
         val source = writeSolidJpeg(fileName = "oriented.jpg", width = 60, height = 20)
         ExifInterface(source.absolutePath).apply {
@@ -77,82 +82,144 @@ class ScreenshotUploadPreparerTest {
     }
 
     @Test
-    fun `exif transforms preserve pixel positions for rotate and flip orientations`() {
-        val source = bitmapOf(
-            width = 2,
-            colors = intArrayOf(
-                Color.RED, Color.GREEN,
-                Color.BLUE, Color.YELLOW,
-                Color.CYAN, Color.MAGENTA,
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `exif transforms preserve pixel positions for every orientation`() {
+        val originalColors = intArrayOf(
+            Color.RED, Color.GREEN,
+            Color.BLUE, Color.YELLOW,
+            Color.CYAN, Color.MAGENTA,
+        )
+        val source = bitmapOf(width = 2, colors = originalColors)
+        val cases = listOf(
+            Triple(ExifInterface.ORIENTATION_NORMAL, 2, originalColors),
+            Triple(ExifInterface.ORIENTATION_UNDEFINED, 2, originalColors),
+            Triple(
+                ExifInterface.ORIENTATION_FLIP_HORIZONTAL,
+                2,
+                intArrayOf(
+                    Color.GREEN, Color.RED,
+                    Color.YELLOW, Color.BLUE,
+                    Color.MAGENTA, Color.CYAN,
+                ),
+            ),
+            Triple(
+                ExifInterface.ORIENTATION_ROTATE_180,
+                2,
+                intArrayOf(
+                    Color.MAGENTA, Color.CYAN,
+                    Color.YELLOW, Color.BLUE,
+                    Color.GREEN, Color.RED,
+                ),
+            ),
+            Triple(
+                ExifInterface.ORIENTATION_FLIP_VERTICAL,
+                2,
+                intArrayOf(
+                    Color.CYAN, Color.MAGENTA,
+                    Color.BLUE, Color.YELLOW,
+                    Color.RED, Color.GREEN,
+                ),
+            ),
+            Triple(
+                ExifInterface.ORIENTATION_TRANSPOSE,
+                3,
+                intArrayOf(
+                    Color.RED, Color.BLUE, Color.CYAN,
+                    Color.GREEN, Color.YELLOW, Color.MAGENTA,
+                ),
+            ),
+            Triple(
+                ExifInterface.ORIENTATION_ROTATE_90,
+                3,
+                intArrayOf(
+                    Color.CYAN, Color.BLUE, Color.RED,
+                    Color.MAGENTA, Color.YELLOW, Color.GREEN,
+                ),
+            ),
+            Triple(
+                ExifInterface.ORIENTATION_TRANSVERSE,
+                3,
+                intArrayOf(
+                    Color.MAGENTA, Color.YELLOW, Color.GREEN,
+                    Color.CYAN, Color.BLUE, Color.RED,
+                ),
+            ),
+            Triple(
+                ExifInterface.ORIENTATION_ROTATE_270,
+                3,
+                intArrayOf(
+                    Color.GREEN, Color.YELLOW, Color.MAGENTA,
+                    Color.RED, Color.BLUE, Color.CYAN,
+                ),
             ),
         )
 
-        val rotated90 = preparer.applyExifOrientation(
-            source,
-            ExifInterface.ORIENTATION_ROTATE_90,
-        )
-        assertPixels(
-            rotated90,
-            width = 3,
-            colors = intArrayOf(
-                Color.CYAN, Color.BLUE, Color.RED,
-                Color.MAGENTA, Color.YELLOW, Color.GREEN,
-            ),
-        )
-
-        val rotated180 = preparer.applyExifOrientation(
-            source,
-            ExifInterface.ORIENTATION_ROTATE_180,
-        )
-        assertPixels(
-            rotated180,
-            width = 2,
-            colors = intArrayOf(
-                Color.MAGENTA, Color.CYAN,
-                Color.YELLOW, Color.BLUE,
-                Color.GREEN, Color.RED,
-            ),
-        )
-
-        val flipped = preparer.applyExifOrientation(
-            source,
-            ExifInterface.ORIENTATION_FLIP_HORIZONTAL,
-        )
-        assertPixels(
-            flipped,
-            width = 2,
-            colors = intArrayOf(
-                Color.GREEN, Color.RED,
-                Color.YELLOW, Color.BLUE,
-                Color.MAGENTA, Color.CYAN,
-            ),
-        )
-
-        val square = bitmapOf(
-            width = 2,
-            colors = intArrayOf(Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW),
-        )
-        val squareRotated90 = preparer.applyExifOrientation(
-            square,
-            ExifInterface.ORIENTATION_ROTATE_90,
-        )
-        assertPixels(
-            squareRotated90,
-            width = 2,
-            colors = intArrayOf(Color.BLUE, Color.RED, Color.YELLOW, Color.GREEN),
-        )
-
-        rotated90.recycle()
-        rotated180.recycle()
-        flipped.recycle()
-        squareRotated90.recycle()
-        square.recycle()
+        cases.forEach { (orientation, width, colors) ->
+            val transformed = preparer.applyExifOrientation(source, orientation)
+            assertPixels(transformed, width = width, colors = colors)
+            assertFalse(source.isRecycled)
+            if (transformed !== source) {
+                transformed.recycle()
+            }
+        }
         source.recycle()
     }
 
     @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `exif rotation transforms square image without changing dimensions`() {
+        val source = bitmapOf(
+            width = 2,
+            colors = intArrayOf(Color.RED, Color.GREEN, Color.BLUE, Color.YELLOW),
+        )
+
+        val rotated = preparer.applyExifOrientation(source, ExifInterface.ORIENTATION_ROTATE_90)
+
+        assertPixels(
+            rotated,
+            width = 2,
+            colors = intArrayOf(Color.BLUE, Color.RED, Color.YELLOW, Color.GREEN),
+        )
+        rotated.recycle()
+        source.recycle()
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `opaque source skips white flatten bitmap allocation`() {
+        val source = bitmapOf(width = 1, colors = intArrayOf(Color.RED))
+        source.setHasAlpha(false)
+
+        val flattened = preparer.flattenOntoWhite(source)
+
+        assertSame(source, flattened)
+        assertEquals(Color.RED, source.getPixel(0, 0))
+        source.recycle()
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `white flatten blends partially transparent pixels`() {
+        val source = bitmapOf(
+            width = 3,
+            colors = intArrayOf(Color.TRANSPARENT, Color.argb(128, 255, 0, 0), Color.BLUE),
+        )
+
+        val flattened = preparer.flattenOntoWhite(source)
+
+        assertPixels(
+            flattened,
+            width = 3,
+            colors = intArrayOf(Color.WHITE, Color.rgb(255, 127, 127), Color.BLUE),
+        )
+        assertFalse(source.isRecycled)
+        flattened.recycle()
+        source.recycle()
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun `prepare flattens alpha onto white background`() = runTest {
-        // Robolectric PNG round-trip may drop alpha; exercise flatten with an in-memory ARGB bitmap.
         val source = Bitmap.createBitmap(8, 8, Bitmap.Config.ARGB_8888)
         for (y in 0 until 8) {
             for (x in 0 until 8) {
@@ -203,9 +270,12 @@ class ScreenshotUploadPreparerTest {
     }
 
     @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
     fun `prepare propagates cancellation`() = runTest {
         val source = writeSolidJpeg(fileName = "cancel.jpg", width = 8, height = 8)
-        preparer.jpegCompressor = JpegBitmapCompressor { _, _ ->
+        var compressionBitmap: Bitmap? = null
+        preparer.jpegCompressor = JpegBitmapCompressor { bitmap, _ ->
+            compressionBitmap = bitmap
             throw CancellationException("cancelled during compress")
         }
         val job = async {
@@ -219,6 +289,7 @@ class ScreenshotUploadPreparerTest {
         } finally {
             job.cancelAndJoin()
         }
+        assertTrue(requireNotNull(compressionBitmap).isRecycled)
     }
 
     @Test
@@ -259,6 +330,8 @@ class ScreenshotUploadPreparerTest {
         assertEquals(2, compressionCalls.get())
     }
 
+    // Host native graphics has no HEIC decoder; these shadow tests cover format routing.
+    // Actual HEIC/HEIF decoding must also be verified on an Android device.
     @Test
     fun `prepare heic path produces jpeg`() = runTest {
         val fixture = copyFixture("sample.heic")

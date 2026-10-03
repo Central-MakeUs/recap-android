@@ -3,8 +3,10 @@ package com.chalkak.recap.core.data.screenshot.image
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ImageDecoder
+import android.graphics.Matrix
 import android.net.Uri
 import androidx.annotation.VisibleForTesting
 import androidx.core.graphics.createBitmap
@@ -93,7 +95,6 @@ class ScreenshotUploadPreparer @Inject constructor(
             }
             coroutineContext.ensureActive()
 
-            // Flatten before orientation so pixel access stays on a BitmapFactory-backed bitmap.
             flattened = flattenOntoWhite(decoded)
             if (flattened !== decoded) {
                 decoded.recycle()
@@ -107,6 +108,9 @@ class ScreenshotUploadPreparer @Inject constructor(
                 decoderAppliedExifOrientation = decodedResult.appliedExifOrientation,
             )
             if (oriented !== flattened) {
+                if (decoded === flattened) {
+                    decoded = null
+                }
                 flattened.recycle()
                 flattened = null
             }
@@ -157,8 +161,12 @@ class ScreenshotUploadPreparer @Inject constructor(
             )
             throw wrapped
         } finally {
-            oriented?.recycle()
-            flattened?.recycle()
+            if (oriented !== flattened && oriented !== decoded) {
+                oriented?.recycle()
+            }
+            if (flattened !== decoded) {
+                flattened?.recycle()
+            }
             decoded?.recycle()
         }
     }
@@ -234,28 +242,18 @@ class ScreenshotUploadPreparer @Inject constructor(
 
     @VisibleForTesting
     internal fun flattenOntoWhite(source: Bitmap): Bitmap {
-        val width = source.width
-        val height = source.height
-        val flattened = createBitmap(width, height)
-        val pixels = IntArray(width * height)
-        source.getPixels(pixels, 0, width, 0, 0, width, height)
-        for (index in pixels.indices) {
-            val pixel = pixels[index]
-            val alpha = Color.alpha(pixel)
-            pixels[index] = when {
-                alpha == 0 -> Color.WHITE
-                alpha == 255 -> pixel or opaqueAlphaMask
-                else -> {
-                    val inverseAlpha = 255 - alpha
-                    Color.rgb(
-                        (Color.red(pixel) * alpha + 255 * inverseAlpha) / 255,
-                        (Color.green(pixel) * alpha + 255 * inverseAlpha) / 255,
-                        (Color.blue(pixel) * alpha + 255 * inverseAlpha) / 255,
-                    )
-                }
-            }
+        if (!source.hasAlpha()) {
+            return source
         }
-        flattened.setPixels(pixels, 0, width, 0, 0, width, height)
+        val flattened = createBitmap(source.width, source.height)
+        try {
+            val canvas = Canvas(flattened)
+            canvas.drawColor(Color.WHITE)
+            canvas.drawBitmap(source, 0f, 0f, null)
+        } catch (error: Throwable) {
+            flattened.recycle()
+            throw error
+        }
         return flattened
     }
 
@@ -270,70 +268,35 @@ class ScreenshotUploadPreparer @Inject constructor(
 
     @VisibleForTesting
     internal fun applyExifOrientation(source: Bitmap, orientation: Int): Bitmap {
-        if (orientation == ExifInterface.ORIENTATION_NORMAL ||
-            orientation == ExifInterface.ORIENTATION_UNDEFINED
-        ) {
-            return source
-        }
-        val sourceWidth = source.width
-        val sourceHeight = source.height
-        val swapsAxes = orientation == ExifInterface.ORIENTATION_TRANSPOSE ||
-                orientation == ExifInterface.ORIENTATION_ROTATE_90 ||
-                orientation == ExifInterface.ORIENTATION_TRANSVERSE ||
-                orientation == ExifInterface.ORIENTATION_ROTATE_270
-        val destinationWidth = if (swapsAxes) sourceHeight else sourceWidth
-        val destinationHeight = if (swapsAxes) sourceWidth else sourceHeight
-        val sourcePixels = IntArray(sourceWidth * sourceHeight)
-        val destinationPixels = IntArray(destinationWidth * destinationHeight)
-        source.getPixels(
-            sourcePixels,
-            0,
-            sourceWidth,
-            0,
-            0,
-            sourceWidth,
-            sourceHeight,
-        )
-        for (sourceY in 0 until sourceHeight) {
-            for (sourceX in 0 until sourceWidth) {
-                val (destinationX, destinationY) = when (orientation) {
-                    ExifInterface.ORIENTATION_FLIP_HORIZONTAL ->
-                        sourceWidth - 1 - sourceX to sourceY
-
-                    ExifInterface.ORIENTATION_ROTATE_180 ->
-                        sourceWidth - 1 - sourceX to sourceHeight - 1 - sourceY
-
-                    ExifInterface.ORIENTATION_FLIP_VERTICAL ->
-                        sourceX to sourceHeight - 1 - sourceY
-
-                    ExifInterface.ORIENTATION_TRANSPOSE -> sourceY to sourceX
-                    ExifInterface.ORIENTATION_ROTATE_90 ->
-                        sourceHeight - 1 - sourceY to sourceX
-
-                    ExifInterface.ORIENTATION_TRANSVERSE ->
-                        sourceHeight - 1 - sourceY to sourceWidth - 1 - sourceX
-
-                    ExifInterface.ORIENTATION_ROTATE_270 ->
-                        sourceY to sourceWidth - 1 - sourceX
-
-                    else -> sourceX to sourceY
-                }
-                destinationPixels[
-                    destinationY * destinationWidth + destinationX
-                ] = sourcePixels[sourceY * sourceWidth + sourceX]
+        val matrix = Matrix()
+        when (orientation) {
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.setScale(-1f, 1f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.setRotate(180f)
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.setScale(1f, -1f)
+            ExifInterface.ORIENTATION_TRANSPOSE -> {
+                matrix.setRotate(90f)
+                matrix.preScale(1f, -1f)
             }
+
+            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.setRotate(90f)
+            ExifInterface.ORIENTATION_TRANSVERSE -> {
+                matrix.setRotate(90f)
+                matrix.preScale(-1f, 1f)
+            }
+
+            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.setRotate(270f)
+            else -> return source
         }
-        val oriented = createBitmap(destinationWidth, destinationHeight)
-        oriented.setPixels(
-            destinationPixels,
-            0,
-            destinationWidth,
+
+        return Bitmap.createBitmap(
+            source,
             0,
             0,
-            destinationWidth,
-            destinationHeight,
+            source.width,
+            source.height,
+            matrix,
+            false,
         )
-        return oriented
     }
 
     private fun parseUri(uriString: String): Uri {
@@ -345,7 +308,6 @@ class ScreenshotUploadPreparer @Inject constructor(
 
     companion object {
         const val JPEG_QUALITY = 75
-        private const val opaqueAlphaMask = 0xFF000000.toInt()
     }
 
     private data class DecodedBitmap(
