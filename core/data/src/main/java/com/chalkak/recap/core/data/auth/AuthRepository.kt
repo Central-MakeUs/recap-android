@@ -76,14 +76,13 @@ class AuthRepository @Inject constructor(
     }
 
     suspend fun refresh(): Result<AuthSignInResult.Success> {
-        val refreshToken = sessionTokenStore.getRefreshToken()
-            ?: return Result.failure(AuthException(AuthError.Unknown))
-
         return try {
+            val refreshToken = sessionTokenStore.getRefreshToken()
+                ?: return Result.failure(AuthException(AuthError.Unknown))
             val response = tokenRefreshApi.refresh(
                 body = TokenRefreshRequestDto(refreshToken = refreshToken),
             )
-            mapTokenResponse(response)
+            mapTokenResponse(response, expectedRefreshToken = refreshToken)
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (error: HttpException) {
@@ -179,17 +178,21 @@ class AuthRepository @Inject constructor(
 
     private suspend fun mapTokenResponse(
         response: AuthTokenApiResponse,
+        expectedRefreshToken: String? = null,
     ): Result<AuthSignInResult.Success> {
         val tokens = response.data
         return when {
             response.success && tokens != null -> {
-                sessionTokenStore.save(
-                    SessionTokens(
-                        accessToken = tokens.accessToken,
-                        refreshToken = tokens.refreshToken,
-                        accessTokenExpiresAt = tokens.accessTokenExpiresAt,
-                    ),
+                val sessionTokens = SessionTokens(
+                    accessToken = tokens.accessToken,
+                    refreshToken = tokens.refreshToken,
+                    accessTokenExpiresAt = tokens.accessTokenExpiresAt,
                 )
+                if (expectedRefreshToken == null) {
+                    sessionTokenStore.save(sessionTokens)
+                } else if (!sessionTokenStore.saveIfRefreshTokenMatches(expectedRefreshToken, sessionTokens)) {
+                    return Result.failure(AuthException(AuthError.Cancelled))
+                }
                 Result.success(
                     AuthSignInResult.Success(
                         accessToken = tokens.accessToken,

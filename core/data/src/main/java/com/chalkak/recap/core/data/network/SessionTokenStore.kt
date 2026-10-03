@@ -37,32 +37,35 @@ class SessionTokenStore @Inject constructor(
     @Volatile
     private var cached: SessionTokens? = null
 
-    @Volatile
     private var hydrated: Boolean = false
 
-    suspend fun save(tokens: SessionTokens) {
-        dataStore.edit { preferences ->
-            preferences[ACCESS_TOKEN] = tokens.accessToken
-            preferences[REFRESH_TOKEN] = tokens.refreshToken
-            preferences[ACCESS_TOKEN_EXPIRES_AT] = tokens.accessTokenExpiresAt
-        }
-        cached = tokens
-        hydrated = true
+    suspend fun save(tokens: SessionTokens) = mutex.withLock {
+        saveLocked(tokens)
     }
 
-    suspend fun clear() {
-        dataStore.edit { preferences ->
-            preferences.remove(ACCESS_TOKEN)
-            preferences.remove(REFRESH_TOKEN)
-            preferences.remove(ACCESS_TOKEN_EXPIRES_AT)
-        }
-        cached = null
-        hydrated = true
+    suspend fun clear() = mutex.withLock {
+        clearLocked()
     }
 
-    suspend fun getTokens(): SessionTokens? {
-        ensureHydrated()
-        return cached
+    /** A refresh response must not restore a session that was cleared or replaced while it ran. */
+    suspend fun saveIfRefreshTokenMatches(expected: String, tokens: SessionTokens): Boolean =
+        mutex.withLock {
+            ensureHydratedLocked()
+            if (cached?.refreshToken != expected) return@withLock false
+            saveLocked(tokens)
+            true
+        }
+
+    suspend fun clearIfRefreshTokenMatches(expected: String): Boolean = mutex.withLock {
+        ensureHydratedLocked()
+        if (cached?.refreshToken != expected) return@withLock false
+        clearLocked()
+        true
+    }
+
+    suspend fun getTokens(): SessionTokens? = mutex.withLock {
+        ensureHydratedLocked()
+        cached
     }
 
     suspend fun getAccessToken(): String? = getTokens()?.accessToken
@@ -76,26 +79,43 @@ class SessionTokenStore @Inject constructor(
         return runBlocking { getTokens() }
     }
 
-    private suspend fun ensureHydrated() {
-        if (hydrated) return
-        mutex.withLock {
-            if (hydrated) return
-            val preferences = dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).first()
-            val accessToken = preferences[ACCESS_TOKEN]
-            val refreshToken = preferences[REFRESH_TOKEN]
-            val expiresAt = preferences[ACCESS_TOKEN_EXPIRES_AT]
-            cached =
-                if (accessToken != null && refreshToken != null && expiresAt != null) {
-                    SessionTokens(
-                        accessToken = accessToken,
-                        refreshToken = refreshToken,
-                        accessTokenExpiresAt = expiresAt,
-                    )
-                } else {
-                    null
-                }
-            hydrated = true
+    private suspend fun saveLocked(tokens: SessionTokens) {
+        dataStore.edit { preferences ->
+            preferences[ACCESS_TOKEN] = tokens.accessToken
+            preferences[REFRESH_TOKEN] = tokens.refreshToken
+            preferences[ACCESS_TOKEN_EXPIRES_AT] = tokens.accessTokenExpiresAt
         }
+        cached = tokens
+        hydrated = true
+    }
+
+    private suspend fun clearLocked() {
+        dataStore.edit { preferences ->
+            preferences.remove(ACCESS_TOKEN)
+            preferences.remove(REFRESH_TOKEN)
+            preferences.remove(ACCESS_TOKEN_EXPIRES_AT)
+        }
+        cached = null
+        hydrated = true
+    }
+
+    private suspend fun ensureHydratedLocked() {
+        if (hydrated) return
+        val preferences = dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME).first()
+        val accessToken = preferences[ACCESS_TOKEN]
+        val refreshToken = preferences[REFRESH_TOKEN]
+        val expiresAt = preferences[ACCESS_TOKEN_EXPIRES_AT]
+        cached =
+            if (accessToken != null && refreshToken != null && expiresAt != null) {
+                SessionTokens(
+                    accessToken = accessToken,
+                    refreshToken = refreshToken,
+                    accessTokenExpiresAt = expiresAt,
+                )
+            } else {
+                null
+            }
+        hydrated = true
     }
 
     private companion object {

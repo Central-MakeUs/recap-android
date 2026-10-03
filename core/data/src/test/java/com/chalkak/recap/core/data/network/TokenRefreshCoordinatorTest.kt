@@ -157,7 +157,7 @@ class TokenRefreshCoordinatorTest {
         val result = coordinator.refreshIfNeeded(force = false)
 
         assertFalse(result)
-        coVerify(exactly = 1) { sessionTokenStore.clear() }
+        coVerify(exactly = 1) { sessionTokenStore.clearIfRefreshTokenMatches(any()) }
     }
 
     @Test
@@ -177,7 +177,7 @@ class TokenRefreshCoordinatorTest {
         val result = coordinator.refreshIfNeeded(force = true)
 
         assertFalse(result)
-        coVerify(exactly = 1) { sessionTokenStore.clear() }
+        coVerify(exactly = 1) { sessionTokenStore.clearIfRefreshTokenMatches(any()) }
     }
 
     @Test
@@ -192,7 +192,7 @@ class TokenRefreshCoordinatorTest {
         val result = coordinator.refreshIfNeeded(force = false)
 
         assertFalse(result)
-        coVerify(exactly = 0) { sessionTokenStore.clear() }
+        coVerify(exactly = 0) { sessionTokenStore.clearIfRefreshTokenMatches(any()) }
     }
 
     @Test
@@ -207,7 +207,7 @@ class TokenRefreshCoordinatorTest {
         val result = coordinator.refreshIfNeeded(force = false)
 
         assertFalse(result)
-        coVerify(exactly = 0) { sessionTokenStore.clear() }
+        coVerify(exactly = 0) { sessionTokenStore.clearIfRefreshTokenMatches(any()) }
     }
 
     @Test
@@ -233,7 +233,7 @@ class TokenRefreshCoordinatorTest {
         repeat(2) {
             assertFalse(coordinator.refreshIfNeeded(force = true))
         }
-        coVerify(exactly = 0) { sessionTokenStore.clear() }
+        coVerify(exactly = 0) { sessionTokenStore.clearIfRefreshTokenMatches(any()) }
     }
 
     @Test
@@ -250,7 +250,7 @@ class TokenRefreshCoordinatorTest {
         repeat(3) {
             assertFalse(coordinator.refreshIfNeeded(force = true))
         }
-        coVerify(exactly = 0) { sessionTokenStore.clear() }
+        coVerify(exactly = 0) { sessionTokenStore.clearIfRefreshTokenMatches(any()) }
     }
 
     @Test

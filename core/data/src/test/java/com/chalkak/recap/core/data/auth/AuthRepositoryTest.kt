@@ -68,6 +68,7 @@ class AuthRepositoryTest {
             ownerHashOf(firstArg())
         }
         stubMatchingAccountOwner(KAKAO_USER_ID)
+        coEvery { sessionTokenStore.saveIfRefreshTokenMatches(any(), any()) } returns true
     }
 
     @Test
@@ -313,7 +314,8 @@ class AuthRepositoryTest {
             result.getOrNull(),
         )
         coVerify(exactly = 1) {
-            sessionTokenStore.save(
+            sessionTokenStore.saveIfRefreshTokenMatches(
+                "old-refresh",
                 SessionTokens(
                     accessToken = "new-access",
                     refreshToken = "new-refresh",
@@ -405,6 +407,28 @@ class AuthRepositoryTest {
 
         assertTrue(result.isFailure)
         coVerify(exactly = 1) { sessionTokenStore.clear() }
+    }
+
+    @Test
+    fun `refresh discards successful response when the session changed during the request`() = runTest {
+        coEvery { sessionTokenStore.getRefreshToken() } returns "old-refresh"
+        coEvery { tokenRefreshApi.refresh(any()) } returns AuthTokenApiResponse(
+            success = true,
+            data = TokenResponseDto(
+                accessToken = "stale-access",
+                refreshToken = "stale-refresh",
+                accessTokenExpiresAt = "2026-09-20T12:00:00Z",
+            ),
+        )
+        coEvery {
+            sessionTokenStore.saveIfRefreshTokenMatches("old-refresh", any())
+        } returns false
+
+        val result = repository.refresh()
+
+        assertEquals(AuthError.Cancelled, (result.exceptionOrNull() as AuthException).authError)
+        coVerify(exactly = 0) { sessionTokenStore.save(any()) }
+        coVerify(exactly = 0) { authApi.refresh(any()) }
     }
 
     private fun stubMatchingAccountOwner(userId: Long) {
