@@ -141,6 +141,10 @@ fun RecapNavHost(
         )
         if (analysisStatus !is OrganizeAnalysisStatusUiState.Hidden) {
             openOrganizeAnalysisStatusIfNeeded()
+        } else if (!analysisProgressViewModel.uiState.value.isStatusVisible &&
+            renderedAnalysisStatus == null
+        ) {
+            backStack.removeOrphanedAnalysisStatus()
         }
     }
 
@@ -440,6 +444,12 @@ fun RecapMainTabNavHost(
 
 internal fun <T> MutableList<T>.removeLastIfNotRoot(): T? =
     if (size > 1) removeLastOrNull() else null
+
+internal fun MutableList<NavKey>.removeOrphanedAnalysisStatus() {
+    // Navigation is restored after process death; the in-memory analysis session is not.
+    removeAll { it == AppRoute.OrganizeAnalysisStatus }
+    if (isEmpty()) add(AppRoute.MainTabs)
+}
 
 private fun mainTabForwardTransition(): ContentTransform =
     slideInHorizontally(
