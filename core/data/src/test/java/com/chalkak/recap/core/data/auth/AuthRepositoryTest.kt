@@ -42,6 +42,7 @@ class AuthRepositoryTest {
     private val context = mockk<Context>(relaxed = true)
     private val kakaoLoginClient = mockk<KakaoLoginClient>()
     private val authApi = mockk<AuthApi>()
+    private val tokenRefreshApi = mockk<AuthApi>()
     private val deviceIdProvider = mockk<DeviceIdProvider>()
     private val sessionTokenStore = mockk<SessionTokenStore>(relaxed = true)
     private val accountOwnerStore = mockk<AccountOwnerStore>(relaxed = true)
@@ -55,6 +56,7 @@ class AuthRepositoryTest {
         repository = AuthRepository(
             kakaoLoginClient = kakaoLoginClient,
             authApi = authApi,
+            tokenRefreshApi = tokenRefreshApi,
             deviceIdProvider = deviceIdProvider,
             sessionTokenStore = sessionTokenStore,
             accountOwnerStore = accountOwnerStore,
@@ -290,7 +292,7 @@ class AuthRepositoryTest {
     fun `refresh stores new tokens from auth api`() = runTest {
         coEvery { sessionTokenStore.getRefreshToken() } returns "old-refresh"
         coEvery {
-            authApi.refresh(TokenRefreshRequestDto(refreshToken = "old-refresh"))
+            tokenRefreshApi.refresh(TokenRefreshRequestDto(refreshToken = "old-refresh"))
         } returns AuthTokenApiResponse(
             success = true,
             data = TokenResponseDto(
@@ -355,7 +357,7 @@ class AuthRepositoryTest {
             """
             {"success":false,"error":{"code":"INVALID_REFRESH_TOKEN","message":"expired"}}
             """.trimIndent().toResponseBody("application/json".toMediaType())
-        coEvery { authApi.refresh(any()) } throws HttpException(Response.error<Unit>(401, body))
+        coEvery { tokenRefreshApi.refresh(any()) } throws HttpException(Response.error<Unit>(401, body))
 
         val result = repository.refresh()
 
@@ -372,7 +374,7 @@ class AuthRepositoryTest {
     @Test
     fun `refresh propagates CancellationException`() {
         coEvery { sessionTokenStore.getRefreshToken() } returns "old-refresh"
-        coEvery { authApi.refresh(any()) } throws CancellationException("cancelled")
+        coEvery { tokenRefreshApi.refresh(any()) } throws CancellationException("cancelled")
 
         assertThrows(CancellationException::class.java) {
             kotlinx.coroutines.runBlocking {

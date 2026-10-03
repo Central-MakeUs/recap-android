@@ -13,6 +13,7 @@ import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
 import java.time.Clock
 import java.util.concurrent.TimeUnit
+import javax.inject.Qualifier
 import javax.inject.Singleton
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -43,11 +44,7 @@ object NetworkModule {
         authInterceptor: AuthInterceptor,
         tokenAuthenticator: TokenAuthenticator,
     ): OkHttpClient {
-        val builder = OkHttpClient.Builder()
-            .connectTimeout(10, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .addInterceptor(offlineNetworkInterceptor)
+        val builder = baseClientBuilder(offlineNetworkInterceptor)
             .addInterceptor(authInterceptor)
             .authenticator(tokenAuthenticator)
 
@@ -60,6 +57,21 @@ object NetworkModule {
 
         return builder.build()
     }
+
+    @Provides
+    @Singleton
+    @TokenRefreshApi
+    fun provideTokenRefreshClient(
+        offlineNetworkInterceptor: OfflineNetworkInterceptor,
+    ): OkHttpClient = baseClientBuilder(offlineNetworkInterceptor).build()
+
+    private fun baseClientBuilder(
+        offlineNetworkInterceptor: OfflineNetworkInterceptor,
+    ): OkHttpClient.Builder = OkHttpClient.Builder()
+        .connectTimeout(10, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .addInterceptor(offlineNetworkInterceptor)
 
     @Provides
     @Singleton
@@ -76,6 +88,15 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideAuthApi(retrofit: Retrofit): AuthApi = retrofit.create(AuthApi::class.java)
+
+    // Interceptors block while awaiting refresh. Its async call must have its own dispatcher.
+    @Provides
+    @Singleton
+    @TokenRefreshApi
+    fun provideTokenRefreshApi(
+        @TokenRefreshApi okHttpClient: OkHttpClient,
+        json: Json,
+    ): AuthApi = provideRetrofit(okHttpClient, json).create(AuthApi::class.java)
 
     @Provides
     @Singleton
@@ -97,3 +118,7 @@ object NetworkModule {
     @Singleton
     fun provideUserApi(retrofit: Retrofit): UserApi = retrofit.create(UserApi::class.java)
 }
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class TokenRefreshApi

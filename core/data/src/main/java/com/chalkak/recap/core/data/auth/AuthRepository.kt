@@ -12,6 +12,7 @@ import com.chalkak.recap.core.data.auth.remote.OAuthLoginRequestDto
 import com.chalkak.recap.core.data.auth.remote.TokenRefreshRequestDto
 import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.data.network.SessionTokens
+import com.chalkak.recap.core.data.network.TokenRefreshApi
 import com.chalkak.recap.core.data.network.mapHttpException
 import com.chalkak.recap.core.model.auth.AuthError
 import com.chalkak.recap.core.model.auth.AuthProvider
@@ -27,6 +28,7 @@ import kotlin.coroutines.cancellation.CancellationException
 class AuthRepository @Inject constructor(
     private val kakaoLoginClient: KakaoLoginClient,
     private val authApi: AuthApi,
+    @param:TokenRefreshApi private val tokenRefreshApi: AuthApi,
     private val deviceIdProvider: DeviceIdProvider,
     private val sessionTokenStore: SessionTokenStore,
     private val accountOwnerStore: AccountOwnerStore,
@@ -78,7 +80,7 @@ class AuthRepository @Inject constructor(
             ?: return Result.failure(AuthException(AuthError.Unknown))
 
         return try {
-            val response = authApi.refresh(
+            val response = tokenRefreshApi.refresh(
                 body = TokenRefreshRequestDto(refreshToken = refreshToken),
             )
             mapTokenResponse(response)
