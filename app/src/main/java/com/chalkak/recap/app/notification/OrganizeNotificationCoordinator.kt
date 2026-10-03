@@ -79,7 +79,11 @@ class OrganizeNotificationCoordinator @Inject constructor(
                         notificationsEnabled = notificationNotifier.areNotificationsEnabled(),
                     )
                 ) {
-                    notificationNotifier.notifyTerminal(terminal)
+                    try {
+                        notificationNotifier.notifyTerminal(terminal)
+                    } catch (error: SecurityException) {
+                        Timber.w(error, "Organize result notification permission is unavailable")
+                    }
                 }
             }
         }
