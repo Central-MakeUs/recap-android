@@ -1,6 +1,5 @@
 package com.chalkak.recap.core.data.network
 
-import com.chalkak.recap.core.data.BuildConfig
 import com.chalkak.recap.core.data.auth.remote.AuthApi
 import com.chalkak.recap.core.data.capture.remote.CaptureApi
 import com.chalkak.recap.core.data.home.remote.HomeApi
@@ -18,7 +17,6 @@ import javax.inject.Singleton
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
-import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
@@ -44,18 +42,10 @@ object NetworkModule {
         authInterceptor: AuthInterceptor,
         tokenAuthenticator: TokenAuthenticator,
     ): OkHttpClient {
-        val builder = baseClientBuilder(offlineNetworkInterceptor)
+        return baseClientBuilder(offlineNetworkInterceptor)
             .addInterceptor(authInterceptor)
             .authenticator(tokenAuthenticator)
-
-        if (BuildConfig.DEBUG) {
-            val logging = HttpLoggingInterceptor().apply {
-                level = HttpLoggingInterceptor.Level.BODY
-            }
-            builder.addInterceptor(logging)
-        }
-
-        return builder.build()
+            .build()
     }
 
     @Provides
