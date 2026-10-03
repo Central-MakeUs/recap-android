@@ -410,6 +410,18 @@ class AuthRepositoryTest {
     }
 
     @Test
+    fun `signInWithKakao returns failure when device id persistence fails`() = runTest {
+        stubKakaoLoginSuccess()
+        coEvery { deviceIdProvider.getOrCreate() } throws IOException("storage unavailable")
+
+        val result = repository.signInWithKakao(context)
+
+        assertTrue(result.isFailure)
+        coVerify(exactly = 0) { authApi.login(any(), any()) }
+        coVerify(exactly = 0) { sessionTokenStore.save(any()) }
+    }
+
+    @Test
     fun `refresh discards successful response when the session changed during the request`() = runTest {
         coEvery { sessionTokenStore.getRefreshToken() } returns "old-refresh"
         coEvery { tokenRefreshApi.refresh(any()) } returns AuthTokenApiResponse(

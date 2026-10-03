@@ -136,10 +136,9 @@ class AuthRepository @Inject constructor(
     private suspend fun loginWithServer(
         credential: SocialAuthCredential,
     ): Result<AuthSignInResult> {
-        val deviceId = deviceIdProvider.getOrCreate()
-        val providerPath = credential.provider.toApiPath()
-
         return try {
+            val deviceId = deviceIdProvider.getOrCreate()
+            val providerPath = credential.provider.toApiPath()
             val response = authApi.login(
                 provider = providerPath,
                 body = OAuthLoginRequestDto(
