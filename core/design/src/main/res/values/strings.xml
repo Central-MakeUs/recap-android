@@ -460,4 +460,8 @@
     <string name="screenshot_type_picker_title">유형 변경</string>
     <string name="screenshot_type_picker_confirm">선택 완료</string>
     <string name="screenshot_fullscreen_close_content_description">전체화면 닫기</string>
+    <string name="usage_card_title">이번 달 사용량</string>
+    <string name="usage_card_sheet_count">%1$d장</string>
+    <string name="usage_card_count_separator">/</string>
+    <string name="usage_card_reset_description">매월 1일에 사용량이 초기화돼요.</string>
 </resources>
