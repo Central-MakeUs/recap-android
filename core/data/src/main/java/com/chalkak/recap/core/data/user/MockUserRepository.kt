@@ -8,9 +8,7 @@ import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardReposito
 import com.chalkak.recap.core.model.user.AccountInfo
 import com.chalkak.recap.core.model.user.ConsentStatus
 import com.chalkak.recap.core.model.user.DataSummary
-import java.time.Instant
-import javax.inject.Inject
-import javax.inject.Singleton
+import com.chalkak.recap.core.model.user.Usage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -18,6 +16,9 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onStart
+import java.time.Instant
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
 class MockUserRepository @Inject constructor(
@@ -44,6 +45,9 @@ class MockUserRepository @Inject constructor(
 
     override suspend fun getDataSummary(): Result<DataSummary> =
         prefetchDataSummary()
+
+    override suspend fun getUsage(): Result<Usage> =
+        remoteAuthRepository.getUsage()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeConsentStatus(): Flow<Result<ConsentStatus>> =

@@ -3,6 +3,7 @@ package com.chalkak.recap.core.data.user
 import com.chalkak.recap.core.model.user.AccountInfo
 import com.chalkak.recap.core.model.user.ConsentStatus
 import com.chalkak.recap.core.model.user.DataSummary
+import com.chalkak.recap.core.model.user.Usage
 import kotlinx.coroutines.flow.Flow
 
 interface UserRepository {
@@ -15,6 +16,8 @@ interface UserRepository {
     fun refreshDataSummary()
 
     suspend fun getDataSummary(): Result<DataSummary>
+
+    suspend fun getUsage(): Result<Usage>
 
     fun observeConsentStatus(): Flow<Result<ConsentStatus>>
 

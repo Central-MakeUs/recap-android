@@ -14,6 +14,9 @@ interface UserApi {
     @GET("api/v1/users/me/data-summary")
     suspend fun getDataSummary(): DataSummaryApiResponse
 
+    @GET("api/v1/users/me/usage")
+    suspend fun getUsage(): UsageApiResponse
+
     @DELETE("api/v1/users/me/data")
     suspend fun deleteAccountData()
 

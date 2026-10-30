@@ -10,6 +10,7 @@ import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardReposito
 import com.chalkak.recap.core.data.user.remote.AccountInfoResponseDto
 import com.chalkak.recap.core.data.user.remote.ConsentStatusResponseDto
 import com.chalkak.recap.core.data.user.remote.DataSummaryResponseDto
+import com.chalkak.recap.core.data.user.remote.UsageResponseDto
 import com.chalkak.recap.core.data.user.remote.UserApi
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -84,6 +85,26 @@ class RemoteUserRepositoryTest {
         val result = repository.getDataSummary()
 
         assertEquals(12L, result.getOrNull()?.capturedCount)
+    }
+
+    @Test
+    fun `getUsage maps monthly usage`() = runTest {
+        coEvery { userApi.getUsage() } returns ApiResponseDto(
+            success = true,
+            data = UsageResponseDto(
+                usedCount = 12,
+                limit = 20,
+                remaining = 8,
+                resetAt = "2026-11-01T00:00:00Z",
+            ),
+        )
+
+        val result = repository.getUsage()
+
+        assertEquals(12, result.getOrNull()?.usedCount)
+        assertEquals(20, result.getOrNull()?.limit)
+        assertEquals(8, result.getOrNull()?.remaining)
+        assertEquals("2026-11-01T00:00:00Z", result.getOrNull()?.resetAt)
     }
 
     @Test
