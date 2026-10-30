@@ -1,6 +1,9 @@
 package com.chalkak.recap.core.data.screenshot.analysis
 
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotUploadPreparer
+import com.chalkak.recap.core.data.testdouble.InMemoryPreferencesDataStore
+import com.chalkak.recap.core.data.user.MockUsageStore
+import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
@@ -101,6 +104,39 @@ class MockScreenshotAnalysisRepositoryTest {
     }
 
     @Test
+    fun `organize records only successfully prepared sheets`() = runTest {
+        val usageStore = MockUsageStore(InMemoryPreferencesDataStore())
+        val repository = repository(usageStore = usageStore)
+        val prepared = ScreenshotAnalysisInput(
+            fileName = "ready.png",
+            jpegBytes = byteArrayOf(1),
+            localImage = LocalImage(
+                uri = "content://ready",
+                displayName = "ready.png",
+                dateAddedMillis = 0L,
+            ),
+        )
+        val unprepared = ScreenshotAnalysisInput(fileName = "missing.png")
+
+        val outcome = repository.organize(listOf(prepared, prepared, unprepared)) { _, _ -> }
+
+        val results = outcome as ScreenshotOrganizeOutcome.LocalResults
+        assertEquals(2, results.results.size)
+        assertEquals(1, results.preparationFailCount)
+        assertEquals(2, usageStore.current().usedCount)
+    }
+
+    @Test
+    fun `analyze does not record usage`() = runTest {
+        val usageStore = MockUsageStore(InMemoryPreferencesDataStore())
+        val repository = repository(usageStore = usageStore)
+
+        repository.analyze(ScreenshotAnalysisInput(fileName = "sample.png"))
+
+        assertEquals(0, usageStore.current().usedCount)
+    }
+
+    @Test
     fun `default captureId suppliers from separate randomizers do not restart from one`() {
         val firstIds = List(8) { ScreenshotMockRandomizer().captureId() }
         val secondIds = List(8) { ScreenshotMockRandomizer().captureId() }
@@ -129,6 +165,7 @@ class MockScreenshotAnalysisRepositoryTest {
         captureIds: List<Long>? = null,
         contentTypeIndex: Int = 0,
         organizedAt: Instant = Instant.parse("2024-01-01T00:00:00Z"),
+        usageStore: MockUsageStore = mockk(relaxed = true),
     ): MockScreenshotAnalysisRepository {
         val captureIdIterator = (captureIds ?: listOf(captureId)).iterator()
         return MockScreenshotAnalysisRepository(
@@ -144,6 +181,7 @@ class MockScreenshotAnalysisRepositoryTest {
                 nextContentTypeIndex = { contentTypeIndex },
             ),
             screenshotUploadPreparer = mockk<ScreenshotUploadPreparer>(),
+            mockUsageStore = usageStore,
         )
     }
 }

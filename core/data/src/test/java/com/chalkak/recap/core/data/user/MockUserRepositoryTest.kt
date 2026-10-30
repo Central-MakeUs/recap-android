@@ -8,13 +8,13 @@ import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardReposito
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
 import com.chalkak.recap.core.model.user.AccountInfo
 import com.chalkak.recap.core.model.user.ConsentStatus
+import com.chalkak.recap.core.model.user.Usage
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
-import io.mockk.verify
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -31,6 +31,7 @@ class MockUserRepositoryTest {
     private val mockScreenshotDataResetter = mockk<MockScreenshotDataResetter>()
     private val changeNotifier = mockk<CaptureChangeNotifier>(relaxed = true)
     private val remoteAuthRepository = mockk<RemoteUserRepository>()
+    private val mockUsageStore = mockk<MockUsageStore>()
 
     private lateinit var repository: MockUserRepository
 
@@ -43,7 +44,19 @@ class MockUserRepositoryTest {
             mockScreenshotDataResetter = mockScreenshotDataResetter,
             changeNotifier = changeNotifier,
             remoteAuthRepository = remoteAuthRepository,
+            mockUsageStore = mockUsageStore,
         )
+    }
+
+    @Test
+    fun `getUsage reads the mock usage store`() = runTest {
+        val usage = Usage(usedCount = 3, limit = 20, remaining = 17, resetAt = "")
+        coEvery { mockUsageStore.current() } returns usage
+
+        val result = repository.getUsage()
+
+        assertEquals(usage, result.getOrNull())
+        coVerify(exactly = 0) { remoteAuthRepository.getUsage() }
     }
 
     @Test

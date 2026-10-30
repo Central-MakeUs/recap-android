@@ -27,6 +27,7 @@ class MockUserRepository @Inject constructor(
     private val mockScreenshotDataResetter: MockScreenshotDataResetter,
     private val changeNotifier: CaptureChangeNotifier,
     private val remoteAuthRepository: RemoteUserRepository,
+    private val mockUsageStore: MockUsageStore,
 ) : UserRepository {
     private val consentRefresh = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
@@ -47,7 +48,9 @@ class MockUserRepository @Inject constructor(
         prefetchDataSummary()
 
     override suspend fun getUsage(): Result<Usage> =
-        remoteAuthRepository.getUsage()
+        runCatching {
+            mockUsageStore.current()
+        }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeConsentStatus(): Flow<Result<ConsentStatus>> =
