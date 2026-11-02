@@ -26,7 +26,6 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -53,13 +52,13 @@ import coil3.compose.AsyncImage
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.theme.RECAPTheme
+import com.chalkak.recap.core.design.theme.RecapBlue500
 import com.chalkak.recap.core.design.theme.RecapGray100
 import com.chalkak.recap.core.design.theme.RecapGray200
 import com.chalkak.recap.core.design.theme.RecapGray300
 import com.chalkak.recap.core.design.theme.RecapGray50
 import com.chalkak.recap.core.design.theme.RecapGray900
-import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
-import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
+import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 import com.chalkak.recap.core.model.LocalImage
 
 @Composable
@@ -186,16 +185,16 @@ private fun ScreenshotConfirmationTopBar(
             }
             Text(
                 text = stringResource(R.string.organize_confirm_title),
-                style = RecapHeading3,
+                style = RecapHeading2,
                 fontWeight = FontWeight.Bold,
                 color = RecapGray900,
             )
-            Spacer(modifier = Modifier.weight(1f))
             Text(
                 text = stringResource(R.string.organize_confirm_count, selectionCount),
-                style = RecapBody2,
-                color = RecapGray300,
-                modifier = Modifier.padding(end = 12.dp),
+                style = RecapHeading2,
+                fontWeight = FontWeight.Bold,
+                color = RecapBlue500,
+                modifier = Modifier.padding(start = 12.dp),
             )
         }
     }
@@ -333,6 +332,17 @@ private object ScreenshotConfirmationTokens {
     val RemoveButtonPadding = 6.dp
     val RemoveButtonCornerRadius = 50
     val DashedBorderWidth = 1.5.dp
+}
+
+@Preview(name = "Screenshot Confirmation Top Bar", showBackground = true, widthDp = 360)
+@Composable
+private fun ScreenshotConfirmationTopBarPreview() {
+    RECAPTheme(dynamicColor = false) {
+        ScreenshotConfirmationTopBar(
+            selectionCount = 15,
+            onBackClick = {},
+        )
+    }
 }
 
 @Preview(

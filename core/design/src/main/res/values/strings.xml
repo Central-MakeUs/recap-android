@@ -352,8 +352,8 @@
     <string name="screenshot_picker_close_content_description">닫기</string>
     <string name="organize_selection_count">%1$d/%2$d</string>
     <string name="organize_selection_complete_button">%1$d장 선택 완료</string>
-    <string name="organize_confirm_title">선택 이미지 확인</string>
-    <string name="organize_confirm_count">%1$d장</string>
+    <string name="organize_confirm_title">선택 스크린샷 확인</string>
+    <string name="organize_confirm_count">%1$d</string>
     <string name="organize_start_organizing">정리 시작하기</string>
     <string name="organize_progress_speech_bubble">앱을 종료해도 백그라운드에서\n정리가 계속 진행돼요!</string>
     <string name="organize_progress_title">스크린샷을 분석·정리 하고있어요</string>
