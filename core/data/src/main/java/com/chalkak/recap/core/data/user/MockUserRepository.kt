@@ -12,6 +12,7 @@ import com.chalkak.recap.core.model.user.Usage
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
@@ -30,7 +31,6 @@ class MockUserRepository @Inject constructor(
     private val mockUsageStore: MockUsageStore,
 ) : UserRepository {
     private val consentRefresh = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    private val usageRefresh = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     override suspend fun getAccountInfo(): Result<AccountInfo> =
         remoteAuthRepository.getAccountInfo()
@@ -48,15 +48,10 @@ class MockUserRepository @Inject constructor(
     override suspend fun getDataSummary(): Result<DataSummary> =
         prefetchDataSummary()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeUsage(): Flow<Result<Usage>> =
-        usageRefresh
-            .onStart { emit(Unit) }
-            .mapLatest {
-                runCatching {
-                    mockUsageStore.current()
-                }
-            }
+        mockUsageStore.observe()
+            .map { usage -> Result.success(usage) }
+            .catch { error -> emit(Result.failure(error)) }
 
     override suspend fun prefetchUsage(): Result<Usage> =
         observeUsage().first()

@@ -1,11 +1,13 @@
 package com.chalkak.recap.core.data.user
 
+import app.cash.turbine.test
 import com.chalkak.recap.core.data.UserPreferencesRepository
 import com.chalkak.recap.core.data.capture.CaptureChange
 import com.chalkak.recap.core.data.capture.CaptureChangeNotifier
 import com.chalkak.recap.core.data.screenshot.backend.MockScreenshotDataResetter
 import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardRepository
 import com.chalkak.recap.core.data.screenshot.persistence.StoredScreenshotCard
+import com.chalkak.recap.core.data.testdouble.InMemoryPreferencesDataStore
 import com.chalkak.recap.core.model.user.AccountInfo
 import com.chalkak.recap.core.model.user.ConsentStatus
 import com.chalkak.recap.core.model.user.Usage
@@ -31,12 +33,13 @@ class MockUserRepositoryTest {
     private val mockScreenshotDataResetter = mockk<MockScreenshotDataResetter>()
     private val changeNotifier = mockk<CaptureChangeNotifier>(relaxed = true)
     private val remoteAuthRepository = mockk<RemoteUserRepository>()
-    private val mockUsageStore = mockk<MockUsageStore>()
+    private lateinit var mockUsageStore: MockUsageStore
 
     private lateinit var repository: MockUserRepository
 
     @BeforeEach
     fun setUp() {
+        mockUsageStore = MockUsageStore(InMemoryPreferencesDataStore())
         coEvery { mockScreenshotDataResetter.reset() } just runs
         repository = MockUserRepository(
             screenshotCardRepository = screenshotCardRepository,
@@ -51,7 +54,7 @@ class MockUserRepositoryTest {
     @Test
     fun `getUsage reads the mock usage store`() = runTest {
         val usage = Usage(usedCount = 3, limit = 20, remaining = 17, resetAt = "")
-        coEvery { mockUsageStore.current() } returns usage
+        mockUsageStore.recordSuccessfulSheets(3)
 
         val result = repository.getUsage()
 
@@ -68,6 +71,38 @@ class MockUserRepositoryTest {
         val result = repository.getDataSummary()
 
         assertEquals(3L, result.getOrNull()?.capturedCount)
+    }
+
+    @Test
+    fun `observeUsage emits accumulated successful sheet counts without resubscribing`() = runTest {
+        repository.observeUsage().test {
+            assertEquals(0, awaitItem().getOrThrow().usedCount)
+
+            mockUsageStore.recordSuccessfulSheets(2)
+            assertEquals(2, awaitItem().getOrThrow().usedCount)
+
+            mockUsageStore.recordSuccessfulSheets(3)
+            val usage = awaitItem().getOrThrow()
+            assertEquals(5, usage.usedCount)
+            assertEquals(15, usage.remaining)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `observeUsage emits zero after mock usage reset`() = runTest {
+        mockUsageStore.recordSuccessfulSheets(4)
+
+        repository.observeUsage().test {
+            assertEquals(4, awaitItem().getOrThrow().usedCount)
+
+            mockUsageStore.reset()
+
+            val usage = awaitItem().getOrThrow()
+            assertEquals(0, usage.usedCount)
+            assertEquals(20, usage.remaining)
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
