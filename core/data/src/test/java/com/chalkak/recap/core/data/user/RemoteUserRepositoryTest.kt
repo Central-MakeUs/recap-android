@@ -108,6 +108,41 @@ class RemoteUserRepositoryTest {
     }
 
     @Test
+    fun `prefetchUsage shares result with observeUsage without second api call`() =
+        runTest(testDispatcher) {
+            coEvery { userApi.getUsage() } returns ApiResponseDto(
+                success = true,
+                data = UsageResponseDto(
+                    usedCount = 12,
+                    limit = 20,
+                    remaining = 8,
+                    resetAt = "2026-11-01T00:00:00Z",
+                ),
+            )
+
+            val prefetched = repository.prefetchUsage()
+            assertTrue(prefetched.isSuccess)
+
+            repository.observeUsage().test {
+                assertSame(prefetched.getOrNull(), awaitItem().getOrNull())
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            coVerify(exactly = 1) { userApi.getUsage() }
+        }
+
+    @Test
+    fun `prefetchUsage fails without calling api when session is unavailable`() =
+        runTest(testDispatcher) {
+            refreshToken.value = null
+
+            val result = repository.prefetchUsage()
+
+            assertTrue(result.isFailure)
+            coVerify(exactly = 0) { userApi.getUsage() }
+        }
+
+    @Test
     fun `prefetchDataSummary shares result with observeDataSummary without second api call`() =
         runTest(testDispatcher) {
             coEvery { userApi.getDataSummary() } returns ApiResponseDto(

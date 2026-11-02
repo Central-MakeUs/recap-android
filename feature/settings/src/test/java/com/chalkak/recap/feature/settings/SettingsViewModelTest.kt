@@ -3,6 +3,7 @@ package com.chalkak.recap.feature.settings
 import com.chalkak.recap.core.data.user.UserRepository
 import com.chalkak.recap.core.model.user.ConsentStatus
 import com.chalkak.recap.core.model.user.DataSummary
+import com.chalkak.recap.core.model.user.Usage
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -29,6 +30,9 @@ class SettingsViewModelTest {
         coEvery { userRepository.prefetchConsentStatus() } returns Result.success(
             ConsentStatus(consented = true),
         )
+        coEvery { userRepository.prefetchUsage() } returns Result.success(
+            Usage(usedCount = 0, limit = 20, remaining = 20, resetAt = ""),
+        )
     }
 
     @After
@@ -45,6 +49,7 @@ class SettingsViewModelTest {
 
         coVerify(exactly = 1) { userRepository.prefetchDataSummary() }
         coVerify(exactly = 1) { userRepository.prefetchConsentStatus() }
+        coVerify(exactly = 1) { userRepository.prefetchUsage() }
     }
 
     @Test
@@ -53,6 +58,8 @@ class SettingsViewModelTest {
             Result.failure(RuntimeException("offline"))
         coEvery { userRepository.prefetchConsentStatus() } returns
             Result.failure(RuntimeException("offline"))
+        coEvery { userRepository.prefetchUsage() } returns
+                Result.failure(RuntimeException("offline"))
         val viewModel = SettingsViewModel(userRepository = userRepository)
 
         viewModel.prefetchDataManagement()
@@ -60,5 +67,6 @@ class SettingsViewModelTest {
 
         coVerify(exactly = 1) { userRepository.prefetchDataSummary() }
         coVerify(exactly = 1) { userRepository.prefetchConsentStatus() }
+        coVerify(exactly = 1) { userRepository.prefetchUsage() }
     }
 }

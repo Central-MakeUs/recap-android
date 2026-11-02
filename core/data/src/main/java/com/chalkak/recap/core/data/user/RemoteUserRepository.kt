@@ -58,6 +58,7 @@ class RemoteUserRepository(
 
     private val consentRefresh = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private val dataSummaryRefresh = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val usageRefresh = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val sharedDataSummary =
@@ -118,6 +119,34 @@ class RemoteUserRepository(
                 replay = 1,
             )
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val sharedUsage =
+        sessionTokenStore.refreshToken
+            .flatMapLatest { sessionKey ->
+                if (sessionKey == null) {
+                    flowOf(
+                        SessionUsage(
+                            sessionKey = null,
+                            result = Result.failure(MissingUsageSessionException()),
+                        ),
+                    )
+                } else {
+                    usageRefresh
+                        .onStart { emit(Unit) }
+                        .mapLatest {
+                            SessionUsage(
+                                sessionKey = sessionKey,
+                                result = fetchUsage(),
+                            )
+                        }
+                }
+            }
+            .shareIn(
+                scope = repositoryScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                replay = 1,
+            )
+
     override suspend fun getAccountInfo(): Result<AccountInfo> =
         runRemoteCatchingSuspend {
             mapApiResponse(userApi.getAccountInfo()) { it.toDomain() }.getOrThrow()
@@ -142,10 +171,20 @@ class RemoteUserRepository(
     override suspend fun getDataSummary(): Result<DataSummary> =
         prefetchDataSummary()
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun observeUsage(): Flow<Result<Usage>> =
+        sessionTokenStore.refreshToken
+            .flatMapLatest { sessionKey ->
+                sharedUsage
+                    .filter { usage -> usage.sessionKey == sessionKey }
+                    .map { usage -> usage.result }
+            }
+
+    override suspend fun prefetchUsage(): Result<Usage> =
+        observeUsage().first()
+
     override suspend fun getUsage(): Result<Usage> =
-        runRemoteCatchingSuspend {
-            mapApiResponse(userApi.getUsage()) { it.toDomain() }.getOrThrow()
-        }
+        prefetchUsage()
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeConsentStatus(): Flow<Result<ConsentStatus>> =
@@ -220,6 +259,11 @@ class RemoteUserRepository(
             mapApiResponse(userApi.getConsentStatus()) { it.toDomain() }.getOrThrow()
         }
 
+    private suspend fun fetchUsage(): Result<Usage> =
+        runRemoteCatchingSuspend {
+            mapApiResponse(userApi.getUsage()) { it.toDomain() }.getOrThrow()
+        }
+
     private data class SessionDataSummary(
         val sessionKey: String?,
         val result: Result<DataSummary>,
@@ -230,11 +274,20 @@ class RemoteUserRepository(
         val result: Result<ConsentStatus>,
     )
 
+    private data class SessionUsage(
+        val sessionKey: String?,
+        val result: Result<Usage>,
+    )
+
     private class MissingDataSummarySessionException : IllegalStateException(
         "A session is required to load the data summary",
     )
 
     private class MissingConsentSessionException : IllegalStateException(
         "A session is required to load the consent status",
+    )
+
+    private class MissingUsageSessionException : IllegalStateException(
+        "A session is required to load the usage",
     )
 }

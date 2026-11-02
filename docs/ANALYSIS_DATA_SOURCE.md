@@ -67,7 +67,8 @@ MockUserRepository (Mock 선택 시)
 - 호출부는 domain repository interface만 본다. Feature/ViewModel은 BuildConfig나 Mock/Remote concrete type을 알지 않는다.
 - 선택되지 않은 Mock/Remote 구현은 `Provider`를 통해 lazy resolve하며, 선택 때문에 eager 생성되지 않는다.
 - Auth(`getAccountInfo` / `withdraw`), onboarding, 일반 사용자 설정은 backend 선택과 무관하게 Remote auth / 기존 경로를 유지한다.
-- 데이터 관리의 data-summary / AI 동의(consent) / 전체 삭제는 선택된 Mock 또는 Remote 구현만 실행한다.
+- 데이터 관리의 data-summary / 이번 달 사용량 / AI 동의는 설정 진입 시 prefetch하고, 데이터 관리 화면은 그 공유 결과를 구독한다. 이 조회와 전체
+  삭제는 선택된 Mock 또는 Remote 구현만 실행한다.
 - 프로세스 실행 중 backend를 갈아끼우지 않는다.
 
 ## Mock / Remote 의미

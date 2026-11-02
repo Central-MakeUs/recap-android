@@ -17,6 +17,10 @@ interface UserRepository {
 
     suspend fun getDataSummary(): Result<DataSummary>
 
+    fun observeUsage(): Flow<Result<Usage>>
+
+    suspend fun prefetchUsage(): Result<Usage>
+
     suspend fun getUsage(): Result<Usage>
 
     fun observeConsentStatus(): Flow<Result<ConsentStatus>>
