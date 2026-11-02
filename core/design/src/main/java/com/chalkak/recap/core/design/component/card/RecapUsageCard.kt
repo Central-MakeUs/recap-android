@@ -1,5 +1,8 @@
 package com.chalkak.recap.core.design.component.card
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.EaseInOutSine
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,9 +15,12 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,6 +36,8 @@ import com.chalkak.recap.core.design.theme.RecapTypography.RecapBody2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading2
 import com.chalkak.recap.core.design.theme.RecapTypography.RecapHeading3
 import com.chalkak.recap.core.design.theme.White
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun RecapUsageCard(
@@ -40,6 +48,20 @@ fun RecapUsageCard(
     val resolvedUsedCount = usedCount.coerceAtLeast(0)
     val resolvedLimitCount = limitCount.coerceAtLeast(0)
     val progress = usageProgress(resolvedUsedCount, resolvedLimitCount)
+    val isPreview = LocalInspectionMode.current
+    val animatedProgress = remember { Animatable(if (isPreview) progress else 0f) }
+
+    LaunchedEffect(progress) {
+        delay(150.milliseconds)
+        animatedProgress.animateTo(
+            targetValue = progress,
+            animationSpec = tween(
+                durationMillis = RecapUsageCardTokens.ProgressAnimationDurationMillis,
+                easing = EaseInOutSine,
+            ),
+        )
+    }
+
     Surface(
         modifier = modifier
             .fillMaxWidth()
@@ -101,7 +123,7 @@ fun RecapUsageCard(
                 }
             }
             LinearProgressIndicator(
-                progress = { progress },
+                progress = { animatedProgress.value },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(RecapUsageCardTokens.ProgressHeight),
@@ -137,6 +159,7 @@ private object RecapUsageCardTokens {
     val TitleCountSpacing = 12.dp
     val CountSeparatorSpacing = 5.dp
     val ProgressHeight = 4.dp
+    const val ProgressAnimationDurationMillis = 750
 }
 
 @Preview(name = "Usage Card", showBackground = true, widthDp = 360)
