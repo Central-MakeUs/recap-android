@@ -35,7 +35,7 @@ android {
         minSdk = 30
         targetSdk = 37
         versionCode = 13
-        versionName = "1.1.5"
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"${kakaoNativeAppKey.get()}\"")
