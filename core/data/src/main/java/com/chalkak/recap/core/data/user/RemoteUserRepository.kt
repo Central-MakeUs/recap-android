@@ -155,6 +155,8 @@ class RemoteUserRepository(
 
     override suspend fun getUsage(): Result<Usage> = usageCache.get()
 
+    override suspend fun getCachedUsage(): Usage? = usageCache.peek()
+
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeConsentStatus(): Flow<Result<ConsentStatus>> =
         sessionTokenStore.refreshToken

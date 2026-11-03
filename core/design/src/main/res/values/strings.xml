@@ -474,6 +474,8 @@
     <string name="organize_monthly_remaining_count">%1$d장</string>
     <string name="monthly_usage_limit_title">이번 달 정리 가능한 한도를\n모두 사용했어요</string>
     <string name="monthly_usage_limit_reset_description">%1$s부터 다시 정리할 수 있어요</string>
-    <string name="monthly_usage_limit_notification_button">알림 받기</string>
+    <string name="monthly_usage_limit_confirm_button">확인</string>
     <string name="monthly_usage_limit_preview_reset_date">12월 1일</string>
+    <string name="monthly_usage_limit_reset_date_format">%1$d월 %2$d일</string>
+    <string name="monthly_usage_limit_next_reset">다음 달 1일</string>
 </resources>

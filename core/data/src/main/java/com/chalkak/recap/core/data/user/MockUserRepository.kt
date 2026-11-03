@@ -61,6 +61,8 @@ class MockUserRepository @Inject constructor(
     override suspend fun getUsage(): Result<Usage> =
         prefetchUsage()
 
+    override suspend fun getCachedUsage(): Usage? = getUsage().getOrNull()
+
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeConsentStatus(): Flow<Result<ConsentStatus>> =
         consentRefresh

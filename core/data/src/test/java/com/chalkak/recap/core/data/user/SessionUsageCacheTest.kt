@@ -2,25 +2,46 @@ package com.chalkak.recap.core.data.user
 
 import app.cash.turbine.test
 import com.chalkak.recap.core.model.user.Usage
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZoneOffset
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZoneOffset
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SessionUsageCacheTest {
     private val sessions = MutableStateFlow<String?>("account-a")
     private val usage = Usage(4, 20, 16, "2026-12-01T00:00:00Z")
     private val clock = MutableClock(Instant.parse("2026-11-03T00:00:00Z"))
+
+    @Test
+    fun `peek reads valid cache without fetching and ignores expired or signed out cache`() =
+        runTest {
+            var calls = 0
+            val cache = SessionUsageCache(backgroundScope, sessions, {
+                calls++
+                Result.success(usage)
+            }, clock)
+            assertNull(cache.peek())
+            assertEquals(0, calls)
+            cache.get()
+            assertEquals(usage, cache.peek())
+            assertEquals(1, calls)
+            clock.now = Instant.parse("2026-12-01T00:00:00Z")
+            assertNull(cache.peek())
+            sessions.value = null
+            assertNull(cache.peek())
+            assertEquals(1, calls)
+        }
 
     @Test
     fun `cache survives gaps between consumers and forced refresh updates observers`() = runTest {

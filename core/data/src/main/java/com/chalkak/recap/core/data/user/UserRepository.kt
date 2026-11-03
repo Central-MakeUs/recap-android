@@ -25,6 +25,8 @@ interface UserRepository {
 
     suspend fun getUsage(): Result<Usage>
 
+    suspend fun getCachedUsage(): Usage?
+
     fun observeConsentStatus(): Flow<Result<ConsentStatus>>
 
     suspend fun prefetchConsentStatus(): Result<ConsentStatus>

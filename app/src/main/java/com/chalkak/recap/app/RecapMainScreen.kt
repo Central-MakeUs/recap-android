@@ -6,6 +6,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -19,7 +20,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation3.runtime.rememberNavBackStack
 import com.chalkak.recap.BuildConfig
 import com.chalkak.recap.core.data.screenshot.permission.ImagePermissionRequestDestination
@@ -29,6 +32,7 @@ import com.chalkak.recap.core.data.screenshot.permission.openPhotoAccessPermissi
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBar
 import com.chalkak.recap.core.design.component.bottombar.RecapBottomBarDestination
+import com.chalkak.recap.core.design.component.bottomsheet.MonthlyUsageLimitBottomSheet
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.White
@@ -36,7 +40,10 @@ import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.feature.organize.OrganizeRoute
 import dev.chrisbanes.haze.rememberHazeState
+import java.time.Instant
+import java.time.ZoneId
 
+@OptIn(ExperimentalMaterial3Api::class)
 @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
 @Composable
 fun RecapMainScreen(
@@ -52,7 +59,9 @@ fun RecapMainScreen(
     onHomeNavigationComplete: (Int) -> Unit = {},
     pendingOpenOrganize: Boolean = false,
     onPendingOpenOrganizeConsumed: () -> Unit = {},
+    viewModel: RecapMainViewModel = hiltViewModel(),
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val backStack = rememberNavBackStack(MainTabRoute.Home)
     val currentRoute = backStack.lastOrNull() as? MainTabRoute ?: MainTabRoute.Home
@@ -74,6 +83,10 @@ fun RecapMainScreen(
     }
 
     fun attemptOpenOrganize() {
+        viewModel.requestOrganize()
+    }
+
+    fun openOrganizeWithPhotoAccess() {
         refreshPhotoAccessLevel()
         if (photoAccessLevel == ImageAccessLevel.Denied) {
             showPhotoPermissionPopup = true
@@ -87,7 +100,15 @@ fun RecapMainScreen(
         showPhotoPermissionPopup = false
         awaitPermissionFromSettings = false
         if (photoAccessLevel != ImageAccessLevel.Denied) {
-            showOrganize = true
+            attemptOpenOrganize()
+        }
+    }
+
+    LaunchedEffect(viewModel) {
+        viewModel.events.collect { event ->
+            when (event) {
+                RecapMainEvent.OpenOrganize -> openOrganizeWithPhotoAccess()
+            }
         }
     }
 
@@ -219,6 +240,32 @@ fun RecapMainScreen(
                     },
                 )
             }
+        }
+
+        uiState.exhaustedUsage?.let { usage ->
+            val resetDate = remember(usage.resetAt) {
+                runCatching {
+                    Instant.parse(usage.resetAt)
+                        .takeIf { it.isAfter(Instant.now()) }
+                        ?.atZone(ZoneId.systemDefault())
+                        ?.toLocalDate()
+                }
+                    .getOrNull()
+            }
+            val resetDateText = if (resetDate != null) {
+                stringResource(
+                    R.string.monthly_usage_limit_reset_date_format,
+                    resetDate.monthValue,
+                    resetDate.dayOfMonth,
+                )
+            } else {
+                stringResource(R.string.monthly_usage_limit_next_reset)
+            }
+            MonthlyUsageLimitBottomSheet(
+                resetDateText = resetDateText,
+                onDismissRequest = viewModel::dismissMonthlyLimit,
+                onConfirmClick = viewModel::dismissMonthlyLimit,
+            )
         }
 
         if (showPhotoPermissionPopup) {

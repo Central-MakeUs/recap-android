@@ -43,7 +43,7 @@ import com.chalkak.recap.core.design.theme.White
 fun MonthlyUsageLimitBottomSheet(
     resetDateText: String,
     onDismissRequest: () -> Unit,
-    onReceiveNotificationClick: () -> Unit,
+    onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier,
     sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
 ) {
@@ -57,7 +57,7 @@ fun MonthlyUsageLimitBottomSheet(
     ) {
         MonthlyUsageLimitBottomSheetContent(
             resetDateText = resetDateText,
-            onReceiveNotificationClick = onReceiveNotificationClick,
+            onConfirmClick = onConfirmClick,
             modifier = Modifier
                 .fillMaxWidth()
                 .verticalScroll(rememberScrollState()),
@@ -68,7 +68,7 @@ fun MonthlyUsageLimitBottomSheet(
 @Composable
 fun MonthlyUsageLimitBottomSheetContent(
     resetDateText: String,
-    onReceiveNotificationClick: () -> Unit,
+    onConfirmClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -112,8 +112,8 @@ fun MonthlyUsageLimitBottomSheetContent(
         )
         Spacer(Modifier.height(MonthlyUsageLimitBottomSheetTokens.DescriptionToButtonSpacing))
         RecapButton(
-            text = stringResource(R.string.monthly_usage_limit_notification_button),
-            onClick = onReceiveNotificationClick,
+            text = stringResource(R.string.monthly_usage_limit_confirm_button),
+            onClick = onConfirmClick,
             modifier = Modifier.fillMaxWidth(),
             contentPadding = PaddingValues(vertical = 15.dp),
         )
@@ -163,7 +163,7 @@ private fun MonthlyUsageLimitBottomSheetPreview() {
                 MonthlyUsageLimitDragHandle()
                 MonthlyUsageLimitBottomSheetContent(
                     resetDateText = stringResource(R.string.monthly_usage_limit_preview_reset_date),
-                    onReceiveNotificationClick = {},
+                    onConfirmClick = {},
                     modifier = Modifier.fillMaxWidth(),
                 )
             }

@@ -1,9 +1,6 @@
 package com.chalkak.recap.core.data.user
 
 import com.chalkak.recap.core.model.user.Usage
-import java.time.Clock
-import java.time.Instant
-import java.time.ZoneOffset
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -21,6 +18,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.time.Clock
+import java.time.Instant
+import java.time.ZoneOffset
 
 internal class SessionUsageCache(
     private val scope: CoroutineScope,
@@ -52,6 +52,14 @@ internal class SessionUsageCache(
                 entry.takeIf { it.session == key }?.result
             }.filterNotNull())
         }.distinctUntilChanged()
+    }
+
+    suspend fun peek(): Usage? {
+        val key = sessions.first()
+        return mutex.withLock {
+            changeSession(key)
+            cached?.takeIf { key != null && clock.instant().isBefore(expiresAt) }
+        }
     }
 
     suspend fun get(forceRefresh: Boolean = false): Result<Usage> {
