@@ -2,6 +2,8 @@ package com.chalkak.recap.feature.settings.data
 
 data class DataManagementUiState(
     val organizedCount: Int? = null,
+    val usageUsedCount: Int? = null,
+    val usageLimitCount: Int? = null,
     val showDeleteConfirmDialog: Boolean = false,
     val showWithdrawConsentDialog: Boolean = false,
     val showAiDataTransferConsentSheet: Boolean = false,

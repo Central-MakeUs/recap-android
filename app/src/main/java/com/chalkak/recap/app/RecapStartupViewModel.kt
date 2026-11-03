@@ -9,6 +9,7 @@ import com.chalkak.recap.core.data.home.HomeRepository
 import com.chalkak.recap.core.data.network.AuthSessionStateProvider
 import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.data.storage.StorageRepository
+import com.chalkak.recap.core.data.user.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlin.coroutines.cancellation.CancellationException
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
@@ -37,6 +39,7 @@ class RecapStartupViewModel @Inject constructor(
     private val storageRepository: StorageRepository,
     private val startupDataRecoveryCoordinator: StartupDataRecoveryCoordinator,
     private val localAppDataResetter: LocalAppDataResetter,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
     private val startupAttempts = MutableStateFlow(0)
     private val recoveryPhase = MutableStateFlow(StartupRecoveryPhase.Running)
@@ -53,6 +56,13 @@ class RecapStartupViewModel @Inject constructor(
     private var startupJob: Job? = null
 
     init {
+        viewModelScope.launch {
+            authSessionStateProvider.hasSession.collectLatest { hasSession ->
+                if (hasSession) {
+                    userRepository.prefetchUsage().onFailure { Timber.w(it, "Usage prefetch failed") }
+                }
+            }
+        }
         observeMainEntry()
         startStartup()
     }

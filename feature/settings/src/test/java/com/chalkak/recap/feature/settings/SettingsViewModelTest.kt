@@ -45,6 +45,7 @@ class SettingsViewModelTest {
 
         coVerify(exactly = 1) { userRepository.prefetchDataSummary() }
         coVerify(exactly = 1) { userRepository.prefetchConsentStatus() }
+        coVerify(exactly = 0) { userRepository.prefetchUsage() }
     }
 
     @Test
@@ -60,5 +61,6 @@ class SettingsViewModelTest {
 
         coVerify(exactly = 1) { userRepository.prefetchDataSummary() }
         coVerify(exactly = 1) { userRepository.prefetchConsentStatus() }
+        coVerify(exactly = 0) { userRepository.prefetchUsage() }
     }
 }

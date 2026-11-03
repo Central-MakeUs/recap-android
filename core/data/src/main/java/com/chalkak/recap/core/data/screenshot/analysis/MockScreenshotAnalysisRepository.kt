@@ -1,21 +1,23 @@
 package com.chalkak.recap.core.data.screenshot.analysis
 
 import com.chalkak.recap.core.data.screenshot.image.ScreenshotUploadPreparer
+import com.chalkak.recap.core.data.user.MockUsageStore
 import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.core.model.PreparedScreenshot
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
-import javax.inject.Inject
-import javax.inject.Singleton
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
+import javax.inject.Inject
+import javax.inject.Singleton
 import kotlin.time.Duration.Companion.milliseconds
 
 @Singleton
 class MockScreenshotAnalysisRepository @Inject constructor(
     private val randomizer: ScreenshotMockRandomizer,
     private val screenshotUploadPreparer: ScreenshotUploadPreparer,
+    private val mockUsageStore: MockUsageStore,
 ) : ScreenshotAnalysisRepository {
     override suspend fun analyze(input: ScreenshotAnalysisInput): ScreenshotAnalysisResult {
         return buildResult(input)
@@ -54,6 +56,9 @@ class MockScreenshotAnalysisRepository @Inject constructor(
             results += buildResult(input)
             input.localImage?.let(sourceImages::add)
             onProgress(index + 1, total)
+        }
+        if (results.isNotEmpty()) {
+            mockUsageStore.recordSuccessfulSheets(results.size)
         }
         return ScreenshotOrganizeOutcome.LocalResults(
             results = results,

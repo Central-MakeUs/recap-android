@@ -5,14 +5,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.data.screenshot.backend.MockScreenshotDataResetter
+import com.chalkak.recap.core.data.user.MockUsageStore
 import com.chalkak.recap.core.design.R
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 data class DeveloperOptionsUiState(
     @get:StringRes val feedbackMessageResId: Int? = null,
@@ -22,6 +23,7 @@ data class DeveloperOptionsUiState(
 class DeveloperViewModel @Inject constructor(
     private val mockScreenshotDataResetter: MockScreenshotDataResetter,
     private val sessionTokenStore: SessionTokenStore,
+    private val mockUsageStore: MockUsageStore,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(DeveloperOptionsUiState())
     val uiState: StateFlow<DeveloperOptionsUiState> = _uiState.asStateFlow()
@@ -34,6 +36,7 @@ class DeveloperViewModel @Inject constructor(
 
             DeveloperOptionAction.InvalidateSession -> invalidateSession()
             DeveloperOptionAction.ResetScreenshotData -> resetScreenshotData()
+            DeveloperOptionAction.ResetMockUsage -> resetMockUsage()
             DeveloperOptionAction.ForceTestCrash -> {
                 throw RuntimeException("Test Crash")
             }
@@ -51,6 +54,23 @@ class DeveloperViewModel @Inject constructor(
                         R.string.developer_options_invalidate_session_success
                     } else {
                         R.string.developer_options_invalidate_session_failure
+                    },
+                )
+            }
+        }
+    }
+
+    fun resetMockUsage() {
+        viewModelScope.launch {
+            val result = runCatching {
+                mockUsageStore.reset()
+            }
+            _uiState.update {
+                it.copy(
+                    feedbackMessageResId = if (result.isSuccess) {
+                        R.string.developer_options_reset_mock_usage_success
+                    } else {
+                        R.string.developer_options_reset_mock_usage_failure
                     },
                 )
             }

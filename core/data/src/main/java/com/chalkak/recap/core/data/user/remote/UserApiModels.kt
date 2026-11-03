@@ -4,6 +4,7 @@ import com.chalkak.recap.core.data.network.ApiResponseDto
 import com.chalkak.recap.core.model.user.AccountInfo
 import com.chalkak.recap.core.model.user.ConsentStatus
 import com.chalkak.recap.core.model.user.DataSummary
+import com.chalkak.recap.core.model.user.Usage
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -18,6 +19,14 @@ data class DataSummaryResponseDto(
 )
 
 @Serializable
+data class UsageResponseDto(
+    val usedCount: Int,
+    val limit: Int,
+    val remaining: Int,
+    val resetAt: String,
+)
+
+@Serializable
 data class ConsentStatusResponseDto(
     val consented: Boolean,
     val consentedAt: String? = null,
@@ -25,6 +34,7 @@ data class ConsentStatusResponseDto(
 
 typealias AccountInfoApiResponse = ApiResponseDto<AccountInfoResponseDto>
 typealias DataSummaryApiResponse = ApiResponseDto<DataSummaryResponseDto>
+typealias UsageApiResponse = ApiResponseDto<UsageResponseDto>
 typealias ConsentStatusApiResponse = ApiResponseDto<ConsentStatusResponseDto>
 
 fun AccountInfoResponseDto.toDomain() =
@@ -36,6 +46,14 @@ fun AccountInfoResponseDto.toDomain() =
 fun DataSummaryResponseDto.toDomain() =
     DataSummary(
         capturedCount = capturedCount,
+    )
+
+fun UsageResponseDto.toDomain() =
+    Usage(
+        usedCount = usedCount,
+        limit = limit,
+        remaining = remaining,
+        resetAt = resetAt,
     )
 
 fun ConsentStatusResponseDto.toDomain() =

@@ -232,9 +232,12 @@
     <string name="developer_options_reset_onboarding_button">온보딩 초기화</string>
     <string name="developer_options_invalidate_session_button">세션 무효화</string>
     <string name="developer_options_reset_screenshot_data_button">스크린샷 정리 데이터 초기화</string>
+    <string name="developer_options_reset_mock_usage_button">mock 사용량 초기화</string>
     <string name="developer_options_test_crash_button">테스트 크래시</string>
     <string name="developer_options_reset_screenshot_data_success">스크린샷 정리 데이터를 초기화했어요.</string>
     <string name="developer_options_reset_screenshot_data_failure">초기화에 실패했어요. 다시 시도해주세요.</string>
+    <string name="developer_options_reset_mock_usage_success">mock 사용량을 초기화했어요.</string>
+    <string name="developer_options_reset_mock_usage_failure">mock 사용량 초기화에 실패했어요. 다시 시도해주세요.</string>
     <string name="developer_options_invalidate_session_success">세션을 무효화했어요.</string>
     <string name="developer_options_invalidate_session_failure">세션 무효화에 실패했어요. 다시 시도해주세요.</string>
     <string name="component_garden_title">컴포넌트 가든</string>
@@ -349,8 +352,8 @@
     <string name="screenshot_picker_close_content_description">닫기</string>
     <string name="organize_selection_count">%1$d/%2$d</string>
     <string name="organize_selection_complete_button">%1$d장 선택 완료</string>
-    <string name="organize_confirm_title">선택 이미지 확인</string>
-    <string name="organize_confirm_count">%1$d장</string>
+    <string name="organize_confirm_title">선택 스크린샷 확인</string>
+    <string name="organize_confirm_count">%1$d</string>
     <string name="organize_start_organizing">정리 시작하기</string>
     <string name="organize_progress_speech_bubble">앱을 종료해도 백그라운드에서\n정리가 계속 진행돼요!</string>
     <string name="organize_progress_title">스크린샷을 분석·정리 하고있어요</string>
@@ -460,4 +463,19 @@
     <string name="screenshot_type_picker_title">유형 변경</string>
     <string name="screenshot_type_picker_confirm">선택 완료</string>
     <string name="screenshot_fullscreen_close_content_description">전체화면 닫기</string>
+    <string name="usage_card_title">이번 달 사용량</string>
+    <string name="usage_card_sheet_count">%1$d장</string>
+    <string name="usage_card_count_separator">/</string>
+    <string name="usage_card_reset_description">매월 1일에 사용량이 초기화돼요.</string>
+    <string name="organize_monthly_limit_message">이번 달 %1$d장까지 정리할 수 있어요</string>
+    <string name="organize_monthly_remaining">이번 달 %1$d장 남았어요</string>
+    <string name="organize_start_count">%1$d장 정리하기</string>
+    <string name="organize_monthly_limit_exceeded">이번달 정리 가능한 한도를 초과했어요</string>
+    <string name="organize_monthly_remaining_count">%1$d장</string>
+    <string name="monthly_usage_limit_title">이번 달 정리 가능한 한도를\n모두 사용했어요</string>
+    <string name="monthly_usage_limit_reset_description">%1$s부터 다시 정리할 수 있어요</string>
+    <string name="monthly_usage_limit_confirm_button">확인</string>
+    <string name="monthly_usage_limit_preview_reset_date">12월 1일</string>
+    <string name="monthly_usage_limit_reset_date_format">%1$d월 %2$d일</string>
+    <string name="monthly_usage_limit_next_reset">다음 달 1일</string>
 </resources>

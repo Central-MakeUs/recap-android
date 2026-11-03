@@ -3,6 +3,7 @@ package com.chalkak.recap.feature.settings.data
 import com.chalkak.recap.core.data.user.UserRepository
 import com.chalkak.recap.core.model.user.ConsentStatus
 import com.chalkak.recap.core.model.user.DataSummary
+import com.chalkak.recap.core.model.user.Usage
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -35,6 +36,9 @@ class DataManagementViewModelTest {
     private val userRepository = mockk<UserRepository>()
     private val dataSummary = MutableStateFlow(Result.success(DataSummary(0)))
     private val consentStatus = MutableStateFlow(Result.success(ConsentStatus(consented = false)))
+    private val usage = MutableStateFlow(
+        Result.success(Usage(usedCount = 0, limit = 20, remaining = 20, resetAt = "")),
+    )
 
     @Before
     fun setUp() {
@@ -43,6 +47,7 @@ class DataManagementViewModelTest {
         every { userRepository.refreshDataSummary() } just runs
         every { userRepository.observeConsentStatus() } returns consentStatus
         every { userRepository.refreshConsentStatus() } just runs
+        every { userRepository.observeUsage() } returns usage
         dataSummary.value = Result.success(DataSummary(0))
         consentStatus.value = Result.success(ConsentStatus(consented = false))
         coEvery { userRepository.deleteAccountData() } returns Result.success(Unit)
@@ -79,6 +84,33 @@ class DataManagementViewModelTest {
         advanceUntilIdle()
 
         assertEquals(128, viewModel.uiState.value.organizedCount)
+    }
+
+    @Test
+    fun observeUsage_updatesUsageCounts() = runTest(testDispatcher) {
+        every { userRepository.observeUsage() } returns flowOf(
+            Result.success(
+                Usage(usedCount = 12, limit = 20, remaining = 8, resetAt = "2026-11-01T00:00:00Z"),
+            ),
+        )
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertEquals(12, viewModel.uiState.value.usageUsedCount)
+        assertEquals(20, viewModel.uiState.value.usageLimitCount)
+    }
+
+    @Test
+    fun observeUsage_keepsCountsNullWhenFetchFails() = runTest(testDispatcher) {
+        every { userRepository.observeUsage() } returns flowOf(
+            Result.failure(RuntimeException("offline")),
+        )
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        assertNull(viewModel.uiState.value.usageUsedCount)
+        assertNull(viewModel.uiState.value.usageLimitCount)
+        assertFalse(viewModel.uiState.value.hasFetchError)
     }
 
     @Test
