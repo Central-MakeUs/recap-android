@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -15,6 +16,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -40,6 +42,7 @@ import com.chalkak.recap.core.model.ImageAccessLevel
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 import com.chalkak.recap.feature.organize.OrganizeRoute
 import dev.chrisbanes.haze.rememberHazeState
+import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.ZoneId
 
@@ -243,6 +246,8 @@ fun RecapMainScreen(
         }
 
         uiState.exhaustedUsage?.let { usage ->
+            val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+            val sheetScope = rememberCoroutineScope()
             val resetDate = remember(usage.resetAt) {
                 runCatching {
                     Instant.parse(usage.resetAt)
@@ -264,7 +269,15 @@ fun RecapMainScreen(
             MonthlyUsageLimitBottomSheet(
                 resetDateText = resetDateText,
                 onDismissRequest = viewModel::dismissMonthlyLimit,
-                onConfirmClick = viewModel::dismissMonthlyLimit,
+                onConfirmClick = {
+                    sheetScope.launch {
+                        sheetState.hide()
+                        if (!sheetState.isVisible) {
+                            viewModel.dismissMonthlyLimit()
+                        }
+                    }
+                },
+                sheetState = sheetState,
             )
         }
 
