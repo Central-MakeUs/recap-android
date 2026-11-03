@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -183,9 +184,17 @@ fun OrganizeRoute(
         }
     }
 
-    LaunchedEffect(uiState.monthlyLimitNotice) {
-        if (uiState.monthlyLimitNotice > 0 && !showScreenshotPicker) {
+    var handledMonthlyLimitNotice by rememberSaveable { mutableIntStateOf(0) }
+    LaunchedEffect(uiState.monthlyLimitNotice, showScreenshotPicker, destination) {
+        if (uiState.monthlyLimitNotice == 0) {
+            handledMonthlyLimitNotice = 0
+        } else if (
+            uiState.monthlyLimitNotice > handledMonthlyLimitNotice &&
+            !showScreenshotPicker &&
+            destination == OrganizeDestination.Confirmation
+        ) {
             toastDispatcher.showToast(monthlyLimitMessage)
+            handledMonthlyLimitNotice = uiState.monthlyLimitNotice
         }
     }
 
