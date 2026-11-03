@@ -183,6 +183,8 @@ class RemoteUserRepository(
     override suspend fun prefetchUsage(): Result<Usage> =
         observeUsage().first()
 
+    override suspend fun fetchLatestUsage(): Result<Usage> = fetchUsage()
+
     override suspend fun getUsage(): Result<Usage> =
         prefetchUsage()
 

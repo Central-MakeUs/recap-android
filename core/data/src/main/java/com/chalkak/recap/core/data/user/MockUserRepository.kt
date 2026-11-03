@@ -56,6 +56,8 @@ class MockUserRepository @Inject constructor(
     override suspend fun prefetchUsage(): Result<Usage> =
         observeUsage().first()
 
+    override suspend fun fetchLatestUsage(): Result<Usage> = getUsage()
+
     override suspend fun getUsage(): Result<Usage> =
         prefetchUsage()
 

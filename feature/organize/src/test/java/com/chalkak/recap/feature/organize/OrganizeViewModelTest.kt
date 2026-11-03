@@ -50,12 +50,48 @@ class OrganizeViewModelTest {
             ConsentStatus(consented = true),
         )
         coEvery { userRepository.giveConsent() } returns Result.success(Unit)
+        coEvery { userRepository.fetchLatestUsage() } returns Result.failure(IllegalStateException("unavailable"))
         stubSuccessfulPreparer()
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `late usage disables organizing until excess selections are removed`() = runTest {
+        val usage = CompletableDeferred<Result<com.chalkak.recap.core.model.user.Usage>>()
+        coEvery { userRepository.fetchLatestUsage() } coAnswers { usage.await() }
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots
+        val viewModel = createViewModel(dataSource)
+        advanceUntilIdle()
+        screenshots.take(3).forEach { viewModel.onAction(OrganizeAction.ToggleSelection(it.uri)) }
+        viewModel.onConfirmationEntered()
+        runCurrent()
+        assertTrue(viewModel.uiState.value.canStartOrganizing)
+        usage.complete(Result.success(com.chalkak.recap.core.model.user.Usage(0, 20, 2, "")))
+        advanceUntilIdle()
+        assertFalse(viewModel.uiState.value.canStartOrganizing)
+        assertTrue(viewModel.uiState.value.canProceed)
+        val events = mutableListOf<OrganizeEvent>()
+        backgroundScope.launch(kotlinx.coroutines.test.UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.events.collect { events += it }
+        }
+        viewModel.onAction(OrganizeAction.StartOrganizing)
+        runCurrent()
+        assertEquals(listOf(OrganizeEvent.MonthlyLimitExceeded), events)
+        assertFalse(viewModel.uiState.value.showAiDataTransferConsentSheet)
+        assertEquals(1, viewModel.uiState.value.monthlyLimitNotice)
+        viewModel.onAction(OrganizeAction.RemoveSelection(screenshots[0].uri))
+        assertTrue(viewModel.uiState.value.canStartOrganizing)
+        viewModel.onAction(OrganizeAction.ToggleSelection(screenshots[3].uri))
+        assertEquals(2, viewModel.uiState.value.selectionCount)
+        viewModel.onConfirmationExited()
+        viewModel.onConfirmationEntered()
+        advanceUntilIdle()
+        coVerify(exactly = 1) { userRepository.fetchLatestUsage() }
     }
 
     @Test

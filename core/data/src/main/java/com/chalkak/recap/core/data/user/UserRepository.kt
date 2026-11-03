@@ -21,6 +21,8 @@ interface UserRepository {
 
     suspend fun prefetchUsage(): Result<Usage>
 
+    suspend fun fetchLatestUsage(): Result<Usage>
+
     suspend fun getUsage(): Result<Usage>
 
     fun observeConsentStatus(): Flow<Result<ConsentStatus>>

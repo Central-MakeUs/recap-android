@@ -9,8 +9,8 @@ import com.chalkak.recap.core.data.user.UserRepository
 import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.core.model.PreparedScreenshot
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
+import com.chalkak.recap.core.model.user.Usage
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Job
@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class OrganizeViewModel @Inject constructor(
@@ -71,7 +72,38 @@ class OrganizeViewModel @Inject constructor(
         }
     }
 
+    private var usageRequested = false
+    private var usageGeneration = 0L
+    private var usageJob: Job? = null
+
+    fun notifyMonthlyLimit() {
+        if ((_uiState.value.monthlyRemaining ?: MAX_SELECTION_COUNT) < MAX_SELECTION_COUNT) {
+            _uiState.update { it.copy(monthlyLimitNotice = it.monthlyLimitNotice + 1) }
+        }
+    }
+
+    private fun fetchUsageOnce() {
+        if (usageRequested) return
+        usageRequested = true
+        val generation = usageGeneration
+        usageJob = viewModelScope.launch {
+            val result = try {
+                userRepository.fetchLatestUsage()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Exception) {
+                Result.failure<Usage>(IllegalStateException("Usage unavailable"))
+            }
+            if (generation != usageGeneration) return@launch
+            val remaining = result.getOrNull()?.remaining?.coerceAtLeast(0) ?: return@launch
+            _uiState.update { it.copy(monthlyRemaining = remaining) }
+            if (_uiState.value.selectionCount > remaining) notifyMonthlyLimit()
+        }
+    }
+
     fun onConfirmationEntered() {
+        _uiState.update { it.copy(hasEnteredConfirmation = true) }
+        fetchUsageOnce()
         confirmationGeneration += 1
         val generation = confirmationGeneration
         isConfirmationActive = true
@@ -112,6 +144,10 @@ class OrganizeViewModel @Inject constructor(
     private fun startOrganizing() {
         if (!isConfirmationActive) return
         if (!_uiState.value.canProceed) return
+        if (!_uiState.value.canStartOrganizing) {
+            _events.tryEmit(OrganizeEvent.MonthlyLimitExceeded)
+            return
+        }
         if (startOrganizingJob?.isActive == true) return
         if (snapshotCandidatesInSelectionOrder() == null) return
         val generation = confirmationGeneration
@@ -259,8 +295,10 @@ class OrganizeViewModel @Inject constructor(
                     state.copy(selectedUris = currentSelection.filterNot { it == uri })
                 }
 
-                currentSelection.size >= MAX_SELECTION_COUNT -> {
-                    state.copy(showMaxSelectionReached = true)
+                currentSelection.size >= state.selectionLimit -> {
+                    if (state.selectionLimit < MAX_SELECTION_COUNT) {
+                        state.copy(monthlyLimitNotice = state.monthlyLimitNotice + 1)
+                    } else state.copy(showMaxSelectionReached = true)
                 }
 
                 else -> {
@@ -285,10 +323,16 @@ class OrganizeViewModel @Inject constructor(
     }
 
     private fun clearSelection() {
+        usageGeneration += 1
+        usageJob?.cancel()
+        usageRequested = false
         invalidateRefresh()
         cancelPreparation(clearCache = true)
         _uiState.update { state ->
             state.copy(
+                monthlyRemaining = null,
+                hasEnteredConfirmation = false,
+                monthlyLimitNotice = 0,
                 selectedUris = emptyList(),
                 showMaxSelectionReached = false,
                 showAiDataTransferConsentSheet = false,
@@ -357,6 +401,7 @@ class OrganizeViewModel @Inject constructor(
     }
 
     private fun snapshotCandidatesInSelectionOrder(): List<ScreenshotUploadCandidate>? {
+        if (!_uiState.value.canStartOrganizing) return null
         val selectedUris = _uiState.value.selectedUris
         if (selectedUris.isEmpty()) return null
         val candidates = ArrayList<ScreenshotUploadCandidate>(selectedUris.size)

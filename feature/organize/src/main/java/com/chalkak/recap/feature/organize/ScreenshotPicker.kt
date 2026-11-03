@@ -325,6 +325,10 @@ fun ScreenshotPickerContent(
     onImageLongClick: (Any) -> Unit = {},
 ) {
     // ModalBottomSheet는 Dialog 윈도우라 앱 루트 RecapToastHost가 가려진다. 시트 안에 호스트한다.
+    val monthlyLimitMessage = stringResource(
+        R.string.organize_monthly_limit_message,
+        uiState.monthlyRemaining ?: 0,
+    )
     val toastHazeState = rememberHazeState()
     var currentToast by remember { mutableStateOf<RecapToastPresentation?>(null) }
     val maxSelectionMessage = stringResource(
@@ -382,7 +386,7 @@ fun ScreenshotPickerContent(
             if (desiredSelected == isSelected) return@forEachIndexed
 
             if (desiredSelected) {
-                if (dragSelectLocalSelected.size >= MAX_SELECTION_COUNT) {
+                if (dragSelectLocalSelected.size >= currentUiState.selectionLimit) {
                     if (!notifiedMaxSelection) {
                         // ViewModel이 상한 도달 토스트를 띄우도록 한 번 시도한다.
                         currentOnAction(OrganizeAction.ToggleSelection(uri))
@@ -432,10 +436,16 @@ fun ScreenshotPickerContent(
         dragSelectLocalSelected.clear()
     }
 
-    LaunchedEffect(uiState.showMaxSelectionReached) {
-        if (!uiState.showMaxSelectionReached) return@LaunchedEffect
+    var handledMonthlyNotice by remember { mutableIntStateOf(uiState.monthlyLimitNotice) }
+    LaunchedEffect(uiState.showMaxSelectionReached, uiState.monthlyLimitNotice) {
+        if (!uiState.showMaxSelectionReached && uiState.monthlyLimitNotice == handledMonthlyNotice) return@LaunchedEffect
+        handledMonthlyNotice = uiState.monthlyLimitNotice
         currentToast = RecapToastPresentation(
-            message = maxSelectionMessage,
+            message = if (uiState.monthlyRemaining != null && uiState.monthlyRemaining < MAX_SELECTION_COUNT) {
+                monthlyLimitMessage
+            } else {
+                maxSelectionMessage
+            },
             type = RecapToastType.Error,
         )
         delay(RecapToastDuration.Short.millis.milliseconds)

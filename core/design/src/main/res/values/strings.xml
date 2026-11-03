@@ -467,4 +467,9 @@
     <string name="usage_card_sheet_count">%1$d장</string>
     <string name="usage_card_count_separator">/</string>
     <string name="usage_card_reset_description">매월 1일에 사용량이 초기화돼요.</string>
+    <string name="organize_monthly_limit_message">이번 달 %1$d장까지 정리할 수 있어요</string>
+    <string name="organize_monthly_remaining">이번 달 %1$d장 남았어요</string>
+    <string name="organize_start_count">%1$d장 정리하기</string>
+    <string name="organize_monthly_limit_exceeded">이번달 정리 가능한 한도를 초과했어요</string>
+    <string name="organize_monthly_remaining_count">%1$d장</string>
 </resources>

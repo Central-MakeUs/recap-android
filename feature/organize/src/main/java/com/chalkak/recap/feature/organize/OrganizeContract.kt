@@ -4,6 +4,9 @@ import com.chalkak.recap.core.model.LocalImage
 import com.chalkak.recap.core.model.ScreenshotUploadCandidate
 
 data class OrganizeUiState(
+    val monthlyRemaining: Int? = null,
+    val hasEnteredConfirmation: Boolean = false,
+    val monthlyLimitNotice: Int = 0,
     val isLoading: Boolean = true,
     val availableScreenshots: List<LocalImage> = emptyList(),
     val selectedUris: List<String> = emptyList(),
@@ -17,8 +20,15 @@ data class OrganizeUiState(
     val canProceed: Boolean
         get() = selectionCount in MIN_SELECTION_COUNT..MAX_SELECTION_COUNT
 
+    val selectionLimit: Int
+        get() = if (hasEnteredConfirmation) {
+            monthlyRemaining?.coerceIn(0, MAX_SELECTION_COUNT) ?: MAX_SELECTION_COUNT
+        } else {
+            MAX_SELECTION_COUNT
+        }
+
     val canStartOrganizing: Boolean
-        get() = canProceed
+        get() = canProceed && selectionCount <= selectionLimit
 
     fun selectionOrder(uri: String): Int? {
         val index = selectedUris.indexOf(uri)
@@ -37,6 +47,8 @@ sealed interface OrganizeAction {
 }
 
 sealed interface OrganizeEvent {
+    data object MonthlyLimitExceeded : OrganizeEvent
+
     data class ProceedToOrganize(
         val candidates: List<ScreenshotUploadCandidate>,
     ) : OrganizeEvent

@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -32,6 +33,7 @@ import com.chalkak.recap.core.data.screenshot.permission.openPhotoAccessPermissi
 import com.chalkak.recap.core.design.R
 import com.chalkak.recap.core.design.component.bottomsheet.AiDataTransferConsentBottomSheet
 import com.chalkak.recap.core.design.component.popup.RecapPopup
+import com.chalkak.recap.core.design.component.toast.LocalRecapToastDispatcher
 import com.chalkak.recap.core.design.theme.RecapBlue300
 import com.chalkak.recap.core.design.theme.White
 import com.chalkak.recap.core.model.ImageAccessLevel
@@ -49,8 +51,15 @@ fun OrganizeRoute(
     clearSelectionOnComplete: Boolean = true,
     viewModel: OrganizeViewModel = hiltViewModel(),
 ) {
+    val toastDispatcher = LocalRecapToastDispatcher.current
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val monthlyLimitMessage by rememberUpdatedState(
+        stringResource(R.string.organize_monthly_limit_message, uiState.monthlyRemaining ?: 0),
+    )
+    val monthlyLimitExceededMessage by rememberUpdatedState(
+        stringResource(R.string.organize_monthly_limit_exceeded),
+    )
     val startAtConfirmation = sharedImages != null && shareSessionId != null
     var imageAccessLevel by remember {
         mutableStateOf(context.currentImageAccessLevel())
@@ -124,6 +133,10 @@ fun OrganizeRoute(
     }
 
     fun attemptNavigateBackToPicker() {
+        if (uiState.selectionCount >= uiState.selectionLimit) {
+            viewModel.notifyMonthlyLimit()
+            return
+        }
         imageAccessLevel = context.currentImageAccessLevel()
         if (imageAccessLevel == ImageAccessLevel.Denied) {
             openPickerAfterPermission = true
@@ -170,6 +183,12 @@ fun OrganizeRoute(
         }
     }
 
+    LaunchedEffect(uiState.monthlyLimitNotice) {
+        if (uiState.monthlyLimitNotice > 0 && !showScreenshotPicker) {
+            toastDispatcher.showToast(monthlyLimitMessage)
+        }
+    }
+
     LaunchedEffect(destination) {
         if (destination == OrganizeDestination.Confirmation) {
             viewModel.onConfirmationEntered()
@@ -187,6 +206,9 @@ fun OrganizeRoute(
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             when (event) {
+                OrganizeEvent.MonthlyLimitExceeded -> {
+                    toastDispatcher.showToast(monthlyLimitExceededMessage)
+                }
                 is OrganizeEvent.ProceedToOrganize -> {
                     completeOrganize(event.candidates)
                 }
