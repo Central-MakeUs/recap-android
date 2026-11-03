@@ -47,6 +47,7 @@ class RemoteUserRepositoryTest {
     fun setUp() {
         refreshToken.value = "refresh-token"
         every { sessionTokenStore.refreshToken } returns refreshToken
+        every { sessionTokenStore.sessionId } returns refreshToken
         coEvery { screenshotCardRepository.deleteAllCards() } just runs
         every { thumbnailCache.clearAll() } returns true
         repository = RemoteUserRepository(

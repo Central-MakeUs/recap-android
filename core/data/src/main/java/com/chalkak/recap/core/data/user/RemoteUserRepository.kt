@@ -60,7 +60,7 @@ class RemoteUserRepository(
     private val dataSummaryRefresh = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private val usageCache = SessionUsageCache(
         scope = repositoryScope,
-        sessions = sessionTokenStore.refreshToken,
+        sessions = sessionTokenStore.sessionId,
         fetch = ::fetchUsage,
     )
 

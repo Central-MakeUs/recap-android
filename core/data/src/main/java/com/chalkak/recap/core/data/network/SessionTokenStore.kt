@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.util.UUID
 
 data class SessionTokens(
     val accessToken: String,
@@ -34,13 +35,21 @@ class SessionTokenStore @Inject constructor(
             .map { preferences -> preferences[REFRESH_TOKEN] }
             .distinctUntilChanged()
 
+    /** Stable across token refreshes, replaced by a new login and removed on logout. */
+    val sessionId: Flow<String?> =
+        dataStore.safeData(USER_PREFERENCES_DATASTORE_NAME)
+            .map { preferences ->
+                preferences[REFRESH_TOKEN]?.let { preferences[SESSION_ID] ?: it }
+            }
+            .distinctUntilChanged()
+
     @Volatile
     private var cached: SessionTokens? = null
 
     private var hydrated: Boolean = false
 
     suspend fun save(tokens: SessionTokens) = mutex.withLock {
-        saveLocked(tokens)
+        saveLocked(tokens, newSession = true)
     }
 
     suspend fun clear() = mutex.withLock {
@@ -52,7 +61,7 @@ class SessionTokenStore @Inject constructor(
         mutex.withLock {
             ensureHydratedLocked()
             if (cached?.refreshToken != expected) return@withLock false
-            saveLocked(tokens)
+            saveLocked(tokens, newSession = false)
             true
         }
 
@@ -79,8 +88,14 @@ class SessionTokenStore @Inject constructor(
         return runBlocking { getTokens() }
     }
 
-    private suspend fun saveLocked(tokens: SessionTokens) {
+    private suspend fun saveLocked(tokens: SessionTokens, newSession: Boolean) {
         dataStore.edit { preferences ->
+            // Preserve the pre-migration identity when refreshing an existing installation.
+            preferences[SESSION_ID] = if (newSession) {
+                UUID.randomUUID().toString()
+            } else {
+                preferences[SESSION_ID] ?: preferences[REFRESH_TOKEN] ?: UUID.randomUUID().toString()
+            }
             preferences[ACCESS_TOKEN] = tokens.accessToken
             preferences[REFRESH_TOKEN] = tokens.refreshToken
             preferences[ACCESS_TOKEN_EXPIRES_AT] = tokens.accessTokenExpiresAt
@@ -94,6 +109,7 @@ class SessionTokenStore @Inject constructor(
             preferences.remove(ACCESS_TOKEN)
             preferences.remove(REFRESH_TOKEN)
             preferences.remove(ACCESS_TOKEN_EXPIRES_AT)
+            preferences.remove(SESSION_ID)
         }
         cached = null
         hydrated = true
@@ -119,6 +135,7 @@ class SessionTokenStore @Inject constructor(
     }
 
     private companion object {
+        val SESSION_ID = stringPreferencesKey("session_id")
         val ACCESS_TOKEN = stringPreferencesKey("session_access_token")
         val REFRESH_TOKEN = stringPreferencesKey("session_refresh_token")
         val ACCESS_TOKEN_EXPIRES_AT = stringPreferencesKey("session_access_token_expires_at")

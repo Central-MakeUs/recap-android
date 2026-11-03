@@ -1,6 +1,9 @@
 package com.chalkak.recap.core.data.user
 
 import app.cash.turbine.test
+import com.chalkak.recap.core.data.network.SessionTokenStore
+import com.chalkak.recap.core.data.network.SessionTokens
+import com.chalkak.recap.core.data.testdouble.InMemoryPreferencesDataStore
 import com.chalkak.recap.core.model.user.Usage
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,6 +25,35 @@ class SessionUsageCacheTest {
     private val sessions = MutableStateFlow<String?>("account-a")
     private val usage = Usage(4, 20, 16, "2026-12-01T00:00:00Z")
     private val clock = MutableClock(Instant.parse("2026-11-03T00:00:00Z"))
+
+    @Test
+    fun `token rotation preserves cached usage and accepts an in flight response`() = runTest {
+        val store = SessionTokenStore(InMemoryPreferencesDataStore())
+        val originalTokens = SessionTokens("access", "refresh", "2026-12-01T00:00:00Z")
+        store.save(originalTokens)
+        val response = CompletableDeferred<Result<Usage>>()
+        var calls = 0
+        val cache = SessionUsageCache(backgroundScope, store.sessionId, {
+            calls++
+            response.await()
+        }, clock)
+        val startup = async { cache.get() }
+        runCurrent()
+
+        assertTrue(store.saveIfRefreshTokenMatches("refresh", originalTokens.copy(refreshToken = "rotated")))
+        runCurrent()
+        response.complete(Result.success(usage))
+        assertEquals(usage, startup.await().getOrThrow())
+
+        assertTrue(store.saveIfRefreshTokenMatches("rotated", originalTokens.copy(refreshToken = "rotated-again")))
+        runCurrent()
+        assertEquals(usage, cache.peek())
+        assertEquals(usage, cache.get().getOrThrow())
+        assertEquals(1, calls)
+
+        store.save(originalTokens.copy(refreshToken = "new-account"))
+        assertNull(cache.peek())
+    }
 
     @Test
     fun `peek reads valid cache without fetching and ignores expired or signed out cache`() =

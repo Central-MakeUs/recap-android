@@ -2,21 +2,58 @@ package com.chalkak.recap.core.data.network
 
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.preferencesOf
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.chalkak.recap.core.data.testdouble.InMemoryPreferencesDataStore
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
+import org.junit.jupiter.api.Assertions.assertNotEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SessionTokenStoreTest {
+    @Test
+    fun `session identity survives refresh and store recreation but changes on login`() = runTest {
+        val dataStore = InMemoryPreferencesDataStore()
+        val store = SessionTokenStore(dataStore)
+        store.save(tokens("old"))
+        val original = store.sessionId.first()
+
+        assertTrue(store.saveIfRefreshTokenMatches("old-refresh", tokens("rotated")))
+        assertEquals(original, store.sessionId.first())
+        assertEquals(original, SessionTokenStore(dataStore).sessionId.first())
+
+        store.save(tokens("new-account"))
+        assertNotEquals(original, store.sessionId.first())
+        store.clear()
+        assertNull(store.sessionId.first())
+    }
+
+    @Test
+    fun `legacy session identity stays stable during first token rotation`() = runTest {
+        val dataStore = InMemoryPreferencesDataStore(preferencesOf(
+            stringPreferencesKey("session_access_token") to "old-access",
+            stringPreferencesKey("session_refresh_token") to "old-refresh",
+            stringPreferencesKey("session_access_token_expires_at") to "2026-12-01T00:00:00Z",
+        ))
+        val store = SessionTokenStore(dataStore)
+        val original = store.sessionId.first()
+
+        assertTrue(store.saveIfRefreshTokenMatches("old-refresh", tokens("rotated")))
+
+        assertEquals(original, store.sessionId.first())
+        assertEquals(original, SessionTokenStore(dataStore).sessionId.first())
+    }
+
     @Test
     fun `refresh cannot restore a cleared session`() = runTest {
         val dataStore = InMemoryPreferencesDataStore()
