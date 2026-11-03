@@ -10,7 +10,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -21,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalInspectionMode
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.tooling.preview.Preview
@@ -99,6 +102,16 @@ fun RecapUsageCard(
                     ),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    if (resolvedLimitCount in 1..resolvedUsedCount) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_error_circle_16),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(RecapUsageCardTokens.LimitIconSize)
+                                .padding(end = 2.dp),
+                            tint = RecapBlue300,
+                        )
+                    }
                     Text(
                         text = stringResource(
                             R.string.usage_card_sheet_count,
@@ -158,6 +171,7 @@ private object RecapUsageCardTokens {
     val SectionSpacing = 15.dp
     val TitleCountSpacing = 12.dp
     val CountSeparatorSpacing = 5.dp
+    val LimitIconSize = 16.dp
     val ProgressHeight = 4.dp
     const val ProgressAnimationDurationMillis = 750
 }
