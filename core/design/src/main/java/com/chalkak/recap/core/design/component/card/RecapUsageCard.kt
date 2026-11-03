@@ -164,7 +164,7 @@ private fun usageProgress(
 }
 
 private object RecapUsageCardTokens {
-    val CornerRadius = 16.dp
+    val CornerRadius = 10.dp
     val BorderWidth = 1.dp
     val HorizontalPadding = 20.dp
     val VerticalPadding = 24.dp
