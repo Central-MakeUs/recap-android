@@ -25,11 +25,5 @@ class SettingsViewModel @Inject constructor(
                     Timber.w(error, "Consent status prefetch failed")
                 }
         }
-        viewModelScope.launch {
-            userRepository.prefetchUsage()
-                .onFailure { error ->
-                    Timber.w(error, "Usage prefetch failed")
-                }
-        }
     }
 }

@@ -191,7 +191,7 @@ fun OrganizeRoute(
 
     LaunchedEffect(destination) {
         if (destination == OrganizeDestination.Confirmation) {
-            viewModel.onConfirmationEntered()
+            viewModel.onConfirmationEntered(forceRefreshUsage = startAtConfirmation)
         } else {
             viewModel.onConfirmationExited()
         }

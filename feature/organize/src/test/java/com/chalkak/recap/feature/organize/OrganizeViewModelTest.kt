@@ -50,6 +50,7 @@ class OrganizeViewModelTest {
             ConsentStatus(consented = true),
         )
         coEvery { userRepository.giveConsent() } returns Result.success(Unit)
+        coEvery { userRepository.getUsage() } returns Result.failure(IllegalStateException("unavailable"))
         coEvery { userRepository.fetchLatestUsage() } returns Result.failure(IllegalStateException("unavailable"))
         stubSuccessfulPreparer()
     }
@@ -62,7 +63,7 @@ class OrganizeViewModelTest {
     @Test
     fun `late usage disables organizing until excess selections are removed`() = runTest {
         val usage = CompletableDeferred<Result<com.chalkak.recap.core.model.user.Usage>>()
-        coEvery { userRepository.fetchLatestUsage() } coAnswers { usage.await() }
+        coEvery { userRepository.getUsage() } coAnswers { usage.await() }
         val dataSource = mockk<LocalScreenshotDataSource>()
         coEvery { dataSource.queryAllScreenshots() } returns screenshots
         val viewModel = createViewModel(dataSource)
@@ -91,7 +92,43 @@ class OrganizeViewModelTest {
         viewModel.onConfirmationExited()
         viewModel.onConfirmationEntered()
         advanceUntilIdle()
+        coVerify(exactly = 1) { userRepository.getUsage() }
+    }
+
+    @Test
+    fun `external confirmation refreshes usage once instead of reading cache`() = runTest {
+        coEvery { userRepository.fetchLatestUsage() } returns Result.success(
+            com.chalkak.recap.core.model.user.Usage(4, 20, 16, ""),
+        )
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots
+        val viewModel = createViewModel(dataSource)
+        viewModel.onConfirmationEntered(forceRefreshUsage = true)
+        advanceUntilIdle()
+
+        assertEquals(16, viewModel.uiState.value.monthlyRemaining)
         coVerify(exactly = 1) { userRepository.fetchLatestUsage() }
+        coVerify(exactly = 0) { userRepository.getUsage() }
+    }
+
+    @Test
+    fun `new external share refreshes usage for each share session`() = runTest {
+        coEvery { userRepository.fetchLatestUsage() } returns Result.success(
+            com.chalkak.recap.core.model.user.Usage(4, 20, 16, ""),
+        )
+        val dataSource = mockk<LocalScreenshotDataSource>()
+        coEvery { dataSource.queryAllScreenshots() } returns screenshots
+        val viewModel = createViewModel(dataSource)
+        viewModel.seedSharedImages("first", screenshots.take(1))
+        advanceUntilIdle()
+        viewModel.onConfirmationEntered(forceRefreshUsage = true)
+        advanceUntilIdle()
+        viewModel.seedSharedImages("second", screenshots.take(2))
+        advanceUntilIdle()
+
+        coVerify(exactly = 2) { userRepository.fetchLatestUsage() }
+        coVerify(exactly = 0) { userRepository.getUsage() }
+        assertEquals(16, viewModel.uiState.value.monthlyRemaining)
     }
 
     @Test

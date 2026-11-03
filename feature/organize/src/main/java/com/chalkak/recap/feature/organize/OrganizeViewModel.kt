@@ -82,13 +82,13 @@ class OrganizeViewModel @Inject constructor(
         }
     }
 
-    private fun fetchUsageOnce() {
+    private fun fetchUsageOnce(forceRefresh: Boolean = false) {
         if (usageRequested) return
         usageRequested = true
         val generation = usageGeneration
         usageJob = viewModelScope.launch {
             val result = try {
-                userRepository.fetchLatestUsage()
+                if (forceRefresh) userRepository.fetchLatestUsage() else userRepository.getUsage()
             } catch (cancelled: CancellationException) {
                 throw cancelled
             } catch (_: Exception) {
@@ -101,9 +101,9 @@ class OrganizeViewModel @Inject constructor(
         }
     }
 
-    fun onConfirmationEntered() {
+    fun onConfirmationEntered(forceRefreshUsage: Boolean = false) {
         _uiState.update { it.copy(hasEnteredConfirmation = true) }
-        fetchUsageOnce()
+        fetchUsageOnce(forceRefresh = forceRefreshUsage)
         confirmationGeneration += 1
         val generation = confirmationGeneration
         isConfirmationActive = true
@@ -221,15 +221,21 @@ class OrganizeViewModel @Inject constructor(
         if (seededShareSessionId == sessionId) return
         invalidateRefresh()
         seededShareSessionId = sessionId
+        usageGeneration += 1
+        usageJob?.cancel()
+        usageRequested = false
         sharedSourceImages = images
         _uiState.update {
             it.copy(
                 isLoading = false,
+                monthlyRemaining = null,
+                monthlyLimitNotice = 0,
                 availableScreenshots = images,
                 selectedUris = images.map { image -> image.uri },
                 showMaxSelectionReached = false,
             )
         }
+        fetchUsageOnce(forceRefresh = true)
         persistShareState()
         if (isConfirmationActive) {
             reconcilePreparation()

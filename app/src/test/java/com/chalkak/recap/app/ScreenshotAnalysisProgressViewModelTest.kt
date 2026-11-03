@@ -22,6 +22,7 @@ import com.chalkak.recap.core.model.observability.PerformanceTracer
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
 import com.chalkak.recap.core.model.screenshot.ScreenshotContentType
 import com.chalkak.recap.feature.organize.OrganizeAnalysisStatusUiState
+import com.chalkak.recap.core.data.user.UserRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -47,6 +48,7 @@ import java.time.Instant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ScreenshotAnalysisProgressViewModelTest {
+    private val userRepository = mockk<UserRepository>()
     private val testDispatcher = StandardTestDispatcher()
     private val repository = mockk<ScreenshotAnalysisRepository>()
     private val screenshotCardRepository = mockk<ScreenshotCardRepository>(relaxed = true)
@@ -61,6 +63,8 @@ class ScreenshotAnalysisProgressViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        coEvery { userRepository.prefetchUsage() } returns Result.failure(IllegalStateException())
+        coEvery { userRepository.fetchLatestUsage() } returns Result.failure(IllegalStateException())
         every {
             userPreferencesRepository.organizeCompleteNotificationEnabled
         } returns organizeCompleteNotificationEnabled
@@ -73,6 +77,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             screenshotAnalysisRunState = screenshotAnalysisRunState,
             organizeProgressTracker = OrganizeProgressTracker(),
             userPreferencesRepository = userPreferencesRepository,
+            userRepository = userRepository,
             crashReporter = crashReporter,
             performanceTracer = performanceTracer,
         ).apply {
@@ -327,6 +332,7 @@ class ScreenshotAnalysisProgressViewModelTest {
             assertFalse(state.isRunning)
             assertTrue(state.isStatusVisible)
             assertTrue(crashReporter.recorded.isEmpty())
+            coVerify(exactly = 1) { userRepository.fetchLatestUsage() }
     }
 
     @Test
@@ -410,6 +416,7 @@ class ScreenshotAnalysisProgressViewModelTest {
         assertEquals(1f, state.progress)
         assertTrue(state.results.isEmpty())
         coVerify(exactly = 0) { screenshotCardRepository.saveAnalysisResults(any(), any()) }
+        coVerify(exactly = 1) { userRepository.fetchLatestUsage() }
         assertFalse(screenshotAnalysisRunState.isRunning.value)
     }
 
