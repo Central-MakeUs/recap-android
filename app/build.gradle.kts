@@ -34,8 +34,8 @@ android {
         applicationId = "com.chalkak.recap"
         minSdk = 30
         targetSdk = 37
-        versionCode = 12
-        versionName = "1.1.4"
+        versionCode = 13
+        versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "KAKAO_NATIVE_APP_KEY", "\"${kakaoNativeAppKey.get()}\"")
@@ -132,6 +132,7 @@ dependencies {
     testImplementation(libs.turbine)
     testRuntimeOnly(libs.junit.platform.launcher)
     testRuntimeOnly(libs.junit.vintage.engine)
+    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

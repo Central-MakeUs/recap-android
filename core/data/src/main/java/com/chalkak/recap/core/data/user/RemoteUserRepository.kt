@@ -12,8 +12,7 @@ import com.chalkak.recap.core.data.user.remote.toDomain
 import com.chalkak.recap.core.model.user.AccountInfo
 import com.chalkak.recap.core.model.user.ConsentStatus
 import com.chalkak.recap.core.model.user.DataSummary
-import javax.inject.Inject
-import javax.inject.Singleton
+import com.chalkak.recap.core.model.user.Usage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -29,6 +28,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
 class RemoteUserRepository(
@@ -57,6 +58,11 @@ class RemoteUserRepository(
 
     private val consentRefresh = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private val dataSummaryRefresh = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val usageCache = SessionUsageCache(
+        scope = repositoryScope,
+        sessions = sessionTokenStore.sessionId,
+        fetch = ::fetchUsage,
+    )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private val sharedDataSummary =
@@ -141,6 +147,16 @@ class RemoteUserRepository(
     override suspend fun getDataSummary(): Result<DataSummary> =
         prefetchDataSummary()
 
+    override fun observeUsage(): Flow<Result<Usage>> = usageCache.observe()
+
+    override suspend fun prefetchUsage(): Result<Usage> = usageCache.get()
+
+    override suspend fun fetchLatestUsage(): Result<Usage> = usageCache.get(forceRefresh = true)
+
+    override suspend fun getUsage(): Result<Usage> = usageCache.get()
+
+    override suspend fun getCachedUsage(): Usage? = usageCache.peek()
+
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeConsentStatus(): Flow<Result<ConsentStatus>> =
         sessionTokenStore.refreshToken
@@ -214,6 +230,11 @@ class RemoteUserRepository(
             mapApiResponse(userApi.getConsentStatus()) { it.toDomain() }.getOrThrow()
         }
 
+    private suspend fun fetchUsage(): Result<Usage> =
+        runRemoteCatchingSuspend {
+            mapApiResponse(userApi.getUsage()) { it.toDomain() }.getOrThrow()
+        }
+
     private data class SessionDataSummary(
         val sessionKey: String?,
         val result: Result<DataSummary>,
@@ -231,4 +252,5 @@ class RemoteUserRepository(
     private class MissingConsentSessionException : IllegalStateException(
         "A session is required to load the consent status",
     )
+
 }

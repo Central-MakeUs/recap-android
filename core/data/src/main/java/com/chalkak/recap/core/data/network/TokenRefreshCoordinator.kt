@@ -37,7 +37,7 @@ class TokenRefreshCoordinator @Inject constructor(
                 onSuccess = { true },
                 onFailure = { error ->
                     if (error.isInvalidOrExpiredRefresh()) {
-                        sessionTokenStore.clear()
+                        sessionTokenStore.clearIfRefreshTokenMatches(tokens.refreshToken)
                     }
                     false
                 },

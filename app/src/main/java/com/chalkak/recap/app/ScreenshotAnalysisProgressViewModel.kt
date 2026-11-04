@@ -27,6 +27,7 @@ import com.chalkak.recap.core.model.observability.PerformanceTrace
 import com.chalkak.recap.core.model.observability.PerformanceTraceNames
 import com.chalkak.recap.core.model.observability.PerformanceTracer
 import com.chalkak.recap.core.model.screenshot.ScreenshotAnalysisResult
+import com.chalkak.recap.core.data.user.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
@@ -67,6 +68,7 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
     private val userPreferencesRepository: UserPreferencesRepository,
     private val crashReporter: CrashReporter,
     private val performanceTracer: PerformanceTracer,
+    private val userRepository: UserRepository,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(ScreenshotAnalysisProgressUiState())
     val uiState: StateFlow<ScreenshotAnalysisProgressUiState> = _uiState.asStateFlow()
@@ -280,6 +282,9 @@ class ScreenshotAnalysisProgressViewModel @Inject constructor(
                 )
                 finishOrganizeSuccess(trace, terminal)
             } finally {
+                viewModelScope.launch {
+                    userRepository.fetchLatestUsage().onFailure { Timber.w(it, "Usage refresh failed") }
+                }
                 screenshotAnalysisRunState.endRun()
                 if (activeOrganizeRunToken === runToken) {
                     activeOrganizeRunToken = null

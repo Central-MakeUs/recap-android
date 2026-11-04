@@ -10,6 +10,7 @@ import com.chalkak.recap.core.data.screenshot.persistence.ScreenshotCardReposito
 import com.chalkak.recap.core.data.user.remote.AccountInfoResponseDto
 import com.chalkak.recap.core.data.user.remote.ConsentStatusResponseDto
 import com.chalkak.recap.core.data.user.remote.DataSummaryResponseDto
+import com.chalkak.recap.core.data.user.remote.UsageResponseDto
 import com.chalkak.recap.core.data.user.remote.UserApi
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -46,6 +47,7 @@ class RemoteUserRepositoryTest {
     fun setUp() {
         refreshToken.value = "refresh-token"
         every { sessionTokenStore.refreshToken } returns refreshToken
+        every { sessionTokenStore.sessionId } returns refreshToken
         coEvery { screenshotCardRepository.deleteAllCards() } just runs
         every { thumbnailCache.clearAll() } returns true
         repository = RemoteUserRepository(
@@ -85,6 +87,61 @@ class RemoteUserRepositoryTest {
 
         assertEquals(12L, result.getOrNull()?.capturedCount)
     }
+
+    @Test
+    fun `getUsage maps monthly usage`() = runTest {
+        coEvery { userApi.getUsage() } returns ApiResponseDto(
+            success = true,
+            data = UsageResponseDto(
+                usedCount = 12,
+                limit = 20,
+                remaining = 8,
+                resetAt = "2026-11-01T00:00:00Z",
+            ),
+        )
+
+        val result = repository.getUsage()
+
+        assertEquals(12, result.getOrNull()?.usedCount)
+        assertEquals(20, result.getOrNull()?.limit)
+        assertEquals(8, result.getOrNull()?.remaining)
+        assertEquals("2026-11-01T00:00:00Z", result.getOrNull()?.resetAt)
+    }
+
+    @Test
+    fun `prefetchUsage shares result with observeUsage without second api call`() =
+        runTest(testDispatcher) {
+            coEvery { userApi.getUsage() } returns ApiResponseDto(
+                success = true,
+                data = UsageResponseDto(
+                    usedCount = 12,
+                    limit = 20,
+                    remaining = 8,
+                    resetAt = "2026-11-01T00:00:00Z",
+                ),
+            )
+
+            val prefetched = repository.prefetchUsage()
+            assertTrue(prefetched.isSuccess)
+
+            repository.observeUsage().test {
+                assertSame(prefetched.getOrNull(), awaitItem().getOrNull())
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            coVerify(exactly = 1) { userApi.getUsage() }
+        }
+
+    @Test
+    fun `prefetchUsage fails without calling api when session is unavailable`() =
+        runTest(testDispatcher) {
+            refreshToken.value = null
+
+            val result = repository.prefetchUsage()
+
+            assertTrue(result.isFailure)
+            coVerify(exactly = 0) { userApi.getUsage() }
+        }
 
     @Test
     fun `prefetchDataSummary shares result with observeDataSummary without second api call`() =

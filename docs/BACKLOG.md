@@ -54,6 +54,39 @@ Cursor는 Codex의 개인 메모리를 볼 수 없다. 두 에이전트가 공�
   - Priority: Low
   - Handoff: not started
 
+## 2026-09-20 production audit backlog
+
+상세 실행 흐름·실패 시나리오·수정/검증 근거: [감사 보고서](PRODUCTION_AUDIT_2026-09-20.md).
+
+### P0 — production correctness
+
+- [ ] 계정 전환 전체에 세션 generation 적용: refresh CAS는 보강했으나 `TokenAuthenticator`의 다른 계정 토큰 재시도, 늦은 logout/withdraw 완료, cleanup과 새 로그인 경합은 아직 보호되지 않는다. Swagger refresh `USER_NOT_FOUND`의 세션 종료 정책도 정리한다.
+
+- [ ] 분석 서버 배치 복구·중복 작업 방지: process death, poll 네트워크 실패, 두 번째 공유 이후에도 account-bound batchId와 `pending-result`로 진행/결과를 복구한다. `cancel`/`ack` 시점과 POST idempotency는 백엔드 계약으로 확정한다. 현재 로컬 취소는 서버 분석을 중단하지 않는다.
+- [ ] 탈퇴 실패/불확실 응답을 성공과 분리: `RemoteUserRepository.withdraw` 실패에도 세션을 지우고 `AccountManagementViewModel`이 결과를 무시한다. 서버 계정/데이터가 남을 때 실패 안내·재시도 경로를 제품 정책으로 확정한다.
+
+### P1 — reliability/performance
+
+- [ ] 업로드 이미지 pixel/byte 상한 및 파일 기반 버퍼 정책: 이번 Canvas/Matrix 수정 후에도 full-resolution decode와 최대 20개 JPEG 배열이 남는다. 긴 스크린샷 OCR 품질을 검증하면서 최대 메모리 예산을 정한다.
+- [ ] 기존 Navigation3 entry별 ViewModel 수명 항목을 correctness 작업으로 우선: Screenshot의 이전 capture mutation 결과는 차단했지만 pop/logout 후 feature collector와 state는 Activity에 남는다. decorator 도입 전에 logout/탈퇴 cleanup을 화면 수명에서 분리한다.
+- [ ] 컬렉션 상세 네트워크 오류를 빈 목록과 분리하고 retry 제공: `RemoteStorageRepository`가 실패를 count=0으로 바꿔 `CollectionViewModel`이 오류를 알 수 없다.
+- [ ] 설정 데이터·동의 화면 실패 복구: `DataManagementViewModel`의 첫 로드 실패 시 action이 모두 disabled이고 재진입/온라인 복구로 refresh되지 않는다. 기존 repository refresh API와 명시적 retry·mutation 실패 안내를 연결한다.
+- [ ] DataStore 장애 전파 containment: `safeData` 재시도 종료 후 observability/notification/application repository collector의 uncaught exception을 막고 복구 정책·fault-injection 테스트를 추가한다. 계정 cleanup 실패도 재시도 마커로 복구한다.
+- [ ] 빠른 즐겨찾기 mutation 순서 보장: Home/Search/Collection의 중복 PATCH와 이전 실패 rollback이 최신 클릭 결과를 덮지 않도록 per-item 순서를 정한다.
+- [ ] HTTP 업로드 취소 및 foreground service 종료 정책: blocking `execute()`를 coroutine cancellation에 연결하고 무한 PROCESSING 폴링·Android 15+ dataSync timeout·알림 설정과 keepalive 결합을 처리한다.
+- [ ] 썸네일 cache 용량/만료 및 삭제 실패 복구: 전체 데이터 삭제의 Room 실패가 cache clear/invalidation까지 건너뛰지 않게 한다. download 실패 이후 재시도와 cache 크기 상한을 추가한다.
+
+### P2 — maintainability
+
+- [ ] 실제 배포된 Room schema 목록/fixture 확정 및 upgrade 테스트: 현재 version=1/exportSchema=false이고 과거 같은 version의 entity 변경이 있다. 설치 이력이 확인되기 전 임의 destructive migration을 추가하지 않는다.
+- [ ] process recreation·gesture/3-button Back·API 30/34/37·TalkBack 회귀 매트릭스: fontScale 1.5 상한은 접근성 제품 결정으로 검토한다. SearchRoute rotation 시 query/results 초기화도 방지한다.
+- [ ] HTTP 429/5xx/잘못된 JSON/누락 필드/응답 유실/늦은 서버 완료 contract 테스트와 debug/Crashlytics payload 개인정보 정책을 문서화한다.
+- [ ] Mock 썸네일 EXIF transpose/transverse 매핑 수정: `ScreenshotImageStorage`의 orientation 5/7은 서로 뒤바뀌어 있다. Remote 업로드 경로와 별도이며 이번 수정 범위에서는 유지했다.
+
+### P3 — optional cleanup
+
+- 새 미관 중심 정리 작업은 추가하지 않는다. 기존 테스트 프레임워크 통일·모듈 의존성 정리는 위 correctness 항목 이후 수행한다.
+
 ## In Progress
 
 - 없음

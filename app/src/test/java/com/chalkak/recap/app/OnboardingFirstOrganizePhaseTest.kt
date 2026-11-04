@@ -69,4 +69,29 @@ class OnboardingFirstOrganizePhaseTest {
             ),
         )
     }
+
+    @Test
+    fun `restored analysis without a session allows selecting screenshots again`() {
+        val recovered = reduceOnboardingFirstOrganize(
+            phase = OnboardingFirstOrganizePhase.AnalysisSession,
+            event = OnboardingFirstOrganizeEvent.AnalysisSessionUnavailable,
+        )
+
+        assertEquals(OnboardingFirstOrganizePhase.Idle, recovered)
+        assertEquals(
+            OnboardingFirstOrganizePhase.OrganizeOverlay,
+            reduceOnboardingFirstOrganize(recovered, OnboardingFirstOrganizeEvent.OpenPicker),
+        )
+    }
+
+    @Test
+    fun `unavailable analysis does not dismiss an open picker`() {
+        assertEquals(
+            OnboardingFirstOrganizePhase.OrganizeOverlay,
+            reduceOnboardingFirstOrganize(
+                phase = OnboardingFirstOrganizePhase.OrganizeOverlay,
+                event = OnboardingFirstOrganizeEvent.AnalysisSessionUnavailable,
+            ),
+        )
+    }
 }

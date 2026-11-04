@@ -2,6 +2,7 @@ package com.chalkak.recap.feature.developer
 
 import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.data.screenshot.backend.MockScreenshotDataResetter
+import com.chalkak.recap.core.data.user.MockUsageStore
 import com.chalkak.recap.core.design.R
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -26,12 +27,14 @@ class DeveloperViewModelTest {
     private val testDispatcher = StandardTestDispatcher()
     private val resetter = mockk<MockScreenshotDataResetter>()
     private val sessionTokenStore = mockk<SessionTokenStore>()
+    private val mockUsageStore = mockk<MockUsageStore>()
 
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
         coEvery { resetter.reset() } returns Unit
         coEvery { sessionTokenStore.clear() } just runs
+        coEvery { mockUsageStore.reset() } just runs
     }
 
     @AfterEach
@@ -100,6 +103,36 @@ class DeveloperViewModelTest {
     }
 
     @Test
+    fun `reset mock usage clears the local counter`() = runTest(testDispatcher) {
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onAction(DeveloperOptionAction.ResetMockUsage)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { mockUsageStore.reset() }
+        assertEquals(
+            R.string.developer_options_reset_mock_usage_success,
+            viewModel.uiState.value.feedbackMessageResId,
+        )
+    }
+
+    @Test
+    fun `reset mock usage failure shows failure feedback`() = runTest(testDispatcher) {
+        coEvery { mockUsageStore.reset() } throws RuntimeException("reset failed")
+        val viewModel = createViewModel()
+        advanceUntilIdle()
+
+        viewModel.onAction(DeveloperOptionAction.ResetMockUsage)
+        advanceUntilIdle()
+
+        assertEquals(
+            R.string.developer_options_reset_mock_usage_failure,
+            viewModel.uiState.value.feedbackMessageResId,
+        )
+    }
+
+    @Test
     fun `force test crash throws runtime exception`() = runTest(testDispatcher) {
         val viewModel = createViewModel()
         advanceUntilIdle()
@@ -115,6 +148,7 @@ class DeveloperViewModelTest {
         return DeveloperViewModel(
             mockScreenshotDataResetter = resetter,
             sessionTokenStore = sessionTokenStore,
+            mockUsageStore = mockUsageStore,
         )
     }
 }

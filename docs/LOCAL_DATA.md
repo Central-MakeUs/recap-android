@@ -233,26 +233,30 @@
 - `organize_complete_notification_enabled`
 - `organize_notification_permission_prompt_shown`
 - `ai_data_transfer_consented` / `ai_data_transfer_consented_at` (MOCK consent SoT)
+- `mock_usage_used_count` (MOCK 사용량 usedCount. 상한 20은 상수이며 저장하지 않음)
 
 주의사항:
 - 일반 사용자 설정은 같은 `user_preferences` DataStore에 추가한다. 계정 소유자 해시만 예외적으로 `account_owner` DataStore를 사용한다.
 - organize 알림 권한 안내 시트 표시 기록은 설치 후 1회 정책이므로 계정 전환·로그아웃 시에도 유지한다.
 - AI 동의 DataStore 값은 MOCK backend에서만 사용한다. REMOTE는 서버 consent API가 SoT다.
 - AI 동의는 계정 종속 값이라 `clearAccountScopedPreferences()`가 지운다. 계정 전환 wipe와 로그아웃 reset이 이 API를 호출한다. 계정별로 다시 받아야 하는 설정을 추가할 때는 여기에도 등록한다.
+- `mock_usage_used_count`는 MOCK 정리 성공 장수만 누적한다. 월 초기화는 없고, 개발자 옵션의 mock 사용량 초기화만 0으로 되돌린다. 계정 wipe와
+  스크린샷 데이터 초기화는 이 값을 지우지 않는다. REMOTE 사용량은 `GET /api/v1/users/me/usage`가 SoT다.
 - 스크린샷 backend(Mock/Remote)는 DataStore가 아니라 `:core:data` `BuildConfig.USE_MOCK_BACKEND`로 빌드 시 고정된다. 자세한 선택은 `docs/ANALYSIS_DATA_SOURCE.md`를 본다.
 
 ## Mock backend vs Remote backend 저장 SoT
 
-| | Mock backend | Remote backend |
-|--|--------------|----------------|
-| 정보카드 SoT | Room `ScreenshotCardRepository` | 서버 Capture/Storage API |
-| 원본 이미지 | 앱 private `ScreenshotImageStorage` | 서버 URL (기기 원본 캐시 없음) |
-| 썸네일 | 앱 private 썸네일 파일 | `RemoteCaptureThumbnailCache` (capture ID 기반 로컬 캐시) |
-| 데이터 요약 | Room 카드 수 (`MockUserRepository.getDataSummary`) | `GET /api/v1/users/me/data-summary` |
-| AI 동의 | `user_preferences` consent keys | `GET/POST/DELETE /api/v1/users/me/consent` |
-| 전체 데이터 삭제 | `MockScreenshotDataResetter` | `DELETE /api/v1/users/me/data` + 로컬 캐시 정리 |
-| Mock 구현 | `MockHomeRepository`, `MockStorageRepository`, `MockCaptureMutationRepository`, `MockUserRepository` 등 | — |
-| Remote 구현 | — | `RemoteHomeRepository`, `RemoteStorageRepository`, `RemoteCaptureMutationRepository`, `RemoteScreenshotDetailRepository`, `RemoteUserRepository` 등 |
+|                  | Mock backend                                                                                            | Remote backend                                                                                                                                      |
+|------------------|---------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|
+| 정보카드 SoT     | Room `ScreenshotCardRepository`                                                                         | 서버 Capture/Storage API                                                                                                                            |
+| 원본 이미지      | 앱 private `ScreenshotImageStorage`                                                                     | 서버 URL (기기 원본 캐시 없음)                                                                                                                      |
+| 썸네일           | 앱 private 썸네일 파일                                                                                  | `RemoteCaptureThumbnailCache` (capture ID 기반 로컬 캐시)                                                                                           |
+| 데이터 요약      | Room 카드 수 (`MockUserRepository.getDataSummary`)                                                      | `GET /api/v1/users/me/data-summary`                                                                                                                 |
+| AI 동의          | `user_preferences` consent keys                                                                         | `GET/POST/DELETE /api/v1/users/me/consent`                                                                                                          |
+| 이번 달 사용량   | `user_preferences` `mock_usage_used_count` (상한 20은 상수)                                             | `GET /api/v1/users/me/usage`                                                                                                                        |
+| 전체 데이터 삭제 | `MockScreenshotDataResetter`                                                                            | `DELETE /api/v1/users/me/data` + 로컬 캐시 정리                                                                                                     |
+| Mock 구현        | `MockHomeRepository`, `MockStorageRepository`, `MockCaptureMutationRepository`, `MockUserRepository` 등 | —                                                                                                                                                   |
+| Remote 구현      | —                                                                                                       | `RemoteHomeRepository`, `RemoteStorageRepository`, `RemoteCaptureMutationRepository`, `RemoteScreenshotDetailRepository`, `RemoteUserRepository` 등 |
 
 개발자 옵션의 스크린샷 데이터 초기화와 Mock `deleteAccountData`는 `MockScreenshotDataResetter`로 Mock Room 카드와 private 원본/썸네일만 삭제한다. session token·onboarding·MOCK consent·일반 사용자 설정은 유지한다. Remote 빌드에서도 이 액션은 서버 데이터 삭제로 바뀌지 않는다.
 BuildConfig backend 선택 자체는 resetter와 무관하며, 런타임 모드 전환(및 전환 시 wipe)은 없다.

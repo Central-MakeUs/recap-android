@@ -85,6 +85,17 @@ fun RecapHazeFolderCard(
     val backShape = RoundedCornerShape(RecapHazeFolderCardTokens.BackCornerRadius)
     val folderShape = remember { FolderShape }
     val tintBrush = remember { folderTintBrush() }
+    // Haze 2.1+는 스타일을 identity로 비교하므로 then으로 만든 스타일은 remember로 고정한다.
+    val baseStyle = CupertinoMaterials.ultraThin()
+    val blurStyle = remember(baseStyle, tintBrush) {
+        baseStyle.then {
+            blurRadius(RecapHazeFolderCardTokens.BlurRadius)
+            colorEffects(
+                listOf(HazeColorEffect.tint(brush = tintBrush)),
+            )
+            noiseFactor(RecapHazeFolderCardTokens.NoiseFactor)
+        }
+    }
     val iconContainerShape = RoundedCornerShape(RecapHazeFolderCardTokens.IconContainerCornerRadius)
     val recapLabel = pluralStringResource(
         R.plurals.recap_haze_folder_card_recap_label,
@@ -137,13 +148,7 @@ fun RecapHazeFolderCard(
                     .clip(folderShape)
                     .hazeBlur(
                         input = HazeInput.Sources(hazeState),
-                        style = CupertinoMaterials.ultraThin().then {
-                            blurRadius(RecapHazeFolderCardTokens.BlurRadius)
-                            colorEffects(
-                                listOf(HazeColorEffect.tint(brush = tintBrush)),
-                            )
-                            noiseFactor(RecapHazeFolderCardTokens.NoiseFactor)
-                        },
+                        style = blurStyle,
                     )
                     .border(
                         width = RecapHazeFolderCardTokens.FrontBorderWidth,

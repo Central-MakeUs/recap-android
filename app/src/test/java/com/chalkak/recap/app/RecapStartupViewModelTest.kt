@@ -10,6 +10,7 @@ import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.data.storage.StorageRepository
 import com.chalkak.recap.core.model.home.HomeSummary
 import com.chalkak.recap.core.model.storage.StorageOverview
+import com.chalkak.recap.core.data.user.UserRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.coVerifyOrder
@@ -33,6 +34,7 @@ import org.junit.jupiter.api.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class RecapStartupViewModelTest {
+    private val userRepository = mockk<UserRepository>()
     private val testDispatcher = StandardTestDispatcher()
     private val userPreferencesRepository = mockk<UserPreferencesRepository>()
     private val sessionTokenStore = mockk<SessionTokenStore>(relaxed = true)
@@ -47,6 +49,8 @@ class RecapStartupViewModelTest {
     @BeforeEach
     fun setUp() {
         Dispatchers.setMain(testDispatcher)
+        coEvery { userRepository.prefetchUsage() } returns Result.failure(IllegalStateException())
+        coEvery { userRepository.fetchLatestUsage() } returns Result.failure(IllegalStateException())
         every { userPreferencesRepository.onboardingCompleted } returns onboardingCompleted
         every { authSessionStateProvider.hasSession } returns hasSession
         every { localAppDataResetter.consumeVoluntarySignOut() } returns false
@@ -278,12 +282,28 @@ class RecapStartupViewModelTest {
         verify(exactly = 1) { localAppDataResetter.consumeVoluntarySignOut() }
     }
 
+    @Test
+    fun `usage prefetch waits for authenticated session including onboarding login`() = runTest(testDispatcher) {
+        createViewModel()
+        advanceUntilIdle()
+        coVerify(exactly = 0) { userRepository.prefetchUsage() }
+
+        hasSession.value = true
+        advanceUntilIdle()
+        coVerify(exactly = 1) { userRepository.prefetchUsage() }
+
+        onboardingCompleted.value = true
+        advanceUntilIdle()
+        coVerify(exactly = 1) { userRepository.prefetchUsage() }
+    }
+
     private fun readyState(entryMode: RecapEntryMode): RecapStartupUiState =
         RecapStartupUiState.Ready(entryMode = entryMode)
 
     private fun createViewModel(): RecapStartupViewModel =
         RecapStartupViewModel(
             userPreferencesRepository = userPreferencesRepository,
+            userRepository = userRepository,
             sessionTokenStore = sessionTokenStore,
             authSessionStateProvider = authSessionStateProvider,
             homeRepository = homeRepository,

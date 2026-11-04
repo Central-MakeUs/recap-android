@@ -31,6 +31,10 @@ android {
     experimentalProperties["android.experimental.enableScreenshotTest"] = true
 }
 
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
+}
+
 dependencies {
     implementation(project(":core:data"))
     implementation(project(":core:design"))
@@ -52,6 +56,10 @@ dependencies {
     implementation(libs.timber)
     ksp(libs.hilt.compiler)
     testImplementation(libs.junit)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+    testRuntimeOnly(libs.junit.vintage.engine)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)

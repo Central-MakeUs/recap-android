@@ -12,6 +12,7 @@ import com.chalkak.recap.core.data.auth.remote.OAuthLoginRequestDto
 import com.chalkak.recap.core.data.auth.remote.TokenRefreshRequestDto
 import com.chalkak.recap.core.data.network.SessionTokenStore
 import com.chalkak.recap.core.data.network.SessionTokens
+import com.chalkak.recap.core.data.network.TokenRefreshApi
 import com.chalkak.recap.core.data.network.mapHttpException
 import com.chalkak.recap.core.model.auth.AuthError
 import com.chalkak.recap.core.model.auth.AuthProvider
@@ -27,6 +28,7 @@ import kotlin.coroutines.cancellation.CancellationException
 class AuthRepository @Inject constructor(
     private val kakaoLoginClient: KakaoLoginClient,
     private val authApi: AuthApi,
+    @param:TokenRefreshApi private val tokenRefreshApi: AuthApi,
     private val deviceIdProvider: DeviceIdProvider,
     private val sessionTokenStore: SessionTokenStore,
     private val accountOwnerStore: AccountOwnerStore,
@@ -74,14 +76,13 @@ class AuthRepository @Inject constructor(
     }
 
     suspend fun refresh(): Result<AuthSignInResult.Success> {
-        val refreshToken = sessionTokenStore.getRefreshToken()
-            ?: return Result.failure(AuthException(AuthError.Unknown))
-
         return try {
-            val response = authApi.refresh(
+            val refreshToken = sessionTokenStore.getRefreshToken()
+                ?: return Result.failure(AuthException(AuthError.Unknown))
+            val response = tokenRefreshApi.refresh(
                 body = TokenRefreshRequestDto(refreshToken = refreshToken),
             )
-            mapTokenResponse(response)
+            mapTokenResponse(response, expectedRefreshToken = refreshToken)
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (error: HttpException) {
@@ -135,10 +136,9 @@ class AuthRepository @Inject constructor(
     private suspend fun loginWithServer(
         credential: SocialAuthCredential,
     ): Result<AuthSignInResult> {
-        val deviceId = deviceIdProvider.getOrCreate()
-        val providerPath = credential.provider.toApiPath()
-
         return try {
+            val deviceId = deviceIdProvider.getOrCreate()
+            val providerPath = credential.provider.toApiPath()
             val response = authApi.login(
                 provider = providerPath,
                 body = OAuthLoginRequestDto(
@@ -177,17 +177,21 @@ class AuthRepository @Inject constructor(
 
     private suspend fun mapTokenResponse(
         response: AuthTokenApiResponse,
+        expectedRefreshToken: String? = null,
     ): Result<AuthSignInResult.Success> {
         val tokens = response.data
         return when {
             response.success && tokens != null -> {
-                sessionTokenStore.save(
-                    SessionTokens(
-                        accessToken = tokens.accessToken,
-                        refreshToken = tokens.refreshToken,
-                        accessTokenExpiresAt = tokens.accessTokenExpiresAt,
-                    ),
+                val sessionTokens = SessionTokens(
+                    accessToken = tokens.accessToken,
+                    refreshToken = tokens.refreshToken,
+                    accessTokenExpiresAt = tokens.accessTokenExpiresAt,
                 )
+                if (expectedRefreshToken == null) {
+                    sessionTokenStore.save(sessionTokens)
+                } else if (!sessionTokenStore.saveIfRefreshTokenMatches(expectedRefreshToken, sessionTokens)) {
+                    return Result.failure(AuthException(AuthError.Cancelled))
+                }
                 Result.success(
                     AuthSignInResult.Success(
                         accessToken = tokens.accessToken,

@@ -2,7 +2,6 @@ package com.chalkak.recap.app
 
 import android.content.Context
 import android.view.accessibility.AccessibilityManager
-import com.chalkak.recap.core.design.component.toast.RecapToastAccessibilityContentFlags
 import com.chalkak.recap.core.design.component.toast.RecapToastDuration
 import com.chalkak.recap.core.design.component.toast.effectiveToastDurationMillis
 
@@ -14,7 +13,7 @@ internal fun resolveEffectiveToastDurationMillis(
         ?: return duration.millis
     val recommendedTimeoutMillis = accessibilityManager.getRecommendedTimeoutMillis(
         duration.millis.toInt().coerceAtLeast(0),
-        RecapToastAccessibilityContentFlags,
+        AccessibilityManager.FLAG_CONTENT_TEXT or AccessibilityManager.FLAG_CONTENT_ICONS,
     )
     return effectiveToastDurationMillis(
         baseDurationMillis = duration.millis,

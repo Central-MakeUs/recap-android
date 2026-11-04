@@ -42,6 +42,7 @@ class AuthRepositoryTest {
     private val context = mockk<Context>(relaxed = true)
     private val kakaoLoginClient = mockk<KakaoLoginClient>()
     private val authApi = mockk<AuthApi>()
+    private val tokenRefreshApi = mockk<AuthApi>()
     private val deviceIdProvider = mockk<DeviceIdProvider>()
     private val sessionTokenStore = mockk<SessionTokenStore>(relaxed = true)
     private val accountOwnerStore = mockk<AccountOwnerStore>(relaxed = true)
@@ -55,6 +56,7 @@ class AuthRepositoryTest {
         repository = AuthRepository(
             kakaoLoginClient = kakaoLoginClient,
             authApi = authApi,
+            tokenRefreshApi = tokenRefreshApi,
             deviceIdProvider = deviceIdProvider,
             sessionTokenStore = sessionTokenStore,
             accountOwnerStore = accountOwnerStore,
@@ -66,6 +68,7 @@ class AuthRepositoryTest {
             ownerHashOf(firstArg())
         }
         stubMatchingAccountOwner(KAKAO_USER_ID)
+        coEvery { sessionTokenStore.saveIfRefreshTokenMatches(any(), any()) } returns true
     }
 
     @Test
@@ -290,7 +293,7 @@ class AuthRepositoryTest {
     fun `refresh stores new tokens from auth api`() = runTest {
         coEvery { sessionTokenStore.getRefreshToken() } returns "old-refresh"
         coEvery {
-            authApi.refresh(TokenRefreshRequestDto(refreshToken = "old-refresh"))
+            tokenRefreshApi.refresh(TokenRefreshRequestDto(refreshToken = "old-refresh"))
         } returns AuthTokenApiResponse(
             success = true,
             data = TokenResponseDto(
@@ -311,7 +314,8 @@ class AuthRepositoryTest {
             result.getOrNull(),
         )
         coVerify(exactly = 1) {
-            sessionTokenStore.save(
+            sessionTokenStore.saveIfRefreshTokenMatches(
+                "old-refresh",
                 SessionTokens(
                     accessToken = "new-access",
                     refreshToken = "new-refresh",
@@ -355,7 +359,7 @@ class AuthRepositoryTest {
             """
             {"success":false,"error":{"code":"INVALID_REFRESH_TOKEN","message":"expired"}}
             """.trimIndent().toResponseBody("application/json".toMediaType())
-        coEvery { authApi.refresh(any()) } throws HttpException(Response.error<Unit>(401, body))
+        coEvery { tokenRefreshApi.refresh(any()) } throws HttpException(Response.error<Unit>(401, body))
 
         val result = repository.refresh()
 
@@ -372,7 +376,7 @@ class AuthRepositoryTest {
     @Test
     fun `refresh propagates CancellationException`() {
         coEvery { sessionTokenStore.getRefreshToken() } returns "old-refresh"
-        coEvery { authApi.refresh(any()) } throws CancellationException("cancelled")
+        coEvery { tokenRefreshApi.refresh(any()) } throws CancellationException("cancelled")
 
         assertThrows(CancellationException::class.java) {
             kotlinx.coroutines.runBlocking {
@@ -403,6 +407,40 @@ class AuthRepositoryTest {
 
         assertTrue(result.isFailure)
         coVerify(exactly = 1) { sessionTokenStore.clear() }
+    }
+
+    @Test
+    fun `signInWithKakao returns failure when device id persistence fails`() = runTest {
+        stubKakaoLoginSuccess()
+        coEvery { deviceIdProvider.getOrCreate() } throws IOException("storage unavailable")
+
+        val result = repository.signInWithKakao(context)
+
+        assertTrue(result.isFailure)
+        coVerify(exactly = 0) { authApi.login(any(), any()) }
+        coVerify(exactly = 0) { sessionTokenStore.save(any()) }
+    }
+
+    @Test
+    fun `refresh discards successful response when the session changed during the request`() = runTest {
+        coEvery { sessionTokenStore.getRefreshToken() } returns "old-refresh"
+        coEvery { tokenRefreshApi.refresh(any()) } returns AuthTokenApiResponse(
+            success = true,
+            data = TokenResponseDto(
+                accessToken = "stale-access",
+                refreshToken = "stale-refresh",
+                accessTokenExpiresAt = "2026-09-20T12:00:00Z",
+            ),
+        )
+        coEvery {
+            sessionTokenStore.saveIfRefreshTokenMatches("old-refresh", any())
+        } returns false
+
+        val result = repository.refresh()
+
+        assertEquals(AuthError.Cancelled, (result.exceptionOrNull() as AuthException).authError)
+        coVerify(exactly = 0) { sessionTokenStore.save(any()) }
+        coVerify(exactly = 0) { authApi.refresh(any()) }
     }
 
     private fun stubMatchingAccountOwner(userId: Long) {

@@ -151,14 +151,19 @@ private fun RecapBottomBarNavPill(
     val homeSelectedStrength = (1f - selectionFraction.value).coerceIn(0f, 1f)
     val collectionSelectedStrength = selectionFraction.value.coerceIn(0f, 1f)
 
+    val baseStyle = CupertinoMaterials.ultraThin()
+    val glassStyle = remember(baseStyle) {
+        baseStyle.then {
+            blurRadius(RecapBottomBarDefaults.GlassBlurRadius)
+            colorEffects(listOf(HazeColorEffect.tint(RecapBottomBarDefaults.GlassTintColor)))
+            noiseFactor(RecapBottomBarDefaults.GlassNoiseFactor)
+        }
+    }
+
     val glassModifier = if (useRealtimeBlur) {
         Modifier.hazeBlur(
             input = HazeInput.Sources(hazeState),
-            style = CupertinoMaterials.ultraThin().then {
-                blurRadius(RecapBottomBarDefaults.GlassBlurRadius)
-                colorEffects(listOf(HazeColorEffect.tint(RecapBottomBarDefaults.GlassTintColor)))
-                noiseFactor(RecapBottomBarDefaults.GlassNoiseFactor)
-            },
+            style = glassStyle,
         )
     } else {
         Modifier.background(

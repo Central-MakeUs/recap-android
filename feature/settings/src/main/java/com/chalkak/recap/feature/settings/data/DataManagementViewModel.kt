@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chalkak.recap.core.data.user.UserRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -15,12 +14,14 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class DataManagementViewModel @Inject constructor(
     private val userRepository: UserRepository,
 ) : ViewModel() {
     private val organizedCount = MutableStateFlow<Int?>(null)
+    private val usageCounts = MutableStateFlow<UsageCounts?>(null)
     private val showDeleteConfirmDialog = MutableStateFlow(false)
     private val showWithdrawConsentDialog = MutableStateFlow(false)
     private val showAiDataTransferConsentSheet = MutableStateFlow(false)
@@ -54,15 +55,28 @@ class DataManagementViewModel @Inject constructor(
         initialValue = false,
     )
 
-    val uiState: StateFlow<DataManagementUiState> = combine(
+    private val screenContent = combine(
         organizedCount,
+        usageCounts,
+    ) { count, usage ->
+        ScreenContent(
+            organizedCount = count,
+            usageUsedCount = usage?.usedCount,
+            usageLimitCount = usage?.limitCount,
+        )
+    }
+
+    val uiState: StateFlow<DataManagementUiState> = combine(
+        screenContent,
         dialogVisibility,
         isAiDataTransferConsented,
         aiDataTransferConsentDate,
         hasFetchError,
-    ) { count, dialogs, isConsented, consentDate, fetchError ->
+    ) { content, dialogs, isConsented, consentDate, fetchError ->
         DataManagementUiState(
-            organizedCount = count,
+            organizedCount = content.organizedCount,
+            usageUsedCount = content.usageUsedCount,
+            usageLimitCount = content.usageLimitCount,
             showDeleteConfirmDialog = dialogs.showDeleteConfirmDialog,
             showWithdrawConsentDialog = dialogs.showWithdrawConsentDialog,
             showAiDataTransferConsentSheet = dialogs.showAiDataTransferConsentSheet,
@@ -79,6 +93,7 @@ class DataManagementViewModel @Inject constructor(
     init {
         observeDataSummary()
         observeConsentStatus()
+        observeUsage()
     }
 
     fun onAction(action: DataManagementAction) {
@@ -167,6 +182,19 @@ class DataManagementViewModel @Inject constructor(
         }
     }
 
+    private fun observeUsage() {
+        viewModelScope.launch {
+            userRepository.observeUsage().collect { result ->
+                result.onSuccess { usage ->
+                    usageCounts.value = UsageCounts(
+                        usedCount = usage.usedCount,
+                        limitCount = usage.limit,
+                    )
+                }
+            }
+        }
+    }
+
     private fun observeConsentStatus() {
         viewModelScope.launch {
             userRepository.observeConsentStatus().collect { result ->
@@ -193,6 +221,17 @@ class DataManagementViewModel @Inject constructor(
             _events.emit(DataManagementEvent.ShowDeleteSuccessToast(deletedCount))
         }
     }
+
+    private data class ScreenContent(
+        val organizedCount: Int?,
+        val usageUsedCount: Int?,
+        val usageLimitCount: Int?,
+    )
+
+    private data class UsageCounts(
+        val usedCount: Int,
+        val limitCount: Int,
+    )
 
     private data class DialogVisibility(
         val showDeleteConfirmDialog: Boolean,

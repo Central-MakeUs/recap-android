@@ -87,6 +87,10 @@ internal enum class DeveloperOption(
         labelResId = R.string.developer_options_reset_screenshot_data_button,
         action = DeveloperOptionAction.ResetScreenshotData,
     ),
+    ResetMockUsage(
+        labelResId = R.string.developer_options_reset_mock_usage_button,
+        action = DeveloperOptionAction.ResetMockUsage,
+    ),
     TestCrash(
         labelResId = R.string.developer_options_test_crash_button,
         action = DeveloperOptionAction.ForceTestCrash,
@@ -98,6 +102,7 @@ internal sealed interface DeveloperOptionAction {
     data object ResetOnboarding : DeveloperOptionAction
     data object InvalidateSession : DeveloperOptionAction
     data object ResetScreenshotData : DeveloperOptionAction
+    data object ResetMockUsage : DeveloperOptionAction
     data object ForceTestCrash : DeveloperOptionAction
 }
 

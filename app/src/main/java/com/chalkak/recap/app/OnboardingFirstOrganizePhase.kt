@@ -12,6 +12,7 @@ sealed interface OnboardingFirstOrganizeEvent {
     data object StartAnalysis : OnboardingFirstOrganizeEvent
     data object CancelAnalysis : OnboardingFirstOrganizeEvent
     data object DismissTerminalResult : OnboardingFirstOrganizeEvent
+    data object AnalysisSessionUnavailable : OnboardingFirstOrganizeEvent
 }
 
 fun reduceOnboardingFirstOrganize(
@@ -36,6 +37,7 @@ fun reduceOnboardingFirstOrganize(
 
     OnboardingFirstOrganizeEvent.CancelAnalysis,
     OnboardingFirstOrganizeEvent.DismissTerminalResult,
+    OnboardingFirstOrganizeEvent.AnalysisSessionUnavailable,
     -> when (phase) {
         OnboardingFirstOrganizePhase.AnalysisSession -> OnboardingFirstOrganizePhase.Idle
         else -> phase

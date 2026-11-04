@@ -54,6 +54,13 @@ fun OnboardingFirstOrganizeHost(
         if (phase == OnboardingFirstOrganizePhase.AnalysisSession) {
             if (analysisStatus !is OrganizeAnalysisStatusUiState.Hidden) {
                 renderedAnalysisStatus = analysisStatus
+            } else if (!analysisProgressViewModel.uiState.value.isStatusVisible &&
+                renderedAnalysisStatus == null
+            ) {
+                phase = reduceOnboardingFirstOrganize(
+                    phase = phase,
+                    event = OnboardingFirstOrganizeEvent.AnalysisSessionUnavailable,
+                )
             }
         } else {
             renderedAnalysisStatus = null

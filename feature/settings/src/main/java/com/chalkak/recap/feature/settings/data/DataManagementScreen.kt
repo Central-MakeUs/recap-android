@@ -35,6 +35,7 @@ import com.chalkak.recap.core.design.component.button.RecapButton
 import com.chalkak.recap.core.design.component.button.RecapButtonDefaults
 import com.chalkak.recap.core.design.component.button.RecapButtonSize
 import com.chalkak.recap.core.design.component.card.OrganizedScreenshotSummaryCard
+import com.chalkak.recap.core.design.component.card.RecapUsageCard
 import com.chalkak.recap.core.design.component.divider.RecapSectionDivider
 import com.chalkak.recap.core.design.component.popup.RecapPopup
 import com.chalkak.recap.core.design.component.topbar.RecapTopBar
@@ -86,6 +87,14 @@ fun DataManagementScreen(
                         ),
                     verticalArrangement = Arrangement.spacedBy(DataManagementTokens.SectionSpacing),
                 ) {
+                    val usageUsedCount = uiState.usageUsedCount
+                    val usageLimitCount = uiState.usageLimitCount
+                    if (usageUsedCount != null && usageLimitCount != null) {
+                        RecapUsageCard(
+                            usedCount = usageUsedCount,
+                            limitCount = usageLimitCount,
+                        )
+                    }
                     OrganizedScreenshotSummaryCard(organizedCount = uiState.organizedCount)
                     RecapButton(
                         text = stringResource(R.string.settings_data_management_delete_button),
@@ -357,6 +366,8 @@ private fun DataManagementScreenPreview() {
         DataManagementScreen(
             uiState = DataManagementUiState(
                 organizedCount = DataManagementScreenPreviewCount,
+                usageUsedCount = DataManagementScreenPreviewUsageUsedCount,
+                usageLimitCount = DataManagementScreenPreviewUsageLimitCount,
                 isAiDataTransferConsented = true,
                 aiDataTransferConsentDate = stringResource(
                     R.string.settings_data_management_ai_consent_preview_date,
@@ -388,6 +399,8 @@ private fun DataManagementScreenConsentCheckingPreview() {
         DataManagementScreen(
             uiState = DataManagementUiState(
                 organizedCount = DataManagementScreenPreviewCount,
+                usageUsedCount = DataManagementScreenPreviewUsageUsedCount,
+                usageLimitCount = DataManagementScreenPreviewUsageLimitCount,
                 isAiDataTransferConsented = null,
             ),
             onAction = {},
@@ -417,6 +430,8 @@ private fun DataManagementConsentRevokedPreview() {
         DataManagementScreen(
             uiState = DataManagementUiState(
                 organizedCount = DataManagementScreenPreviewCount,
+                usageUsedCount = DataManagementScreenPreviewUsageUsedCount,
+                usageLimitCount = DataManagementScreenPreviewUsageLimitCount,
                 isAiDataTransferConsented = false,
             ),
             onAction = {},
@@ -431,6 +446,8 @@ private fun DataManagementDeleteConfirmPreview() {
         DataManagementScreen(
             uiState = DataManagementUiState(
                 organizedCount = DataManagementScreenPreviewCount,
+                usageUsedCount = DataManagementScreenPreviewUsageUsedCount,
+                usageLimitCount = DataManagementScreenPreviewUsageLimitCount,
                 showDeleteConfirmDialog = true,
                 isAiDataTransferConsented = true,
                 aiDataTransferConsentDate = stringResource(
@@ -449,6 +466,8 @@ private fun DataManagementWithdrawConsentConfirmPreview() {
         DataManagementScreen(
             uiState = DataManagementUiState(
                 organizedCount = DataManagementScreenPreviewCount,
+                usageUsedCount = DataManagementScreenPreviewUsageUsedCount,
+                usageLimitCount = DataManagementScreenPreviewUsageLimitCount,
                 showWithdrawConsentDialog = true,
                 isAiDataTransferConsented = true,
                 aiDataTransferConsentDate = stringResource(
@@ -467,6 +486,8 @@ private fun DataManagementConsentAgreeSheetPreview() {
         DataManagementScreen(
             uiState = DataManagementUiState(
                 organizedCount = DataManagementScreenPreviewCount,
+                usageUsedCount = DataManagementScreenPreviewUsageUsedCount,
+                usageLimitCount = DataManagementScreenPreviewUsageLimitCount,
                 showAiDataTransferConsentSheet = true,
                 isAiDataTransferConsented = false,
             ),
@@ -476,3 +497,5 @@ private fun DataManagementConsentAgreeSheetPreview() {
 }
 
 private const val DataManagementScreenPreviewCount = 128
+private const val DataManagementScreenPreviewUsageUsedCount = 12
+private const val DataManagementScreenPreviewUsageLimitCount = 20

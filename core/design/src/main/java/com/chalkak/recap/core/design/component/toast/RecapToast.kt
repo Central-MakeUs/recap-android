@@ -154,14 +154,18 @@ fun RecapToast(
     colors: RecapToastColors = RecapToastDefaults.colors(),
     useRealtimeBlur: Boolean = isRecapRealtimeBlurEnabled(),
 ) {
+    val baseStyle = CupertinoMaterials.ultraThin()
+    val blurStyle = remember(baseStyle, colors.container) {
+        baseStyle.then {
+            blurRadius(RecapToastDefaults.BlurRadius)
+            colorEffects(listOf(HazeColorEffect.tint(colors.container)))
+            noiseFactor(RecapToastDefaults.NoiseFactor)
+        }
+    }
     val hazeModifier = if (useRealtimeBlur) {
         Modifier.hazeBlur(
             input = HazeInput.Sources(hazeState),
-            style = CupertinoMaterials.ultraThin().then {
-                blurRadius(RecapToastDefaults.BlurRadius)
-                colorEffects(listOf(HazeColorEffect.tint(colors.container)))
-                noiseFactor(RecapToastDefaults.NoiseFactor)
-            },
+            style = blurStyle,
         )
     } else {
         Modifier
